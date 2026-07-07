@@ -47,7 +47,7 @@ export default function DoctorSummaryPage() {
       if (startDate) queryParams.set("startDate", `${startDate}T00:00:00.000Z`);
       if (endDate) queryParams.set("endDate", `${endDate}T23:59:59.999Z`);
 
-      const res = await fetch(`/admin/api/doctor-summary?${queryParams.toString()}`).then((r) => r.json());
+      const res = await fetch(`/api/doctor-summary?${queryParams.toString()}`).then((r) => r.json());
       if (res.success) {
         const parsed = res.summary.map((item) => ({
           ...item,

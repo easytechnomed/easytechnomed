@@ -436,7 +436,7 @@ export default function TestReportPage() {
   useEffect(() => {
     async function fetchSettings() {
       try {
-        const res = await fetch("/admin/api/settings").then((r) => r.json());
+        const res = await fetch("/api/settings").then((r) => r.json());
         if (res.success && res.settings) {
           setAdminSettings({
             framePdfUrl: res.settings.framePdfUrl || "",
@@ -458,7 +458,7 @@ export default function TestReportPage() {
       if (endDate) queryParams.set("endDate", `${endDate}T23:59:59.999Z`);
       if (search) queryParams.set("search", search);
 
-      const res = await fetch(`/admin/api/registrations?${queryParams.toString()}`).then((r) => r.json());
+      const res = await fetch(`/api/registrations?${queryParams.toString()}`).then((r) => r.json());
       if (res.success) {
         setRegistrations(res.registrations);
       }
@@ -511,7 +511,7 @@ export default function TestReportPage() {
   const handleEditRegistration = () => {
     handleCloseMenu();
     if (selectedReg) {
-      router.push(`/admin/registration?edit=${selectedReg.id}`);
+      router.push(`/registration?edit=${selectedReg.id}`);
     }
   };
 
@@ -522,7 +522,7 @@ export default function TestReportPage() {
       return;
     }
     try {
-      const res = await fetch(`/admin/api/registrations/${selectedReg.id}`, { method: "DELETE" }).then((r) => r.json());
+      const res = await fetch(`/api/registrations/${selectedReg.id}`, { method: "DELETE" }).then((r) => r.json());
       if (res.success) {
         showToast(res.message, "success");
         loadData();
@@ -546,7 +546,7 @@ export default function TestReportPage() {
     setPreviewLoading(true);
     setReportPreviewOpen(true);
     try {
-      const res = await fetch(`/admin/api/registrations/${selectedReg.id}/parameters`).then((r) => r.json());
+      const res = await fetch(`/api/registrations/${selectedReg.id}/parameters`).then((r) => r.json());
       if (res.success) {
         setPreviewData(res.registration);
       } else {
@@ -566,7 +566,7 @@ export default function TestReportPage() {
     const regId = selectedReg.id;
     handleCloseMenu();
     try {
-      const res = await fetch(`/admin/api/registrations/${regId}/samples`).then((r) => r.json());
+      const res = await fetch(`/api/registrations/${regId}/samples`).then((r) => r.json());
       if (res.success) {
         const rows = res.registration.tests.map((rt) => ({
           testId: rt.test.id,
@@ -600,7 +600,7 @@ export default function TestReportPage() {
   const handleSaveSamples = async () => {
     setSampleSaving(true);
     try {
-      const res = await fetch(`/admin/api/registrations/${selectedReg.id}/samples`, {
+      const res = await fetch(`/api/registrations/${selectedReg.id}/samples`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(sampleRows),
@@ -626,7 +626,7 @@ export default function TestReportPage() {
     try {
 
       // 2. Fetch test parameters
-      const res = await fetch(`/admin/api/registrations/${regId}/parameters`).then((r) => r.json());
+      const res = await fetch(`/api/registrations/${regId}/parameters`).then((r) => r.json());
       if (res.success) {
         setResultRegDetails(res.registration);
 
@@ -685,7 +685,7 @@ export default function TestReportPage() {
         value: resultValues[paramId]
       }));
 
-      const res = await fetch(`/admin/api/registrations/${resultRegDetails.id}/results`, {
+      const res = await fetch(`/api/registrations/${resultRegDetails.id}/results`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ resultsData, reportNotes }),
@@ -813,7 +813,7 @@ export default function TestReportPage() {
 
   const handleSaveConfigParameters = async () => {
     try {
-      const res = await fetch(`/admin/api/registrations/${configTest.id}/parameters`, {
+      const res = await fetch(`/api/registrations/${configTest.id}/parameters`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ parametersList: configParams }),
@@ -824,7 +824,7 @@ export default function TestReportPage() {
 
         // Re-load result entry details to show updated parameters
         if (resultRegDetails) {
-          const freshParams = await fetch(`/admin/api/registrations/${resultRegDetails.id}/parameters`).then((r) => r.json());
+          const freshParams = await fetch(`/api/registrations/${resultRegDetails.id}/parameters`).then((r) => r.json());
           if (freshParams.success) {
             setResultRegDetails(freshParams.registration);
             setResultTests(freshParams.registration.tests.map(rt => rt.test));
@@ -1690,7 +1690,7 @@ export default function TestReportPage() {
                 fullWidth
                 color="warning"
                 onClick={() => {
-                  router.push("/admin/settings");
+                  router.push("/settings");
                   setPrintDialogOpen(false);
                 }}
                 sx={{ py: 1.2, fontWeight: 700 }}
@@ -1756,8 +1756,8 @@ export default function TestReportPage() {
                     <Typography variant="body2" sx={{ mb: 0.5 }}><strong>Registered On:</strong> {new Date(previewData.date).toLocaleString("en-IN")}</Typography>
                     <Typography variant="body2">
                       <strong>Status:</strong>{" "}
-                      <Badge 
-                        badgeContent={previewData.status} 
+                      <Badge
+                        badgeContent={previewData.status}
                         color={previewData.status === "Completed" ? "success" : "warning"}
                         sx={{ "& .MuiBadge-badge": { position: "static", transform: "none", fontWeight: 700 } }}
                       />
@@ -1792,17 +1792,17 @@ export default function TestReportPage() {
                             const val = result ? result.value : "";
                             const ref = getReferenceRange(param, previewData);
                             const isAbnormal = isOutOfRange(val, ref.min, ref.max);
-                            
+
                             const isSectionHeader = !param.unit && !ref.rangeStr && !val;
-                            
+
                             return (
                               <TableRow key={pIdx} hover>
                                 <TableCell sx={{ fontWeight: isSectionHeader ? 700 : 500, color: isSectionHeader ? "text.secondary" : "text.primary" }}>
                                   {param.name}
                                 </TableCell>
-                                <TableCell sx={{ 
-                                  fontWeight: isAbnormal ? 700 : 500, 
-                                  color: isAbnormal ? "error.main" : "text.primary" 
+                                <TableCell sx={{
+                                  fontWeight: isAbnormal ? 700 : 500,
+                                  color: isAbnormal ? "error.main" : "text.primary"
                                 }}>
                                   {val || (isSectionHeader ? "" : "-")}
                                 </TableCell>

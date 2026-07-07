@@ -117,7 +117,7 @@ function SettingsContent() {
     async function loadSettings() {
       setLoading(true);
       try {
-        const res = await fetch("/admin/api/settings").then((r) => r.json());
+        const res = await fetch("/api/settings").then((r) => r.json());
         if (res.success && res.settings) {
           setSettings({
             framePdfUrl: res.settings.framePdfUrl || "",
@@ -142,7 +142,7 @@ function SettingsContent() {
   const fetchTests = async (page = 1, search = "") => {
     setTestsLoading(true);
     try {
-      const res = await fetch(`/admin/api/tests?page=${page}&limit=20&search=${encodeURIComponent(search)}`).then((r) => r.json());
+      const res = await fetch(`/api/tests?page=${page}&limit=20&search=${encodeURIComponent(search)}`).then((r) => r.json());
       if (res.success && res.tests) {
         setTestsList(res.tests);
         if (res.pagination) {
@@ -200,7 +200,7 @@ function SettingsContent() {
       const formData = new FormData();
       formData.append("file", file);
 
-      const res = await fetch("/admin/api/settings/upload-frame", {
+      const res = await fetch("/api/settings/upload-frame", {
         method: "POST",
         body: formData,
       }).then((r) => r.json());
@@ -225,7 +225,7 @@ function SettingsContent() {
   const handleSave = async () => {
     setSaving(true);
     try {
-      const res = await fetch("/admin/api/settings", {
+      const res = await fetch("/api/settings", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(settings),
@@ -261,7 +261,7 @@ function SettingsContent() {
 
     setUpdatingProfile(true);
     try {
-      const res = await fetch("/admin/api/profile", {
+      const res = await fetch("/api/profile", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -301,7 +301,7 @@ function SettingsContent() {
 
     setIsAddingTest(true);
     try {
-      const res = await fetch("/admin/api/tests", {
+      const res = await fetch("/api/tests", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -364,7 +364,7 @@ function SettingsContent() {
 
     setIsUpdatingPrice(true);
     try {
-      const res = await fetch("/admin/api/tests", {
+      const res = await fetch("/api/tests", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -500,7 +500,7 @@ function SettingsContent() {
 
     setSavingParams(true);
     try {
-      const res = await fetch(`/admin/api/registrations/${parameterizingTest.id}/parameters`, {
+      const res = await fetch(`/api/registrations/${parameterizingTest.id}/parameters`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -756,7 +756,7 @@ function SettingsContent() {
                                       setOpenEditPriceDialog(true);
                                     }}
                                   >
-                                      <EditIcon fontSize="small" />
+                                    <EditIcon fontSize="small" />
                                   </IconButton>
                                 </Tooltip>
                                 <Tooltip title="Configure Parameters">
@@ -813,7 +813,7 @@ function SettingsContent() {
               <Typography variant="subtitle2" sx={{ fontWeight: 700, mb: 1 }}>
                 Current Frame Template URL
               </Typography>
-              
+
               {settings.framePdfUrl ? (
                 <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, p: 1.5, bgcolor: "rgba(15, 118, 110, 0.05)", border: "1px solid", borderColor: "primary.light", borderRadius: 2 }}>
                   <Typography variant="body2" sx={{ flexGrow: 1, fontStyle: "italic", wordBreak: "break-all", fontWeight: 500, color: "primary.dark" }}>
@@ -919,7 +919,7 @@ function SettingsContent() {
             </Grid>
 
             <Divider sx={{ my: 3 }} />
-            
+
             <Box sx={{ display: "flex", justifyContent: "flex-end" }}>
               <Button
                 variant="contained"
@@ -1081,7 +1081,7 @@ function SettingsContent() {
                     <Typography variant="subtitle2" sx={{ fontWeight: 700, mb: 1.5, color: "text.secondary" }}>
                       Sex/Age-Specific Reference Values (Optional)
                     </Typography>
-                    
+
                     <Grid container spacing={2}>
                       {/* Male */}
                       <Grid size={{ xs: 12, sm: 4 }}>

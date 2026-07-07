@@ -168,7 +168,7 @@ export default async function AdminDashboardPage({ searchParams }) {
     } else {
       key = reg.date.toISOString().substring(0, 10);
     }
-    
+
     if (!aggregatedData[key]) {
       aggregatedData[key] = { count: 0, revenue: 0 };
     }
@@ -361,7 +361,7 @@ export default async function AdminDashboardPage({ searchParams }) {
               </Typography>
               <Divider sx={{ mb: 2 }} />
               <Box sx={{ display: "flex", flexDirection: "column", gap: 1.5 }}>
-                <Link href="/admin/registration" style={{ textDecoration: "none" }}>
+                <Link href="/registration" style={{ textDecoration: "none" }}>
                   <Button
                     variant="outlined"
                     fullWidth
@@ -371,7 +371,7 @@ export default async function AdminDashboardPage({ searchParams }) {
                     New Patient Registration
                   </Button>
                 </Link>
-                <Link href="/admin/test-report" style={{ textDecoration: "none" }}>
+                <Link href="/test-report" style={{ textDecoration: "none" }}>
                   <Button
                     variant="outlined"
                     fullWidth
@@ -381,7 +381,7 @@ export default async function AdminDashboardPage({ searchParams }) {
                     Manage Test Reports
                   </Button>
                 </Link>
-                <Link href="/admin/doctor-summary" style={{ textDecoration: "none" }}>
+                <Link href="/doctor-summary" style={{ textDecoration: "none" }}>
                   <Button
                     variant="outlined"
                     fullWidth
@@ -409,14 +409,14 @@ export default async function AdminDashboardPage({ searchParams }) {
                     Latest registrations generated in the system
                   </Typography>
                 </Box>
-                <Link href="/admin/test-report" style={{ textDecoration: "none" }}>
+                <Link href="/test-report" style={{ textDecoration: "none" }}>
                   <Button variant="text" size="small">
                     View All
                   </Button>
                 </Link>
               </Box>
               <Divider sx={{ mb: 2 }} />
-              
+
               <TableContainer component={Paper} variant="outlined" sx={{ flexGrow: 1 }}>
                 <Table size="small">
                   <TableHead sx={{ bgcolor: "grey.50" }}>

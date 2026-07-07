@@ -128,7 +128,7 @@ export default function AdminLayoutClient({ admin, children }) {
 
   const handleLogout = async () => {
     handleProfileMenuClose();
-    const res = await fetch("/admin/api/auth/logout", {
+    const res = await fetch("/api/auth/logout", {
       method: "POST",
     }).then((r) => r.json());
     if (res?.success) {
@@ -137,20 +137,20 @@ export default function AdminLayoutClient({ admin, children }) {
   };
 
   const menuItems = [
-    { text: "Dashboard", path: "/admin/dashboard", icon: <DashboardIcon /> },
-    { text: "Patient Registration", path: "/admin/registration", icon: <RegisterIcon /> },
-    { text: "Test Reports", path: "/admin/test-report", icon: <ReportIcon /> },
-    { text: "Dr. Referral Summary", path: "/admin/doctor-summary", icon: <DoctorIcon /> },
-    // { text: "Manage Approvals", path: "/admin/userApprove", icon: <ApprovalsIcon /> },
-    { text: "Manage Members", path: "/admin/members", icon: <PeopleIcon /> },
+    { text: "Dashboard", path: "/dashboard", icon: <DashboardIcon /> },
+    { text: "Patient Registration", path: "/registration", icon: <RegisterIcon /> },
+    { text: "Test Reports", path: "/test-report", icon: <ReportIcon /> },
+    { text: "Dr. Referral Summary", path: "/doctor-summary", icon: <DoctorIcon /> },
+    // { text: "Manage Approvals", path: "/userApprove", icon: <ApprovalsIcon /> },
+    { text: "Manage Members", path: "/members", icon: <PeopleIcon /> },
     {
       text: "System Settings",
-      path: "/admin/settings",
+      path: "/settings",
       icon: <SettingsIcon />,
       subItems: [
-        { text: "Profile Setting", path: "/admin/settings?tab=profile" },
-        { text: "Test & Parameter", path: "/admin/settings?tab=tests" },
-        { text: "PDF Frame Setting", path: "/admin/settings?tab=pdf" },
+        { text: "Profile Setting", path: "/settings?tab=profile" },
+        { text: "Test & Parameter", path: "/settings?tab=tests" },
+        { text: "PDF Frame Setting", path: "/settings?tab=pdf" },
       ]
     },
   ];
@@ -215,7 +215,7 @@ export default function AdminLayoutClient({ admin, children }) {
                       const searchParamsStr = sub.path.split("?")[1] || "";
                       const tabName = searchParamsStr.split("=")[1] || "";
                       const currentTab = searchParams.get("tab") || "profile";
-                      const isSubActive = pathname === "/admin/settings" && currentTab === tabName;
+                      const isSubActive = pathname === "/settings" && currentTab === tabName;
 
                       return (
                         <ListItem key={sub.text} disablePadding sx={{ mb: 0.5 }}>

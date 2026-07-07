@@ -20,7 +20,7 @@ export default function UserApproveTable({ initialUsers = [], roles = [] }) {
   const [isPending, startTransition] = useTransition();
 
   const handleLogout = async () => {
-    const res = await fetch("/admin/api/auth/logout", { method: "POST" }).then((r) => r.json());
+    const res = await fetch("/api/auth/logout", { method: "POST" }).then((r) => r.json());
     if (res.success) {
       toast.success("Logged out successfully");
       router.push(res.redirect);
@@ -32,7 +32,7 @@ export default function UserApproveTable({ initialUsers = [], roles = [] }) {
     setPendingActionId({ id: userId, type: "approve" });
     startTransition(async () => {
       try {
-        const res = await fetch("/admin/api/approvals/approve", {
+        const res = await fetch("/api/approvals/approve", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ userId }),
@@ -59,7 +59,7 @@ export default function UserApproveTable({ initialUsers = [], roles = [] }) {
     setPendingActionId({ id: userId, type: "reject" });
     startTransition(async () => {
       try {
-        const res = await fetch("/admin/api/approvals/reject", {
+        const res = await fetch("/api/approvals/reject", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ userId }),
@@ -86,7 +86,7 @@ export default function UserApproveTable({ initialUsers = [], roles = [] }) {
     setPendingActionId({ id: userId, type: "role" });
     startTransition(async () => {
       try {
-        const res = await fetch("/admin/api/approvals/change-role", {
+        const res = await fetch("/api/approvals/change-role", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ userId, roleId }),
@@ -160,7 +160,7 @@ export default function UserApproveTable({ initialUsers = [], roles = [] }) {
           </p>
         </div>
         <div className="flex gap-3">
-          <Button variant="outline" className="border-slate-300 text-slate-700 bg-white hover:bg-slate-50" onClick={() => router.push("/admin/dashboard")}>
+          <Button variant="outline" className="border-slate-300 text-slate-700 bg-white hover:bg-slate-50" onClick={() => router.push("/dashboard")}>
             Admin Dashboard
           </Button>
           <Button variant="outline" className="border-slate-300 text-slate-700 bg-white hover:bg-slate-50" onClick={handleLogout}>

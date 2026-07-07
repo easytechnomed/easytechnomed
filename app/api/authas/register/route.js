@@ -38,6 +38,9 @@ export async function POST(req) {
     const token = crypto.randomBytes(32).toString("hex");
     const expires = new Date(Date.now() + 24 * 60 * 60 * 1000);
 
+    const now = new Date();
+    const trialEnd = new Date(now.getTime() + 3 * 24 * 60 * 60 * 1000); // 3 days free trial
+
     await prisma.user.create({
       data: {
         name,
@@ -49,6 +52,8 @@ export async function POST(req) {
         isApproved: false,
         verificationToken: token,
         verificationTokenExpires: expires,
+        startAt: now,
+        expireAt: trialEnd,
       },
     });
 

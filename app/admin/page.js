@@ -5,5 +5,5 @@ export const dynamic = "force-dynamic";
 
 export default async function AdminRootPage() {
   await requireAdmin();
-  redirect("/admin/dashboard");
+  redirect("/dashboard");
 }

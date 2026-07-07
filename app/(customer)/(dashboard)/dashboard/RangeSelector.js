@@ -9,7 +9,7 @@ export default function DashboardRangeSelector({ initialRange }) {
 
   const handleChange = (e) => {
     const val = e.target.value;
-    router.push(`/admin/dashboard?range=${val}`);
+    router.push(`/dashboard?range=${val}`);
   };
 
   return (

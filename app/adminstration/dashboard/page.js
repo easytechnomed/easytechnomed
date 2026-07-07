@@ -48,9 +48,13 @@ import {
   Business as WorkspaceIcon,
   People as PeopleIcon,
   AppRegistration as RegIcon,
-  Security as SecurityIcon
+  Security as SecurityIcon,
+  CloudUpload as UploadIcon,
+  CheckCircle as CheckCircleIcon,
+  Error as ErrorIcon
 } from "@mui/icons-material";
 import { toast } from "sonner";
+import * as XLSX from "xlsx";
 
 // Server Action imports removed - using REST API instead
 
@@ -99,6 +103,107 @@ export default function SuperAdminDashboard() {
   const [workspaceForm, setWorkspaceForm] = useState({ name: "", slug: "" });
   const [adminForm, setAdminForm] = useState({ name: "", email: "", password: "", workspaceId: "", roleId: "" });
   const [roleForm, setRoleForm] = useState({ name: "", permissions: [] });
+
+  // Import tests state
+  const [importWorkspaceId, setImportWorkspaceId] = useState("");
+  const [selectedFile, setSelectedFile] = useState(null);
+  const [excelHeaders, setExcelHeaders] = useState([]);
+  const [excelDataRows, setExcelDataRows] = useState([]);
+  const [mappedFields, setMappedFields] = useState({ name: "", code: "", price: "" });
+  const [importStep, setImportStep] = useState(1);
+  const [importingProgress, setImportingProgress] = useState(false);
+  const [importResult, setImportResult] = useState(null);
+
+  const handleFileChange = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    
+    setSelectedFile(file);
+    const reader = new FileReader();
+    reader.onload = (evt) => {
+      try {
+        const data = new Uint8Array(evt.target.result);
+        const workbook = XLSX.read(data, { type: "array" });
+        const firstSheetName = workbook.SheetNames[0];
+        const worksheet = workbook.Sheets[firstSheetName];
+        const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+        
+        if (jsonData.length === 0) {
+          toast.error("The uploaded file is empty.");
+          return;
+        }
+        
+        const headers = jsonData[0].map(h => String(h || "").trim()).filter(Boolean);
+        setExcelHeaders(headers);
+        setExcelDataRows(jsonData.slice(1));
+        
+        // Auto-detect mappings based on header name
+        const detected = { name: "", code: "", price: "" };
+        headers.forEach(h => {
+          const lower = h.toLowerCase();
+          if (lower.includes("name") || lower.includes("test")) {
+            detected.name = h;
+          } else if (lower.includes("code") || lower.includes("id")) {
+            detected.code = h;
+          } else if (lower.includes("price") || lower.includes("rate") || lower.includes("charge") || lower.includes("cost")) {
+            detected.price = h;
+          }
+        });
+        setMappedFields(detected);
+        setImportStep(2); // Go to step 2 (Column Mapping)
+      } catch (err) {
+        console.error(err);
+        toast.error("Failed to parse the Excel file.");
+      }
+    };
+    reader.readAsArrayBuffer(file);
+  };
+
+  const handleExecuteImport = async () => {
+    if (importWorkspaceId === "") {
+      toast.error("Please select a target workspace.");
+      setImportStep(1);
+      return;
+    }
+
+    setImportingProgress(true);
+    
+    // Map headers index
+    const nameColIdx = excelHeaders.indexOf(mappedFields.name);
+    const codeColIdx = mappedFields.code ? excelHeaders.indexOf(mappedFields.code) : -1;
+    const priceColIdx = excelHeaders.indexOf(mappedFields.price);
+
+    const formattedTests = excelDataRows.map(row => {
+      const name = nameColIdx !== -1 ? String(row[nameColIdx] || "").trim() : "";
+      const code = codeColIdx !== -1 ? String(row[codeColIdx] || "").trim() : "";
+      const price = priceColIdx !== -1 ? String(row[priceColIdx] || "").trim() : "";
+      return { name, code, price };
+    }).filter(t => t.name !== ""); // filter empty rows
+
+    try {
+      const res = await fetch("/adminstration/api/tests/import", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          workspaceId: importWorkspaceId === "global" ? null : importWorkspaceId,
+          tests: formattedTests
+        })
+      }).then(r => r.json());
+
+      if (res.success) {
+        setImportResult(res);
+        setImportStep(4);
+        toast.success(`Successfully imported tests!`);
+      } else {
+        toast.error(res.error || "Failed to import tests.");
+      }
+    } catch (err) {
+      console.error(err);
+      toast.error("An error occurred during the import.");
+    } finally {
+      setImportingProgress(false);
+    }
+  };
 
   const fetchData = async () => {
     setLoading(true);
@@ -414,6 +519,7 @@ export default function SuperAdminDashboard() {
             <Tab label="Workspaces (Labs)" sx={{ fontWeight: 700 }} />
             <Tab label="Admin Accounts" sx={{ fontWeight: 700 }} />
             <Tab label="Roles & Permissions" sx={{ fontWeight: 700 }} />
+            <Tab label="Import Tests" sx={{ fontWeight: 700 }} />
           </Tabs>
 
           {tabValue === 0 && (
@@ -625,6 +731,305 @@ export default function SuperAdminDashboard() {
                   </TableBody>
                 </Table>
               </TableContainer>
+            )}
+
+            {/* IMPORT TESTS TAB */}
+            {tabValue === 3 && (
+              <Box sx={{ maxWidth: 800, mx: "auto", mt: 2 }}>
+                <Card variant="outlined" sx={{ borderRadius: 3, bgcolor: "background.paper", p: 3 }}>
+                  <Typography variant="h5" sx={{ fontWeight: 800, mb: 1, display: "flex", alignItems: "center", gap: 1.5 }}>
+                    🧪 Import Tests from Excel
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary" sx={{ mb: 4 }}>
+                    Bulk upload new tests and update prices in one go. Upload an Excel or CSV file, map the columns, preview the results in real-time, and import.
+                  </Typography>
+
+                  {/* Step indicators */}
+                  <Box sx={{ display: "flex", justifyContent: "space-between", mb: 4, px: 2 }}>
+                    {[
+                      { label: "1. Upload File", active: importStep === 1, done: importStep > 1 },
+                      { label: "2. Map & Preview", active: importStep === 2, done: importStep > 2 },
+                      { label: "3. Status", active: importStep === 4, done: false }
+                    ].map((step, idx) => (
+                      <Box key={idx} sx={{ display: "flex", flexDirection: "column", alignItems: "center", opacity: step.active || step.done ? 1 : 0.4 }}>
+                        <Typography variant="subtitle2" sx={{ fontWeight: step.active ? 800 : 500, color: step.active ? "primary.main" : (step.done ? "success.main" : "text.secondary") }}>
+                          {step.label}
+                        </Typography>
+                      </Box>
+                    ))}
+                  </Box>
+
+                  <Divider sx={{ mb: 4 }} />
+
+                  {/* STEP 1: UPLOAD FILE & SELECT TARGET WORKSPACE */}
+                  {importStep === 1 && (
+                    <Box sx={{ display: "flex", flexDirection: "column", gap: 4 }}>
+                      <FormControl fullWidth size="small">
+                        <InputLabel shrink>Select Target Workspace</InputLabel>
+                        <Select
+                          value={importWorkspaceId}
+                          onChange={(e) => setImportWorkspaceId(e.target.value)}
+                          displayEmpty
+                          notched
+                        >
+                          <MenuItem value="">
+                            <em>Select Workspace / Lab...</em>
+                          </MenuItem>
+                          <MenuItem value="global">Global / Default Template (for new labs)</MenuItem>
+                          {workspaces.map((ws) => (
+                            <MenuItem key={ws.id} value={ws.id}>
+                              {ws.name} (/{ws.slug})
+                            </MenuItem>
+                          ))}
+                        </Select>
+                        <Typography variant="caption" color="text.secondary" sx={{ mt: 1 }}>
+                          Choose "Global" to import these as default template tests for any newly registered laboratory. Select a specific workspace to import only into that lab.
+                        </Typography>
+                      </FormControl>
+
+                      <Box
+                        sx={{
+                          border: "2px dashed rgba(255, 255, 255, 0.15)",
+                          borderRadius: 3,
+                          p: 5,
+                          textAlign: "center",
+                          cursor: "pointer",
+                          transition: "border-color 0.2s",
+                          "&:hover": {
+                            borderColor: "primary.main",
+                          },
+                        }}
+                        component="label"
+                      >
+                        <input
+                          type="file"
+                          accept=".xlsx,.xls,.csv"
+                          style={{ display: "none" }}
+                          onChange={handleFileChange}
+                          onClick={(e) => { e.target.value = null; }} // reset to allow same file re-upload
+                        />
+                        <UploadIcon color="primary" sx={{ fontSize: 48, mb: 2 }} />
+                        <Typography variant="h6" sx={{ fontWeight: 700, mb: 0.5 }}>
+                          Click or drag file here
+                        </Typography>
+                        <Typography variant="body2" color="text.secondary">
+                          Supports .xlsx, .xls, .csv files
+                        </Typography>
+                      </Box>
+                    </Box>
+                  )}
+
+                  {/* STEP 2: MAP COLUMNS & LIVE PREVIEW */}
+                  {importStep === 2 && (
+                    <Box sx={{ display: "flex", flexDirection: "column", gap: 3 }}>
+                      <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>
+                        Map Excel headers to Test fields:
+                      </Typography>
+
+                      <Grid container spacing={2}>
+                        <Grid item xs={12} sm={4}>
+                          <FormControl fullWidth size="small" required>
+                            <InputLabel shrink>Test Name *</InputLabel>
+                            <Select
+                              value={mappedFields.name}
+                              onChange={(e) => setMappedFields(prev => ({ ...prev, name: e.target.value }))}
+                              displayEmpty
+                              notched
+                            >
+                              <MenuItem value="" disabled>Select column...</MenuItem>
+                              {excelHeaders.map((h) => (
+                                <MenuItem key={h} value={h}>{h}</MenuItem>
+                              ))}
+                            </Select>
+                          </FormControl>
+                        </Grid>
+
+                        <Grid item xs={12} sm={4}>
+                          <FormControl fullWidth size="small">
+                            <InputLabel shrink>Test Code (Optional)</InputLabel>
+                            <Select
+                              value={mappedFields.code}
+                              onChange={(e) => setMappedFields(prev => ({ ...prev, code: e.target.value }))}
+                              displayEmpty
+                              notched
+                            >
+                              <MenuItem value=""><em>Auto-Generate (Max 6-char unique)</em></MenuItem>
+                              {excelHeaders.map((h) => (
+                                <MenuItem key={h} value={h}>{h}</MenuItem>
+                              ))}
+                            </Select>
+                          </FormControl>
+                        </Grid>
+
+                        <Grid item xs={12} sm={4}>
+                          <FormControl fullWidth size="small" required>
+                            <InputLabel shrink>Price / Charges *</InputLabel>
+                            <Select
+                              value={mappedFields.price}
+                              onChange={(e) => setMappedFields(prev => ({ ...prev, price: e.target.value }))}
+                              displayEmpty
+                              notched
+                            >
+                              <MenuItem value="" disabled>Select column...</MenuItem>
+                              {excelHeaders.map((h) => (
+                                <MenuItem key={h} value={h}>{h}</MenuItem>
+                              ))}
+                            </Select>
+                          </FormControl>
+                        </Grid>
+                      </Grid>
+
+                      {/* LIVE DATA PREVIEW */}
+                      <Box sx={{ mt: 2 }}>
+                        <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 1.5 }}>
+                          <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>
+                            Live Data Preview (Showing first 5 rows):
+                          </Typography>
+                          <Typography variant="body2" color="primary.main" sx={{ fontWeight: 600 }}>
+                            Total items to import: {excelDataRows.length}
+                          </Typography>
+                        </Box>
+
+                        <TableContainer component={Paper} variant="outlined" sx={{ borderRadius: 2 }}>
+                          <Table size="small">
+                            <TableHead sx={{ bgcolor: "background.default" }}>
+                              <TableRow>
+                                <TableCell sx={{ fontWeight: 700 }}>#</TableCell>
+                                <TableCell sx={{ fontWeight: 700 }}>Name</TableCell>
+                                <TableCell sx={{ fontWeight: 700 }}>Code</TableCell>
+                                <TableCell sx={{ fontWeight: 700 }}>Price</TableCell>
+                              </TableRow>
+                            </TableHead>
+                            <TableBody>
+                              {excelDataRows.slice(0, 5).map((row, idx) => {
+                                // Helper to get row value by header mapping
+                                const getValue = (field) => {
+                                  const headerName = mappedFields[field];
+                                  if (!headerName) return null;
+                                  const colIdx = excelHeaders.indexOf(headerName);
+                                  return colIdx !== -1 ? String(row[colIdx] || "").trim() : null;
+                                };
+
+                                const testName = getValue("name");
+                                const testCode = getValue("code");
+                                const testPrice = getValue("price");
+
+                                return (
+                                  <TableRow key={idx}>
+                                    <TableCell>{idx + 1}</TableCell>
+                                    <TableCell sx={{ fontWeight: 600 }}>
+                                      {testName !== null ? (testName || <span style={{ color: "#ef4444" }}>[Empty Value]</span>) : <span style={{ color: "rgba(255,255,255,0.3)", fontStyle: "italic" }}>[Not Mapped]</span>}
+                                    </TableCell>
+                                    <TableCell sx={{ color: "text.secondary" }}>
+                                      {mappedFields.code === "" ? (
+                                        <span style={{ color: "#14b8a6", fontStyle: "italic" }}>[Auto-Gen e.g. CBC100]</span>
+                                      ) : (
+                                        testCode !== null ? (testCode || <span style={{ color: "#ef4444" }}>[Empty Value]</span>) : <span style={{ color: "rgba(255,255,255,0.3)", fontStyle: "italic" }}>[Not Mapped]</span>
+                                      )}
+                                    </TableCell>
+                                    <TableCell sx={{ fontWeight: 600 }}>
+                                      {testPrice !== null ? (
+                                        testPrice && !isNaN(parseFloat(testPrice)) ? `₹${parseFloat(testPrice).toFixed(2)}` : <span style={{ color: "#ef4444" }}>[Invalid Value]</span>
+                                      ) : <span style={{ color: "rgba(255,255,255,0.3)", fontStyle: "italic" }}>[Not Mapped]</span>}
+                                    </TableCell>
+                                  </TableRow>
+                                );
+                              })}
+                            </TableBody>
+                          </Table>
+                        </TableContainer>
+                      </Box>
+
+                      <Box sx={{ display: "flex", justifyContent: "space-between", mt: 3 }}>
+                        <Button variant="outlined" onClick={() => setImportStep(1)} disabled={importingProgress}>
+                          Back
+                        </Button>
+                        <Button
+                          variant="contained"
+                          color="success"
+                          disabled={!mappedFields.name || !mappedFields.price || importingProgress}
+                          onClick={handleExecuteImport}
+                          startIcon={importingProgress ? <CircularProgress size={16} color="inherit" /> : null}
+                        >
+                          {importingProgress ? "Importing..." : "Start Import"}
+                        </Button>
+                      </Box>
+                    </Box>
+                  )}
+
+                  {/* STEP 4: IMPORT RESULTS */}
+                  {importStep === 4 && importResult && (
+                    <Box sx={{ display: "flex", flexDirection: "column", gap: 3, textAlign: "center" }}>
+                      <Box sx={{ display: "flex", justifyContent: "center", mb: 1 }}>
+                        {importResult.errors && importResult.errors.length > 0 ? (
+                          <ErrorIcon color="warning" sx={{ fontSize: 64 }} />
+                        ) : (
+                          <CheckCircleIcon color="success" sx={{ fontSize: 64 }} />
+                        )}
+                      </Box>
+
+                      <Typography variant="h5" sx={{ fontWeight: 800 }}>
+                        {importResult.errors && importResult.errors.length > 0 ? "Import Completed with Warnings" : "Import Completed Successfully!"}
+                      </Typography>
+
+                      <Grid container spacing={3} sx={{ mt: 1, mb: 2 }}>
+                        <Grid item xs={6}>
+                          <Card variant="outlined" sx={{ p: 2, borderRadius: 2, bgcolor: "rgba(20, 184, 166, 0.04)" }}>
+                            <Typography variant="h4" color="primary.main" sx={{ fontWeight: 800 }}>
+                              {importResult.createdCount}
+                            </Typography>
+                            <Typography variant="body2" color="text.secondary">
+                              Tests Created
+                            </Typography>
+                          </Card>
+                        </Grid>
+                        <Grid item xs={6}>
+                          <Card variant="outlined" sx={{ p: 2, borderRadius: 2, bgcolor: "rgba(34, 197, 94, 0.04)" }}>
+                            <Typography variant="h4" color="success.main" sx={{ fontWeight: 800 }}>
+                              {importResult.updatedCount}
+                            </Typography>
+                            <Typography variant="body2" color="text.secondary">
+                              Tests Updated / Repriced
+                            </Typography>
+                          </Card>
+                        </Grid>
+                      </Grid>
+
+                      {importResult.errors && importResult.errors.length > 0 && (
+                        <Box sx={{ textAlign: "left" }}>
+                          <Typography variant="subtitle2" color="warning.main" sx={{ fontWeight: 700, mb: 1 }}>
+                            Warnings / Skip Logs ({importResult.errors.length}):
+                          </Typography>
+                          <Paper variant="outlined" sx={{ p: 2, maxHeight: 150, overflowY: "auto", bgcolor: "rgba(0, 0, 0, 0.2)", borderRadius: 2 }}>
+                            {importResult.errors.map((err, index) => (
+                              <Typography key={index} variant="caption" display="block" color="text.secondary" sx={{ mb: 0.5 }}>
+                                • {err}
+                              </Typography>
+                            ))}
+                          </Paper>
+                        </Box>
+                      )}
+
+                      <Box sx={{ mt: 3 }}>
+                        <Button
+                          variant="contained"
+                          onClick={() => {
+                            setImportStep(1);
+                            setSelectedFile(null);
+                            setExcelHeaders([]);
+                            setExcelDataRows([]);
+                            setMappedFields({ name: "", code: "", price: "" });
+                            setImportResult(null);
+                            fetchData(); // Reload workspaces stats
+                          }}
+                        >
+                          Import Another File
+                        </Button>
+                      </Box>
+                    </Box>
+                  )}
+                </Card>
+              </Box>
             )}
           </>
         )}

@@ -12,15 +12,15 @@ export async function proxy(request) {
   const superAdminToken = request.cookies.get("super_admin_session_token")?.value;
 
   // 1. Workspace Admin Pages protection (excludes superadmin routes starting with /adminstration)
-  if (pathname.startsWith("/admin") && !pathname.startsWith("/admin/auth") && !pathname.startsWith("/admin/api") && !pathname.startsWith("/adminstration")) {
+  if (pathname.startsWith("/admin") && !pathname.startsWith("/auth") && !pathname.startsWith("/api") && !pathname.startsWith("/adminstration")) {
     if (!adminToken) {
-      return NextResponse.redirect(new URL("/admin/auth/login", request.url));
+      return NextResponse.redirect(new URL("/auth/login", request.url));
     }
     try {
       await jwtVerify(adminToken, JWT_SECRET);
       // Admin session is verified
     } catch (e) {
-      const res = NextResponse.redirect(new URL("/admin/auth/login", request.url));
+      const res = NextResponse.redirect(new URL("/auth/login", request.url));
       res.cookies.delete("admin_session_token");
       return res;
     }
@@ -57,10 +57,10 @@ export async function proxy(request) {
   }
 
   // 4. Prevent logged-in admins from visiting admin auth login page
-  if (pathname === "/admin/auth/login" && adminToken) {
+  if (pathname === "/auth/login" && adminToken) {
     try {
       await jwtVerify(adminToken, JWT_SECRET);
-      return NextResponse.redirect(new URL("/admin/dashboard", request.url));
+      return NextResponse.redirect(new URL("/dashboard", request.url));
     } catch (e) {
       const res = NextResponse.next();
       res.cookies.delete("admin_session_token");
@@ -96,5 +96,5 @@ export async function proxy(request) {
 }
 
 export const config = {
-  matcher: ["/dashboard", "/dashboard/:path*", "/admin", "/admin/:path*", "/adminstration", "/adminstration/:path*", "/auth/login", "/auth/register"],
+  matcher: ["/dashboard", "/dashboard/:path*", "/admin", "/:path*", "/adminstration", "/adminstration/:path*", "/auth/login", "/auth/register"],
 };

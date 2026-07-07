@@ -125,8 +125,8 @@ export default function RegistrationPage() {
     async function loadData() {
       try {
         const [docsRes, testsRes] = await Promise.all([
-          fetch("/admin/api/doctors").then((r) => r.json()),
-          fetch("/admin/api/tests").then((r) => r.json())
+          fetch("/api/doctors").then((r) => r.json()),
+          fetch("/api/tests").then((r) => r.json())
         ]);
         if (docsRes.success) setDoctors(docsRes.doctors);
         if (testsRes.success) {
@@ -153,7 +153,7 @@ export default function RegistrationPage() {
     async function fetchReg() {
       setLoading(true);
       try {
-        const res = await fetch(`/admin/api/registrations/${parseInt(editId)}`).then((r) => r.json());
+        const res = await fetch(`/api/registrations/${parseInt(editId)}`).then((r) => r.json());
         if (res.success) {
           const reg = res.registration;
           setBillOn(reg.billOn);
@@ -233,7 +233,7 @@ export default function RegistrationPage() {
     setTitle(val);
     const maleTitles = ["Mr.", "Mast.", "Md.", "Baba (M)", "S/O"];
     const femaleTitles = ["Mrs.", "Ms.", "Miss.", "Sister", "Baby (F)", "W/O", "D/O"];
-    
+
     if (maleTitles.includes(val)) {
       setGender("Male");
     } else if (femaleTitles.includes(val)) {
@@ -322,7 +322,7 @@ export default function RegistrationPage() {
 
     setIsSavingTest(true);
     try {
-      const res = await fetch("/admin/api/tests", {
+      const res = await fetch("/api/tests", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -334,7 +334,7 @@ export default function RegistrationPage() {
 
       if (res.success) {
         showNotification("Test added successfully!", "success");
-        
+
         const parsedTest = {
           ...res.test,
           price: Number(res.test.price) || 0,
@@ -387,7 +387,7 @@ export default function RegistrationPage() {
 
     setIsSavingTest(true);
     try {
-      const res = await fetch("/admin/api/tests", {
+      const res = await fetch("/api/tests", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -408,7 +408,7 @@ export default function RegistrationPage() {
         // Update test in master tests list
         setTests((prev) => {
           return prev.map((t) => (t.id === parsedTest.id ? parsedTest : t))
-                     .sort((a, b) => a.name.localeCompare(b.name));
+            .sort((a, b) => a.name.localeCompare(b.name));
         });
 
         // Update test inside selectedTests array if it was selected and adjust totals
@@ -488,21 +488,21 @@ export default function RegistrationPage() {
       };
 
       const res = editId
-        ? await fetch(`/admin/api/registrations/${parseInt(editId)}`, {
-            method: "PUT",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(payload),
-          }).then((r) => r.json())
-        : await fetch("/admin/api/registrations", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(payload),
-          }).then((r) => r.json());
+        ? await fetch(`/api/registrations/${parseInt(editId)}`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        }).then((r) => r.json())
+        : await fetch("/api/registrations", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        }).then((r) => r.json());
 
       if (res.success) {
         showNotification(res.message, "success");
         if (editId) {
-          setTimeout(() => router.push("/admin/test-report"), 1000);
+          setTimeout(() => router.push("/test-report"), 1000);
         } else {
           handleReset();
         }
@@ -521,7 +521,7 @@ export default function RegistrationPage() {
     if (!newDocName.trim()) return;
     setIsAddingDoc(true);
     try {
-      const res = await fetch("/admin/api/doctors", {
+      const res = await fetch("/api/doctors", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -536,7 +536,7 @@ export default function RegistrationPage() {
 
       if (res.success) {
         showNotification(res.message || "Doctor added successfully!", "success");
-        
+
         // Add new doctor to doctors option list
         const createdDoctor = res.doctor;
         setDoctors((prev) => {
@@ -598,7 +598,7 @@ export default function RegistrationPage() {
       const targetInput = e.currentTarget;
       setIsLookingUpMobile(true);
       try {
-        const res = await fetch(`/admin/api/registrations/by-mobile?mobileNo=${val}`).then((r) => r.json());
+        const res = await fetch(`/api/registrations/by-mobile?mobileNo=${val}`).then((r) => r.json());
         if (res.success && res.patients && res.patients.length > 0) {
           if (res.patients.length === 1) {
             // Exactly one patient, prefill immediately

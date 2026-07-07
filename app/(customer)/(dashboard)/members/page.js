@@ -50,8 +50,8 @@ export default function WorkspaceMembersPage() {
     setLoading(true);
     try {
       const [mRes, rRes] = await Promise.all([
-        fetch("/admin/api/members").then((r) => r.json()),
-        fetch("/admin/api/roles").then((r) => r.json())
+        fetch("/api/members").then((r) => r.json()),
+        fetch("/api/roles").then((r) => r.json())
       ]);
 
       if (mRes.success) {
@@ -99,7 +99,7 @@ export default function WorkspaceMembersPage() {
     }
 
     setSubmitting(true);
-    const res = await fetch("/admin/api/members", {
+    const res = await fetch("/api/members", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(formData),

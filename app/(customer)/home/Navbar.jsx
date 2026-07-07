@@ -86,7 +86,7 @@ export default function Navbar({
                             <Button
                                 variant="contained"
                                 color="primary"
-                                onClick={() => router.push("/admin/auth/login")}
+                                onClick={() => router.push("/auth/login")}
                                 endIcon={<ArrowForwardIcon />}
                             >
                                 Admin Console
@@ -150,7 +150,7 @@ export default function Navbar({
                             fullWidth
                             onClick={() => {
                                 setMobileMenuOpen(false);
-                                router.push("/admin/auth/login");
+                                router.push("/auth/login");
                             }}
                             endIcon={<ArrowForwardIcon />}
                         >
