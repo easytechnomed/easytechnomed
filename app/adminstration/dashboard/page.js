@@ -38,7 +38,16 @@ import {
   Checkbox,
   FormControlLabel,
   FormGroup,
-  Chip
+  Chip,
+  Drawer,
+  List,
+  ListItem,
+  ListItemButton,
+  ListItemIcon,
+  ListItemText,
+  AppBar,
+  Toolbar,
+  useMediaQuery
 } from "@mui/material";
 import {
   Shield as ShieldIcon,
@@ -51,28 +60,61 @@ import {
   Security as SecurityIcon,
   CloudUpload as UploadIcon,
   CheckCircle as CheckCircleIcon,
-  Error as ErrorIcon
+  Error as ErrorIcon,
+  ChevronLeft as ChevronLeftIcon,
+  Menu as MenuIcon
 } from "@mui/icons-material";
 import { toast } from "sonner";
 import * as XLSX from "xlsx";
 
-// Server Action imports removed - using REST API instead
+const drawerWidth = 260;
 
-// Custom dark theme for superadmin dashboard
-const darkTheme = createTheme({
+// Custom light purple theme for superadmin dashboard (makeover matching standard admin UI style)
+const lightPurpleTheme = createTheme({
   palette: {
-    mode: "dark",
+    mode: "light",
     primary: {
-      main: "#14b8a6", // Teal 500
+      main: "#7c3aed", // Purple 600
+      light: "#c084fc", // Purple 400
+      dark: "#6d28d9", // Purple 700
+      contrastText: "#ffffff",
+    },
+    secondary: {
+      main: "#db2777", // Pink 600
     },
     background: {
-      default: "#0f172a", // Slate 900
-      paper: "#1e293b", // Slate 800
+      default: "#f8fafc", // Slate 50
+      paper: "#ffffff", // Card backgrounds
     },
-    divider: "rgba(255, 255, 255, 0.08)",
+    text: {
+      primary: "#0f172a", // Slate 900
+      secondary: "#475569", // Slate 600
+    },
+    divider: "rgba(0, 0, 0, 0.08)",
   },
   typography: {
     fontFamily: "var(--font-outfit), 'Outfit', sans-serif",
+    button: {
+      textTransform: "none",
+      fontWeight: 600,
+    },
+  },
+  components: {
+    MuiButton: {
+      styleOverrides: {
+        root: {
+          borderRadius: 8,
+        },
+      },
+    },
+    MuiCard: {
+      styleOverrides: {
+        root: {
+          borderRadius: 12,
+          boxShadow: "0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1)",
+        },
+      },
+    },
   },
 });
 
@@ -88,6 +130,7 @@ const AVAILABLE_PERMISSIONS = [
 export default function SuperAdminDashboard() {
   const router = useRouter();
   const [tabValue, setTabValue] = useState(0);
+  const [mobileOpen, setMobileOpen] = useState(false);
   const [workspaces, setWorkspaces] = useState([]);
   const [admins, setAdmins] = useState([]);
   const [roles, setRoles] = useState([]);
@@ -427,785 +470,968 @@ export default function SuperAdminDashboard() {
   const totalAdmins = admins.length;
   const totalRegToday = workspaces.reduce((sum, ws) => sum + (ws.stats?.today || 0), 0);
 
+  const menuItems = [
+    { text: "Workspace Controller", icon: <WorkspaceIcon />, tabIndex: 0 },
+    { text: "Administrators", icon: <PeopleIcon />, tabIndex: 1 },
+    { text: "Admin Roles", icon: <SecurityIcon />, tabIndex: 2 },
+    { text: "Import Lab Tests", icon: <UploadIcon />, tabIndex: 3 },
+  ];
+
+  const drawerContent = (
+    <Box sx={{ height: "100%", display: "flex", flexDirection: "column" }}>
+      <Toolbar sx={{ display: "flex", flexDirection: "column", alignItems: "flex-start", justifyContent: "center", px: 3, py: 2.5, gap: 0.5 }}>
+        <Box component="img" src="/logo/logobg.png" alt="EasyTechnoMed Logo" sx={{ height: 45, objectFit: "contain" }} />
+        <Typography variant="caption" sx={{ fontWeight: 800, color: "primary.main", letterSpacing: "1px", textTransform: "uppercase" }}>
+          SuperAdmin Console
+        </Typography>
+      </Toolbar>
+      <Divider />
+      <Box sx={{ overflow: "auto", flexGrow: 1, py: 2 }}>
+        <List sx={{ px: 2 }}>
+          {menuItems.map((item) => {
+            const isActive = tabValue === item.tabIndex;
+            return (
+              <ListItem key={item.text} disablePadding sx={{ mb: 0.5 }}>
+                <ListItemButton
+                  onClick={() => {
+                    setTabValue(item.tabIndex);
+                    setMobileOpen(false);
+                  }}
+                  sx={{
+                    borderRadius: "8px",
+                    py: 1.2,
+                    px: 2,
+                    backgroundColor: isActive ? "rgba(124, 58, 237, 0.08)" : "transparent",
+                    color: isActive ? "primary.main" : "text.secondary",
+                    "&:hover": {
+                      backgroundColor: isActive ? "rgba(124, 58, 237, 0.12)" : "rgba(124, 58, 237, 0.04)",
+                      color: isActive ? "primary.main" : "primary.main",
+                      "& .MuiListItemIcon-root": {
+                        color: "primary.main",
+                      },
+                    },
+                    "& .MuiListItemIcon-root": {
+                      color: isActive ? "primary.main" : "text.secondary",
+                      minWidth: 40,
+                    },
+                  }}
+                >
+                  <ListItemIcon>
+                    {item.icon}
+                  </ListItemIcon>
+                  <ListItemText
+                    primary={item.text}
+                    primaryTypographyProps={{
+                      fontWeight: isActive ? 700 : 500,
+                      fontSize: "0.9rem",
+                    }}
+                  />
+                </ListItemButton>
+              </ListItem>
+            );
+          })}
+        </List>
+      </Box>
+      <Divider />
+      <Box sx={{ p: 2, bgcolor: "rgba(0,0,0,0.02)", display: "flex", alignItems: "center", gap: 1.5 }}>
+        <Avatar sx={{ bgcolor: "primary.main", color: "primary.contrastText", width: 40, height: 40, fontWeight: 700 }}>
+          S
+        </Avatar>
+        <Box sx={{ minWidth: 0, flexGrow: 1 }}>
+          <Typography variant="subtitle2" noWrap sx={{ fontWeight: 700, color: "text.primary" }}>
+            System Admin
+          </Typography>
+          <Typography variant="caption" noWrap sx={{ display: "block", color: "text.secondary" }}>
+            superadmin@easytechnomed.com
+          </Typography>
+        </Box>
+      </Box>
+    </Box>
+  );
+
   return (
-    <ThemeProvider theme={darkTheme}>
+    <ThemeProvider theme={lightPurpleTheme}>
       <CssBaseline />
-      <Box sx={{ minHeight: "100vh", bgcolor: "background.default", py: 4, px: { xs: 2, md: 4 } }}>
+      <Box sx={{ display: "flex", minHeight: "100vh", bgcolor: "background.default" }}>
         
-        {/* Navbar */}
-        <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 5 }}>
-          <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
-            <ShieldIcon color="primary" sx={{ fontSize: 36 }} />
-            <Box>
-              <Typography variant="h5" sx={{ fontWeight: 800 }}>
-                SuperAdmin Administration
+        {/* Sidebar Navigation */}
+        <Box component="nav" sx={{ width: { md: drawerWidth }, flexShrink: { md: 0 } }}>
+          {/* Mobile Drawer */}
+          <Drawer
+            variant="temporary"
+            open={mobileOpen}
+            onClose={() => setMobileOpen(false)}
+            ModalProps={{ keepMounted: true }}
+            sx={{
+              display: { xs: "block", md: "none" },
+              "& .MuiDrawer-paper": { boxSizing: "border-box", width: drawerWidth, borderRight: "1px solid", borderColor: "divider" },
+            }}
+          >
+            {drawerContent}
+          </Drawer>
+
+          {/* Desktop Drawer */}
+          <Drawer
+            variant="permanent"
+            sx={{
+              display: { xs: "none", md: "block" },
+              "& .MuiDrawer-paper": { boxSizing: "border-box", width: drawerWidth, borderRight: "1px solid", borderColor: "divider" },
+            }}
+            open
+          >
+            {drawerContent}
+          </Drawer>
+        </Box>
+
+        {/* Right Area */}
+        <Box sx={{ flexGrow: 1, display: "flex", flexDirection: "column", minWidth: 0 }}>
+          {/* Header AppBar */}
+          <AppBar
+            position="static"
+            color="inherit"
+            elevation={0}
+            sx={{
+              borderBottom: "1px solid",
+              borderColor: "divider",
+              bgcolor: "background.paper",
+            }}
+          >
+            <Toolbar sx={{ justifyContent: "space-between", px: { xs: 2, md: 4 } }}>
+              <Box sx={{ display: "flex", alignItems: "center" }}>
+                <IconButton
+                  color="inherit"
+                  edge="start"
+                  onClick={() => setMobileOpen(!mobileOpen)}
+                  sx={{ mr: 2, display: { md: "none" } }}
+                >
+                  <MenuIcon />
+                </IconButton>
+                <Typography variant="h6" noWrap sx={{ fontWeight: 800, fontSize: "1.25rem", color: "primary.main" }}>
+                  {menuItems[tabValue]?.text}
+                </Typography>
+              </Box>
+
+              <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+                {/* Purple text header display showing System Admin */}
+                <Box sx={{ display: { xs: "none", sm: "flex" }, alignItems: "center", gap: 1.5 }}>
+                  <Avatar sx={{ bgcolor: "primary.main", color: "primary.contrastText", width: 32, height: 32, fontSize: "0.875rem", fontWeight: 700 }}>
+                    S
+                  </Avatar>
+                  <Typography variant="subtitle2" sx={{ fontWeight: 700, color: "text.primary" }}>
+                    System Admin
+                  </Typography>
+                </Box>
+                <Divider orientation="vertical" variant="middle" flexItem sx={{ display: { xs: "none", sm: "block" } }} />
+                <Button
+                  variant="outlined"
+                  color="error"
+                  startIcon={<LogoutIcon />}
+                  onClick={handleLogout}
+                  sx={{ fontWeight: 600 }}
+                >
+                  Logout
+                </Button>
+              </Box>
+            </Toolbar>
+          </AppBar>
+
+          {/* Main content body */}
+          <Box sx={{ flexGrow: 1, p: { xs: 2.5, md: 4 }, bgcolor: "background.default" }}>
+            
+            {/* Welcome banner */}
+            <Box sx={{ mb: 4 }}>
+              <Typography variant="h4" sx={{ fontWeight: 800, color: "text.primary", mb: 0.5 }}>
+                Welcome back, System Admin!
               </Typography>
-              <Typography variant="caption" color="text.secondary">
-                Pathlab Laboratories Workspace Controller
+              <Typography variant="body2" color="text.secondary">
+                Here is the current overview of your laboratory operations, workspaces, and accounts.
               </Typography>
             </Box>
-          </Box>
-          <Button
-            variant="outlined"
-            color="error"
-            startIcon={<LogoutIcon />}
-            onClick={handleLogout}
-            sx={{ fontWeight: 600 }}
-          >
-            Logout
-          </Button>
-        </Box>
 
-        {/* Stats Grid */}
-        <Grid container spacing={3} sx={{ mb: 5 }}>
-          <Grid item xs={12} sm={4}>
-            <Card variant="outlined" sx={{ borderRadius: 3 }}>
-              <CardContent sx={{ display: "flex", alignItems: "center", gap: 2.5 }}>
-                <Box sx={{ p: 2, borderRadius: 2, bgcolor: "rgba(20, 184, 166, 0.08)", color: "primary.main" }}>
-                  <WorkspaceIcon sx={{ fontSize: 28 }} />
-                </Box>
-                <Box>
-                  <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 700, textTransform: "uppercase" }}>
-                    Total Labs
-                  </Typography>
-                  <Typography variant="h4" sx={{ fontWeight: 800 }}>
-                    {loading ? <CircularProgress size={24} /> : totalWorkspaces}
-                  </Typography>
-                </Box>
-              </CardContent>
-            </Card>
-          </Grid>
+            {/* Stats Grid */}
+            <Grid container spacing={3} sx={{ mb: 4 }}>
+              <Grid item xs={12} sm={4}>
+                <Card variant="outlined" sx={{ borderRadius: 3 }}>
+                  <CardContent sx={{ display: "flex", alignItems: "center", gap: 2.5 }}>
+                    <Box sx={{ p: 2, borderRadius: 2, bgcolor: "rgba(124, 58, 237, 0.08)", color: "primary.main" }}>
+                      <WorkspaceIcon sx={{ fontSize: 28 }} />
+                    </Box>
+                    <Box>
+                      <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 700, textTransform: "uppercase" }}>
+                        Total Labs
+                      </Typography>
+                      <Typography variant="h4" sx={{ fontWeight: 800 }}>
+                        {loading ? <CircularProgress size={24} /> : totalWorkspaces}
+                      </Typography>
+                    </Box>
+                  </CardContent>
+                </Card>
+              </Grid>
 
-          <Grid item xs={12} sm={4}>
-            <Card variant="outlined" sx={{ borderRadius: 3 }}>
-              <CardContent sx={{ display: "flex", alignItems: "center", gap: 2.5 }}>
-                <Box sx={{ p: 2, borderRadius: 2, bgcolor: "rgba(20, 184, 166, 0.08)", color: "primary.main" }}>
-                  <PeopleIcon sx={{ fontSize: 28 }} />
-                </Box>
-                <Box>
-                  <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 700, textTransform: "uppercase" }}>
-                    Total Connected Admins
-                  </Typography>
-                  <Typography variant="h4" sx={{ fontWeight: 800 }}>
-                    {loading ? <CircularProgress size={24} /> : totalAdmins}
-                  </Typography>
-                </Box>
-              </CardContent>
-            </Card>
-          </Grid>
+              <Grid item xs={12} sm={4}>
+                <Card variant="outlined" sx={{ borderRadius: 3 }}>
+                  <CardContent sx={{ display: "flex", alignItems: "center", gap: 2.5 }}>
+                    <Box sx={{ p: 2, borderRadius: 2, bgcolor: "rgba(124, 58, 237, 0.08)", color: "primary.main" }}>
+                      <PeopleIcon sx={{ fontSize: 28 }} />
+                    </Box>
+                    <Box>
+                      <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 700, textTransform: "uppercase" }}>
+                        Total Connected Admins
+                      </Typography>
+                      <Typography variant="h4" sx={{ fontWeight: 800 }}>
+                        {loading ? <CircularProgress size={24} /> : totalAdmins}
+                      </Typography>
+                    </Box>
+                  </CardContent>
+                </Card>
+              </Grid>
 
-          <Grid item xs={12} sm={4}>
-            <Card variant="outlined" sx={{ borderRadius: 3 }}>
-              <CardContent sx={{ display: "flex", alignItems: "center", gap: 2.5 }}>
-                <Box sx={{ p: 2, borderRadius: 2, bgcolor: "rgba(20, 184, 166, 0.08)", color: "primary.main" }}>
-                  <RegIcon sx={{ fontSize: 28 }} />
-                </Box>
-                <Box>
-                  <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 700, textTransform: "uppercase" }}>
-                    Global Registrations Today
-                  </Typography>
-                  <Typography variant="h4" sx={{ fontWeight: 800 }}>
-                    {loading ? <CircularProgress size={24} /> : totalRegToday}
-                  </Typography>
-                </Box>
-              </CardContent>
-            </Card>
-          </Grid>
-        </Grid>
+              <Grid item xs={12} sm={4}>
+                <Card variant="outlined" sx={{ borderRadius: 3 }}>
+                  <CardContent sx={{ display: "flex", alignItems: "center", gap: 2.5 }}>
+                    <Box sx={{ p: 2, borderRadius: 2, bgcolor: "rgba(124, 58, 237, 0.08)", color: "primary.main" }}>
+                      <RegIcon sx={{ fontSize: 28 }} />
+                    </Box>
+                    <Box>
+                      <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 700, textTransform: "uppercase" }}>
+                        Global Registrations Today
+                      </Typography>
+                      <Typography variant="h4" sx={{ fontWeight: 800 }}>
+                        {loading ? <CircularProgress size={24} /> : totalRegToday}
+                      </Typography>
+                    </Box>
+                  </CardContent>
+                </Card>
+              </Grid>
+            </Grid>
 
-        {/* Dashboard Tabs & Actions */}
-        <Box sx={{ borderBottom: 1, borderColor: "divider", mb: 3, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-          <Tabs value={tabValue} onChange={handleTabChange} textColor="primary" indicatorColor="primary">
-            <Tab label="Workspaces (Labs)" sx={{ fontWeight: 700 }} />
-            <Tab label="Admin Accounts" sx={{ fontWeight: 700 }} />
-            <Tab label="Roles & Permissions" sx={{ fontWeight: 700 }} />
-            <Tab label="Import Tests" sx={{ fontWeight: 700 }} />
-          </Tabs>
-
-          {tabValue === 0 && (
-            <Button
-              variant="contained"
-              startIcon={<AddIcon />}
-              onClick={() => setWorkspaceModalOpen(true)}
-              sx={{ fontWeight: 600 }}
-            >
-              New Workspace
-            </Button>
-          )}
-
-          {tabValue === 1 && (
-            <Button
-              variant="contained"
-              startIcon={<AddIcon />}
-              onClick={() => setAdminModalOpen(true)}
-              sx={{ fontWeight: 600 }}
-            >
-              New Admin Account
-            </Button>
-          )}
-
-          {tabValue === 2 && (
-            <Button
-              variant="contained"
-              startIcon={<AddIcon />}
-              onClick={() => {
-                setRoleForm({ name: "", permissions: [] });
-                setRoleModalOpen(true);
-              }}
-              sx={{ fontWeight: 600 }}
-            >
-              New Role
-            </Button>
-          )}
-        </Box>
-
-        {/* Tab Contents */}
-        {loading ? (
-          <Box sx={{ display: "flex", justifyContent: "center", py: 8 }}>
-            <CircularProgress color="primary" />
-          </Box>
-        ) : (
-          <>
-            {/* WORKSPACES TAB */}
-            {tabValue === 0 && (
-              <TableContainer component={Paper} variant="outlined" sx={{ borderRadius: 3 }}>
-                <Table>
-                  <TableHead sx={{ bgcolor: "background.paper" }}>
-                    <TableRow>
-                      <TableCell sx={{ fontWeight: 700 }}>Workspace Name</TableCell>
-                      <TableCell sx={{ fontWeight: 700 }}>Slug</TableCell>
-                      <TableCell sx={{ fontWeight: 700 }}>Admins</TableCell>
-                      <TableCell sx={{ fontWeight: 700 }} align="center">Reg Today</TableCell>
-                      <TableCell sx={{ fontWeight: 700 }} align="center">Reg Last 7 Days</TableCell>
-                      <TableCell sx={{ fontWeight: 700 }} align="center">Active Status</TableCell>
-                      <TableCell sx={{ fontWeight: 700 }} align="center">Actions</TableCell>
-                    </TableRow>
-                  </TableHead>
-                  <TableBody>
-                    {workspaces.length === 0 ? (
-                      <TableRow>
-                        <TableCell colSpan={7} align="center" sx={{ py: 6, color: "text.secondary" }}>
-                          No workspaces found. Create one to begin.
-                        </TableCell>
-                      </TableRow>
-                    ) : (
-                      workspaces.map((ws) => (
-                        <TableRow key={ws.id} hover>
-                          <TableCell sx={{ fontWeight: 600 }}>{ws.name}</TableCell>
-                          <TableCell sx={{ color: "text.secondary" }}>/{ws.slug}</TableCell>
-                          <TableCell sx={{ maxWidth: 220 }}>
-                            {ws.admins.length === 0 ? (
-                              <Typography variant="body2" color="text.secondary" sx={{ fontStyle: "italic" }}>
-                                No admins
-                              </Typography>
-                            ) : (
-                              ws.admins.map((adm) => adm.name).join(", ")
-                            )}
-                          </TableCell>
-                          <TableCell align="center">{ws.stats?.today || 0}</TableCell>
-                          <TableCell align="center">{ws.stats?.last7Days || 0}</TableCell>
-                          <TableCell align="center">
-                            <Switch
-                              checked={ws.isActive}
-                              onChange={() => handleToggleWorkspace(ws.id, ws.isActive)}
-                              color="primary"
-                            />
-                          </TableCell>
-                          <TableCell align="center">
-                            <IconButton color="error" onClick={() => handleDeleteWorkspace(ws.id)}>
-                              <DeleteIcon />
-                            </IconButton>
-                          </TableCell>
-                        </TableRow>
-                      ))
-                    )}
-                  </TableBody>
-                </Table>
-              </TableContainer>
-            )}
-
-            {/* ADMINS TAB */}
-            {tabValue === 1 && (
-              <TableContainer component={Paper} variant="outlined" sx={{ borderRadius: 3 }}>
-                <Table>
-                  <TableHead sx={{ bgcolor: "background.paper" }}>
-                    <TableRow>
-                      <TableCell sx={{ fontWeight: 700 }}>Admin Name</TableCell>
-                      <TableCell sx={{ fontWeight: 700 }}>Email Address</TableCell>
-                      <TableCell sx={{ fontWeight: 700 }}>Laboratory Workspace</TableCell>
-                      <TableCell sx={{ fontWeight: 700 }}>Role</TableCell>
-                      <TableCell sx={{ fontWeight: 700 }}>Approval</TableCell>
-                      <TableCell sx={{ fontWeight: 700 }} align="center">Active Status</TableCell>
-                    </TableRow>
-                  </TableHead>
-                  <TableBody>
-                    {admins.length === 0 ? (
-                      <TableRow>
-                        <TableCell colSpan={6} align="center" sx={{ py: 6, color: "text.secondary" }}>
-                          No admin accounts found. Create one.
-                        </TableCell>
-                      </TableRow>
-                    ) : (
-                      admins.map((admin) => (
-                        <TableRow key={admin.id} hover>
-                          <TableCell sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
-                            <Avatar sx={{ bgcolor: "primary.main", width: 32, height: 32, fontSize: "0.85rem" }}>
-                              {admin.name?.charAt(0).toUpperCase()}
-                            </Avatar>
-                            <Typography variant="body2" sx={{ fontWeight: 600 }}>
-                              {admin.name}
-                            </Typography>
-                          </TableCell>
-                          <TableCell>{admin.email}</TableCell>
-                          <TableCell sx={{ color: "primary.main", fontWeight: 600 }}>
-                            {admin.workspace ? admin.workspace.name : "N/A (Global)"}
-                          </TableCell>
-                          <TableCell>
-                            <Chip label={admin.role?.name || "Admin"} size="small" variant="outlined" color="primary" />
-                          </TableCell>
-                          <TableCell>{admin.isApproved ? "Approved" : "Pending"}</TableCell>
-                          <TableCell align="center">
-                            <Switch
-                              checked={admin.isActive}
-                              onChange={() => handleToggleAdmin(admin.id, admin.isActive)}
-                              color="primary"
-                            />
-                          </TableCell>
-                        </TableRow>
-                      ))
-                    )}
-                  </TableBody>
-                </Table>
-              </TableContainer>
-            )}
-
-            {/* ROLES TAB */}
-            {tabValue === 2 && (
-              <TableContainer component={Paper} variant="outlined" sx={{ borderRadius: 3 }}>
-                <Table>
-                  <TableHead sx={{ bgcolor: "background.paper" }}>
-                    <TableRow>
-                      <TableCell sx={{ fontWeight: 700 }}>Role Name</TableCell>
-                      <TableCell sx={{ fontWeight: 700 }}>Permissions Granted</TableCell>
-                      <TableCell sx={{ fontWeight: 700 }} align="center">Actions</TableCell>
-                    </TableRow>
-                  </TableHead>
-                  <TableBody>
-                    {roles.length === 0 ? (
-                      <TableRow>
-                        <TableCell colSpan={3} align="center" sx={{ py: 6, color: "text.secondary" }}>
-                          No custom roles found.
-                        </TableCell>
-                      </TableRow>
-                    ) : (
-                      roles.map((role) => (
-                        <TableRow key={role.id} hover>
-                          <TableCell sx={{ fontWeight: 600 }}>{role.name}</TableCell>
-                          <TableCell>
-                            <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1 }}>
-                              {role.permissions.length === 0 ? (
-                                <Typography variant="body2" color="text.secondary" sx={{ fontStyle: "italic" }}>
-                                  No permissions assigned (Read-only default)
-                                </Typography>
-                              ) : (
-                                role.permissions.map(perm => (
-                                  <Chip key={perm} label={perm} size="small" color="teal" variant="outlined" />
-                                ))
-                              )}
-                            </Box>
-                          </TableCell>
-                          <TableCell align="center">
-                            {role.id !== 1 ? (
-                              <IconButton color="error" onClick={() => handleDeleteRole(role.id)}>
-                                <DeleteIcon />
-                              </IconButton>
-                            ) : (
-                              <Typography variant="caption" color="text.secondary">
-                                System Default
-                              </Typography>
-                            )}
-                          </TableCell>
-                        </TableRow>
-                      ))
-                    )}
-                  </TableBody>
-                </Table>
-              </TableContainer>
-            )}
-
-            {/* IMPORT TESTS TAB */}
-            {tabValue === 3 && (
-              <Box sx={{ maxWidth: 800, mx: "auto", mt: 2 }}>
-                <Card variant="outlined" sx={{ borderRadius: 3, bgcolor: "background.paper", p: 3 }}>
-                  <Typography variant="h5" sx={{ fontWeight: 800, mb: 1, display: "flex", alignItems: "center", gap: 1.5 }}>
-                    🧪 Import Tests from Excel
-                  </Typography>
-                  <Typography variant="body2" color="text.secondary" sx={{ mb: 4 }}>
-                    Bulk upload new tests and update prices in one go. Upload an Excel or CSV file, map the columns, preview the results in real-time, and import.
-                  </Typography>
-
-                  {/* Step indicators */}
-                  <Box sx={{ display: "flex", justifyContent: "space-between", mb: 4, px: 2 }}>
-                    {[
-                      { label: "1. Upload File", active: importStep === 1, done: importStep > 1 },
-                      { label: "2. Map & Preview", active: importStep === 2, done: importStep > 2 },
-                      { label: "3. Status", active: importStep === 4, done: false }
-                    ].map((step, idx) => (
-                      <Box key={idx} sx={{ display: "flex", flexDirection: "column", alignItems: "center", opacity: step.active || step.done ? 1 : 0.4 }}>
-                        <Typography variant="subtitle2" sx={{ fontWeight: step.active ? 800 : 500, color: step.active ? "primary.main" : (step.done ? "success.main" : "text.secondary") }}>
-                          {step.label}
-                        </Typography>
-                      </Box>
-                    ))}
-                  </Box>
-
-                  <Divider sx={{ mb: 4 }} />
-
-                  {/* STEP 1: UPLOAD FILE & SELECT TARGET WORKSPACE */}
-                  {importStep === 1 && (
-                    <Box sx={{ display: "flex", flexDirection: "column", gap: 4 }}>
-                      <FormControl fullWidth size="small">
-                        <InputLabel shrink>Select Target Workspace</InputLabel>
-                        <Select
-                          value={importWorkspaceId}
-                          onChange={(e) => setImportWorkspaceId(e.target.value)}
-                          displayEmpty
-                          notched
-                        >
-                          <MenuItem value="">
-                            <em>Select Workspace / Lab...</em>
-                          </MenuItem>
-                          <MenuItem value="global">Global / Default Template (for new labs)</MenuItem>
-                          {workspaces.map((ws) => (
-                            <MenuItem key={ws.id} value={ws.id}>
-                              {ws.name} (/{ws.slug})
-                            </MenuItem>
-                          ))}
-                        </Select>
-                        <Typography variant="caption" color="text.secondary" sx={{ mt: 1 }}>
-                          Choose "Global" to import these as default template tests for any newly registered laboratory. Select a specific workspace to import only into that lab.
-                        </Typography>
-                      </FormControl>
-
-                      <Box
-                        sx={{
-                          border: "2px dashed rgba(255, 255, 255, 0.15)",
-                          borderRadius: 3,
-                          p: 5,
-                          textAlign: "center",
-                          cursor: "pointer",
-                          transition: "border-color 0.2s",
-                          "&:hover": {
-                            borderColor: "primary.main",
-                          },
-                        }}
-                        component="label"
+            {/* Active Content panel */}
+            {loading ? (
+              <Box sx={{ display: "flex", justifyContent: "center", py: 8 }}>
+                <CircularProgress color="primary" />
+              </Box>
+            ) : (
+              <>
+                {/* WORKSPACES TAB */}
+                {tabValue === 0 && (
+                  <Box sx={{ display: "flex", flexDirection: "column", gap: 3 }}>
+                    <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                      <Typography variant="h6" sx={{ fontWeight: 800, color: "text.primary" }}>
+                        Registered Workspaces (Labs)
+                      </Typography>
+                      <Button
+                        variant="contained"
+                        startIcon={<AddIcon />}
+                        onClick={() => setWorkspaceModalOpen(true)}
+                        sx={{ fontWeight: 600 }}
                       >
-                        <input
-                          type="file"
-                          accept=".xlsx,.xls,.csv"
-                          style={{ display: "none" }}
-                          onChange={handleFileChange}
-                          onClick={(e) => { e.target.value = null; }} // reset to allow same file re-upload
-                        />
-                        <UploadIcon color="primary" sx={{ fontSize: 48, mb: 2 }} />
-                        <Typography variant="h6" sx={{ fontWeight: 700, mb: 0.5 }}>
-                          Click or drag file here
-                        </Typography>
-                        <Typography variant="body2" color="text.secondary">
-                          Supports .xlsx, .xls, .csv files
-                        </Typography>
-                      </Box>
+                        New Workspace
+                      </Button>
                     </Box>
-                  )}
-
-                  {/* STEP 2: MAP COLUMNS & LIVE PREVIEW */}
-                  {importStep === 2 && (
-                    <Box sx={{ display: "flex", flexDirection: "column", gap: 3 }}>
-                      <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>
-                        Map Excel headers to Test fields:
-                      </Typography>
-
-                      <Grid container spacing={2}>
-                        <Grid item xs={12} sm={4}>
-                          <FormControl fullWidth size="small" required>
-                            <InputLabel shrink>Test Name *</InputLabel>
-                            <Select
-                              value={mappedFields.name}
-                              onChange={(e) => setMappedFields(prev => ({ ...prev, name: e.target.value }))}
-                              displayEmpty
-                              notched
-                            >
-                              <MenuItem value="" disabled>Select column...</MenuItem>
-                              {excelHeaders.map((h) => (
-                                <MenuItem key={h} value={h}>{h}</MenuItem>
-                              ))}
-                            </Select>
-                          </FormControl>
-                        </Grid>
-
-                        <Grid item xs={12} sm={4}>
-                          <FormControl fullWidth size="small">
-                            <InputLabel shrink>Test Code (Optional)</InputLabel>
-                            <Select
-                              value={mappedFields.code}
-                              onChange={(e) => setMappedFields(prev => ({ ...prev, code: e.target.value }))}
-                              displayEmpty
-                              notched
-                            >
-                              <MenuItem value=""><em>Auto-Generate (Max 6-char unique)</em></MenuItem>
-                              {excelHeaders.map((h) => (
-                                <MenuItem key={h} value={h}>{h}</MenuItem>
-                              ))}
-                            </Select>
-                          </FormControl>
-                        </Grid>
-
-                        <Grid item xs={12} sm={4}>
-                          <FormControl fullWidth size="small" required>
-                            <InputLabel shrink>Price / Charges *</InputLabel>
-                            <Select
-                              value={mappedFields.price}
-                              onChange={(e) => setMappedFields(prev => ({ ...prev, price: e.target.value }))}
-                              displayEmpty
-                              notched
-                            >
-                              <MenuItem value="" disabled>Select column...</MenuItem>
-                              {excelHeaders.map((h) => (
-                                <MenuItem key={h} value={h}>{h}</MenuItem>
-                              ))}
-                            </Select>
-                          </FormControl>
-                        </Grid>
-                      </Grid>
-
-                      {/* LIVE DATA PREVIEW */}
-                      <Box sx={{ mt: 2 }}>
-                        <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 1.5 }}>
-                          <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>
-                            Live Data Preview (Showing first 5 rows):
-                          </Typography>
-                          <Typography variant="body2" color="primary.main" sx={{ fontWeight: 600 }}>
-                            Total items to import: {excelDataRows.length}
-                          </Typography>
-                        </Box>
-
-                        <TableContainer component={Paper} variant="outlined" sx={{ borderRadius: 2 }}>
-                          <Table size="small">
-                            <TableHead sx={{ bgcolor: "background.default" }}>
-                              <TableRow>
-                                <TableCell sx={{ fontWeight: 700 }}>#</TableCell>
-                                <TableCell sx={{ fontWeight: 700 }}>Name</TableCell>
-                                <TableCell sx={{ fontWeight: 700 }}>Code</TableCell>
-                                <TableCell sx={{ fontWeight: 700 }}>Price</TableCell>
+                    <TableContainer component={Paper} variant="outlined" sx={{ borderRadius: 3 }}>
+                      <Table>
+                        <TableHead sx={{ bgcolor: "background.paper" }}>
+                          <TableRow>
+                            <TableCell sx={{ fontWeight: 700 }}>Workspace Name</TableCell>
+                            <TableCell sx={{ fontWeight: 700 }}>Slug</TableCell>
+                            <TableCell sx={{ fontWeight: 700 }}>Admins</TableCell>
+                            <TableCell sx={{ fontWeight: 700 }} align="center">Reg Today</TableCell>
+                            <TableCell sx={{ fontWeight: 700 }} align="center">Reg Last 7 Days</TableCell>
+                            <TableCell sx={{ fontWeight: 700 }} align="center">Active Status</TableCell>
+                            <TableCell sx={{ fontWeight: 700 }} align="center">Actions</TableCell>
+                          </TableRow>
+                        </TableHead>
+                        <TableBody>
+                          {workspaces.length === 0 ? (
+                            <TableRow>
+                              <TableCell colSpan={7} align="center" sx={{ py: 6, color: "text.secondary" }}>
+                                No workspaces found. Create one to begin.
+                              </TableCell>
+                            </TableRow>
+                          ) : (
+                            workspaces.map((ws) => (
+                              <TableRow key={ws.id} hover>
+                                <TableCell sx={{ fontWeight: 600 }}>{ws.name}</TableCell>
+                                <TableCell sx={{ color: "text.secondary" }}>/{ws.slug}</TableCell>
+                                <TableCell sx={{ maxWidth: 220 }}>
+                                  {ws.admins.length === 0 ? (
+                                    <Typography variant="body2" color="text.secondary" sx={{ fontStyle: "italic" }}>
+                                      No admins
+                                    </Typography>
+                                  ) : (
+                                    ws.admins.map((adm) => adm.name).join(", ")
+                                  )}
+                                </TableCell>
+                                <TableCell align="center">{ws.stats?.today || 0}</TableCell>
+                                <TableCell align="center">{ws.stats?.last7Days || 0}</TableCell>
+                                <TableCell align="center">
+                                  <Switch
+                                    checked={ws.isActive}
+                                    onChange={() => handleToggleWorkspace(ws.id, ws.isActive)}
+                                    color="primary"
+                                  />
+                                </TableCell>
+                                <TableCell align="center">
+                                  <IconButton color="error" onClick={() => handleDeleteWorkspace(ws.id)}>
+                                    <DeleteIcon />
+                                  </IconButton>
+                                </TableCell>
                               </TableRow>
-                            </TableHead>
-                            <TableBody>
-                              {excelDataRows.slice(0, 5).map((row, idx) => {
-                                // Helper to get row value by header mapping
-                                const getValue = (field) => {
-                                  const headerName = mappedFields[field];
-                                  if (!headerName) return null;
-                                  const colIdx = excelHeaders.indexOf(headerName);
-                                  return colIdx !== -1 ? String(row[colIdx] || "").trim() : null;
-                                };
+                            ))
+                          )}
+                        </TableBody>
+                      </Table>
+                    </TableContainer>
+                  </Box>
+                )}
 
-                                const testName = getValue("name");
-                                const testCode = getValue("code");
-                                const testPrice = getValue("price");
-
-                                return (
-                                  <TableRow key={idx}>
-                                    <TableCell>{idx + 1}</TableCell>
-                                    <TableCell sx={{ fontWeight: 600 }}>
-                                      {testName !== null ? (testName || <span style={{ color: "#ef4444" }}>[Empty Value]</span>) : <span style={{ color: "rgba(255,255,255,0.3)", fontStyle: "italic" }}>[Not Mapped]</span>}
-                                    </TableCell>
-                                    <TableCell sx={{ color: "text.secondary" }}>
-                                      {mappedFields.code === "" ? (
-                                        <span style={{ color: "#14b8a6", fontStyle: "italic" }}>[Auto-Gen e.g. CBC100]</span>
-                                      ) : (
-                                        testCode !== null ? (testCode || <span style={{ color: "#ef4444" }}>[Empty Value]</span>) : <span style={{ color: "rgba(255,255,255,0.3)", fontStyle: "italic" }}>[Not Mapped]</span>
-                                      )}
-                                    </TableCell>
-                                    <TableCell sx={{ fontWeight: 600 }}>
-                                      {testPrice !== null ? (
-                                        testPrice && !isNaN(parseFloat(testPrice)) ? `₹${parseFloat(testPrice).toFixed(2)}` : <span style={{ color: "#ef4444" }}>[Invalid Value]</span>
-                                      ) : <span style={{ color: "rgba(255,255,255,0.3)", fontStyle: "italic" }}>[Not Mapped]</span>}
-                                    </TableCell>
-                                  </TableRow>
-                                );
-                              })}
-                            </TableBody>
-                          </Table>
-                        </TableContainer>
-                      </Box>
-
-                      <Box sx={{ display: "flex", justifyContent: "space-between", mt: 3 }}>
-                        <Button variant="outlined" onClick={() => setImportStep(1)} disabled={importingProgress}>
-                          Back
-                        </Button>
-                        <Button
-                          variant="contained"
-                          color="success"
-                          disabled={!mappedFields.name || !mappedFields.price || importingProgress}
-                          onClick={handleExecuteImport}
-                          startIcon={importingProgress ? <CircularProgress size={16} color="inherit" /> : null}
-                        >
-                          {importingProgress ? "Importing..." : "Start Import"}
-                        </Button>
-                      </Box>
+                {/* ADMINS TAB */}
+                {tabValue === 1 && (
+                  <Box sx={{ display: "flex", flexDirection: "column", gap: 3 }}>
+                    <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                      <Typography variant="h6" sx={{ fontWeight: 800, color: "text.primary" }}>
+                        Workspace Administrators
+                      </Typography>
+                      <Button
+                        variant="contained"
+                        startIcon={<AddIcon />}
+                        onClick={() => setAdminModalOpen(true)}
+                        sx={{ fontWeight: 600 }}
+                      >
+                        New Admin Account
+                      </Button>
                     </Box>
-                  )}
+                    <TableContainer component={Paper} variant="outlined" sx={{ borderRadius: 3 }}>
+                      <Table>
+                        <TableHead sx={{ bgcolor: "background.paper" }}>
+                          <TableRow>
+                            <TableCell sx={{ fontWeight: 700 }}>Admin Name</TableCell>
+                            <TableCell sx={{ fontWeight: 700 }}>Email Address</TableCell>
+                            <TableCell sx={{ fontWeight: 700 }}>Laboratory Workspace</TableCell>
+                            <TableCell sx={{ fontWeight: 700 }}>Role</TableCell>
+                            <TableCell sx={{ fontWeight: 700 }}>Approval</TableCell>
+                            <TableCell sx={{ fontWeight: 700 }} align="center">Active Status</TableCell>
+                          </TableRow>
+                        </TableHead>
+                        <TableBody>
+                          {admins.length === 0 ? (
+                            <TableRow>
+                              <TableCell colSpan={6} align="center" sx={{ py: 6, color: "text.secondary" }}>
+                                No admin accounts found. Create one.
+                              </TableCell>
+                            </TableRow>
+                          ) : (
+                            admins.map((admin) => (
+                              <TableRow key={admin.id} hover>
+                                <TableCell sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
+                                  <Avatar sx={{ bgcolor: "primary.main", color: "primary.contrastText", width: 32, height: 32, fontSize: "0.85rem" }}>
+                                    {admin.name?.charAt(0).toUpperCase()}
+                                  </Avatar>
+                                  <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                                    {admin.name}
+                                  </Typography>
+                                </TableCell>
+                                <TableCell>{admin.email}</TableCell>
+                                <TableCell sx={{ color: "primary.main", fontWeight: 600 }}>
+                                  {admin.workspace ? admin.workspace.name : "N/A (Global)"}
+                                </TableCell>
+                                <TableCell>
+                                  <Chip label={admin.role?.name || "Admin"} size="small" variant="outlined" color="primary" />
+                                </TableCell>
+                                <TableCell>{admin.isApproved ? "Approved" : "Pending"}</TableCell>
+                                <TableCell align="center">
+                                  <Switch
+                                    checked={admin.isActive}
+                                    onChange={() => handleToggleAdmin(admin.id, admin.isActive)}
+                                    color="primary"
+                                  />
+                                </TableCell>
+                              </TableRow>
+                            ))
+                          )}
+                        </TableBody>
+                      </Table>
+                    </TableContainer>
+                  </Box>
+                )}
 
-                  {/* STEP 4: IMPORT RESULTS */}
-                  {importStep === 4 && importResult && (
-                    <Box sx={{ display: "flex", flexDirection: "column", gap: 3, textAlign: "center" }}>
-                      <Box sx={{ display: "flex", justifyContent: "center", mb: 1 }}>
-                        {importResult.errors && importResult.errors.length > 0 ? (
-                          <ErrorIcon color="warning" sx={{ fontSize: 64 }} />
-                        ) : (
-                          <CheckCircleIcon color="success" sx={{ fontSize: 64 }} />
-                        )}
-                      </Box>
+                {/* ROLES TAB */}
+                {tabValue === 2 && (
+                  <Box sx={{ display: "flex", flexDirection: "column", gap: 3 }}>
+                    <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                      <Typography variant="h6" sx={{ fontWeight: 800, color: "text.primary" }}>
+                        Workspace Roles & Permissions
+                      </Typography>
+                      <Button
+                        variant="contained"
+                        startIcon={<AddIcon />}
+                        onClick={() => {
+                          setRoleForm({ name: "", permissions: [] });
+                          setRoleModalOpen(true);
+                        }}
+                        sx={{ fontWeight: 600 }}
+                      >
+                        New Role
+                      </Button>
+                    </Box>
+                    <TableContainer component={Paper} variant="outlined" sx={{ borderRadius: 3 }}>
+                      <Table>
+                        <TableHead sx={{ bgcolor: "background.paper" }}>
+                          <TableRow>
+                            <TableCell sx={{ fontWeight: 700 }}>Role Name</TableCell>
+                            <TableCell sx={{ fontWeight: 700 }}>Permissions Granted</TableCell>
+                            <TableCell sx={{ fontWeight: 700 }} align="center">Actions</TableCell>
+                          </TableRow>
+                        </TableHead>
+                        <TableBody>
+                          {roles.length === 0 ? (
+                            <TableRow>
+                              <TableCell colSpan={3} align="center" sx={{ py: 6, color: "text.secondary" }}>
+                                No custom roles found.
+                              </TableCell>
+                            </TableRow>
+                          ) : (
+                            roles.map((role) => (
+                              <TableRow key={role.id} hover>
+                                <TableCell sx={{ fontWeight: 600 }}>{role.name}</TableCell>
+                                <TableCell>
+                                  <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1 }}>
+                                    {role.permissions.length === 0 ? (
+                                      <Typography variant="body2" color="text.secondary" sx={{ fontStyle: "italic" }}>
+                                        No permissions assigned (Read-only default)
+                                      </Typography>
+                                    ) : (
+                                      role.permissions.map(perm => (
+                                        <Chip key={perm} label={perm} size="small" color="primary" variant="outlined" />
+                                      ))
+                                    )}
+                                  </Box>
+                                </TableCell>
+                                <TableCell align="center">
+                                  {role.id !== 1 ? (
+                                    <IconButton color="error" onClick={() => handleDeleteRole(role.id)}>
+                                      <DeleteIcon />
+                                    </IconButton>
+                                  ) : (
+                                    <Typography variant="caption" color="text.secondary">
+                                      System Default
+                                    </Typography>
+                                  )}
+                                </TableCell>
+                              </TableRow>
+                            ))
+                          )}
+                        </TableBody>
+                      </Table>
+                    </TableContainer>
+                  </Box>
+                )}
 
-                      <Typography variant="h5" sx={{ fontWeight: 800 }}>
-                        {importResult.errors && importResult.errors.length > 0 ? "Import Completed with Warnings" : "Import Completed Successfully!"}
+                {/* IMPORT TESTS TAB */}
+                {tabValue === 3 && (
+                  <Box sx={{ maxWidth: 800, mx: "auto", mt: 2, display: "flex", flexDirection: "column", gap: 3 }}>
+                    <Typography variant="h6" sx={{ fontWeight: 800, color: "text.primary" }}>
+                      Excel Bulk Lab Test Importer
+                    </Typography>
+                    <Card variant="outlined" sx={{ borderRadius: 3, bgcolor: "background.paper", p: 3 }}>
+                      <Typography variant="h5" sx={{ fontWeight: 800, mb: 1, display: "flex", alignItems: "center", gap: 1.5 }}>
+                        🧪 Import Tests from Excel
+                      </Typography>
+                      <Typography variant="body2" color="text.secondary" sx={{ mb: 4 }}>
+                        Bulk upload new tests and update prices in one go. Upload an Excel or CSV file, map the columns, preview the results in real-time, and import.
                       </Typography>
 
-                      <Grid container spacing={3} sx={{ mt: 1, mb: 2 }}>
-                        <Grid item xs={6}>
-                          <Card variant="outlined" sx={{ p: 2, borderRadius: 2, bgcolor: "rgba(20, 184, 166, 0.04)" }}>
-                            <Typography variant="h4" color="primary.main" sx={{ fontWeight: 800 }}>
-                              {importResult.createdCount}
+                      {/* Step indicators */}
+                      <Box sx={{ display: "flex", justifyContent: "space-between", mb: 4, px: 2 }}>
+                        {[
+                          { label: "1. Upload File", active: importStep === 1, done: importStep > 1 },
+                          { label: "2. Column Mapping", active: importStep === 2, done: importStep > 2 },
+                          { label: "3. Preview Data", active: importStep === 3, done: importStep > 3 },
+                          { label: "4. Done", active: importStep === 4, done: importStep > 4 }
+                        ].map((step, idx) => (
+                          <Box key={idx} sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                            <Avatar
+                              sx={{
+                                width: 28,
+                                height: 28,
+                                fontSize: "0.825rem",
+                                fontWeight: 700,
+                                bgcolor: step.active ? "primary.main" : step.done ? "success.main" : "rgba(0,0,0,0.06)",
+                                color: step.active || step.done ? "#ffffff" : "text.secondary"
+                              }}
+                            >
+                              {idx + 1}
+                            </Avatar>
+                            <Typography
+                              variant="caption"
+                              sx={{
+                                fontWeight: step.active || step.done ? 700 : 500,
+                                color: step.active ? "primary.main" : step.done ? "success.main" : "text.secondary",
+                                display: { xs: "none", sm: "block" }
+                              }}
+                            >
+                              {step.label}
                             </Typography>
-                            <Typography variant="body2" color="text.secondary">
-                              Tests Created
-                            </Typography>
-                          </Card>
-                        </Grid>
-                        <Grid item xs={6}>
-                          <Card variant="outlined" sx={{ p: 2, borderRadius: 2, bgcolor: "rgba(34, 197, 94, 0.04)" }}>
-                            <Typography variant="h4" color="success.main" sx={{ fontWeight: 800 }}>
-                              {importResult.updatedCount}
-                            </Typography>
-                            <Typography variant="body2" color="text.secondary">
-                              Tests Updated / Repriced
-                            </Typography>
-                          </Card>
-                        </Grid>
-                      </Grid>
+                          </Box>
+                        ))}
+                      </Box>
 
-                      {importResult.errors && importResult.errors.length > 0 && (
-                        <Box sx={{ textAlign: "left" }}>
-                          <Typography variant="subtitle2" color="warning.main" sx={{ fontWeight: 700, mb: 1 }}>
-                            Warnings / Skip Logs ({importResult.errors.length}):
-                          </Typography>
-                          <Paper variant="outlined" sx={{ p: 2, maxHeight: 150, overflowY: "auto", bgcolor: "rgba(0, 0, 0, 0.2)", borderRadius: 2 }}>
-                            {importResult.errors.map((err, index) => (
-                              <Typography key={index} variant="caption" display="block" color="text.secondary" sx={{ mb: 0.5 }}>
-                                • {err}
-                              </Typography>
-                            ))}
-                          </Paper>
+                      <Divider sx={{ mb: 4 }} />
+
+                      {/* STEP 1: SELECT WORKSPACE & FILE */}
+                      {importStep === 1 && (
+                        <Box sx={{ display: "flex", flexDirection: "column", gap: 3 }}>
+                          <FormControl fullWidth size="small">
+                            <InputLabel shrink>Target Workspace (Lab)</InputLabel>
+                            <Select
+                              value={importWorkspaceId}
+                              onChange={(e) => setImportWorkspaceId(e.target.value)}
+                              displayEmpty
+                              notched
+                            >
+                              <MenuItem value="" disabled>Select target laboratory...</MenuItem>
+                              <MenuItem value="global" sx={{ fontWeight: 700, color: "primary.main" }}>[GLOBAL TEMPLATE] Add to global default tests</MenuItem>
+                              {workspaces.map((ws) => (
+                                <MenuItem key={ws.id} value={ws.id}>
+                                  {ws.name} (/{ws.slug})
+                                </MenuItem>
+                              ))}
+                            </Select>
+                          </FormControl>
+
+                          <Box
+                            sx={{
+                              border: "2px dashed",
+                              borderColor: "divider",
+                              borderRadius: 3,
+                              p: 4,
+                              textAlign: "center",
+                              bgcolor: "rgba(0,0,0,0.01)",
+                              cursor: "pointer",
+                              transition: "all 0.2s",
+                              "&:hover": {
+                                borderColor: "primary.main",
+                                bgcolor: "rgba(124, 58, 237, 0.02)"
+                              }
+                            }}
+                            component="label"
+                          >
+                            <input
+                              type="file"
+                              accept=".xlsx, .xls, .csv"
+                              style={{ display: "none" }}
+                              onChange={handleFileChange}
+                              onClick={(e) => { e.target.value = null; }}
+                            />
+                            <UploadIcon sx={{ fontSize: 48, color: "primary.main", mb: 2 }} />
+                            <Typography variant="subtitle1" sx={{ fontWeight: 700, mb: 0.5 }}>
+                              Click to upload test directory file
+                            </Typography>
+                            <Typography variant="caption" color="text.secondary" display="block">
+                              Supports Excel files (.xlsx, .xls) and CSV sheets
+                            </Typography>
+                          </Box>
                         </Box>
                       )}
 
-                      <Box sx={{ mt: 3 }}>
-                        <Button
-                          variant="contained"
-                          onClick={() => {
-                            setImportStep(1);
-                            setSelectedFile(null);
-                            setExcelHeaders([]);
-                            setExcelDataRows([]);
-                            setMappedFields({ name: "", code: "", price: "" });
-                            setImportResult(null);
-                            fetchData(); // Reload workspaces stats
-                          }}
-                        >
-                          Import Another File
-                        </Button>
-                      </Box>
-                    </Box>
-                  )}
-                </Card>
-              </Box>
+                      {/* STEP 2: COLUMN MAPPING */}
+                      {importStep === 2 && (
+                        <Box sx={{ display: "flex", flexDirection: "column", gap: 3 }}>
+                          <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>
+                            Map columns from your Excel sheet to lab database fields:
+                          </Typography>
+
+                          <Grid container spacing={3}>
+                            <Grid item xs={12} sm={4}>
+                              <FormControl fullWidth size="small">
+                                <InputLabel shrink>Test Name *</InputLabel>
+                                <Select
+                                  value={mappedFields.name}
+                                  onChange={(e) => setMappedFields(prev => ({ ...prev, name: e.target.value }))}
+                                  displayEmpty
+                                  notched
+                                >
+                                  <MenuItem value="" disabled>Select column...</MenuItem>
+                                  {excelHeaders.map((h) => (
+                                    <MenuItem key={h} value={h}>{h}</MenuItem>
+                                  ))}
+                                </Select>
+                              </FormControl>
+                            </Grid>
+
+                            <Grid item xs={12} sm={4}>
+                              <FormControl fullWidth size="small">
+                                <InputLabel shrink>Test Code / ID (Optional)</InputLabel>
+                                <Select
+                                  value={mappedFields.code}
+                                  onChange={(e) => setMappedFields(prev => ({ ...prev, code: e.target.value }))}
+                                  displayEmpty
+                                  notched
+                                >
+                                  <MenuItem value="">[Auto-Generate Codes]</MenuItem>
+                                  {excelHeaders.map((h) => (
+                                    <MenuItem key={h} value={h}>{h}</MenuItem>
+                                  ))}
+                                </Select>
+                              </FormControl>
+                            </Grid>
+
+                            <Grid item xs={12} sm={4}>
+                              <FormControl fullWidth size="small">
+                                <InputLabel shrink>Base Price (INR) *</InputLabel>
+                                <Select
+                                  value={mappedFields.price}
+                                  onChange={(e) => setMappedFields(prev => ({ ...prev, price: e.target.value }))}
+                                  displayEmpty
+                                  notched
+                                >
+                                  <MenuItem value="" disabled>Select column...</MenuItem>
+                                  {excelHeaders.map((h) => (
+                                    <MenuItem key={h} value={h}>{h}</MenuItem>
+                                  ))}
+                                </Select>
+                              </FormControl>
+                            </Grid>
+                          </Grid>
+
+                          <Box sx={{ display: "flex", justifyContent: "space-between", mt: 3 }}>
+                            <Button variant="outlined" onClick={() => setImportStep(1)}>
+                              Back
+                            </Button>
+                            <Button
+                              variant="contained"
+                              disabled={!mappedFields.name || !mappedFields.price}
+                              onClick={() => setImportStep(3)}
+                            >
+                              Preview Data
+                            </Button>
+                          </Box>
+                        </Box>
+                      )}
+
+                      {/* STEP 3: PREVIEW DATA */}
+                      {importStep === 3 && (
+                        <Box sx={{ display: "flex", flexDirection: "column", gap: 3 }}>
+                          <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>
+                            Previewing first 5 rows to verify mappings:
+                          </Typography>
+
+                          <TableContainer component={Paper} variant="outlined" sx={{ borderRadius: 2 }}>
+                            <Table size="small">
+                              <TableHead sx={{ bgcolor: "background.paper" }}>
+                                <TableRow>
+                                  <TableCell sx={{ fontWeight: 700 }}>Row</TableCell>
+                                  <TableCell sx={{ fontWeight: 700 }}>Test Name</TableCell>
+                                  <TableCell sx={{ fontWeight: 700 }}>Code</TableCell>
+                                  <TableCell sx={{ fontWeight: 700 }}>Price</TableCell>
+                                </TableRow>
+                              </TableHead>
+                              <TableBody>
+                                {excelDataRows.slice(0, 5).map((row, idx) => {
+                                  const getValue = (field) => {
+                                    const headerName = mappedFields[field];
+                                    if (!headerName) return null;
+                                    const colIdx = excelHeaders.indexOf(headerName);
+                                    return colIdx !== -1 ? String(row[colIdx] || "").trim() : null;
+                                  };
+
+                                  const testName = getValue("name");
+                                  const testCode = getValue("code");
+                                  const testPrice = getValue("price");
+
+                                  return (
+                                    <TableRow key={idx}>
+                                      <TableCell>{idx + 1}</TableCell>
+                                      <TableCell sx={{ fontWeight: 600 }}>
+                                        {testName !== null ? (testName || <span style={{ color: "#ef4444" }}>[Empty Value]</span>) : <span style={{ color: "rgba(0,0,0,0.3)", fontStyle: "italic" }}>[Not Mapped]</span>}
+                                      </TableCell>
+                                      <TableCell sx={{ color: "text.secondary" }}>
+                                        {mappedFields.code === "" ? (
+                                          <span style={{ color: "#7c3aed", fontStyle: "italic" }}>[Auto-Gen e.g. CBC100]</span>
+                                        ) : (
+                                          testCode !== null ? (testCode || <span style={{ color: "#ef4444" }}>[Empty Value]</span>) : <span style={{ color: "rgba(0,0,0,0.3)", fontStyle: "italic" }}>[Not Mapped]</span>
+                                        )}
+                                      </TableCell>
+                                      <TableCell sx={{ fontWeight: 600 }}>
+                                        {testPrice !== null ? (
+                                          testPrice && !isNaN(parseFloat(testPrice)) ? `₹${parseFloat(testPrice).toFixed(2)}` : <span style={{ color: "#ef4444" }}>[Invalid Value]</span>
+                                        ) : <span style={{ color: "rgba(0,0,0,0.3)", fontStyle: "italic" }}>[Not Mapped]</span>}
+                                      </TableCell>
+                                    </TableRow>
+                                  );
+                                })}
+                              </TableBody>
+                            </Table>
+                          </TableContainer>
+
+                          <Box sx={{ display: "flex", justifyContent: "space-between", mt: 3 }}>
+                            <Button variant="outlined" onClick={() => setImportStep(2)} disabled={importingProgress}>
+                              Back
+                            </Button>
+                            <Button
+                              variant="contained"
+                              color="success"
+                              disabled={!mappedFields.name || !mappedFields.price || importingProgress}
+                              onClick={handleExecuteImport}
+                              startIcon={importingProgress ? <CircularProgress size={16} color="inherit" /> : null}
+                            >
+                              {importingProgress ? "Importing..." : "Start Import"}
+                            </Button>
+                          </Box>
+                        </Box>
+                      )}
+
+                      {/* STEP 4: IMPORT RESULTS */}
+                      {importStep === 4 && importResult && (
+                        <Box sx={{ display: "flex", flexDirection: "column", gap: 3, textAlign: "center" }}>
+                          <Box sx={{ display: "flex", justifyContent: "center", mb: 1 }}>
+                            {importResult.errors && importResult.errors.length > 0 ? (
+                              <ErrorIcon color="warning" sx={{ fontSize: 64 }} />
+                            ) : (
+                              <CheckCircleIcon color="success" sx={{ fontSize: 64 }} />
+                            )}
+                          </Box>
+
+                          <Typography variant="h5" sx={{ fontWeight: 800 }}>
+                            {importResult.errors && importResult.errors.length > 0 ? "Import Completed with Warnings" : "Import Completed Successfully!"}
+                          </Typography>
+
+                          <Grid container spacing={3} sx={{ mt: 1, mb: 2 }}>
+                            <Grid item xs={6}>
+                              <Card variant="outlined" sx={{ p: 2, borderRadius: 2, bgcolor: "rgba(124, 58, 237, 0.04)" }}>
+                                <Typography variant="h4" color="primary.main" sx={{ fontWeight: 800 }}>
+                                  {importResult.createdCount}
+                                </Typography>
+                                <Typography variant="body2" color="text.secondary">
+                                  Tests Created
+                                </Typography>
+                              </Card>
+                            </Grid>
+                            <Grid item xs={6}>
+                              <Card variant="outlined" sx={{ p: 2, borderRadius: 2, bgcolor: "rgba(34, 197, 94, 0.04)" }}>
+                                <Typography variant="h4" color="success.main" sx={{ fontWeight: 800 }}>
+                                  {importResult.updatedCount}
+                                </Typography>
+                                <Typography variant="body2" color="text.secondary">
+                                  Tests Updated / Repriced
+                                </Typography>
+                              </Card>
+                            </Grid>
+                          </Grid>
+
+                          {importResult.errors && importResult.errors.length > 0 && (
+                            <Box sx={{ textAlign: "left" }}>
+                              <Typography variant="subtitle2" color="warning.main" sx={{ fontWeight: 700, mb: 1 }}>
+                                Warnings / Skip Logs ({importResult.errors.length}):
+                              </Typography>
+                              <Paper variant="outlined" sx={{ p: 2, maxHeight: 150, overflowY: "auto", bgcolor: "rgba(0, 0, 0, 0.03)", borderRadius: 2 }}>
+                                {importResult.errors.map((err, index) => (
+                                  <Typography key={index} variant="caption" display="block" color="text.secondary" sx={{ mb: 0.5 }}>
+                                    • {err}
+                                  </Typography>
+                                ))}
+                              </Paper>
+                            </Box>
+                          )}
+
+                          <Box sx={{ mt: 3 }}>
+                            <Button
+                              variant="contained"
+                              onClick={() => {
+                                setImportStep(1);
+                                setSelectedFile(null);
+                                setExcelHeaders([]);
+                                setExcelDataRows([]);
+                                setMappedFields({ name: "", code: "", price: "" });
+                                setImportResult(null);
+                                fetchData(); // Reload workspaces stats
+                              }}
+                            >
+                              Import Another File
+                            </Button>
+                          </Box>
+                        </Box>
+                      )}
+                    </Card>
+                  </Box>
+                )}
+              </>
             )}
-          </>
-        )}
 
-        {/* Create Workspace Dialog */}
-        <Dialog open={workspaceModalOpen} onClose={() => setWorkspaceModalOpen(false)} maxWidth="sm" fullWidth>
-          <DialogTitle sx={{ fontWeight: 700 }}>Register New Lab Workspace</DialogTitle>
-          <form onSubmit={handleWorkspaceSubmit}>
-            <DialogContent sx={{ display: "flex", flexDirection: "column", gap: 2.5, pt: 1 }}>
-              <TextField
-                label="Workspace Name"
-                value={workspaceForm.name}
-                onChange={handleWorkspaceNameChange}
-                fullWidth
-                required
-                size="small"
-                slotProps={{ inputLabel: { shrink: true } }}
-              />
-              <TextField
-                label="Slug / URL Path prefix"
-                value={workspaceForm.slug}
-                onChange={(e) => setWorkspaceForm(prev => ({ ...prev, slug: e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, "-") }))}
-                fullWidth
-                required
-                size="small"
-                helperText="URL prefix e.g. alpha-lab"
-                slotProps={{ inputLabel: { shrink: true } }}
-              />
-            </DialogContent>
-            <DialogActions sx={{ px: 3, pb: 3 }}>
-              <Button onClick={() => setWorkspaceModalOpen(false)} variant="outlined" color="inherit" disabled={submitting}>
-                Cancel
-              </Button>
-              <Button type="submit" variant="contained" disabled={submitting}>
-                {submitting ? "Creating..." : "Create Workspace"}
-              </Button>
-            </DialogActions>
-          </form>
-        </Dialog>
-
-        {/* Create Admin Dialog */}
-        <Dialog open={adminModalOpen} onClose={() => setAdminModalOpen(false)} maxWidth="sm" fullWidth>
-          <DialogTitle sx={{ fontWeight: 700 }}>Register New Admin Account</DialogTitle>
-          <form onSubmit={handleAdminSubmit}>
-            <DialogContent sx={{ display: "flex", flexDirection: "column", gap: 2.5, pt: 1 }}>
-              <TextField
-                label="Full Name"
-                value={adminForm.name}
-                onChange={(e) => setAdminForm(prev => ({ ...prev, name: e.target.value }))}
-                fullWidth
-                required
-                size="small"
-                slotProps={{ inputLabel: { shrink: true } }}
-              />
-              <TextField
-                label="Email Address"
-                type="email"
-                value={adminForm.email}
-                onChange={(e) => setAdminForm(prev => ({ ...prev, email: e.target.value }))}
-                fullWidth
-                required
-                size="small"
-                slotProps={{ inputLabel: { shrink: true } }}
-              />
-              <TextField
-                label="Password"
-                type="password"
-                value={adminForm.password}
-                onChange={(e) => setAdminForm(prev => ({ ...prev, password: e.target.value }))}
-                fullWidth
-                required
-                size="small"
-                inputProps={{ minLength: 8 }}
-                slotProps={{ inputLabel: { shrink: true } }}
-              />
-              <FormControl fullWidth size="small" required>
-                <InputLabel shrink>Assign to Workspace</InputLabel>
-                <Select
-                  value={adminForm.workspaceId}
-                  onChange={(e) => setAdminForm(prev => ({ ...prev, workspaceId: e.target.value }))}
-                  displayEmpty
-                  notched
-                >
-                  <MenuItem value="" disabled>Select Lab...</MenuItem>
-                  {workspaces.map((ws) => (
-                    <MenuItem key={ws.id} value={ws.id}>
-                      {ws.name} (/{ws.slug})
-                    </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
-              <FormControl fullWidth size="small" required>
-                <InputLabel shrink>Role</InputLabel>
-                <Select
-                  value={adminForm.roleId}
-                  onChange={(e) => setAdminForm(prev => ({ ...prev, roleId: e.target.value }))}
-                  displayEmpty
-                  notched
-                >
-                  <MenuItem value="" disabled>Select Role...</MenuItem>
-                  {roles.map((role) => (
-                    <MenuItem key={role.id} value={role.id}>
-                      {role.name}
-                    </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
-            </DialogContent>
-            <DialogActions sx={{ px: 3, pb: 3 }}>
-              <Button onClick={() => setAdminModalOpen(false)} variant="outlined" color="inherit" disabled={submitting}>
-                Cancel
-              </Button>
-              <Button type="submit" variant="contained" disabled={submitting}>
-                {submitting ? "Register..." : "Create Admin Account"}
-              </Button>
-            </DialogActions>
-          </form>
-        </Dialog>
-
-        {/* Create Role Dialog */}
-        <Dialog open={roleModalOpen} onClose={() => setRoleModalOpen(false)} maxWidth="sm" fullWidth>
-          <DialogTitle sx={{ fontWeight: 700 }}>Create Custom Role</DialogTitle>
-          <form onSubmit={handleRoleSubmit}>
-            <DialogContent sx={{ display: "flex", flexDirection: "column", gap: 2.5, pt: 1 }}>
-              <TextField
-                label="Role Name"
-                value={roleForm.name}
-                onChange={(e) => setRoleForm(prev => ({ ...prev, name: e.target.value }))}
-                fullWidth
-                required
-                size="small"
-                placeholder="e.g. Lab Technician, Report Viewer"
-                slotProps={{ inputLabel: { shrink: true } }}
-              />
-              <Divider />
-              <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>
-                Permissions Settings
-              </Typography>
-              <FormGroup>
-                {AVAILABLE_PERMISSIONS.map((perm) => (
-                  <FormControlLabel
-                    key={perm.value}
-                    control={
-                      <Checkbox
-                        checked={roleForm.permissions.includes(perm.value)}
-                        onChange={() => handlePermissionChange(perm.value)}
-                        color="primary"
-                      />
-                    }
-                    label={
-                      <Box>
-                        <Typography variant="body2" sx={{ fontWeight: 600 }}>
-                          {perm.value}
-                        </Typography>
-                        <Typography variant="caption" color="text.secondary">
-                          {perm.label}
-                        </Typography>
-                      </Box>
-                    }
-                    sx={{ mb: 1.5, alignItems: "flex-start" }}
+            {/* Create Workspace Dialog */}
+            <Dialog open={workspaceModalOpen} onClose={() => setWorkspaceModalOpen(false)} maxWidth="sm" fullWidth>
+              <DialogTitle sx={{ fontWeight: 700 }}>Register New Lab Workspace</DialogTitle>
+              <form onSubmit={handleWorkspaceSubmit}>
+                <DialogContent sx={{ display: "flex", flexDirection: "column", gap: 2.5, pt: 1 }}>
+                  <TextField
+                    label="Workspace Name"
+                    value={workspaceForm.name}
+                    onChange={handleWorkspaceNameChange}
+                    fullWidth
+                    required
+                    size="small"
+                    slotProps={{ inputLabel: { shrink: true } }}
                   />
-                ))}
-              </FormGroup>
-            </DialogContent>
-            <DialogActions sx={{ px: 3, pb: 3 }}>
-              <Button onClick={() => setRoleModalOpen(false)} variant="outlined" color="inherit" disabled={submitting}>
-                Cancel
-              </Button>
-              <Button type="submit" variant="contained" disabled={submitting}>
-                {submitting ? "Creating..." : "Create Role"}
-              </Button>
-            </DialogActions>
-          </form>
-        </Dialog>
+                  <TextField
+                    label="Slug / URL Path prefix"
+                    value={workspaceForm.slug}
+                    onChange={(e) => setWorkspaceForm(prev => ({ ...prev, slug: e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, "-") }))}
+                    fullWidth
+                    required
+                    size="small"
+                    helperText="URL prefix e.g. alpha-lab"
+                    slotProps={{ inputLabel: { shrink: true } }}
+                  />
+                </DialogContent>
+                <DialogActions sx={{ px: 3, pb: 3 }}>
+                  <Button onClick={() => setWorkspaceModalOpen(false)} variant="outlined" color="inherit" disabled={submitting}>
+                    Cancel
+                  </Button>
+                  <Button type="submit" variant="contained" disabled={submitting}>
+                    {submitting ? "Creating..." : "Create Workspace"}
+                  </Button>
+                </DialogActions>
+              </form>
+            </Dialog>
 
-      </Box>
+            {/* Create Admin Dialog */}
+            <Dialog open={adminModalOpen} onClose={() => setAdminModalOpen(false)} maxWidth="sm" fullWidth>
+              <DialogTitle sx={{ fontWeight: 700 }}>Register New Admin Account</DialogTitle>
+              <form onSubmit={handleAdminSubmit}>
+                <DialogContent sx={{ display: "flex", flexDirection: "column", gap: 2.5, pt: 1 }}>
+                  <TextField
+                    label="Full Name"
+                    value={adminForm.name}
+                    onChange={(e) => setAdminForm(prev => ({ ...prev, name: e.target.value }))}
+                    fullWidth
+                    required
+                    size="small"
+                    slotProps={{ inputLabel: { shrink: true } }}
+                  />
+                  <TextField
+                    label="Email Address"
+                    type="email"
+                    value={adminForm.email}
+                    onChange={(e) => setAdminForm(prev => ({ ...prev, email: e.target.value }))}
+                    fullWidth
+                    required
+                    size="small"
+                    slotProps={{ inputLabel: { shrink: true } }}
+                  />
+                  <TextField
+                    label="Password"
+                    type="password"
+                    value={adminForm.password}
+                    onChange={(e) => setAdminForm(prev => ({ ...prev, password: e.target.value }))}
+                    fullWidth
+                    required
+                    size="small"
+                    inputProps={{ minLength: 8 }}
+                    slotProps={{ inputLabel: { shrink: true } }}
+                  />
+                  <FormControl fullWidth size="small" required>
+                    <InputLabel shrink>Assign to Workspace</InputLabel>
+                    <Select
+                      value={adminForm.workspaceId}
+                      onChange={(e) => setAdminForm(prev => ({ ...prev, workspaceId: e.target.value }))}
+                      displayEmpty
+                      notched
+                    >
+                      <MenuItem value="" disabled>Select Lab...</MenuItem>
+                      {workspaces.map((ws) => (
+                        <MenuItem key={ws.id} value={ws.id}>
+                          {ws.name} (/{ws.slug})
+                        </MenuItem>
+                      ))}
+                    </Select>
+                  </FormControl>
+                  <FormControl fullWidth size="small" required>
+                    <InputLabel shrink>Role</InputLabel>
+                    <Select
+                      value={adminForm.roleId}
+                      onChange={(e) => setAdminForm(prev => ({ ...prev, roleId: e.target.value }))}
+                      displayEmpty
+                      notched
+                    >
+                      <MenuItem value="" disabled>Select Role...</MenuItem>
+                      {roles.map((role) => (
+                        <MenuItem key={role.id} value={role.id}>
+                          {role.name}
+                        </MenuItem>
+                      ))}
+                    </Select>
+                  </FormControl>
+                </DialogContent>
+                <DialogActions sx={{ px: 3, pb: 3 }}>
+                  <Button onClick={() => setAdminModalOpen(false)} variant="outlined" color="inherit" disabled={submitting}>
+                    Cancel
+                  </Button>
+                  <Button type="submit" variant="contained" disabled={submitting}>
+                    {submitting ? "Register..." : "Create Admin Account"}
+                  </Button>
+                </DialogActions>
+              </form>
+            </Dialog>
+
+            {/* Create Role Dialog */}
+            <Dialog open={roleModalOpen} onClose={() => setRoleModalOpen(false)} maxWidth="sm" fullWidth>
+              <DialogTitle sx={{ fontWeight: 700 }}>Create Custom Role</DialogTitle>
+              <form onSubmit={handleRoleSubmit}>
+                <DialogContent sx={{ display: "flex", flexDirection: "column", gap: 2.5, pt: 1 }}>
+                  <TextField
+                    label="Role Name"
+                    value={roleForm.name}
+                    onChange={(e) => setRoleForm(prev => ({ ...prev, name: e.target.value }))}
+                    fullWidth
+                    required
+                    size="small"
+                    placeholder="e.g. Lab Technician, Report Viewer"
+                    slotProps={{ inputLabel: { shrink: true } }}
+                  />
+                  <Divider />
+                  <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>
+                    Permissions Settings
+                  </Typography>
+                  <FormGroup>
+                    {AVAILABLE_PERMISSIONS.map((perm) => (
+                      <FormControlLabel
+                        key={perm.value}
+                        control={
+                          <Checkbox
+                            checked={roleForm.permissions.includes(perm.value)}
+                            onChange={() => handlePermissionChange(perm.value)}
+                            color="primary"
+                          />
+                        }
+                        label={
+                          <Box>
+                            <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                              {perm.value}
+                            </Typography>
+                            <Typography variant="caption" color="text.secondary">
+                              {perm.label}
+                            </Typography>
+                          </Box>
+                        }
+                        sx={{ mb: 1.5, alignItems: "flex-start" }}
+                      />
+                    ))}
+                  </FormGroup>
+                </DialogContent>
+                <DialogActions sx={{ px: 3, pb: 3 }}>
+                  <Button onClick={() => setRoleModalOpen(false)} variant="outlined" color="inherit" disabled={submitting}>
+                    Cancel
+                  </Button>
+                  <Button type="submit" variant="contained" disabled={submitting}>
+                    {submitting ? "Creating..." : "Create Role"}
+                  </Button>
+                </DialogActions>
+              </form>
+            </Dialog>
+
+          </Box> {/* End Main content body */}
+        </Box> {/* End Right Area */}
+      </Box> {/* End Root flex Box */}
     </ThemeProvider>
   );
 }
