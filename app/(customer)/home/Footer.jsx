@@ -21,7 +21,7 @@ export default function Footer({ navLinks }) {
                         <Box
                             component="img"
                             src="/logo/logobg.png"
-                            alt="PathLab Logo"
+                            alt="EasyTechnoMed Logo"
                             sx={{ height: 48, mb: 2.5, borderRadius: "6px", filter: "brightness(0.9)" }}
                         />
                         <Typography variant="body2" sx={{ maxWidth: 360, lineHeight: 1.7, fontSize: "0.9rem" }}>
@@ -79,7 +79,7 @@ export default function Footer({ navLinks }) {
                     }}
                 >
                     <Typography variant="caption" sx={{ fontSize: "0.75rem", textAlign: { xs: "center", sm: "left" } }}>
-                        © {new Date().getFullYear()} Pathlab. All rights reserved. Authorized personnel console access under license.
+                        © {new Date().getFullYear()} EasyTechnoMed. All rights reserved. Authorized personnel console access under license.
                     </Typography>
                     <Box sx={{ display: "flex", gap: 3 }}>
                         <Typography

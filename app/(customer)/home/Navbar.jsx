@@ -66,7 +66,7 @@ export default function Navbar({
                         <Box
                             component="img"
                             src="/logo/logobg.png"
-                            alt="PathLab Logo"
+                            alt="EasyTechnoMed Logo"
                             sx={{ height: 48, cursor: "pointer", borderRadius: "6px" }}
                             onClick={() => {
                                 if (typeof window !== "undefined" && window.location.pathname === "/") {
@@ -141,7 +141,7 @@ export default function Navbar({
             >
                 <Box sx={{ width: 280, p: 3, height: "100%", display: "flex", flexDirection: "column" }}>
                     <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 4 }}>
-                        <Box component="img" src="/logo/logobg.png" alt="Pathlab" sx={{ height: 40, borderRadius: "4px" }} />
+                        <Box component="img" src="/logo/logobg.png" alt="EasyTechnoMed" sx={{ height: 40, borderRadius: "4px" }} />
                         <IconButton onClick={() => setMobileMenuOpen(false)}>
                             <CloseIcon />
                         </IconButton>

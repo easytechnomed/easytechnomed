@@ -54,7 +54,7 @@ export default function Benefits() {
                             color: "text.primary"
                         }}
                     >
-                        Why Diagnostic Labs Love Pathlab
+                        Why Diagnostic Labs Love EasyTechnoMed
                     </Typography>
                     <Typography variant="body1" color="text.secondary" sx={{ fontSize: { xs: "0.95rem", md: "1.05rem" } }}>
                         Designed by medical software experts to eliminate paper bottlenecks and speed up patient test report delivery.

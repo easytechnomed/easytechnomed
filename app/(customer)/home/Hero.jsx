@@ -280,7 +280,7 @@ export default function Hero({
                                 <Box
                                     component="img"
                                     src="/landing/test report table.png"
-                                    alt="PathLab Dashboard Preview"
+                                    alt="EasyTechnoMed Dashboard Preview"
                                     sx={{
                                         width: "100%",
                                         height: "auto",
