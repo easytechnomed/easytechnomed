@@ -7,12 +7,11 @@ const JWT_SECRET = new TextEncoder().encode(
 
 export async function proxy(request) {
   const { pathname } = request.nextUrl;
-  const userToken = request.cookies.get("session_token")?.value;
   const adminToken = request.cookies.get("admin_session_token")?.value;
   const superAdminToken = request.cookies.get("super_admin_session_token")?.value;
 
-  // 1. Workspace Admin Pages protection (excludes superadmin routes starting with /adminstration)
-  if (pathname.startsWith("/admin") && !pathname.startsWith("/auth") && !pathname.startsWith("/api") && !pathname.startsWith("/adminstration")) {
+  // 1. Workspace Admin & Dashboard Pages protection (excludes superadmin routes starting with /adminstration)
+  if ((pathname.startsWith("/admin") || pathname.startsWith("/dashboard")) && !pathname.startsWith("/auth") && !pathname.startsWith("/api") && !pathname.startsWith("/adminstration")) {
     if (!adminToken) {
       return NextResponse.redirect(new URL("/auth/login", request.url));
     }
@@ -41,23 +40,8 @@ export async function proxy(request) {
     }
   }
 
-  // 3. Customer Pages protection
-  if (pathname.startsWith("/dashboard")) {
-    if (!userToken) {
-      return NextResponse.redirect(new URL("/auth/login", request.url));
-    }
-    try {
-      await jwtVerify(userToken, JWT_SECRET);
-      // Customer session is verified
-    } catch (e) {
-      const res = NextResponse.redirect(new URL("/auth/login", request.url));
-      res.cookies.delete("session_token");
-      return res;
-    }
-  }
-
-  // 4. Prevent logged-in admins from visiting admin auth login page
-  if (pathname === "/auth/login" && adminToken) {
+  // 3. Prevent logged-in admins from visiting login/register pages
+  if ((pathname === "/auth/login" || pathname === "/auth/register") && adminToken) {
     try {
       await jwtVerify(adminToken, JWT_SECRET);
       return NextResponse.redirect(new URL("/dashboard", request.url));
@@ -68,7 +52,7 @@ export async function proxy(request) {
     }
   }
 
-  // 5. Prevent logged-in superadmins from visiting superadmin login page
+  // 4. Prevent logged-in superadmins from visiting superadmin login page
   if (pathname === "/adminstration/login" && superAdminToken) {
     try {
       await jwtVerify(superAdminToken, JWT_SECRET);
@@ -76,18 +60,6 @@ export async function proxy(request) {
     } catch (e) {
       const res = NextResponse.next();
       res.cookies.delete("super_admin_session_token");
-      return res;
-    }
-  }
-
-  // 6. Prevent logged-in users from visiting customer auth pages
-  if ((pathname === "/auth/login" || pathname === "/auth/register") && userToken) {
-    try {
-      await jwtVerify(userToken, JWT_SECRET);
-      return NextResponse.redirect(new URL("/dashboard", request.url));
-    } catch (e) {
-      const res = NextResponse.next();
-      res.cookies.delete("session_token");
       return res;
     }
   }

@@ -59,11 +59,11 @@ export default function CustomerRegisterPage() {
   return (
     <div className="h-[100dvh] w-full flex flex-col md:flex-row bg-slate-50 text-slate-800 font-sans md:overflow-hidden overflow-y-auto">
       {/* Col 1: AI Generated Visual and Branding */}
-      <div className="hidden md:flex md:w-1/2 relative bg-cover bg-center items-center justify-center overflow-hidden" 
-           style={{ backgroundImage: "url('/logo/customer_login_bg.png')" }}>
+      <div className="hidden md:flex md:w-1/2 relative bg-cover bg-center items-center justify-center overflow-hidden"
+        style={{ backgroundImage: "url('/logo/customer_login_bg.png')" }}>
         {/* Soft elegant gradient overlay (Light medical theme) */}
         <div className="absolute inset-0 bg-gradient-to-tr from-white via-white/80 to-teal-50/40 z-10" />
-        
+
         {/* Content Overlay */}
         <div className="relative z-20 max-w-lg px-8 text-center md:text-left flex flex-col gap-6">
           <div className="flex items-center gap-3">
@@ -77,7 +77,7 @@ export default function CustomerRegisterPage() {
               </p>
             </div>
           </div>
-          
+
           <div className="space-y-3">
             <h2 className="text-3xl md:text-4xl font-black tracking-tight text-slate-900 leading-tight">
               Powering modern <br />
@@ -87,7 +87,7 @@ export default function CustomerRegisterPage() {
               Manage patient registrations, design custom parameters, track laboratory statistics, and generate print-ready reports with ease.
             </p>
           </div>
-          
+
           <div className="flex items-center gap-4 pt-5 border-t border-slate-200">
             <div className="flex -space-x-2">
               <span className="w-8 h-8 rounded-full border-2 border-white bg-teal-500 flex items-center justify-center text-xs font-bold text-white">L</span>
@@ -105,13 +105,13 @@ export default function CustomerRegisterPage() {
       <div className="w-full md:w-1/2 flex items-center justify-center p-6 md:p-8 bg-gradient-to-br from-slate-50 via-teal-50/10 to-slate-100 relative overflow-hidden">
         {/* Modern grid-pattern overlay */}
         <div className="absolute inset-0 bg-[linear-gradient(to_right,#e2e8f0_1px,transparent_1px),linear-gradient(to_bottom,#e2e8f0_1px,transparent_1px)] bg-[size:4rem_4rem] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_0%,#000_70%,transparent_100%)] opacity-35" />
-        
+
         {/* Soft background glow bubbles */}
         <div className="absolute -top-32 -right-32 w-[30rem] h-[30rem] bg-gradient-to-br from-teal-200/30 to-emerald-200/10 rounded-full blur-3xl pointer-events-none" />
         <div className="absolute -bottom-32 -left-32 w-[30rem] h-[30rem] bg-gradient-to-br from-sky-200/20 to-teal-100/10 rounded-full blur-3xl pointer-events-none" />
-        
+
         <div className="w-full max-w-md space-y-5 relative z-10">
-          
+
           {/* Logo showing on mobile only */}
           <div className="flex md:hidden items-center justify-center gap-2 mb-4">
             <img src="/logo/logobg.png" alt="EasyTechnoMed Logo" className="h-10 w-auto bg-white p-1 rounded-xl shadow-sm border border-slate-100" />
@@ -141,7 +141,7 @@ export default function CustomerRegisterPage() {
           <div className="border border-slate-200/50 bg-white/70 backdrop-blur-xl shadow-[0_20px_60px_rgba(15,23,42,0.04)] hover:shadow-[0_30px_70px_rgba(20,184,166,0.09)] rounded-3xl p-5 md:p-6 border-2 transition-all duration-500 flex flex-col gap-4">
             <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
               <div className="space-y-3">
-                
+
                 {/* Full Name Field with Left Border Highlighting */}
                 <div className="space-y-1 group">
                   <Label htmlFor="name" className="text-slate-700 text-xs font-bold pl-1 group-focus-within:text-teal-600 transition-colors">Full Name</Label>
@@ -217,7 +217,7 @@ export default function CustomerRegisterPage() {
                   Start 3-Day Free Trial
                   <ArrowRight className="h-4 w-4" />
                 </Button>
-                
+
                 <div className="flex items-center justify-center w-full text-xs text-slate-500 pt-2 border-t border-slate-100">
                   <button
                     type="button"
