@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import Link from "next/link";
 import {
     Box,
     Container,
@@ -82,8 +83,8 @@ export default function Footer({ navLinks }) {
                     </Typography>
                     <Box sx={{ display: "flex", gap: 3 }}>
                         <Typography
-                            component="a"
-                            href="#"
+                            component={Link}
+                            href="/privacy"
                             sx={{
                                 color: "#94a3b8",
                                 textDecoration: "none",

@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import Link from "next/link";
 import {
     Box,
     Container,
@@ -26,17 +27,35 @@ export default function Navbar({
     mobileMenuOpen,
     setMobileMenuOpen,
     navLinks,
-    router
+    router,
+    alwaysSolid = false
 }) {
+    const isSolid = scrolled || alwaysSolid;
+    const [isLoggedIn, setIsLoggedIn] = React.useState(false);
+
+    React.useEffect(() => {
+        fetch("/api/auth/check")
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    setIsLoggedIn(data.isLoggedIn);
+                }
+            })
+            .catch(err => {
+                console.error("Failed to check auth status", err);
+            });
+    }, []);
+
     return (
         <>
             <AppBar
                 position="fixed"
                 elevation={0}
                 sx={{
-                    bgcolor: scrolled ? "rgba(255, 255, 255, 0.95)" : "transparent",
-                    backdropFilter: scrolled ? "blur(12px)" : "none",
-                    borderBottom: scrolled ? "1px solid rgba(15, 118, 110, 0.1)" : "none",
+                    bgcolor: isSolid ? "rgba(255, 255, 255, 0.95)" : "transparent",
+                    backdropFilter: isSolid ? "blur(12px)" : "none",
+                    borderBottom: "1px solid",
+                    borderColor: isSolid ? "rgba(15, 118, 110, 0.1)" : "transparent",
                     transition: "all 0.3s ease",
                     zIndex: 1100
                 }}
@@ -49,7 +68,13 @@ export default function Navbar({
                             src="/logo/logobg.png"
                             alt="PathLab Logo"
                             sx={{ height: 48, cursor: "pointer", borderRadius: "6px" }}
-                            onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
+                            onClick={() => {
+                                if (typeof window !== "undefined" && window.location.pathname === "/") {
+                                    window.scrollTo({ top: 0, behavior: "smooth" });
+                                } else {
+                                    router.push("/");
+                                }
+                            }}
                         />
 
                         {/* Desktop Navigation Links */}
@@ -57,11 +82,11 @@ export default function Navbar({
                             {navLinks.map((link) => (
                                 <Typography
                                     key={link.text}
-                                    component="a"
+                                    component={Link}
                                     href={link.href}
                                     sx={{
                                         textDecoration: "none",
-                                        color: scrolled ? "text.primary" : "#334155",
+                                        color: isSolid ? "text.primary" : "#334155",
                                         fontWeight: 600,
                                         fontSize: "0.95rem",
                                         transition: "color 0.2s",
@@ -75,28 +100,31 @@ export default function Navbar({
 
                         {/* Action Buttons */}
                         <Box sx={{ display: { xs: "none", md: "flex" }, gap: 2 }}>
-                            <Button
-                                variant="outlined"
-                                color="primary"
-                                onClick={() => router.push("/auth/login")}
-                                sx={{ borderColor: "rgba(15, 118, 110, 0.4)", color: scrolled ? "primary.main" : "#334155" }}
-                            >
-                                Customer Login
-                            </Button>
-                            <Button
-                                variant="contained"
-                                color="primary"
-                                onClick={() => router.push("/auth/login")}
-                                endIcon={<ArrowForwardIcon />}
-                            >
-                                Admin Console
-                            </Button>
+                            {isLoggedIn ? (
+                                <Button
+                                    variant="contained"
+                                    color="primary"
+                                    onClick={() => router.push("/dashboard")}
+                                    endIcon={<ArrowForwardIcon />}
+                                >
+                                    Open Dashboard
+                                </Button>
+                            ) : (
+                                <Button
+                                    variant="contained"
+                                    color="primary"
+                                    onClick={() => router.push("/auth/login")}
+                                    endIcon={<ArrowForwardIcon />}
+                                >
+                                    Customer Login
+                                </Button>
+                            )}
                         </Box>
 
                         {/* Mobile Menu Icon */}
                         <IconButton
                             edge="end"
-                            sx={{ display: { xs: "flex", md: "none" }, color: "primary.main" }}
+                            sx={{ display: { xs: "flex", md: "none" }, color: isSolid ? "primary.main" : "#334155" }}
                             onClick={() => setMobileMenuOpen(true)}
                         >
                             <MenuIcon />
@@ -122,7 +150,7 @@ export default function Navbar({
                         {navLinks.map((link) => (
                             <ListItem key={link.text} disablePadding>
                                 <ListItemButton
-                                    component="a"
+                                    component={Link}
                                     href={link.href}
                                     onClick={() => setMobileMenuOpen(false)}
                                     sx={{ py: 1.5, borderRadius: 2 }}
@@ -133,29 +161,33 @@ export default function Navbar({
                         ))}
                     </List>
                     <Box sx={{ display: "flex", flexDirection: "column", gap: 2, mt: 4 }}>
-                        <Button
-                            variant="outlined"
-                            color="primary"
-                            fullWidth
-                            onClick={() => {
-                                setMobileMenuOpen(false);
-                                router.push("/auth/login");
-                            }}
-                        >
-                            Customer Login
-                        </Button>
-                        <Button
-                            variant="contained"
-                            color="primary"
-                            fullWidth
-                            onClick={() => {
-                                setMobileMenuOpen(false);
-                                router.push("/auth/login");
-                            }}
-                            endIcon={<ArrowForwardIcon />}
-                        >
-                            Admin Console
-                        </Button>
+                        {isLoggedIn ? (
+                            <Button
+                                variant="contained"
+                                color="primary"
+                                fullWidth
+                                onClick={() => {
+                                    setMobileMenuOpen(false);
+                                    router.push("/dashboard");
+                                }}
+                                endIcon={<ArrowForwardIcon />}
+                            >
+                                Open Dashboard
+                            </Button>
+                        ) : (
+                            <Button
+                                variant="contained"
+                                color="primary"
+                                fullWidth
+                                onClick={() => {
+                                    setMobileMenuOpen(false);
+                                    router.push("/auth/login");
+                                }}
+                                endIcon={<ArrowForwardIcon />}
+                            >
+                                Customer Login
+                            </Button>
+                        )}
                     </Box>
                 </Box>
             </Drawer>
