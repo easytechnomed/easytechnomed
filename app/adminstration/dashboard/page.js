@@ -1,5 +1,5 @@
 "use client";
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
   Box,
@@ -126,7 +126,7 @@ const AVAILABLE_PERMISSIONS = [
   { value: "admin:reject", label: "Reject users" },
 ];
 
-export default function SuperAdminDashboard() {
+function SuperAdminDashboard() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const tab = searchParams.get("tab");
@@ -1468,5 +1468,17 @@ export default function SuperAdminDashboard() {
         </Box> {/* End Right Area */}
       </Box> {/* End Root flex Box */}
     </ThemeProvider>
+  );
+}
+
+export default function SuperAdminDashboardPage() {
+  return (
+    <Suspense fallback={
+      <Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", minHeight: "100vh", bgcolor: "#f8fafc" }}>
+        <CircularProgress color="primary" />
+      </Box>
+    }>
+      <SuperAdminDashboard />
+    </Suspense>
   );
 }
