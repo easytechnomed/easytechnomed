@@ -1,0 +1,74 @@
+import { NextResponse } from "next/server";
+import { prisma } from "@/lib/db";
+import { requireSuperAdmin } from "@/lib/auth";
+import bcrypt from "bcryptjs";
+
+export async function GET() {
+  try {
+    await requireSuperAdmin();
+
+    const admins = await prisma.admin.findMany({
+      include: {
+        workspace: { select: { name: true } },
+        role: { select: { id: true, name: true } },
+      },
+      orderBy: { name: "asc" },
+    });
+
+    const serializedAdmins = admins.map((admin) => ({
+      id: admin.id,
+      name: admin.name,
+      email: admin.email,
+      isActive: admin.isActive,
+      isApproved: admin.isApproved,
+      role: admin.role,
+      workspace: admin.workspace,
+    }));
+
+    return NextResponse.json({ success: true, admins: serializedAdmins });
+  } catch (error) {
+    console.error("SuperAdmin Admins GET Error:", error);
+    return NextResponse.json({ success: false, error: error.message }, { status: 500 });
+  }
+}
+
+export async function POST(req) {
+  try {
+    await requireSuperAdmin();
+    const body = await req.json().catch(() => ({}));
+
+    const name = body.name?.trim();
+    const email = body.email?.trim().toLowerCase();
+    const password = body.password;
+    const workspaceId = parseInt(body.workspaceId);
+    const roleId = parseInt(body.roleId) || 1;
+
+    if (!name || !email || !password || isNaN(workspaceId)) {
+      return NextResponse.json({ success: false, error: "All fields are required." });
+    }
+
+    const existingAdmin = await prisma.admin.findUnique({ where: { email } });
+    if (existingAdmin) {
+      return NextResponse.json({ success: false, error: "Email is already in use by another admin." });
+    }
+
+    const hashedPassword = await bcrypt.hash(password, 10);
+    await prisma.admin.create({
+      data: {
+        name,
+        email,
+        password: hashedPassword,
+        workspaceId,
+        roleId,
+        isApproved: true,
+        isEmailVerified: true,
+        isActive: true,
+      },
+    });
+
+    return NextResponse.json({ success: true, message: "Admin account created and assigned successfully!" });
+  } catch (error) {
+    console.error("SuperAdmin Admins POST Error:", error);
+    return NextResponse.json({ success: false, error: error.message }, { status: 500 });
+  }
+}

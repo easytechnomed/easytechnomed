@@ -1,0 +1,3890 @@
+[
+  {
+    "code": "T5507",
+    "test_name": "-   Head defects"
+  },
+  {
+    "code": "T5506",
+    "test_name": "-   Neck & Mid piece"
+  },
+  {
+    "code": "T5505",
+    "test_name": "-   Tail defects"
+  },
+  {
+    "code": "T3178",
+    "test_name": "- Erythrocytes (RBC)"
+  },
+  {
+    "code": "T4917",
+    "test_name": "PHOS- Phosphorous - Serum"
+  },
+  {
+    "code": "T7083",
+    "test_name": "-\"1 25 Dihydroxy Vitamin D\""
+  },
+  {
+    "code": "T6115",
+    "test_name": "-(17) CEFOxITINE"
+  },
+  {
+    "code": "T2888",
+    "test_name": "ANA--"
+  },
+  {
+    "code": "T3602",
+    "test_name": "P014--"
+  },
+  {
+    "code": "T2723",
+    "test_name": "HIV--"
+  },
+  {
+    "code": "T3755",
+    "test_name": "--"
+  },
+  {
+    "code": "T2666",
+    "test_name": "--"
+  },
+  {
+    "code": "T2762",
+    "test_name": "CRP--"
+  },
+  {
+    "code": "T2870",
+    "test_name": "FT3--"
+  },
+  {
+    "code": "T2680",
+    "test_name": "HGB---"
+  },
+  {
+    "code": "T5849",
+    "test_name": "-------"
+  },
+  {
+    "code": "T5965",
+    "test_name": "-17 OH PROGESTERONE"
+  },
+  {
+    "code": "T17",
+    "test_name": "24 Hr.U-PR-24 HOUR URINE PROTIEN"
+  },
+  {
+    "code": "T2583",
+    "test_name": "24 HRS PRO-24 HOURS URINARY PROTEIN"
+  },
+  {
+    "code": "T7055",
+    "test_name": "U. PCR-24 HRS PROTEIN CREATININE RATIO -URINE"
+  },
+  {
+    "code": "T210",
+    "test_name": "VitdA-25-OH VITAMIN D (TOTAL)"
+  },
+  {
+    "code": "T841",
+    "test_name": "ACE-A C E Level (ANGIOTENSIN CONVERTING ENZYME)"
+  },
+  {
+    "code": "T3530",
+    "test_name": "P003-A C E Level (ANGIOTENSIN CONVERTING ENZYME)"
+  },
+  {
+    "code": "T2807",
+    "test_name": "-A.F.B. for Body Fluid"
+  },
+  {
+    "code": "T5216",
+    "test_name": "-A.N.A (Anti Nuclear Antibodies) By IFA"
+  },
+  {
+    "code": "T4946",
+    "test_name": "-A/G RATIO"
+  },
+  {
+    "code": "T3036",
+    "test_name": "-A/G Ratio"
+  },
+  {
+    "code": "T5001",
+    "test_name": "abc-ABC"
+  },
+  {
+    "code": "F107",
+    "test_name": "-abc"
+  },
+  {
+    "code": "T6189",
+    "test_name": "Abg-ABG"
+  },
+  {
+    "code": "T4924",
+    "test_name": "-Absolute Basophils Count"
+  },
+  {
+    "code": "T122",
+    "test_name": "AEC-Absolute Eosinophil Count"
+  },
+  {
+    "code": "T3031",
+    "test_name": "-ABSOLUTE EOSINOPHIL COUNT"
+  },
+  {
+    "code": "T2380",
+    "test_name": "-ABSOLUTE LEUKOCYTE COUNTS"
+  },
+  {
+    "code": "T2135",
+    "test_name": "ANC-Absolute Neutrophil Count (ANC)"
+  },
+  {
+    "code": "T6435",
+    "test_name": "-Absolute Nutrophil Count"
+  },
+  {
+    "code": "T5424",
+    "test_name": "-Absolute W.B.C Count"
+  },
+  {
+    "code": "T865",
+    "test_name": "APP-Acid Phosphatase (Prostatic)"
+  },
+  {
+    "code": "T3254",
+    "test_name": "ACP_P-Acid Phosphatase (Prostatic)"
+  },
+  {
+    "code": "T558",
+    "test_name": "APT-Acid Phosphatase (Total)"
+  },
+  {
+    "code": "T3257",
+    "test_name": "ACP_T-Acid Phosphatase (Total)"
+  },
+  {
+    "code": "T671",
+    "test_name": "-ADA (EXAMINATION OF PLEURAL FLUID)"
+  },
+  {
+    "code": "T828",
+    "test_name": "ADA-ADA-MTB"
+  },
+  {
+    "code": "T5447",
+    "test_name": "ADA-ADENOSINE DEAMINASE (ADA)"
+  },
+  {
+    "code": "T2354",
+    "test_name": "ACTH-ADRENOCORTICOTROPIC HORMONE (ACTH)"
+  },
+  {
+    "code": "T7028",
+    "test_name": "ACTH-Adrenocorticotropic Hormone (ACTH)"
+  },
+  {
+    "code": "T2756",
+    "test_name": "AFB Stain-AFB (Ziehl Nelsen) Stain"
+  },
+  {
+    "code": "T6467",
+    "test_name": "AFB-U-AFB-ZN Stain, Urine"
+  },
+  {
+    "code": "T5951",
+    "test_name": "-ALBUMIN"
+  },
+  {
+    "code": "T107",
+    "test_name": "ALDY-Aldehyde Test"
+  },
+  {
+    "code": "T2777",
+    "test_name": "P008-Aldehyde Test"
+  },
+  {
+    "code": "T2665",
+    "test_name": "ALP-ALKALINE PHOSPHATASE"
+  },
+  {
+    "code": "T47",
+    "test_name": "ALP-Alkaline Phosphatase"
+  },
+  {
+    "code": "T6301",
+    "test_name": "ALL,FULL-Allergy Comprehensive Panel (Veg+Non Veg+Inhalants+Drugs)"
+  },
+  {
+    "code": "T2088",
+    "test_name": "Allergy-Allergy Panel"
+  },
+  {
+    "code": "T2393",
+    "test_name": "Allergy-Allergy Panel"
+  },
+  {
+    "code": "T5874",
+    "test_name": "-ALLERGY PROFILE"
+  },
+  {
+    "code": "T2490",
+    "test_name": "-ALLERGY PROFILE"
+  },
+  {
+    "code": "T5876",
+    "test_name": "-ALLERGY PROFILE FOOD"
+  },
+  {
+    "code": "T5877",
+    "test_name": "-ALLERGY PROFILE INHALATION"
+  },
+  {
+    "code": "T3240",
+    "test_name": "AFP-ALPHA FETO PROTEIN (AFP)"
+  },
+  {
+    "code": "T2132",
+    "test_name": "AFP-ALPHA FETO PROTEIN (AFP)"
+  },
+  {
+    "code": "T7026",
+    "test_name": "-Ammonia, Whole Blood"
+  },
+  {
+    "code": "T7051",
+    "test_name": "Amoebic-AMOEBIC SEROLOGY - IgG (ENTAMOEBA HISTOLYTICA), SERUM"
+  },
+  {
+    "code": "T5042",
+    "test_name": "ANA ELISA-ANA/ANF (Anti Nuclear Antibody/Factor) - ELISA"
+  },
+  {
+    "code": "T7062",
+    "test_name": "ANA IFA-ANA/ANF (Anti Nuclear Antibody/Factor) - IFA"
+  },
+  {
+    "code": "F94",
+    "test_name": "-ANC PROFILE"
+  },
+  {
+    "code": "F83",
+    "test_name": "-ANC PROFILE (FEMALE)"
+  },
+  {
+    "code": "F85",
+    "test_name": "-ANC PROFILE (MALE)"
+  },
+  {
+    "code": "T5966",
+    "test_name": "-ANCA Profile"
+  },
+  {
+    "code": "P9",
+    "test_name": "-Anemia Profile"
+  },
+  {
+    "code": "T908",
+    "test_name": "ACA-IgA-Anti Cardiolipin Antibodies (IgA)"
+  },
+  {
+    "code": "T3601",
+    "test_name": "P011-Anti Cardiolipin Antibodies (IgA)"
+  },
+  {
+    "code": "T3134",
+    "test_name": "P012-Anti Cardiolipin Antibodies (IgG)"
+  },
+  {
+    "code": "T906",
+    "test_name": "ACA-IgG-Anti Cardiolipin Antibodies (IgG)"
+  },
+  {
+    "code": "T907",
+    "test_name": "ACA-IgM-Anti Cardiolipin Antibodies (IgM)"
+  },
+  {
+    "code": "T3600",
+    "test_name": "P013-Anti Cardiolipin Antibodies (IgM)"
+  },
+  {
+    "code": "T6244",
+    "test_name": "Anti CCP-ANTI CCP (ANTI CYCLIC CITRULLINATED PEPTIDE) - ELISA"
+  },
+  {
+    "code": "T909",
+    "test_name": "A-CCP-Anti CCP Antibody"
+  },
+  {
+    "code": "T910",
+    "test_name": "DNA-Anti Ds DNA"
+  },
+  {
+    "code": "T3603",
+    "test_name": "P015-Anti Ds DNA"
+  },
+  {
+    "code": "T3361",
+    "test_name": "-ANTI HBc - IgG"
+  },
+  {
+    "code": "T689",
+    "test_name": "-ANTI HBc - IgG"
+  },
+  {
+    "code": "T816",
+    "test_name": "AHBEA-Anti Hbe Antigen"
+  },
+  {
+    "code": "T3508",
+    "test_name": "P016-Anti Hbe Antigen"
+  },
+  {
+    "code": "T2052",
+    "test_name": "AHBs-Anti HBs Antibody Titre"
+  },
+  {
+    "code": "T583",
+    "test_name": "HCV-ANTI HCV (Card Test)"
+  },
+  {
+    "code": "T866",
+    "test_name": "AHAV-ANTI HEPATITIS A VIRUS (ANTI HAV) - IgM"
+  },
+  {
+    "code": "T5066",
+    "test_name": "-ANTI HEPATITIS A VIRUS (ANTI HAV) - Total*"
+  },
+  {
+    "code": "T940",
+    "test_name": "AHBC-ANTI HEPATITIS B CORE ANTIGEN (AHBC) - IgM"
+  },
+  {
+    "code": "T3648",
+    "test_name": "P020-ANTI HEPATITIS B CORE ANTIGEN (AHBC) - IgM"
+  },
+  {
+    "code": "T818",
+    "test_name": "AHBCT-ANTI HEPATITIS B CORE ANTIGEN (AHBC) - TOTAL"
+  },
+  {
+    "code": "T3511",
+    "test_name": "P021-ANTI HEPATITIS B CORE ANTIGEN (AHBC) - TOTAL"
+  },
+  {
+    "code": "T2356",
+    "test_name": "AHEV-ANTI HEPATITIS E VIRUS (ANTI HEV) - IgM"
+  },
+  {
+    "code": "T5467",
+    "test_name": "AMH-ANTI MULLERIAN HORMONE (AMH)"
+  },
+  {
+    "code": "T562",
+    "test_name": "AMH-ANTI MULLERIAN HORMONE (AMH)"
+  },
+  {
+    "code": "T178",
+    "test_name": "ANA-Anti Nuclear Antibody (ANA)"
+  },
+  {
+    "code": "T867",
+    "test_name": "APLA-IgG-Anti Phospholipid Antibody (IgG)"
+  },
+  {
+    "code": "T3560",
+    "test_name": "P024-Anti Phospholipid Antibody (IgG)"
+  },
+  {
+    "code": "T868",
+    "test_name": "APLA-IgM-Anti Phospholipid Antibody (IgM)"
+  },
+  {
+    "code": "T3561",
+    "test_name": "P025-Anti Phospholipid Antibody (IgM)"
+  },
+  {
+    "code": "T3852",
+    "test_name": "-Anti SM/RNP Antibody"
+  },
+  {
+    "code": "T869",
+    "test_name": "ATG-ANTI THYROGLOBULIN ANTIBODY (ATG)"
+  },
+  {
+    "code": "T3562",
+    "test_name": "P026-ANTI THYROGLOBULIN ANTIBODY (ATG)"
+  },
+  {
+    "code": "T3519",
+    "test_name": "Anti TPO-ANTI TPO (THYROID PEROXIDASE/MICROSOMAL) ANTIBODY"
+  },
+  {
+    "code": "T832",
+    "test_name": "TPOAb-ANTI TPO ANTIBODY  (AMA)"
+  },
+  {
+    "code": "T5039",
+    "test_name": "-Anti-CCP hs (high sensitive)"
+  },
+  {
+    "code": "T6094",
+    "test_name": "-ANTIC-BIOTICS"
+  },
+  {
+    "code": "T5938",
+    "test_name": "-Antiphospholipid Antibodies (APLA)"
+  },
+  {
+    "code": "T5975",
+    "test_name": "APO A1 & B-APOLIPOPROTEINS A1 & B"
+  },
+  {
+    "code": "T2713",
+    "test_name": "APTT-APTT (Activated Partial Thromboplastin Time)"
+  },
+  {
+    "code": "T77",
+    "test_name": "APTT-APTT (ACTIVATED PARTIAL THROMBOPLASTIN TIME)"
+  },
+  {
+    "code": "P6",
+    "test_name": "-Arthiritis Profile (T)"
+  },
+  {
+    "code": "P5",
+    "test_name": "-Arthritis Profile (A)"
+  },
+  {
+    "code": "T2566",
+    "test_name": "AFE-ASCITIC FLUID EXAMINATION"
+  },
+  {
+    "code": "T15",
+    "test_name": "AFE-ASCITIC FLUID EXAMINATION"
+  },
+  {
+    "code": "T715",
+    "test_name": "ABDOMEN-Ascitic Fluid For A D A"
+  },
+  {
+    "code": "T3431",
+    "test_name": "AFB-Ascitic Fluid For A.F.B"
+  },
+  {
+    "code": "T717",
+    "test_name": "AFB-Ascitic Fluid For A.F.B"
+  },
+  {
+    "code": "T4544",
+    "test_name": "ASCI C/S-ASCITIC FLUID FOR CULTURE & SENSITIVITY"
+  },
+  {
+    "code": "T1734",
+    "test_name": "ASCI C/S-ASCITIC FLUID FOR CULTURE & SENSITIVITY"
+  },
+  {
+    "code": "T2021",
+    "test_name": "AF-CYT-ASCITIC FLUID FOR CYTOLOGY"
+  },
+  {
+    "code": "T2914",
+    "test_name": "AF-CYT-ASCITIC FLUID FOR CYTOLOGY"
+  },
+  {
+    "code": "T3500",
+    "test_name": "AF-GS-Ascitic Fluid For Grams Stain"
+  },
+  {
+    "code": "T809",
+    "test_name": "AF-GS-Ascitic Fluid For Grams Stain"
+  },
+  {
+    "code": "T5458",
+    "test_name": "-ASO (QUANTITATIVE)"
+  },
+  {
+    "code": "T934",
+    "test_name": "ASO-ASO Test (Tubidometric)"
+  },
+  {
+    "code": "T3645",
+    "test_name": "ASO-ASO Test (Tubidometric)"
+  },
+  {
+    "code": "T5422",
+    "test_name": "-Atypical Lymphocytes"
+  },
+  {
+    "code": "T184",
+    "test_name": "HbsAg-Australia Antigen (HbsAg)"
+  },
+  {
+    "code": "T7080",
+    "test_name": "-B"
+  },
+  {
+    "code": "T3532",
+    "test_name": "B-Cell-Band Cell"
+  },
+  {
+    "code": "T845",
+    "test_name": "B-Cell-Band Cell"
+  },
+  {
+    "code": "T2078",
+    "test_name": "-Band Cell"
+  },
+  {
+    "code": "T6506",
+    "test_name": "BCR-ABL1-BCR ABL1 Quantitative (RT-PCR)"
+  },
+  {
+    "code": "T796",
+    "test_name": "HCG5-Beta HCG"
+  },
+  {
+    "code": "T6477",
+    "test_name": "B-HCG-Beta HCG - Total, Maternal"
+  },
+  {
+    "code": "T6478",
+    "test_name": "B-HCG-Beta HCG - Total, Maternal"
+  },
+  {
+    "code": "T6475",
+    "test_name": "B-HCG-Beta HCG - Total, Maternal"
+  },
+  {
+    "code": "T3070",
+    "test_name": "B-THAL-Beta- Thalassemia Screening"
+  },
+  {
+    "code": "T821",
+    "test_name": "B-THAL-Beta- Thalassemia Screening"
+  },
+  {
+    "code": "T802",
+    "test_name": "BETA-2-Beta-2 Glycoprotein 1- IgG"
+  },
+  {
+    "code": "T2644",
+    "test_name": "BETA-2-Beta-2 Glycoprotein IgM"
+  },
+  {
+    "code": "T2256",
+    "test_name": "BETA-2-Beta-2 Glycoprotein IgM"
+  },
+  {
+    "code": "T5747",
+    "test_name": "-BICARBONATE (Total CO2)"
+  },
+  {
+    "code": "T2847",
+    "test_name": "BILE ACID-Bile Acids - Total,Serum"
+  },
+  {
+    "code": "T2727",
+    "test_name": "BP-BILE PIGMENT"
+  },
+  {
+    "code": "T92",
+    "test_name": "BP-BILE PIGMENT"
+  },
+  {
+    "code": "T2726",
+    "test_name": "BS-BILE SALT"
+  },
+  {
+    "code": "T91",
+    "test_name": "BS-BILE SALT"
+  },
+  {
+    "code": "T1260",
+    "test_name": "Bili(TDI)-Billirubin (Total & Direct & Indirect)"
+  },
+  {
+    "code": "T1303",
+    "test_name": "BILLI(T)-Billirubin (Total)"
+  },
+  {
+    "code": "T2945",
+    "test_name": "BIOP-LARG-BIOPSY LARGE SPECIMEN"
+  },
+  {
+    "code": "T2872",
+    "test_name": "BIOP-MED-BIOPSY MEDIUM SPECIMEN"
+  },
+  {
+    "code": "T1272",
+    "test_name": "BIOP-MED-BIOPSY MEDIUM SPECIMEN"
+  },
+  {
+    "code": "T1279",
+    "test_name": "BIOP-Small-BIOPSY SMALL SPECIMEN"
+  },
+  {
+    "code": "T2896",
+    "test_name": "BIOP-Small-BIOPSY SMALL SPECIMEN"
+  },
+  {
+    "code": "T2357",
+    "test_name": "-Blastoid Cells"
+  },
+  {
+    "code": "T5421",
+    "test_name": "-Blasts"
+  },
+  {
+    "code": "T7116",
+    "test_name": "-blood"
+  },
+  {
+    "code": "T7117",
+    "test_name": "-blood"
+  },
+  {
+    "code": "T2037",
+    "test_name": "BLD-CS-BLOOD CULTURE"
+  },
+  {
+    "code": "T4897",
+    "test_name": "BLOOD C/S-Blood Culture & Sensitivity"
+  },
+  {
+    "code": "T2909",
+    "test_name": "BS_F_PP-Blood Glucose (Fasting + Post Prandial)"
+  },
+  {
+    "code": "T2716",
+    "test_name": "BLD-GR-BLOOD GROUPING & RH TYPING"
+  },
+  {
+    "code": "T78",
+    "test_name": "BLD-GR-BLOOD GROUPING & RH TYPING"
+  },
+  {
+    "code": "T5440",
+    "test_name": "-Blood pH"
+  },
+  {
+    "code": "T7065",
+    "test_name": "fbs-blood sugar (F)"
+  },
+  {
+    "code": "T5172",
+    "test_name": "FBS+PP-BLOOD SUGAR (F+PP)"
+  },
+  {
+    "code": "T3674",
+    "test_name": "BSPP-BLOOD SUGAR (PP)"
+  },
+  {
+    "code": "T12",
+    "test_name": "UREA-Blood Urea"
+  },
+  {
+    "code": "T5469",
+    "test_name": "-BLOOD UREA (SERUM)"
+  },
+  {
+    "code": "T4997",
+    "test_name": "1515-BLOOD UREA NITROGEN"
+  },
+  {
+    "code": "T37",
+    "test_name": "BUN-Blood Urea Nitrogen(Bun)"
+  },
+  {
+    "code": "T5939",
+    "test_name": "-Body mass index (BMI)"
+  },
+  {
+    "code": "T3359",
+    "test_name": "BT-CT-BT - CT"
+  },
+  {
+    "code": "T643",
+    "test_name": "BTCT-BT - CT"
+  },
+  {
+    "code": "T2707",
+    "test_name": "BT-CT-BT-CT"
+  },
+  {
+    "code": "T2391",
+    "test_name": "BUN/CREAT-BUN/CREATININE RATIO"
+  },
+  {
+    "code": "T5080",
+    "test_name": "-Bun/Creatinine ratio"
+  },
+  {
+    "code": "T1140",
+    "test_name": "CSF_CYTO-C S F for Cytological Examination"
+  },
+  {
+    "code": "T3781",
+    "test_name": "CSF_CYTO-C S F for Cytological Examination"
+  },
+  {
+    "code": "T5862",
+    "test_name": "-C-PEPTIDE (FASTING)"
+  },
+  {
+    "code": "T3634",
+    "test_name": "hsCRP-C-REACTIVE PROTEIN (hsCRP), Serum"
+  },
+  {
+    "code": "T5086",
+    "test_name": "CRP-C-REACTIVE PROTEIN (QUANTITATIVE)-CRP"
+  },
+  {
+    "code": "T103",
+    "test_name": "CRP-C-Reactive Protein(C R P)"
+  },
+  {
+    "code": "T664",
+    "test_name": "-C.S.F. ADA"
+  },
+  {
+    "code": "T3209",
+    "test_name": "-C3 COMPLIMENT"
+  },
+  {
+    "code": "T6285",
+    "test_name": "-C4 COMPLIMENT"
+  },
+  {
+    "code": "T931",
+    "test_name": "CA-15.3-CA 15.3"
+  },
+  {
+    "code": "T3606",
+    "test_name": "CA-15.3-CA 15.3"
+  },
+  {
+    "code": "T831",
+    "test_name": "CA-19.9-CA 19.9"
+  },
+  {
+    "code": "T3518",
+    "test_name": "CA-19.9-CA 19.9"
+  },
+  {
+    "code": "T584",
+    "test_name": "OV125Ag-CA-125"
+  },
+  {
+    "code": "T5211",
+    "test_name": "-CA-125 (Cancer Antigen-125)"
+  },
+  {
+    "code": "T6251",
+    "test_name": "-CA125-CANCER MARKER"
+  },
+  {
+    "code": "T6598",
+    "test_name": "iCa-CALCIUM IONIZED (iCa), SERUM"
+  },
+  {
+    "code": "T5011",
+    "test_name": "-CALCIUM PROFILE"
+  },
+  {
+    "code": "T2647",
+    "test_name": "Ca++-Calcium Total - Serum"
+  },
+  {
+    "code": "T827",
+    "test_name": "CEA2-CARCINO EMBRYONIC ANTIGEN (CEA)"
+  },
+  {
+    "code": "T3515",
+    "test_name": "CEA-CARCINO EMBRYONIC ANTIGEN (CEA)"
+  },
+  {
+    "code": "T597",
+    "test_name": "CD4-CD 4"
+  },
+  {
+    "code": "T3326",
+    "test_name": "CD4-CD 4"
+  },
+  {
+    "code": "T2606",
+    "test_name": "CSF-CEREBROSPINAL FLUID (CSF) ROUTINE EXAMINATION"
+  },
+  {
+    "code": "T801",
+    "test_name": "CERU-CERULOPLASMIN"
+  },
+  {
+    "code": "T3358",
+    "test_name": "CERU-CERULOPLASMIN"
+  },
+  {
+    "code": "T665",
+    "test_name": "-CHEMICAL :-"
+  },
+  {
+    "code": "T3353",
+    "test_name": "-CHEMICAL :-"
+  },
+  {
+    "code": "T3185",
+    "test_name": "-Chemical Examination"
+  },
+  {
+    "code": "T496",
+    "test_name": "-CHEMICAL EXAMINATION"
+  },
+  {
+    "code": "T5504",
+    "test_name": "-CHEMICAL EXAMINATION"
+  },
+  {
+    "code": "T6551",
+    "test_name": "CHIK IgM-CHIKUNGUNGYA IgM - Rapid"
+  },
+  {
+    "code": "T4",
+    "test_name": "GUNYA-CHIKUNGUNYA IgG & IgM"
+  },
+  {
+    "code": "T2509",
+    "test_name": "GUNYA-CHIKUNGUNYA IgG & IgM"
+  },
+  {
+    "code": "T5044",
+    "test_name": "-Chloramphenicol(CH)"
+  },
+  {
+    "code": "T2783",
+    "test_name": "-CHOLESTEROL / HDL RATIO"
+  },
+  {
+    "code": "T3587",
+    "test_name": "S.CHOL-CHOLESTEROL TOTAL, SERUM"
+  },
+  {
+    "code": "T4963",
+    "test_name": "-CHROMATOGRAM AREA %"
+  },
+  {
+    "code": "T5883",
+    "test_name": "-CLINICAL IMPRESSION :"
+  },
+  {
+    "code": "T5762",
+    "test_name": "-Clumping"
+  },
+  {
+    "code": "P11",
+    "test_name": "-CMO Pakage"
+  },
+  {
+    "code": "P10",
+    "test_name": "-COAGULATION PROFILE"
+  },
+  {
+    "code": "T1409",
+    "test_name": "7003-COLONY COUNT"
+  },
+  {
+    "code": "T4909",
+    "test_name": "-Comment:"
+  },
+  {
+    "code": "T4910",
+    "test_name": "-Comment:"
+  },
+  {
+    "code": "T211",
+    "test_name": "PBS-COMMENTS ON P.B.S"
+  },
+  {
+    "code": "T2926",
+    "test_name": "PBS-COMMENTS ON P.B.S"
+  },
+  {
+    "code": "F11",
+    "test_name": "-COMPLETE BLOOD COUNT-CBC **"
+  },
+  {
+    "code": "F12",
+    "test_name": "-COMPLETE HAEMOGRAM"
+  },
+  {
+    "code": "T5797",
+    "test_name": "-Complete Vitamin Profile"
+  },
+  {
+    "code": "T6634",
+    "test_name": "-Confirm Time (Mean)"
+  },
+  {
+    "code": "T6287",
+    "test_name": "-Conjunctival Smear Left Eye"
+  },
+  {
+    "code": "T3550",
+    "test_name": "Cortisol-CORTISOL - Serum"
+  },
+  {
+    "code": "T2030",
+    "test_name": "COVID-19-COVID ANTIBODY- IgG"
+  },
+  {
+    "code": "T5223",
+    "test_name": "-COVID screen Plus"
+  },
+  {
+    "code": "T5780",
+    "test_name": "-Covid-19 Ag by FIA"
+  },
+  {
+    "code": "T3631",
+    "test_name": "COVID-19-COVID-19 IgG (ELISA)"
+  },
+  {
+    "code": "T2031",
+    "test_name": "-COVID-19 SCREENING"
+  },
+  {
+    "code": "T6436",
+    "test_name": "COV-RT.PCR-COVID-19(SARS-COV-2) Qualitative Assay (RT-PCR)"
+  },
+  {
+    "code": "T63",
+    "test_name": "CPK MB-CPK- MB"
+  },
+  {
+    "code": "T104",
+    "test_name": "CPK-CPK- Nac (Total)"
+  },
+  {
+    "code": "T2642",
+    "test_name": "CK-NAC-Creatine Kinase (CK) NAC"
+  },
+  {
+    "code": "T5925",
+    "test_name": "CPKMB-Creatine Phosphokinase (CPK) - MB"
+  },
+  {
+    "code": "T6533",
+    "test_name": "CPK-NAC-Creatine Phosphokinase (CPK) - NAC"
+  },
+  {
+    "code": "T1221",
+    "test_name": "CCT-CREATININE CLEARANCE TEST"
+  },
+  {
+    "code": "T3876",
+    "test_name": "CCT-CREATININE CLEARANCE TEST"
+  },
+  {
+    "code": "T5352",
+    "test_name": "-CRP (QUALITATIVE)"
+  },
+  {
+    "code": "T21",
+    "test_name": "CSF-CSF EXAMINATION"
+  },
+  {
+    "code": "T1973",
+    "test_name": "CSF-CS-CSF FOR CULTURE & SENSITIVITY"
+  },
+  {
+    "code": "T4807",
+    "test_name": "CSF-CS-CSF FOR CULTURE & SENSITIVITY"
+  },
+  {
+    "code": "T6160",
+    "test_name": "-CSF Routine/Microscopy"
+  },
+  {
+    "code": "T5294",
+    "test_name": "Any C&S-CULTURE & SENSITIVITY (C&S) - Aerobic"
+  },
+  {
+    "code": "T5661",
+    "test_name": "Any C&S 2-CULTURE & SENSITIVITY (C&S) - Aerobic (2)"
+  },
+  {
+    "code": "T6752",
+    "test_name": "BD BACT/RA-CULTURE & SENSITIVITY (C&S) - Any Sample (BD BACTEC/RAPID)"
+  },
+  {
+    "code": "T6637",
+    "test_name": "Blood C/S-CULTURE & SENSITIVITY (C&S) BLOOD - Aerobic"
+  },
+  {
+    "code": "T6139",
+    "test_name": "C/S-CULTURE AND SENSITIVITY"
+  },
+  {
+    "code": "T4906",
+    "test_name": "-Culture Media:"
+  },
+  {
+    "code": "T4907",
+    "test_name": "-Culture Report:"
+  },
+  {
+    "code": "T1148",
+    "test_name": "CUNJ-GS-Cunjuctival Fluid For Grams Stain"
+  },
+  {
+    "code": "T3795",
+    "test_name": "CUNJ-GS-Cunjuctival Fluid For Grams Stain"
+  },
+  {
+    "code": "T1147",
+    "test_name": "CUNJ-KOH-Cunjuctival Fluid For K O H Stain"
+  },
+  {
+    "code": "T3794",
+    "test_name": "CUNJ-KOH-Cunjuctival Fluid For K O H Stain"
+  },
+  {
+    "code": "T1365",
+    "test_name": "EYE C/S-CUNJUCTIVAL SWAB CULTURE & SENSITIVITY"
+  },
+  {
+    "code": "T3709",
+    "test_name": "EYE C/S-CUNJUCTIVAL SWAB CULTURE & SENSITIVITY"
+  },
+  {
+    "code": "T564",
+    "test_name": "CMV-IgG-CYTOMEGALO VIRUS (CMV) - IgG"
+  },
+  {
+    "code": "T3274",
+    "test_name": "CMV-IgG-CYTOMEGALO VIRUS (CMV) - IgG"
+  },
+  {
+    "code": "T3275",
+    "test_name": "CMV IgM-CYTOMEGALO VIRUS (CMV) - IgM"
+  },
+  {
+    "code": "T565",
+    "test_name": "CMV-Igm-CYTOMEGALO VIRUS (CMV) IgM"
+  },
+  {
+    "code": "T2054",
+    "test_name": "Dimer-D-Dimer"
+  },
+  {
+    "code": "T5028",
+    "test_name": "-D-DIMER (Quantitative)"
+  },
+  {
+    "code": "T3245",
+    "test_name": "DENG-DENGU IGG,IGM,NS1 PROFILE"
+  },
+  {
+    "code": "T5368",
+    "test_name": "-DENGU IGG,IGM,NS1 PROFILE(Quanti)"
+  },
+  {
+    "code": "T6452",
+    "test_name": "DEN-NS1-Dengue - NS1 Antigen"
+  },
+  {
+    "code": "T553",
+    "test_name": "DENG-DENGUE DUO NS1/IgG/IgM"
+  },
+  {
+    "code": "T6503",
+    "test_name": "NS1AgELISA-Dengue NS1 Antigen - ELISA"
+  },
+  {
+    "code": "T5024",
+    "test_name": "DEN SER-DENGUE SEROLOGY (IgG/IgM)"
+  },
+  {
+    "code": "T852",
+    "test_name": "DHEAS-DHEA - SULPHATE (DHEAS)"
+  },
+  {
+    "code": "T3539",
+    "test_name": "DHEA-S-DHEAS-S (Dehydroepiandrosterone Sulfate)"
+  },
+  {
+    "code": "T2785",
+    "test_name": "Dia Mini-Diabetic Mini Profile"
+  },
+  {
+    "code": "P4",
+    "test_name": "-Diabetic Profile"
+  },
+  {
+    "code": "T126",
+    "test_name": "-Differential Count of WBC*"
+  },
+  {
+    "code": "T3373",
+    "test_name": "DCT-Direct Coomb's Test (DCT)"
+  },
+  {
+    "code": "T695",
+    "test_name": "DCT-Direct Coombs Test"
+  },
+  {
+    "code": "T2447",
+    "test_name": "-DOPPLER ABDOMEN"
+  },
+  {
+    "code": "T2445",
+    "test_name": "-DOPPLER BILATERAL LIMB ARTERIAL"
+  },
+  {
+    "code": "T2446",
+    "test_name": "-DOPPLER BILATERAL LIMB ARTERIAL & VENOUS."
+  },
+  {
+    "code": "T2444",
+    "test_name": "-DOPPLER BILATERAL LIMB VENOUS."
+  },
+  {
+    "code": "T2443",
+    "test_name": "-DOPPLER CAROTID"
+  },
+  {
+    "code": "T2442",
+    "test_name": "-DOPPLER ILIO-FEMORAL BILATERAL (ARTERIAL & VENOUS)"
+  },
+  {
+    "code": "T2454",
+    "test_name": "-DOPPLER ILIO-FEMORAL BILATERAL (ARTERIAL)"
+  },
+  {
+    "code": "T2453",
+    "test_name": "-DOPPLER ILIO-FEMORAL BILATERAL (VENOUS)"
+  },
+  {
+    "code": "T2441",
+    "test_name": "-DOPPLER OBSTETRICS (USG)"
+  },
+  {
+    "code": "T2440",
+    "test_name": "-DOPPLER OBSTETRICS WITH BIOPHYSICAL PROFILE (BPP)"
+  },
+  {
+    "code": "T2439",
+    "test_name": "-DOPPLER PENILE"
+  },
+  {
+    "code": "T2438",
+    "test_name": "-DOPPLER RENAL"
+  },
+  {
+    "code": "T2437",
+    "test_name": "-DOPPLER SCROTAL"
+  },
+  {
+    "code": "T2436",
+    "test_name": "-DOPPLER SINGLE LIMB ARTERIAL"
+  },
+  {
+    "code": "T2416",
+    "test_name": "-DOPPLER SINGLE LIMB ARTERIAL & VENOUS."
+  },
+  {
+    "code": "T2415",
+    "test_name": "-DOPPLER SINGLE LIMB VENOUS."
+  },
+  {
+    "code": "T2407",
+    "test_name": "-DOPPLER SMALL PART (HRSG)"
+  },
+  {
+    "code": "T2413",
+    "test_name": "-DOPPLER SPLENO-PORTAL AXIS"
+  },
+  {
+    "code": "F66",
+    "test_name": "-DOUBLE MARKER"
+  },
+  {
+    "code": "T5510",
+    "test_name": "-Double Marker, Serum"
+  },
+  {
+    "code": "T3649",
+    "test_name": "-DRUGS OF ABUSE URINE SCREEN TEST"
+  },
+  {
+    "code": "T6989",
+    "test_name": "Hydatid-ECHINOCOCCUS (HYDATID SEROLOGY) IgG, Serum"
+  },
+  {
+    "code": "F108",
+    "test_name": "-efg"
+  },
+  {
+    "code": "T4943",
+    "test_name": "eGFR-eGFR (estimated Glomerular Filtration Rate)"
+  },
+  {
+    "code": "T6155",
+    "test_name": "-EGFR (ESTIMATED GLOMERULAR FILTRATION RATE)"
+  },
+  {
+    "code": "T6601",
+    "test_name": "ECG-Electrocardiogram (ECG)"
+  },
+  {
+    "code": "T2551",
+    "test_name": "ELEC-Electrolyte Profile (Serum)"
+  },
+  {
+    "code": "T6446",
+    "test_name": "-Electrolytes (KFT)"
+  },
+  {
+    "code": "T1300",
+    "test_name": "HCV Elisa-ELISA For H C V"
+  },
+  {
+    "code": "T3778",
+    "test_name": "HCV Elisa-ELISA For H C V"
+  },
+  {
+    "code": "T690",
+    "test_name": "AHBC-Elisa For H E V"
+  },
+  {
+    "code": "T3415",
+    "test_name": "AHBC-Elisa For H E V"
+  },
+  {
+    "code": "T911",
+    "test_name": "NCC-ELISA FOR NCC"
+  },
+  {
+    "code": "T3604",
+    "test_name": "NCC-ELISA FOR NCC"
+  },
+  {
+    "code": "T7017",
+    "test_name": "Endomysial-Endomysial Antibody, IgG"
+  },
+  {
+    "code": "T201",
+    "test_name": "ESR AUTO-Erythrocyte Sedimentation Rate"
+  },
+  {
+    "code": "T2911",
+    "test_name": "ESR-Erythrocyte Sedimentation Rate (ESR)"
+  },
+  {
+    "code": "T543",
+    "test_name": "EGFR-EST. GLOMERULAR FILTRATION RATE (EGFR)"
+  },
+  {
+    "code": "T870",
+    "test_name": "E2-Estradiol / Oestrogen  (E2)"
+  },
+  {
+    "code": "T3563",
+    "test_name": "E2-ESTRADIOL/OESTROGEN (E2)"
+  },
+  {
+    "code": "T2556",
+    "test_name": "FNAC-F.N.A.C(Fine Needle Aspiration Cytology)"
+  },
+  {
+    "code": "T2014",
+    "test_name": "FNAC-F.N.A.C(Fine Needle Aspiration Cytology)"
+  },
+  {
+    "code": "T3625",
+    "test_name": "-Face Mask"
+  },
+  {
+    "code": "T3289",
+    "test_name": "FBS-FASTING BLOOD SUGAR (FBS)"
+  },
+  {
+    "code": "T2459",
+    "test_name": "-FBS"
+  },
+  {
+    "code": "T228",
+    "test_name": "Ferritin-FERRITIN"
+  },
+  {
+    "code": "T3230",
+    "test_name": "FERRITIN-FERRITIN, Serum"
+  },
+  {
+    "code": "P8",
+    "test_name": "-FEVER PANEL"
+  },
+  {
+    "code": "T3580",
+    "test_name": "FDP-FIBRIN DEGRADATION PRODUCT(FDP)"
+  },
+  {
+    "code": "T2158",
+    "test_name": "Fib-FIBRINOGEN"
+  },
+  {
+    "code": "T884",
+    "test_name": "FDP-FIBRINOGEN DEGRADATION PRODUCTS(FDP)"
+  },
+  {
+    "code": "T5821",
+    "test_name": "-Fluid Culture Sensitivity"
+  },
+  {
+    "code": "T5647",
+    "test_name": "-Fluid Cytology"
+  },
+  {
+    "code": "T2246",
+    "test_name": "Cyto-Fluid For Cytological Examination"
+  },
+  {
+    "code": "T5944",
+    "test_name": "GLU FLUID-FLUID GLUCOSE"
+  },
+  {
+    "code": "T5945",
+    "test_name": "GLU FLUID-FLUID GLUCOSE"
+  },
+  {
+    "code": "T5947",
+    "test_name": "LDH-FLUID LDH (Lactate Dehgdrogenase)"
+  },
+  {
+    "code": "T5942",
+    "test_name": "-FLUID PROTEIN"
+  },
+  {
+    "code": "T5550",
+    "test_name": "-FLUID ROUTINE MICROSCOPY"
+  },
+  {
+    "code": "T2434",
+    "test_name": "-FOETAL ECHOCARDIOGRAPHY"
+  },
+  {
+    "code": "T6591",
+    "test_name": "Folic A-FOLIC ACID (FOLATE) - SERUM"
+  },
+  {
+    "code": "T566",
+    "test_name": "FOLATE-Folic Acid/FOLATE"
+  },
+  {
+    "code": "T6899",
+    "test_name": "-Fourth Week Report"
+  },
+  {
+    "code": "T812",
+    "test_name": "F-HCG-FREE BETA HCG"
+  },
+  {
+    "code": "T3503",
+    "test_name": "F-HCG-FREE BETA HCG"
+  },
+  {
+    "code": "T930",
+    "test_name": "F-PSA-Free P S A"
+  },
+  {
+    "code": "T632",
+    "test_name": "F-TESTOS-FREE TESTOSTERONE"
+  },
+  {
+    "code": "T3670",
+    "test_name": "F-TFT-Free Thyroid Profile (Free - TFT) (FT3, FT4, TSH)"
+  },
+  {
+    "code": "T164",
+    "test_name": "FRT4-Free Thyroxine(FT4)"
+  },
+  {
+    "code": "T5178",
+    "test_name": "-Free Thyroxine(FT4)"
+  },
+  {
+    "code": "T3227",
+    "test_name": "-Free Triiodothyronine (FT3)"
+  },
+  {
+    "code": "T163",
+    "test_name": "FT3-Free Triiodothyronine(FT3)"
+  },
+  {
+    "code": "T3186",
+    "test_name": "-Fructose test"
+  },
+  {
+    "code": "T497",
+    "test_name": "-Fructose test"
+  },
+  {
+    "code": "T629",
+    "test_name": "hFSH-FSH (Follicle Stimulating Hormone)"
+  },
+  {
+    "code": "T3351",
+    "test_name": "FSH-FSH (Follicle Stimulating Hormone)"
+  },
+  {
+    "code": "T6140",
+    "test_name": "-FUNGAL STAIN"
+  },
+  {
+    "code": "T6141",
+    "test_name": "-FUNGAL STAIN"
+  },
+  {
+    "code": "T6143",
+    "test_name": "-FUNGUS ELEMENT"
+  },
+  {
+    "code": "T6286",
+    "test_name": "-G6pd (Quantitative)"
+  },
+  {
+    "code": "T3581",
+    "test_name": "G6PD-G6PD Quantitative"
+  },
+  {
+    "code": "T885",
+    "test_name": "G6PD-G6PDH"
+  },
+  {
+    "code": "T5534",
+    "test_name": "GGT-Gamma Glutamyl Transferase(GGT)"
+  },
+  {
+    "code": "T5535",
+    "test_name": "GGT-Gamma Glutamyl Transferase(GGT)"
+  },
+  {
+    "code": "T115",
+    "test_name": "G-GT-Gamma-GT"
+  },
+  {
+    "code": "T851",
+    "test_name": "GCT-GCT(After 75 gm glucose)"
+  },
+  {
+    "code": "T7085",
+    "test_name": "-GGGG"
+  },
+  {
+    "code": "T5000",
+    "test_name": "GGT-GGTP"
+  },
+  {
+    "code": "T4996",
+    "test_name": "-Globulin"
+  },
+  {
+    "code": "T4934",
+    "test_name": "P2-GLOBULIN"
+  },
+  {
+    "code": "T3035",
+    "test_name": "-Globulin"
+  },
+  {
+    "code": "T4935",
+    "test_name": "-GLUBULIN"
+  },
+  {
+    "code": "T6418",
+    "test_name": "PP-Glucose PP"
+  },
+  {
+    "code": "T114",
+    "test_name": "HbA1c-Glycosylated Haemoglobin*"
+  },
+  {
+    "code": "T5016",
+    "test_name": "-GRAM STAIN"
+  },
+  {
+    "code": "T120",
+    "test_name": "G-STAIN-Gram's Staining"
+  },
+  {
+    "code": "T4905",
+    "test_name": "-Gram's staining:"
+  },
+  {
+    "code": "T2077",
+    "test_name": "-GRAPH"
+  },
+  {
+    "code": "T3215",
+    "test_name": "GTT 100-GTT 100 GM (Glucose Tolerance Test)"
+  },
+  {
+    "code": "T6992",
+    "test_name": "GTT-GTT 75 GM (Glucose Tolerance Test)"
+  },
+  {
+    "code": "T534",
+    "test_name": "GTT-GTT(Glucose Tolerance Test)"
+  },
+  {
+    "code": "T2125",
+    "test_name": "GTT-GTT(Glucose Tolerance Test)2 Sample"
+  },
+  {
+    "code": "T5461",
+    "test_name": "hpyAb-H. Pylori Ab (IgG, IgM and IgA)"
+  },
+  {
+    "code": "T2883",
+    "test_name": "H.PYLO-H. Pylori IgG"
+  },
+  {
+    "code": "T173",
+    "test_name": "H.PYLO-H. Pylori IgG"
+  },
+  {
+    "code": "T2257",
+    "test_name": "HPYLO-H.Pylori (IgG)"
+  },
+  {
+    "code": "T179",
+    "test_name": "HPYLO-H.Pylori (IgM)"
+  },
+  {
+    "code": "T4948",
+    "test_name": "-HAEMATOLOGICAL INDICES"
+  },
+  {
+    "code": "T57",
+    "test_name": "HGB-Haemoglobin"
+  },
+  {
+    "code": "T5121",
+    "test_name": "-Haemoglobin"
+  },
+  {
+    "code": "T2629",
+    "test_name": "Hb-HAEMOGLOBIN (Hb)"
+  },
+  {
+    "code": "T854",
+    "test_name": "HB-ELEC-HB Electrophoresis"
+  },
+  {
+    "code": "T3542",
+    "test_name": "HB-ELEC-HB Electrophoresis"
+  },
+  {
+    "code": "T6311",
+    "test_name": "HB HPLC-HB Electrophoresis (HPLC)"
+  },
+  {
+    "code": "T5917",
+    "test_name": "-Hb ELECTROPHORESIS TEST FOR HB VARIANT"
+  },
+  {
+    "code": "T5499",
+    "test_name": "-Hb ELECTROPHORESIS TEST FOR SICKLE CELL DISEASE"
+  },
+  {
+    "code": "F59",
+    "test_name": "-HB% ,TLC,DLC"
+  },
+  {
+    "code": "F58",
+    "test_name": "-HB,TLC,DLC,ESR"
+  },
+  {
+    "code": "T6258",
+    "test_name": "-HBeAg (Hepatitis B Envelope Antigen)"
+  },
+  {
+    "code": "T586",
+    "test_name": "E-HBsAg-HBsAg (C.L.I.A)"
+  },
+  {
+    "code": "T2895",
+    "test_name": "HbsAg-HBSAG (HEPATITIS B VIRUS)"
+  },
+  {
+    "code": "T5465",
+    "test_name": "BHCG-HCG-Beta Subunit"
+  },
+  {
+    "code": "P2",
+    "test_name": "-HCL Health Checkup"
+  },
+  {
+    "code": "T4919",
+    "test_name": "-HCT"
+  },
+  {
+    "code": "T589",
+    "test_name": "HCV Elisa-HCV Anti Body(Elisa)"
+  },
+  {
+    "code": "T6256",
+    "test_name": "HCV-HCV Antibody (Anti HCV) QUNTITATIVE"
+  },
+  {
+    "code": "T2677",
+    "test_name": "HDL-HDL CHOLESTEROL"
+  },
+  {
+    "code": "T6431",
+    "test_name": "-HDL/LDL"
+  },
+  {
+    "code": "T2889",
+    "test_name": "H PYLO-HELICOBACTER PYLORI (H. PYLORI) - IgM"
+  },
+  {
+    "code": "T2080",
+    "test_name": "HB-Elect-HEMOGLOBIN VARIANT ANALYSIS"
+  },
+  {
+    "code": "T3538",
+    "test_name": "-Hepatitis A Virus"
+  },
+  {
+    "code": "T850",
+    "test_name": "-Hepatitis A Virus"
+  },
+  {
+    "code": "T5968",
+    "test_name": "-Hepatitis A Virus (HAV) IgG/IgM"
+  },
+  {
+    "code": "T2349",
+    "test_name": "HBC AB-Hepatitis B Core Antibody"
+  },
+  {
+    "code": "T2348",
+    "test_name": "HBeAg-HEPATITIS B ENVELOPE ANTIGEN (HBEAG)"
+  },
+  {
+    "code": "T3491",
+    "test_name": "P017-HEPATITIS B SURFACE ANTIBODY; ANTI HBs"
+  },
+  {
+    "code": "T3265",
+    "test_name": "HBsAgELISA-Hepatitis B Surface Antigen (HBsAg) - ELISA"
+  },
+  {
+    "code": "T6432",
+    "test_name": "HBsAgRapid-Hepatitis B Surface Antigen (HBsAg) Rapid Card"
+  },
+  {
+    "code": "T919",
+    "test_name": "Hep-B PCR-Hepatitis B Viral Load"
+  },
+  {
+    "code": "T6259",
+    "test_name": "-HEPATITIS B VIRUS (HBV) QUANTITATIVE"
+  },
+  {
+    "code": "T5055",
+    "test_name": "HCV-Hepatitis C Antibody (HCV)"
+  },
+  {
+    "code": "T6964",
+    "test_name": "HCV Elisa-Hepatitis C Antibody (HCV) - ELISA"
+  },
+  {
+    "code": "T5362",
+    "test_name": "HCVAb Rap-Hepatitis C Antibody (HCV) - Rapid Card"
+  },
+  {
+    "code": "T7034",
+    "test_name": "HCV IgM-HEPATITIS C VIRUS (HCV ANTIBODY)-IGM"
+  },
+  {
+    "code": "T2456",
+    "test_name": "-HEPATITIS C VIRUS RNA QUANTITATIVE"
+  },
+  {
+    "code": "T5068",
+    "test_name": "-Hepatitis E virus-IgM Antibodies (HEV IgM)"
+  },
+  {
+    "code": "P12",
+    "test_name": "-Hepatitis Panel"
+  },
+  {
+    "code": "T5729",
+    "test_name": "-HERPES SIMPLEX VIRUS ( HSV)1+2 ANTIBODIES PANEL"
+  },
+  {
+    "code": "T774",
+    "test_name": "HSV (IgM)-HERPES SIMPLEX VIRUS I (HSV)-IgM"
+  },
+  {
+    "code": "T568",
+    "test_name": "HSV (IgG)-HERPES SIMPLEX VIRUS I (HSV)IgG"
+  },
+  {
+    "code": "T2134",
+    "test_name": "HSV (IgG)-HERPES SIMPLEX VIRUS II (HSV) IgG"
+  },
+  {
+    "code": "T2133",
+    "test_name": "HSV (IgM)-HERPES SIMPLEX VIRUS II (HSV)-IgM"
+  },
+  {
+    "code": "T7041",
+    "test_name": "-Histo- Appendix, GB, Ut&Cx only."
+  },
+  {
+    "code": "T7042",
+    "test_name": "-Histopathology: Prostatic Chips"
+  },
+  {
+    "code": "T1301",
+    "test_name": "HIVWB-HIV (W.B)"
+  },
+  {
+    "code": "T87",
+    "test_name": "HIV-HIV 1 & 2"
+  },
+  {
+    "code": "T5214",
+    "test_name": "HIV-HIV 1 & 2 ANTIBODIES"
+  },
+  {
+    "code": "T593",
+    "test_name": "HIV-ELISA-HIV I & II (ELISA)"
+  },
+  {
+    "code": "T3318",
+    "test_name": "HIV ELISA-HIV I & II Antibodies Screening - ELISA"
+  },
+  {
+    "code": "T2346",
+    "test_name": "HIV-VL-HIV Viral Load"
+  },
+  {
+    "code": "T6465",
+    "test_name": "HIV1&2Ab/g-HIV-1&2 Ab/Ag Screening - Rapid"
+  },
+  {
+    "code": "T6528",
+    "test_name": "HLAB27RT-HLA B-27 Qualitative Assay (RT-PCR)"
+  },
+  {
+    "code": "T596",
+    "test_name": "HLAB27-HLAB 27"
+  },
+  {
+    "code": "T5836",
+    "test_name": "-HOMA-IR ; INSULIN RESISTANCE INDEX"
+  },
+  {
+    "code": "T5878",
+    "test_name": "-HOME COLLECTION"
+  },
+  {
+    "code": "T4937",
+    "test_name": "-home collection"
+  },
+  {
+    "code": "T3236",
+    "test_name": "HOMOCY-HOMOCYSTEINE"
+  },
+  {
+    "code": "T542",
+    "test_name": "HOMOCY-HOMOCYSTEINE"
+  },
+  {
+    "code": "T914",
+    "test_name": "HSCRP-HS C R P"
+  },
+  {
+    "code": "T849",
+    "test_name": "GH-Human Growth Hormone"
+  },
+  {
+    "code": "T3536",
+    "test_name": "HGH-Human Growth Hormone(HGH)"
+  },
+  {
+    "code": "T3323",
+    "test_name": "HLAB27-Human Leukocyte Antigen B27 (HLA-B27)"
+  },
+  {
+    "code": "T5843",
+    "test_name": "-HUMAN PAPILLOMA VIRUS (HPV) RT-PCR"
+  },
+  {
+    "code": "T2111",
+    "test_name": "HY-CYT-HYDROCELE FLUID FOR CYTOLOGY"
+  },
+  {
+    "code": "P7",
+    "test_name": "-HYPERTENSION PROFILE"
+  },
+  {
+    "code": "T861",
+    "test_name": "ICT-MP-I C T For Microfilaria"
+  },
+  {
+    "code": "T3554",
+    "test_name": "ICT-MP-I C T For Microfilaria"
+  },
+  {
+    "code": "T3244",
+    "test_name": "-I.N.R"
+  },
+  {
+    "code": "T3547",
+    "test_name": "IgE (T)-IgE Total - Serum"
+  },
+  {
+    "code": "T2137",
+    "test_name": "IL-6-IL-6 (INTERLUKIN)"
+  },
+  {
+    "code": "T3062",
+    "test_name": "IgA-IMMUNOGLOBULIN A (IgA)"
+  },
+  {
+    "code": "T787",
+    "test_name": "IgA-IMMUNOGLOBULIN A (IgA)"
+  },
+  {
+    "code": "T916",
+    "test_name": "IgG-IMMUNOGLOBULIN G (IgG)"
+  },
+  {
+    "code": "T3637",
+    "test_name": "IgG-IMMUNOGLOBULIN G (IgG)"
+  },
+  {
+    "code": "T3241",
+    "test_name": "-Index"
+  },
+  {
+    "code": "T351",
+    "test_name": "-Indirect Bilirubin"
+  },
+  {
+    "code": "T177",
+    "test_name": "ICT-Indirect Coombs Test"
+  },
+  {
+    "code": "T5225",
+    "test_name": "ICT-Indirect Coombs Test (ICT)"
+  },
+  {
+    "code": "F68",
+    "test_name": "-INFERTILITY - 4"
+  },
+  {
+    "code": "F67",
+    "test_name": "-INFERTILITY PROFILE"
+  },
+  {
+    "code": "F70",
+    "test_name": "-INFERTILITY- 3"
+  },
+  {
+    "code": "T3102",
+    "test_name": "INHIB-A-INHIBIN A"
+  },
+  {
+    "code": "T800",
+    "test_name": "INHIB-A-INHIBIN A"
+  },
+  {
+    "code": "T156",
+    "test_name": "PHOS-INORGANIC PHOSPHORUS"
+  },
+  {
+    "code": "T2865",
+    "test_name": "PHOS-INORGANIC PHOSPHORUS"
+  },
+  {
+    "code": "T3501",
+    "test_name": "INS-F-INSULIN (FASTING)"
+  },
+  {
+    "code": "T811",
+    "test_name": "insulin-INSULINE (FASTING)"
+  },
+  {
+    "code": "T799",
+    "test_name": "Insulin-INSULINE (PP)"
+  },
+  {
+    "code": "T5981",
+    "test_name": "INS-PP-INSULINE (PP)"
+  },
+  {
+    "code": "T842",
+    "test_name": "PTH-INTACT PARATHYROID HORMONE (PTH)"
+  },
+  {
+    "code": "T5375",
+    "test_name": "-Interleukin-6"
+  },
+  {
+    "code": "F87",
+    "test_name": "-IRON PROFILE"
+  },
+  {
+    "code": "T3269",
+    "test_name": "-IRON STUDY"
+  },
+  {
+    "code": "T6428",
+    "test_name": "IRON (Fe)-IRON TOTAL - Serum"
+  },
+  {
+    "code": "T3243",
+    "test_name": "-ISI"
+  },
+  {
+    "code": "T4939",
+    "test_name": "-jytgygukgy"
+  },
+  {
+    "code": "T1149",
+    "test_name": "KOH-K O H Stain"
+  },
+  {
+    "code": "T3796",
+    "test_name": "KOH-K O H Stain"
+  },
+  {
+    "code": "T915",
+    "test_name": "KARYO-KARYOTYPING"
+  },
+  {
+    "code": "T3636",
+    "test_name": "KARYO-KARYOTYPING"
+  },
+  {
+    "code": "F48",
+    "test_name": "-KFT (KIDNEY FUNCTION TEST)"
+  },
+  {
+    "code": "T943",
+    "test_name": "LE-L E CELL"
+  },
+  {
+    "code": "T3659",
+    "test_name": "LE-L E CELL"
+  },
+  {
+    "code": "T113",
+    "test_name": "-L.D.L. / H.D.L. Ratio"
+  },
+  {
+    "code": "T2499",
+    "test_name": "-LBS"
+  },
+  {
+    "code": "T2839",
+    "test_name": "LDH-LDH (Lactate Dehgdrogenase)"
+  },
+  {
+    "code": "T127",
+    "test_name": "LDH-LDH (Lactate Dehydrogenase)"
+  },
+  {
+    "code": "T2678",
+    "test_name": "LDL-LDL CHOLESTEROL"
+  },
+  {
+    "code": "T6500",
+    "test_name": "LEP-Leptin (L)"
+  },
+  {
+    "code": "T1559",
+    "test_name": "7024-Levofloxacin (QB)"
+  },
+  {
+    "code": "T3349",
+    "test_name": "LH-LH (Luteinizing Hormone)"
+  },
+  {
+    "code": "T627",
+    "test_name": "hLH-LH(Luteinizing Hormone)"
+  },
+  {
+    "code": "T2764",
+    "test_name": "-LH:FSH Ratio"
+  },
+  {
+    "code": "T1560",
+    "test_name": "-Linezolid (LZ)"
+  },
+  {
+    "code": "F23",
+    "test_name": "-LIPID PROFILE"
+  },
+  {
+    "code": "T5272",
+    "test_name": "LPT-LIPID PROFILE (LPT)"
+  },
+  {
+    "code": "T2394",
+    "test_name": "-LIPID PROFILE BASIC"
+  },
+  {
+    "code": "T6493",
+    "test_name": "Li-Lithium (Li) - Serum"
+  },
+  {
+    "code": "T2792",
+    "test_name": "LFT -LIVER FUNCTION TEST (LFT)"
+  },
+  {
+    "code": "T5795",
+    "test_name": "-LOYALTY PRIVILEGE CARD"
+  },
+  {
+    "code": "T2500",
+    "test_name": "-LPB"
+  },
+  {
+    "code": "T2503",
+    "test_name": "-LPID PROFILE"
+  },
+  {
+    "code": "T912",
+    "test_name": "L A-Lupus Anticoagulant"
+  },
+  {
+    "code": "T3627",
+    "test_name": "LUPUS-LUPUS ANTICOAGULANT"
+  },
+  {
+    "code": "T4926",
+    "test_name": "-Lymphocyte - Monocyte Ratio (LMR)"
+  },
+  {
+    "code": "T3483",
+    "test_name": "-Macrophages"
+  },
+  {
+    "code": "T5071",
+    "test_name": "-MAGNESIUM"
+  },
+  {
+    "code": "T142",
+    "test_name": "MAG-Magnesium"
+  },
+  {
+    "code": "T3759",
+    "test_name": "PARACHECK-MALARIA  P.VIVAX AND P.FALCIPARUM ANTIGEN (MP)"
+  },
+  {
+    "code": "T5092",
+    "test_name": "MP AG-MALARIA ANTIGEN DETECTION (PF & PV) - RAPID"
+  },
+  {
+    "code": "T904",
+    "test_name": "MP-Malarial Parasites (PBS)"
+  },
+  {
+    "code": "T6443",
+    "test_name": "MP (Smear)-Malarial Parasites Smear (MP Smear)"
+  },
+  {
+    "code": "T40",
+    "test_name": "MTX-MANTOUX TEST  (05 TU)"
+  },
+  {
+    "code": "T105",
+    "test_name": "MTX-MANTOUX TEST  (10 TU)"
+  },
+  {
+    "code": "T5429",
+    "test_name": "MPV-Mean Platelet Volume (MPV)"
+  },
+  {
+    "code": "T7071",
+    "test_name": "-Medical Report"
+  },
+  {
+    "code": "T5784",
+    "test_name": "-Mentzer Index"
+  },
+  {
+    "code": "T4713",
+    "test_name": "-Meropenam (MP)"
+  },
+  {
+    "code": "T5779",
+    "test_name": "-Method :"
+  },
+  {
+    "code": "T687",
+    "test_name": "MICRAL-MICRAL (Microalbumin)"
+  },
+  {
+    "code": "T3229",
+    "test_name": "MICRAL-MICRAL (Microalbumin)"
+  },
+  {
+    "code": "T124",
+    "test_name": "MF-Micro Filaria (PBS)"
+  },
+  {
+    "code": "T6495",
+    "test_name": "-MICROALBUMIN (SPOT URINE)"
+  },
+  {
+    "code": "T3557",
+    "test_name": "-MICROFILARIA  IgG/IgM RAPID CARD TEST"
+  },
+  {
+    "code": "T2095",
+    "test_name": "-Microscopical Examination"
+  },
+  {
+    "code": "T5775",
+    "test_name": "-MICROSCOPY EXAMINATION :"
+  },
+  {
+    "code": "T1561",
+    "test_name": "-Moxifloxacin (MF)(ML)"
+  },
+  {
+    "code": "T7084",
+    "test_name": "-MRI PELVIS"
+  },
+  {
+    "code": "T3543",
+    "test_name": "TBPCR-MTB DNA PCR (Qualitative) BLOOD"
+  },
+  {
+    "code": "T855",
+    "test_name": "TBPCR-MTB Real Time P C R"
+  },
+  {
+    "code": "T2660",
+    "test_name": "GENEXPERT-MTB With Rifampicin Resistance - GeneXpert"
+  },
+  {
+    "code": "T2079",
+    "test_name": "-Myeloblast and Monocytoid Cells"
+  },
+  {
+    "code": "T2350",
+    "test_name": "MyoGLB-MYOGLOBIN"
+  },
+  {
+    "code": "T3840",
+    "test_name": "-n/a"
+  },
+  {
+    "code": "T1891",
+    "test_name": "-Nalidixic Acid (NA)"
+  },
+  {
+    "code": "T4712",
+    "test_name": "-Nalidixic Acid (NA)"
+  },
+  {
+    "code": "T1440",
+    "test_name": "-Nalidixic Acid (NA)"
+  },
+  {
+    "code": "T1563",
+    "test_name": "-Nalidixic Acid (NA)"
+  },
+  {
+    "code": "T1893",
+    "test_name": "-Netillin (NET)"
+  },
+  {
+    "code": "T1647",
+    "test_name": "-Netillin (NET)"
+  },
+  {
+    "code": "T4710",
+    "test_name": "-Netillin (NET)"
+  },
+  {
+    "code": "T1442",
+    "test_name": "-Netillin (NET)"
+  },
+  {
+    "code": "T1565",
+    "test_name": "-Netillin (NET)"
+  },
+  {
+    "code": "T1892",
+    "test_name": "-Netilmycin (NT)"
+  },
+  {
+    "code": "T4711",
+    "test_name": "-Netilmycin (NT)"
+  },
+  {
+    "code": "T1441",
+    "test_name": "-Netilmycin (NT)"
+  },
+  {
+    "code": "T1564",
+    "test_name": "-Netilmycin (NT)"
+  },
+  {
+    "code": "T4925",
+    "test_name": "-Neutrophil - Lymphocyte Ratio (NLR)"
+  },
+  {
+    "code": "T3128",
+    "test_name": "-Neutrophils"
+  },
+  {
+    "code": "T403",
+    "test_name": "-Neutrophils"
+  },
+  {
+    "code": "T6399",
+    "test_name": "-NON-HDL CHOLESTEROL"
+  },
+  {
+    "code": "T6421",
+    "test_name": "-NON-HDL CHOLESTEROL"
+  },
+  {
+    "code": "T1484",
+    "test_name": "-Norfloxacin (NX)"
+  },
+  {
+    "code": "T1648",
+    "test_name": "-Norfloxacin (NX)"
+  },
+  {
+    "code": "T4708",
+    "test_name": "-Norfloxacin (NX)"
+  },
+  {
+    "code": "T1443",
+    "test_name": "-Norfloxacin (NX)"
+  },
+  {
+    "code": "T1566",
+    "test_name": "-Norfloxacin (NX)"
+  },
+  {
+    "code": "T1894",
+    "test_name": "-Norfloxacin (NX)"
+  },
+  {
+    "code": "T1446",
+    "test_name": "-Note:"
+  },
+  {
+    "code": "T5036",
+    "test_name": "NTPro BNP-NT-Pro BNP (N-Terminal Pro B Type Natriuretic Peptide)"
+  },
+  {
+    "code": "T2053",
+    "test_name": "BnP-NT-Pro-BNP"
+  },
+  {
+    "code": "T1895",
+    "test_name": "-Ofloxacin (ZN)"
+  },
+  {
+    "code": "T1485",
+    "test_name": "-Ofloxacin (ZN)"
+  },
+  {
+    "code": "T1649",
+    "test_name": "-Ofloxacin (ZN)"
+  },
+  {
+    "code": "T4709",
+    "test_name": "-Ofloxacin (ZN)"
+  },
+  {
+    "code": "T1444",
+    "test_name": "-Ofloxacin (ZN)"
+  },
+  {
+    "code": "T1567",
+    "test_name": "-Ofloxacin (ZN)"
+  },
+  {
+    "code": "T653",
+    "test_name": "OPT-Optimal Test"
+  },
+  {
+    "code": "T3366",
+    "test_name": "OPT-Optimal Test"
+  },
+  {
+    "code": "T5073",
+    "test_name": "OGTT-ORAL GLUCOSE TOLERANCE TEST (OGTT)"
+  },
+  {
+    "code": "T4908",
+    "test_name": "-Organism isolated:"
+  },
+  {
+    "code": "T5446",
+    "test_name": "-Other"
+  },
+  {
+    "code": "T696",
+    "test_name": "-Other"
+  },
+  {
+    "code": "T3484",
+    "test_name": "-Others"
+  },
+  {
+    "code": "T1265",
+    "test_name": "BIOP-LARG-PAP SEMER"
+  },
+  {
+    "code": "T2994",
+    "test_name": "PAP-PAP SMEAR EXAMINATION"
+  },
+  {
+    "code": "T1286",
+    "test_name": "PAP-PAP SMEAR EXAMINATION"
+  },
+  {
+    "code": "T2506",
+    "test_name": "-Pap Smear Sampling Procedure"
+  },
+  {
+    "code": "T1310",
+    "test_name": "PARACHECK-Paracheck For Malaria"
+  },
+  {
+    "code": "T3764",
+    "test_name": "PARAHIT-Parahit Total For Malari"
+  },
+  {
+    "code": "T1307",
+    "test_name": "PARAHIT-Parahit Total For Malaria"
+  },
+  {
+    "code": "T3252",
+    "test_name": "PTH-Parathyroid Hormone (PTH)"
+  },
+  {
+    "code": "T6523",
+    "test_name": "iPTH-Parathyroid Hormone (PTH), Intact"
+  },
+  {
+    "code": "T2432",
+    "test_name": "-PCN"
+  },
+  {
+    "code": "T5963",
+    "test_name": "-PCOD Profile"
+  },
+  {
+    "code": "T141",
+    "test_name": "PCV-PCV (Haematocrit)"
+  },
+  {
+    "code": "T2852",
+    "test_name": "PCV-PCV (Haematocrit)"
+  },
+  {
+    "code": "T4690",
+    "test_name": "PERI_EX-PERICARDIAL FLUID EXAMINATION"
+  },
+  {
+    "code": "T1898",
+    "test_name": "PERI_EX-PERICARDIAL FLUID EXAMINATION"
+  },
+  {
+    "code": "T4463",
+    "test_name": "PERICARDIA-PERICARDIAL FLUID FOR CULTURE & SENSITIVITY"
+  },
+  {
+    "code": "T1693",
+    "test_name": "PERICARDIA-PERICARDIAL FLUID FOR CULTURE & SENSITIVITY"
+  },
+  {
+    "code": "T1964",
+    "test_name": "PERICAR-Cy-PERICARDIAL FLUID FOR CYTOLOGY"
+  },
+  {
+    "code": "T4790",
+    "test_name": "PERICAR-Cy-PERICARDIAL FLUID FOR CYTOLOGY"
+  },
+  {
+    "code": "T6151",
+    "test_name": "PBF-PERIPHERAL BLOOD FILM"
+  },
+  {
+    "code": "T2543",
+    "test_name": "P.S.-Peripheral Smear Examination (PS)"
+  },
+  {
+    "code": "T4988",
+    "test_name": "PSMP-PERIPHERAL SMEAR FOR MALARIA PARASITE"
+  },
+  {
+    "code": "T2815",
+    "test_name": "MF-PERIPHERAL SMEAR FOR MICRO FILARIA"
+  },
+  {
+    "code": "T2215",
+    "test_name": "PFE-PERITONEAL FLUID EXAMINATION"
+  },
+  {
+    "code": "T2232",
+    "test_name": "PERI-AFB-PERITONEAL FLUID FOR A.F.B."
+  },
+  {
+    "code": "T2296",
+    "test_name": "PERI-F C/S-PERITONEAL FLUID FOR CULTURE & SENSITIVITY"
+  },
+  {
+    "code": "T5005",
+    "test_name": "-PHOSPHORUS"
+  },
+  {
+    "code": "T5933",
+    "test_name": "-PHYSICAL MEASURMENT"
+  },
+  {
+    "code": "T1486",
+    "test_name": "-Pipracillin/Tazobactam (P/T)"
+  },
+  {
+    "code": "T4707",
+    "test_name": "-Pipracillin/Tazobactam (P/T)"
+  },
+  {
+    "code": "T1650",
+    "test_name": "-Pipracillin/Tazobactam (P/T)"
+  },
+  {
+    "code": "T1445",
+    "test_name": "-Pipracillin/Tazobactam (P/T)"
+  },
+  {
+    "code": "T1896",
+    "test_name": "-Pipracillin/Tazobactam (P/T)"
+  },
+  {
+    "code": "T1568",
+    "test_name": "-Pipracillin/Tazobactam (P/T)"
+  },
+  {
+    "code": "T2387",
+    "test_name": "BSAD-Plasma Glucose (After Dinner))"
+  },
+  {
+    "code": "T2389",
+    "test_name": "BSAL-Plasma Glucose (After Lunch)"
+  },
+  {
+    "code": "T2386",
+    "test_name": "BSBD-Plasma Glucose (Befor Dinner)"
+  },
+  {
+    "code": "T2388",
+    "test_name": "BSBL-Plasma Glucose (Befor Lunch)"
+  },
+  {
+    "code": "T1240",
+    "test_name": "BS(F)(PP)-PLASMA GLUCOSE (F) & (PP)"
+  },
+  {
+    "code": "T33",
+    "test_name": "BSF-Plasma Glucose (Fasting)"
+  },
+  {
+    "code": "T16",
+    "test_name": "BSPP-Plasma Glucose (P P)"
+  },
+  {
+    "code": "T2582",
+    "test_name": "BSPP-Plasma Glucose (PP)"
+  },
+  {
+    "code": "T35",
+    "test_name": "BSR-Plasma Glucose (Random)"
+  },
+  {
+    "code": "T3392",
+    "test_name": "Glucose F-Plasma Glucose Fasting"
+  },
+  {
+    "code": "T4927",
+    "test_name": "-Platelet - Lymphocyte Ratio (PLR)"
+  },
+  {
+    "code": "T2683",
+    "test_name": "PLT-PLATELET COUNT!"
+  },
+  {
+    "code": "T5746",
+    "test_name": "PDW-Platelet Distribution Width(PDW)"
+  },
+  {
+    "code": "T5128",
+    "test_name": "-Platelet Indices"
+  },
+  {
+    "code": "T2372",
+    "test_name": "-PLATELET PARAMETERS"
+  },
+  {
+    "code": "T5986",
+    "test_name": "-Plateletcrit(PCT)"
+  },
+  {
+    "code": "T5439",
+    "test_name": "PLT-Platelets Count"
+  },
+  {
+    "code": "T3291",
+    "test_name": "-PLATELETS INDICES"
+  },
+  {
+    "code": "T5438",
+    "test_name": "-PLATELETS INDICES"
+  },
+  {
+    "code": "T640",
+    "test_name": "J0PLT-PLATLETS COUNT"
+  },
+  {
+    "code": "T1190",
+    "test_name": "-PLEURAL FLUID EXAMINATION"
+  },
+  {
+    "code": "T2355",
+    "test_name": "P-AFB-PLEURAL FLUID FOR A.F.B."
+  },
+  {
+    "code": "T1652",
+    "test_name": "PLURAL C/S-PLEURAL FLUID FOR CULTURE & SENSITIVITY"
+  },
+  {
+    "code": "T4628",
+    "test_name": "PLURAL-PLURAL FLUID EXAMINATION"
+  },
+  {
+    "code": "T4382",
+    "test_name": "PLURAL C/S-PLURAL FLUID FOR CULTURE & SENSITIVITY"
+  },
+  {
+    "code": "T1946",
+    "test_name": "PLU-CYTO-PLURAL FLUID FOR CYTOLOGY"
+  },
+  {
+    "code": "T4756",
+    "test_name": "PLU-CYTO-PLURAL FLUID FOR CYTOLOGY"
+  },
+  {
+    "code": "P3",
+    "test_name": "-Pre Operative Profile"
+  },
+  {
+    "code": "T815",
+    "test_name": "PAPP-A-PREGNANCY ASSOCIATED PLASMA PROTEIN A"
+  },
+  {
+    "code": "T3504",
+    "test_name": "PAPP-A-PREGNANCY ASSOCIATED PLASMA PROTEIN A"
+  },
+  {
+    "code": "T6089",
+    "test_name": "-Primary Sample Type:EDTA plasma"
+  },
+  {
+    "code": "T2138",
+    "test_name": "PCT-Procalcitonin"
+  },
+  {
+    "code": "T775",
+    "test_name": "Prog-Progesteron"
+  },
+  {
+    "code": "T3493",
+    "test_name": "PROG-PROGESTERONE"
+  },
+  {
+    "code": "T2631",
+    "test_name": "PRL-PROLACTIN (PRL)"
+  },
+  {
+    "code": "T29",
+    "test_name": "PRL-PROLACTIN (PRL)"
+  },
+  {
+    "code": "T5423",
+    "test_name": "-Promyelocytes"
+  },
+  {
+    "code": "T6282",
+    "test_name": "PSA-F-Prostatic Specific Antigen (PSA) - Free"
+  },
+  {
+    "code": "T3223",
+    "test_name": "PSA.T-Prostatic Specific Antigen (PSA) - Total"
+  },
+  {
+    "code": "T538",
+    "test_name": "PSA-Hyb-Prostatic Specific Antigen(PSA)"
+  },
+  {
+    "code": "T6320",
+    "test_name": "UPCR-PROTEIN CREATININE RATIO - URINE (SPOT)"
+  },
+  {
+    "code": "T933",
+    "test_name": "Prot. Elec-Protein Electrophoresis"
+  },
+  {
+    "code": "T3644",
+    "test_name": "Prot. Elec-Protein Electrophoresis"
+  },
+  {
+    "code": "T7002",
+    "test_name": "SPE-PROTEIN ELECTROPHORESIS, SERUM (SPE)"
+  },
+  {
+    "code": "T2670",
+    "test_name": "PT-INR-PROTHROMBIN TIME & INR"
+  },
+  {
+    "code": "T52",
+    "test_name": "PT-INR-PROTHROMBIN TIME WITH INR"
+  },
+  {
+    "code": "T4945",
+    "test_name": "-PRP PROCEDURE"
+  },
+  {
+    "code": "T5203",
+    "test_name": "PT INR-PT(Prothrombin Time) With INR*"
+  },
+  {
+    "code": "T2404",
+    "test_name": "-PTBD"
+  },
+  {
+    "code": "T109",
+    "test_name": "PUS-AFB-Pus for AFB"
+  },
+  {
+    "code": "T2778",
+    "test_name": "PUS-AFB-PUS FOR AFB"
+  },
+  {
+    "code": "T1529",
+    "test_name": "PUSC/S-PUS FOR CULTURE & SENSITIVITY"
+  },
+  {
+    "code": "T4139",
+    "test_name": "PUSC/S-PUS FOR CULTURE & SENSITIVITY"
+  },
+  {
+    "code": "F63",
+    "test_name": "-Quadruple Marker"
+  },
+  {
+    "code": "T6337",
+    "test_name": "QuadM-Quadruple Marker, Serum"
+  },
+  {
+    "code": "T5112",
+    "test_name": "-R.B.C. INDICES"
+  },
+  {
+    "code": "T5428",
+    "test_name": "-R.B.C. INDICES"
+  },
+  {
+    "code": "T5356",
+    "test_name": "-RA FACTOR (QUALITATIVE)"
+  },
+  {
+    "code": "T2724",
+    "test_name": "RAF-RA FACTOR (QUANTITATIVE)"
+  },
+  {
+    "code": "T2390",
+    "test_name": "RA-RA FACTOR (SALIDE)"
+  },
+  {
+    "code": "T89",
+    "test_name": "RA-RA TEST (TURBIDOMETRIC)"
+  },
+  {
+    "code": "T5085",
+    "test_name": "GLHK-RANDAM BLOOD SUGAR *"
+  },
+  {
+    "code": "T6461",
+    "test_name": "RBS-RANDOM BLOOD SUGAR - (RBS)"
+  },
+  {
+    "code": "T23",
+    "test_name": "MAL-Rapid Test For Malaria"
+  },
+  {
+    "code": "T863",
+    "test_name": "-Rapid Test For Microfilaria"
+  },
+  {
+    "code": "T2687",
+    "test_name": "RBC-RBC COUNT (Red Blood Cells)"
+  },
+  {
+    "code": "T68",
+    "test_name": "RBC-RBC COUNT (Red Blood Cells)"
+  },
+  {
+    "code": "T2358",
+    "test_name": "-RBC PARAMETERS"
+  },
+  {
+    "code": "T3482",
+    "test_name": "-Reactive Mesothelial Cells"
+  },
+  {
+    "code": "T5719",
+    "test_name": "MTB-Real time PCR for Mycobacterium TB Complex"
+  },
+  {
+    "code": "T2635",
+    "test_name": "Hep-B PCR-Real time PCR test for Hepatitis B DNA Viral Load"
+  },
+  {
+    "code": "T5430",
+    "test_name": "-Red Cell Distribution Width (RDW)-SD"
+  },
+  {
+    "code": "T6392",
+    "test_name": "RDW-SD-RED DISTRIBUTION WIDTH-SD"
+  },
+  {
+    "code": "T5474",
+    "test_name": "RFT-RENAL FUNCTION TEST(RFT)"
+  },
+  {
+    "code": "T5737",
+    "test_name": "-Respiratory Viruses Rapid Antigen Test"
+  },
+  {
+    "code": "T2711",
+    "test_name": "RETIC-RETICULOCYTE COUNT"
+  },
+  {
+    "code": "T76",
+    "test_name": "RETIC-Reticulocyte Count"
+  },
+  {
+    "code": "F27",
+    "test_name": "-RFT (RENAL FUNCTION TEST)"
+  },
+  {
+    "code": "T569",
+    "test_name": "RUB-IgG-RUBELLA  IgG"
+  },
+  {
+    "code": "T729",
+    "test_name": "RUB-IgM-RUBELLA  IgM"
+  },
+  {
+    "code": "T3233",
+    "test_name": "-RUBELLA (GERMAN MEASLES)ANTIBODIES PANEL IgG & IgM"
+  },
+  {
+    "code": "T5954",
+    "test_name": "-S. Typhi/ Paratyphi Antigen (Ag) Test"
+  },
+  {
+    "code": "T3512",
+    "test_name": "TyphiIgG/M-Salmonella Typhi Dot Combo IgG/IgM Test"
+  },
+  {
+    "code": "T6488",
+    "test_name": "Typhi IgG-Salmonella Typhi IgG (Typhi Dot) Test"
+  },
+  {
+    "code": "T6484",
+    "test_name": "Typhi IgM-Salmonella Typhi IgM (Typhi Dot) Test"
+  },
+  {
+    "code": "T2119",
+    "test_name": "-SAMPLE COLLECTION CHARGE"
+  },
+  {
+    "code": "T5221",
+    "test_name": "SARS-IgG-SARS-COV-2 (COVID-19) IgG ANTIBODY"
+  },
+  {
+    "code": "T5763",
+    "test_name": "-SARS-COV-2 (COVID-19) IgM ANTIBODY"
+  },
+  {
+    "code": "T6252",
+    "test_name": "-SCREENING PANEL QUANTITATIVE"
+  },
+  {
+    "code": "T223",
+    "test_name": "HSF-SEMEN ANALYSIS"
+  },
+  {
+    "code": "T2952",
+    "test_name": "SA-SEMEN ANALYSIS (SEMINOGRAM)"
+  },
+  {
+    "code": "T1857",
+    "test_name": "HSF C/S-SEMEN CULTURE & SENSITIVITY"
+  },
+  {
+    "code": "T3899",
+    "test_name": "HSF C/S-SEMEN CULTURE & SENSITIVITY"
+  },
+  {
+    "code": "T5503",
+    "test_name": "Fructose-Semen Fructose, Qualitative"
+  },
+  {
+    "code": "T49",
+    "test_name": "ALB-Serum Albumin"
+  },
+  {
+    "code": "T2633",
+    "test_name": "AMY-Serum Amylase"
+  },
+  {
+    "code": "T30",
+    "test_name": "AMY-Serum Amylase"
+  },
+  {
+    "code": "T918",
+    "test_name": "BILE ACID-SERUM BILE ACID"
+  },
+  {
+    "code": "T3770",
+    "test_name": "BILI T+D-SERUM BILIRUBIN"
+  },
+  {
+    "code": "T6146",
+    "test_name": "-SERUM BILIRUBIN (TOTAL)"
+  },
+  {
+    "code": "T43",
+    "test_name": "CLOR-Serum Chloride(Cl-)"
+  },
+  {
+    "code": "T857",
+    "test_name": "CORTI-Serum Cortisol"
+  },
+  {
+    "code": "T2646",
+    "test_name": "CREAT-SERUM CREATININE"
+  },
+  {
+    "code": "T38",
+    "test_name": "Creat-Serum Creatinine"
+  },
+  {
+    "code": "T4999",
+    "test_name": "CREAT-SERUM CREATININE"
+  },
+  {
+    "code": "T11",
+    "test_name": "ELE-SERUM ELECTROLYTE"
+  },
+  {
+    "code": "T54",
+    "test_name": "HDL-Serum H.D.L. -  Cholesterol"
+  },
+  {
+    "code": "T856",
+    "test_name": "IgE (T)-Serum IgE (Total)"
+  },
+  {
+    "code": "T167",
+    "test_name": "IRON-SERUM IRON"
+  },
+  {
+    "code": "T139",
+    "test_name": "LIPASE-Serum Lipase"
+  },
+  {
+    "code": "T2850",
+    "test_name": "Lipase-Serum Lipase"
+  },
+  {
+    "code": "T183",
+    "test_name": "LITH-Serum Lithium"
+  },
+  {
+    "code": "T5247",
+    "test_name": "K-SERUM POTASSIUM"
+  },
+  {
+    "code": "T5046",
+    "test_name": "-SERUM PROCALCITONIN"
+  },
+  {
+    "code": "T45",
+    "test_name": "GOT-Serum SGOT(AST)"
+  },
+  {
+    "code": "T44",
+    "test_name": "GPT-Serum SGPT(ALT)"
+  },
+  {
+    "code": "T5658",
+    "test_name": "-SERUM SODIUM"
+  },
+  {
+    "code": "T5246",
+    "test_name": "NA-SERUM SODIUM"
+  },
+  {
+    "code": "T39",
+    "test_name": "CA-Serum Total Calcium"
+  },
+  {
+    "code": "T10",
+    "test_name": "CHOL-Serum Total Cholesterol"
+  },
+  {
+    "code": "T1313",
+    "test_name": "TPR-SERUM TOTAL PROTEIN"
+  },
+  {
+    "code": "T4929",
+    "test_name": "TG-SERUM TRIGLYCERIDES"
+  },
+  {
+    "code": "T53",
+    "test_name": "TG-Serum Triglycerides"
+  },
+  {
+    "code": "T62",
+    "test_name": "UA-Serum Uric Acid"
+  },
+  {
+    "code": "T5014",
+    "test_name": "-Serum, Urease, GLDH"
+  },
+  {
+    "code": "T2659",
+    "test_name": "SGOT-SGOT(AST)"
+  },
+  {
+    "code": "T4938",
+    "test_name": "-SGOT/SGPT Ratio"
+  },
+  {
+    "code": "T5202",
+    "test_name": "SGPT-SGPT (ALT)"
+  },
+  {
+    "code": "T2658",
+    "test_name": "SGPT-SGPT (ALT)"
+  },
+  {
+    "code": "T942",
+    "test_name": "SICK-SICKLING TEST"
+  },
+  {
+    "code": "T3657",
+    "test_name": "SICK-SICKLING TEST"
+  },
+  {
+    "code": "T2427",
+    "test_name": "-Single knee"
+  },
+  {
+    "code": "T2428",
+    "test_name": "-Single knee"
+  },
+  {
+    "code": "T205",
+    "test_name": "SKIN-SKIN FOR FUNGUS"
+  },
+  {
+    "code": "T2935",
+    "test_name": "SKIN-SKIN SCRAP FOR CYTOLOGY"
+  },
+  {
+    "code": "T212",
+    "test_name": "SKIN-SKIN SCRAP FOR CYTOLOGY"
+  },
+  {
+    "code": "T714",
+    "test_name": "SKIN SCRAP-SKIN SCRAPING FOR  FUNGAS"
+  },
+  {
+    "code": "T2884",
+    "test_name": "SKIN SCRAP-SKIN SCRAPING FOR KOH"
+  },
+  {
+    "code": "T1188",
+    "test_name": "SKINLAP-Skin Smear For Microbactrium Leprae"
+  },
+  {
+    "code": "T1234",
+    "test_name": "SKIN-Skin Smear For Z N Stain"
+  },
+  {
+    "code": "T3892",
+    "test_name": "SKIN-Skin Smear For Z N Stain"
+  },
+  {
+    "code": "T5378",
+    "test_name": "Slit Skin-SLIT SKIN SMEAR TEST"
+  },
+  {
+    "code": "T1487",
+    "test_name": "-Sparfloxacin (SO)(DC)**"
+  },
+  {
+    "code": "T4706",
+    "test_name": "-Sparfloxacin (SO)(DC)**"
+  },
+  {
+    "code": "T1897",
+    "test_name": "-Sparfloxacin (SO)(DC)**"
+  },
+  {
+    "code": "T6142",
+    "test_name": "-SPECIMEN"
+  },
+  {
+    "code": "T3331",
+    "test_name": "-SPERM MORPHOLOGY"
+  },
+  {
+    "code": "T2489",
+    "test_name": "SPU-sputam demo"
+  },
+  {
+    "code": "T708",
+    "test_name": "GRAM-SPUTUM  FOR GRAM'S STAIN"
+  },
+  {
+    "code": "T5063",
+    "test_name": "-SPUTUM  FOR GRAM'S STAIN"
+  },
+  {
+    "code": "T3799",
+    "test_name": "SPUTUM C/S-SPUTUM CULTURE & SENSITIVITY"
+  },
+  {
+    "code": "T1324",
+    "test_name": "SPUTUM C/S-SPUTUM CULTURE & SENSITIVITY"
+  },
+  {
+    "code": "T101",
+    "test_name": "SPUT-SPUTUM FOR A.F.B."
+  },
+  {
+    "code": "T150",
+    "test_name": "SPUTUM-SPUTUM FOR FUNGUS"
+  },
+  {
+    "code": "T2861",
+    "test_name": "SPUTUM-SPUTUM FOR FUNGUS"
+  },
+  {
+    "code": "T46",
+    "test_name": "GEN-EXPERT-Sputum For MTB GeneXpert"
+  },
+  {
+    "code": "T1216",
+    "test_name": "SPUT-PCR-Sputum For MTB PCR"
+  },
+  {
+    "code": "T3872",
+    "test_name": "SPUT-PCR-Sputum For MTB PCR"
+  },
+  {
+    "code": "T5606",
+    "test_name": "-Sputum Routine Microscopy"
+  },
+  {
+    "code": "T2498",
+    "test_name": "-SSS"
+  },
+  {
+    "code": "T6556",
+    "test_name": "Stone Ana.-Stone Analysis - Routine"
+  },
+  {
+    "code": "T1447",
+    "test_name": "STOOL-STOOL CULTURE & SENSITIVITY"
+  },
+  {
+    "code": "T3977",
+    "test_name": "STOOL C/S-STOOL CULTURE & SENSITIVITY"
+  },
+  {
+    "code": "T3419",
+    "test_name": "STOOL OB-STOOL FOR OCCULT BLOOD"
+  },
+  {
+    "code": "T706",
+    "test_name": "S-OBT-STOOL OCCULT BLOOD"
+  },
+  {
+    "code": "T761",
+    "test_name": "S-R-SU-STOOL REDUCING SUGAR"
+  },
+  {
+    "code": "T3479",
+    "test_name": "S-R-SU-STOOL REDUCING SUGAR"
+  },
+  {
+    "code": "T2729",
+    "test_name": "STOOL RE-STOOL ROUTINE EXAMINATION"
+  },
+  {
+    "code": "T98",
+    "test_name": "STOOL-RE-STOOL ROUTINE EXAMINATION"
+  },
+  {
+    "code": "T4659",
+    "test_name": "SYNOV-SYNOVIAL FLUID EXAMINATION"
+  },
+  {
+    "code": "T1914",
+    "test_name": "SYNOV-SYNOVIAL FLUID EXAMINATION"
+  },
+  {
+    "code": "T1570",
+    "test_name": "SYNO C/S-SYNOVIAL FLUID FOR CULTURE & SENSITIVITY"
+  },
+  {
+    "code": "T4220",
+    "test_name": "SYNO C/S-SYNOVIAL FLUID FOR CULTURE & SENSITIVITY"
+  },
+  {
+    "code": "T1955",
+    "test_name": "SYNO-CYTO-SYNOVIAL FLUID FOR CYTOLOGY"
+  },
+  {
+    "code": "T4773",
+    "test_name": "SYNO-CYTO-SYNOVIAL FLUID FOR CYTOLOGY"
+  },
+  {
+    "code": "T2627",
+    "test_name": "T3-T3 (Triiodothyronine)"
+  },
+  {
+    "code": "T26",
+    "test_name": "TotT3-T3 (Triiodothyronine)"
+  },
+  {
+    "code": "T2628",
+    "test_name": "T4-T4 (Thyroxine)"
+  },
+  {
+    "code": "T27",
+    "test_name": "TotT4-T4 (Thyroxine)"
+  },
+  {
+    "code": "T3278",
+    "test_name": "TB GOLD-TB Gold (QUANTIFERON)"
+  },
+  {
+    "code": "T570",
+    "test_name": "TB GOLD-TB Gold (QUANTIFERON)"
+  },
+  {
+    "code": "F105",
+    "test_name": "-TEST"
+  },
+  {
+    "code": "T7081",
+    "test_name": "-TestABC"
+  },
+  {
+    "code": "T574",
+    "test_name": "Testo-TESTOSTERONE"
+  },
+  {
+    "code": "T3355",
+    "test_name": "TESTO F-TESTOSTERONE - FREE"
+  },
+  {
+    "code": "T5219",
+    "test_name": "TESTO.T-TESTOSTERONE - TOTAL"
+  },
+  {
+    "code": "T7074",
+    "test_name": "-test\\ABC"
+  },
+  {
+    "code": "T7031",
+    "test_name": "TETNUS-TETANUS TOXOID ANTIBODY - IgG"
+  },
+  {
+    "code": "T2496",
+    "test_name": "-TETET"
+  },
+  {
+    "code": "T1406",
+    "test_name": "THROAT C/S-THROAT SWAB FOR CULTURE & SENSITIVITY"
+  },
+  {
+    "code": "T3438",
+    "test_name": "THROAT C/S-THROAT SWAB FOR CULTURE & SENSITIVITY"
+  },
+  {
+    "code": "F65",
+    "test_name": "-THYRO -3"
+  },
+  {
+    "code": "F64",
+    "test_name": "-Thyro 2"
+  },
+  {
+    "code": "F71",
+    "test_name": "-THYRO-5"
+  },
+  {
+    "code": "T2492",
+    "test_name": "1560,1561,-THYROID PROFILE (T3,T4,TSH)"
+  },
+  {
+    "code": "T5289",
+    "test_name": "TFT-THYROID PROFILE - TFT (T3, T4 & TSH)"
+  },
+  {
+    "code": "T6247",
+    "test_name": "-TIBC (TOTAL IRON BINDING CAPACITY)"
+  },
+  {
+    "code": "T2087",
+    "test_name": "TISS-PCR-TISSUE For MTB PCR"
+  },
+  {
+    "code": "T6296",
+    "test_name": "TTG-IgA-TISSUE TRANSGLUTAMINASE ANTIBODY - IgA (TTG-IgA)"
+  },
+  {
+    "code": "F69",
+    "test_name": "-TLC/ DLC OF WBC"
+  },
+  {
+    "code": "T6266",
+    "test_name": "-TORCH 10 PROFILE (IgG & IgM)"
+  },
+  {
+    "code": "F98",
+    "test_name": "-TORCH 4 IgM"
+  },
+  {
+    "code": "F99",
+    "test_name": "-TORCH ALL 10"
+  },
+  {
+    "code": "F56",
+    "test_name": "-TORCH PROFILE"
+  },
+  {
+    "code": "T5806",
+    "test_name": "TLC & DLC-Total & Differential Leukocyte Count (TLC & DLC)"
+  },
+  {
+    "code": "T2784",
+    "test_name": "-TOTAL CHOLESTEROL/HDL Ratio"
+  },
+  {
+    "code": "T3188",
+    "test_name": "-Total Count of  Spermatozoa"
+  },
+  {
+    "code": "T499",
+    "test_name": "-Total Count of  Spermatozoa"
+  },
+  {
+    "code": "T709",
+    "test_name": "TIBC-Total Iron Binding Capacity(TIBC)"
+  },
+  {
+    "code": "T3421",
+    "test_name": "TIBC-Total Iron Binding Capacity(TIBC)"
+  },
+  {
+    "code": "T3329",
+    "test_name": "-Total Normal Form"
+  },
+  {
+    "code": "T8",
+    "test_name": "A:G-Total Protein (A:G)"
+  },
+  {
+    "code": "T5194",
+    "test_name": "-TOTAL PROTIEN"
+  },
+  {
+    "code": "T3287",
+    "test_name": "TOXO-IgG-TOXO GONDII - IgG"
+  },
+  {
+    "code": "T575",
+    "test_name": "TOXO-IgG-TOXO GONDII - IgG"
+  },
+  {
+    "code": "T3391",
+    "test_name": "TOXO IgM-TOXO GONDII - IgM"
+  },
+  {
+    "code": "T730",
+    "test_name": "TOXO IgM-TOXO GONDII - IgM"
+  },
+  {
+    "code": "T5732",
+    "test_name": "-TOXOPLASMA ANTIBODIES PANEL IgG & IgM"
+  },
+  {
+    "code": "T837",
+    "test_name": "TPHA-TREPONEMA PALLIDUM HAEMAGGLUTINATION(TPHA)"
+  },
+  {
+    "code": "T3522",
+    "test_name": "TPHA-TREPONEMA PALLIDUM HAEMAGGLUTINATION(TPHA)"
+  },
+  {
+    "code": "F31",
+    "test_name": "-TRIPLE MARKER"
+  },
+  {
+    "code": "T3294",
+    "test_name": "TripM-Triple Marker, Serum"
+  },
+  {
+    "code": "T137",
+    "test_name": "TROP-T-TROPONIN - T"
+  },
+  {
+    "code": "T5495",
+    "test_name": "TROP T-TROPONIN - T"
+  },
+  {
+    "code": "T138",
+    "test_name": "TROP-I-TROPONIN I"
+  },
+  {
+    "code": "T2848",
+    "test_name": "TROP I-TROPONIN I (Quantitative)"
+  },
+  {
+    "code": "T5750",
+    "test_name": "rtpcr-TRUENAT COVID- RT PCR PROFILE*"
+  },
+  {
+    "code": "T2435",
+    "test_name": "-TRUS"
+  },
+  {
+    "code": "T5364",
+    "test_name": "TSH-TSH (Thyroid Stimulating Hormone)"
+  },
+  {
+    "code": "T807",
+    "test_name": "TSH3-TSH * (Thyroid Stimulating Hormone)"
+  },
+  {
+    "code": "T5059",
+    "test_name": "-TSUTSUGAMUSHI / SCRUB TYPHUS (IgG, IgM)"
+  },
+  {
+    "code": "T2352",
+    "test_name": "TTG (IgA)-TTG (IgA)"
+  },
+  {
+    "code": "T2497",
+    "test_name": "-TTTT"
+  },
+  {
+    "code": "T2649",
+    "test_name": "MTX-TUBERCULIN (MANTOUX) SKIN TEST"
+  },
+  {
+    "code": "T833",
+    "test_name": "typh-Typhidot  IgM , IgG"
+  },
+  {
+    "code": "T6147",
+    "test_name": "ENTROCHECK-TYPHOID FEVER PANEL"
+  },
+  {
+    "code": "T3076",
+    "test_name": "E3-UNCONJUGATED ESTRIOL (E3)"
+  },
+  {
+    "code": "T794",
+    "test_name": "E3-UNCONJUGATED ESTRIOL (E3)"
+  },
+  {
+    "code": "P14",
+    "test_name": "-Universe Advanced Health Package"
+  },
+  {
+    "code": "P13",
+    "test_name": "-Universe Basic Package"
+  },
+  {
+    "code": "P1",
+    "test_name": "-Universe Premium  Package"
+  },
+  {
+    "code": "T2392",
+    "test_name": "UR/CR-Urea / Creatinine Ratio"
+  },
+  {
+    "code": "T6487",
+    "test_name": "UA-Uric Acid - Serum"
+  },
+  {
+    "code": "T6490",
+    "test_name": "UA-Uric Acid - Serum"
+  },
+  {
+    "code": "T2512",
+    "test_name": "ACR-URINARY ALBUMIN : CREATININE"
+  },
+  {
+    "code": "T5",
+    "test_name": "ACR-Urinary Albumin : Creatinine"
+  },
+  {
+    "code": "T2260",
+    "test_name": "PCR-Urinary Protein :Creatinine"
+  },
+  {
+    "code": "T5089",
+    "test_name": "-URINE BY SALTS"
+  },
+  {
+    "code": "T5787",
+    "test_name": "-Urine Cotinine"
+  },
+  {
+    "code": "T1227",
+    "test_name": "UR-CREAT-Urine Creatinine"
+  },
+  {
+    "code": "T3887",
+    "test_name": "UR-CREAT-Urine Creatinine"
+  },
+  {
+    "code": "T7086",
+    "test_name": "URINE C/S-URINE CULTURE & SENSITIVITY"
+  },
+  {
+    "code": "T18",
+    "test_name": "URINE C-URINE CULTURE & SENSITIVITY"
+  },
+  {
+    "code": "T5638",
+    "test_name": "-URINE ELECTROLYTES"
+  },
+  {
+    "code": "T3425",
+    "test_name": "UR-CHY-URINE FOR CHYLE"
+  },
+  {
+    "code": "T711",
+    "test_name": "UR-CHY-URINE FOR CHYLE"
+  },
+  {
+    "code": "T779",
+    "test_name": "-URINE FOR CYTOLOGY"
+  },
+  {
+    "code": "T3394",
+    "test_name": "UR CYTO-URINE FOR CYTOLOGY"
+  },
+  {
+    "code": "T728",
+    "test_name": "UR_KET-URINE FOR KETON BODIES"
+  },
+  {
+    "code": "T3436",
+    "test_name": "UR_KET-URINE FOR KETONE BODIES"
+  },
+  {
+    "code": "T3853",
+    "test_name": "OBT-URINE FOR OBT"
+  },
+  {
+    "code": "T1181",
+    "test_name": "OBT-URINE FOR OBT"
+  },
+  {
+    "code": "T7066",
+    "test_name": "reducing-Urine for Reducing Substances"
+  },
+  {
+    "code": "T7067",
+    "test_name": "reducing-Urine for Reducing Substances"
+  },
+  {
+    "code": "T7068",
+    "test_name": "reducing-Urine for Reducing Substances"
+  },
+  {
+    "code": "T7069",
+    "test_name": "reducing-Urine for Reducing Substances"
+  },
+  {
+    "code": "T3888",
+    "test_name": "U_SOD-URINE FOR SODIUM"
+  },
+  {
+    "code": "T1228",
+    "test_name": "U_SOD-Urine For Sodiun"
+  },
+  {
+    "code": "T6535",
+    "test_name": "hCG(U)-Urine hCG Pregnancy Test (Rapid)"
+  },
+  {
+    "code": "T7",
+    "test_name": "PREG-URINE PREGNANCY TEST"
+  },
+  {
+    "code": "T2541",
+    "test_name": "PREG-URINE PREGNANCY TEST"
+  },
+  {
+    "code": "T2813",
+    "test_name": "U-PROT-URINE PROTEIN"
+  },
+  {
+    "code": "T123",
+    "test_name": "U-PROT-URINE PROTEIN"
+  },
+  {
+    "code": "T6",
+    "test_name": "URINE RE-URINE ROUTINE EXAMINATION"
+  },
+  {
+    "code": "T2516",
+    "test_name": "URM-URINE ROUTINE EXAMINATION (URE)"
+  },
+  {
+    "code": "T121",
+    "test_name": "UR-SUG-Urine Sugar"
+  },
+  {
+    "code": "T6463",
+    "test_name": "UR-SUG-Urine Sugar"
+  },
+  {
+    "code": "T2944",
+    "test_name": "UR-SUG-URINE SUGAR (Post Prandial)"
+  },
+  {
+    "code": "T218",
+    "test_name": "UR-SUG-URINE SUGAR (Post Prandial)"
+  },
+  {
+    "code": "T2755",
+    "test_name": "UR-F-Urine Sugar Fasting"
+  },
+  {
+    "code": "T100",
+    "test_name": "UR-F-Urine Sugar Fasting"
+  },
+  {
+    "code": "T1182",
+    "test_name": "URO-UROBILLINOGEN"
+  },
+  {
+    "code": "T2448",
+    "test_name": "-USG BED SIDE (ANY PART)"
+  },
+  {
+    "code": "T2452",
+    "test_name": "-USG Biophysical score"
+  },
+  {
+    "code": "T2410",
+    "test_name": "-USG CRANIUM(BRAIN)"
+  },
+  {
+    "code": "T2449",
+    "test_name": "-USG EYE (B SCAN)"
+  },
+  {
+    "code": "T2412",
+    "test_name": "-USG FETAL ECHO"
+  },
+  {
+    "code": "T2401",
+    "test_name": "-USG FOLLICULAR MONITORING (NORMAL)"
+  },
+  {
+    "code": "T2402",
+    "test_name": "-USG FOLLICULAR MONITORING(TVS)"
+  },
+  {
+    "code": "T2395",
+    "test_name": "-USG Follicular Study"
+  },
+  {
+    "code": "T2451",
+    "test_name": "-USG Guided Aspiration(Other Side)"
+  },
+  {
+    "code": "T2409",
+    "test_name": "-USG GUIDED BIOPSY PROCEDURE CHARGE"
+  },
+  {
+    "code": "T2430",
+    "test_name": "-USG GUIDED DIAGNOSTIC ASPIRATION"
+  },
+  {
+    "code": "T2431",
+    "test_name": "-USG GUIDED PERCUTANEOUS CATHETER DRAINAGE (PCD) PLACMENT"
+  },
+  {
+    "code": "T2417",
+    "test_name": "-USG GUIDED SCLEROTHERAPY"
+  },
+  {
+    "code": "T2423",
+    "test_name": "-USG GUIDED THERAPEUTIC ASPIRATION"
+  },
+  {
+    "code": "T2398",
+    "test_name": "-USG KUB"
+  },
+  {
+    "code": "T2414",
+    "test_name": "-USG LIVER ELASTOGRAPHY"
+  },
+  {
+    "code": "T2396",
+    "test_name": "-USG LOWER ABDOMEN"
+  },
+  {
+    "code": "T2429",
+    "test_name": "-USG NECK(HRSG)"
+  },
+  {
+    "code": "T2422",
+    "test_name": "-USG NT/NB SCAN"
+  },
+  {
+    "code": "T2424",
+    "test_name": "-USG OBSTETRICS"
+  },
+  {
+    "code": "T2425",
+    "test_name": "-USG OBSTETRICS WITH BPP(BIOPHYSICAL PROFILE)"
+  },
+  {
+    "code": "T2403",
+    "test_name": "-USG PELVIS"
+  },
+  {
+    "code": "T2411",
+    "test_name": "-USG SCROTUM"
+  },
+  {
+    "code": "T2420",
+    "test_name": "-USG SMALL PART(HRSG)"
+  },
+  {
+    "code": "T2405",
+    "test_name": "-USG SONO SELPHINGOGRAPHY (SSG)"
+  },
+  {
+    "code": "T2433",
+    "test_name": "-USG SONOMAMMOGRAPHY"
+  },
+  {
+    "code": "T2450",
+    "test_name": "-USG STRESS ECHOCARDIO(DOBUTAMINE/TMT)"
+  },
+  {
+    "code": "T2421",
+    "test_name": "-USG THORAX"
+  },
+  {
+    "code": "T2406",
+    "test_name": "-USG THYROID GLAND(HRSG)"
+  },
+  {
+    "code": "T2455",
+    "test_name": "-USG TIFFA LEVEL II WITH FETAL ECHO"
+  },
+  {
+    "code": "T2400",
+    "test_name": "-USG TIFFA LEVEL II/ANOMALY SCAN"
+  },
+  {
+    "code": "T2419",
+    "test_name": "-USG TIFFA LEVEL II/ANOMALY SCAN(TWINS)"
+  },
+  {
+    "code": "T2418",
+    "test_name": "-USG TRANSRECTAL"
+  },
+  {
+    "code": "T2426",
+    "test_name": "-USG TVS"
+  },
+  {
+    "code": "T2408",
+    "test_name": "-USG UPPER ABDOMEN"
+  },
+  {
+    "code": "T2399",
+    "test_name": "-USG UPPER ABDOMEN"
+  },
+  {
+    "code": "T2397",
+    "test_name": "-USG WHOLE ABDOMEN"
+  },
+  {
+    "code": "T5915",
+    "test_name": "-VALPROIC ACID (S. VALPROATE)"
+  },
+  {
+    "code": "T5006",
+    "test_name": "VDRL-VDRL (Screening) RAPID TEST"
+  },
+  {
+    "code": "T712",
+    "test_name": "VDRL-VDRL / RPR"
+  },
+  {
+    "code": "T5180",
+    "test_name": "-VDRL/RPR FOR SYPHILIS - DILUTION"
+  },
+  {
+    "code": "T1611",
+    "test_name": "VEGIN C/S-VIGINAL SWAB FOR CULTURE & SENSITIVITY"
+  },
+  {
+    "code": "T4301",
+    "test_name": "VEGIN C/S-VIGINAL SWAB FOR CULTURE & SENSITIVITY"
+  },
+  {
+    "code": "T5053",
+    "test_name": "VIT B12-Vitamin - B12 (Cyanocobalamin)"
+  },
+  {
+    "code": "T144",
+    "test_name": "VitB12-VITAMIN B-12"
+  },
+  {
+    "code": "T6152",
+    "test_name": "-VITAMIN D 25-HYDROXY CHOLECALCIFEROL"
+  },
+  {
+    "code": "T5056",
+    "test_name": "VIT D3-Vitamin D, 25-Hydroxy"
+  },
+  {
+    "code": "T932",
+    "test_name": "VIT-GS-Vitricous Fluid for Gram's Stain"
+  },
+  {
+    "code": "T3643",
+    "test_name": "VIT-GS-Vitricous Fluid for Gram's Stain"
+  },
+  {
+    "code": "T2679",
+    "test_name": "VLDL-VLDL"
+  },
+  {
+    "code": "T5967",
+    "test_name": "-VMA (VANILLYL MANDELIC ACID), 24 HOUR URINE"
+  },
+  {
+    "code": "T5414",
+    "test_name": "-W.B.C. INDICES"
+  },
+  {
+    "code": "T5096",
+    "test_name": "-W.B.C. INDICES"
+  },
+  {
+    "code": "T2488",
+    "test_name": "-WBC Count"
+  },
+  {
+    "code": "T2370",
+    "test_name": "-WBC PARAMETERS"
+  },
+  {
+    "code": "T2841",
+    "test_name": "WIDAL-WIDAL (Slide Agglutination Method)"
+  },
+  {
+    "code": "T5798",
+    "test_name": "WidalSlide-WIDAL TEST (Slide Screen Agglutination Method)"
+  },
+  {
+    "code": "T6538",
+    "test_name": "Widal Tube-Widal Test (Tube Agglutination Method)"
+  },
+  {
+    "code": "T128",
+    "test_name": "1004-WIDAL TEST(Slide Method)"
+  },
+  {
+    "code": "T3194",
+    "test_name": "-With Abnormal Head"
+  },
+  {
+    "code": "T3189",
+    "test_name": "-With Abnormal Neck"
+  },
+  {
+    "code": "T3328",
+    "test_name": "-With Abnormal Tail"
+  },
+  {
+    "code": "T1488",
+    "test_name": "WOUND C/S-WOUND SWAB FOR CULTURE & SENSITIVITY"
+  },
+  {
+    "code": "T4058",
+    "test_name": "WOUND C/S-WOUND SWAB FOR CULTURE & SENSITIVITY"
+  },
+  {
+    "code": "T4947",
+    "test_name": "-xtz"
+  },
+  {
+    "code": "T5020",
+    "test_name": "-XX"
+  },
+  {
+    "code": "T5021",
+    "test_name": "-XXXX"
+  },
+  {
+    "code": "T5137",
+    "test_name": "xyz-xyz"
+  },
+  {
+    "code": "T5602",
+    "test_name": "-Z.N. Staining"
+  }
+]
