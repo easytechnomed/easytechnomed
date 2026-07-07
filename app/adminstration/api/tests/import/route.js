@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
-import { requireSuperAdmin } from "@/lib/auth";
+import { verifySuperAdminAPI } from "@/lib/auth";
 
 // Helper to generate unique 6-character code (letters + digits)
 async function generateUniqueCode(tx, name, workspaceId) {
@@ -151,7 +151,7 @@ async function seedParametersForTest(tx, testId, name) {
 
 export async function POST(req) {
   try {
-    await requireSuperAdmin();
+    await verifySuperAdminAPI();
     const body = await req.json().catch(() => ({}));
     let { workspaceId, tests } = body;
 
@@ -269,6 +269,7 @@ export async function POST(req) {
 
   } catch (error) {
     console.error("SuperAdmin Tests Import POST Error:", error);
-    return NextResponse.json({ success: false, error: error.message }, { status: 500 });
+    const status = error.message === "Unauthorized" ? 401 : 500;
+    return NextResponse.json({ success: false, error: error.message }, { status });
   }
 }

@@ -1,11 +1,11 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
-import { requireSuperAdmin } from "@/lib/auth";
+import { verifySuperAdminAPI } from "@/lib/auth";
 import bcrypt from "bcryptjs";
 
 export async function GET() {
   try {
-    await requireSuperAdmin();
+    await verifySuperAdminAPI();
 
     const admins = await prisma.admin.findMany({
       include: {
@@ -28,13 +28,14 @@ export async function GET() {
     return NextResponse.json({ success: true, admins: serializedAdmins });
   } catch (error) {
     console.error("SuperAdmin Admins GET Error:", error);
-    return NextResponse.json({ success: false, error: error.message }, { status: 500 });
+    const status = error.message === "Unauthorized" ? 401 : 500;
+    return NextResponse.json({ success: false, error: error.message }, { status });
   }
 }
 
 export async function POST(req) {
   try {
-    await requireSuperAdmin();
+    await verifySuperAdminAPI();
     const body = await req.json().catch(() => ({}));
 
     const name = body.name?.trim();
@@ -69,6 +70,7 @@ export async function POST(req) {
     return NextResponse.json({ success: true, message: "Admin account created and assigned successfully!" });
   } catch (error) {
     console.error("SuperAdmin Admins POST Error:", error);
-    return NextResponse.json({ success: false, error: error.message }, { status: 500 });
+    const status = error.message === "Unauthorized" ? 401 : 500;
+    return NextResponse.json({ success: false, error: error.message }, { status });
   }
 }

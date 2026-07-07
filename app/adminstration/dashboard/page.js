@@ -1,7 +1,6 @@
 "use client";
-
 import React, { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import {
   Box,
   Typography,
@@ -129,8 +128,22 @@ const AVAILABLE_PERMISSIONS = [
 
 export default function SuperAdminDashboard() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const tab = searchParams.get("tab");
+
   const [tabValue, setTabValue] = useState(0);
   const [mobileOpen, setMobileOpen] = useState(false);
+
+  // Sync tabValue with query parameter
+  useEffect(() => {
+    if (tab === "admins") {
+      setTabValue(1);
+    } else if (tab === "importer") {
+      setTabValue(3);
+    } else {
+      setTabValue(0);
+    }
+  }, [tab]);
   const [workspaces, setWorkspaces] = useState([]);
   const [admins, setAdmins] = useState([]);
   const [roles, setRoles] = useState([]);
@@ -256,6 +269,19 @@ export default function SuperAdminDashboard() {
         fetch("/adminstration/api/admins").then((r) => r.json()),
         fetch("/adminstration/api/roles").then((r) => r.json())
       ]);
+
+      if (!wsRes.success && (wsRes.error === "NEXT_REDIRECT" || wsRes.error === "Unauthorized")) {
+        router.push("/adminstration/login");
+        return;
+      }
+      if (!adminRes.success && (adminRes.error === "NEXT_REDIRECT" || adminRes.error === "Unauthorized")) {
+        router.push("/adminstration/login");
+        return;
+      }
+      if (!roleRes.success && (roleRes.error === "NEXT_REDIRECT" || roleRes.error === "Unauthorized")) {
+        router.push("/adminstration/login");
+        return;
+      }
 
       if (wsRes.success) {
         setWorkspaces(wsRes.workspaces);
@@ -494,8 +520,17 @@ export default function SuperAdminDashboard() {
               <ListItem key={item.text} disablePadding sx={{ mb: 0.5 }}>
                 <ListItemButton
                   onClick={() => {
-                    setTabValue(item.tabIndex);
                     setMobileOpen(false);
+                    if (item.tabIndex === 2) {
+                      router.push("/adminstration/adminRole");
+                    } else {
+                      const paths = {
+                        0: "/adminstration/dashboard?tab=workspaces",
+                        1: "/adminstration/dashboard?tab=admins",
+                        3: "/adminstration/dashboard?tab=importer"
+                      };
+                      router.push(paths[item.tabIndex]);
+                    }
                   }}
                   sx={{
                     borderRadius: "8px",

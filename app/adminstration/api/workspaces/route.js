@@ -1,10 +1,10 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
-import { requireSuperAdmin } from "@/lib/auth";
+import { verifySuperAdminAPI } from "@/lib/auth";
 
 export async function GET() {
   try {
-    await requireSuperAdmin();
+    await verifySuperAdminAPI();
 
     const workspaces = await prisma.workspace.findMany({
       where: { isDeleted: false },
@@ -56,13 +56,14 @@ export async function GET() {
     return NextResponse.json({ success: true, workspaces: stats });
   } catch (error) {
     console.error("SuperAdmin Workspaces GET Error:", error);
-    return NextResponse.json({ success: false, error: error.message }, { status: 500 });
+    const status = error.message === "Unauthorized" ? 401 : 500;
+    return NextResponse.json({ success: false, error: error.message }, { status });
   }
 }
 
 export async function POST(req) {
   try {
-    await requireSuperAdmin();
+    await verifySuperAdminAPI();
     const body = await req.json().catch(() => ({}));
 
     const name = body.name?.trim();

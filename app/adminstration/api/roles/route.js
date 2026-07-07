@@ -1,10 +1,10 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
-import { requireSuperAdmin } from "@/lib/auth";
+import { verifySuperAdminAPI } from "@/lib/auth";
 
 export async function GET() {
   try {
-    await requireSuperAdmin();
+    await verifySuperAdminAPI();
 
     const roles = await prisma.adminRole.findMany({
       where: { isDeleted: false },
@@ -23,13 +23,14 @@ export async function GET() {
     return NextResponse.json({ success: true, roles: serializedRoles });
   } catch (error) {
     console.error("SuperAdmin Roles GET Error:", error);
-    return NextResponse.json({ success: false, error: error.message }, { status: 500 });
+    const status = error.message === "Unauthorized" ? 401 : 500;
+    return NextResponse.json({ success: false, error: error.message }, { status });
   }
 }
 
 export async function POST(req) {
   try {
-    await requireSuperAdmin();
+    await verifySuperAdminAPI();
     const body = await req.json().catch(() => ({}));
 
     const name = body.name?.trim();
@@ -59,6 +60,7 @@ export async function POST(req) {
     return NextResponse.json({ success: true, message: "Role created successfully!" });
   } catch (error) {
     console.error("SuperAdmin Roles POST Error:", error);
-    return NextResponse.json({ success: false, error: error.message }, { status: 500 });
+    const status = error.message === "Unauthorized" ? 401 : 500;
+    return NextResponse.json({ success: false, error: error.message }, { status });
   }
 }

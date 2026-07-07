@@ -137,6 +137,19 @@ export default function AdminRolesPage() {
         fetch("/adminstration/api/roles").then((r) => r.json())
       ]);
 
+      if (!wsRes.success && (wsRes.error === "NEXT_REDIRECT" || wsRes.error === "Unauthorized")) {
+        router.push("/adminstration/login");
+        return;
+      }
+      if (!adminRes.success && (adminRes.error === "NEXT_REDIRECT" || adminRes.error === "Unauthorized")) {
+        router.push("/adminstration/login");
+        return;
+      }
+      if (!roleRes.success && (roleRes.error === "NEXT_REDIRECT" || roleRes.error === "Unauthorized")) {
+        router.push("/adminstration/login");
+        return;
+      }
+
       if (wsRes.success) setWorkspaces(wsRes.workspaces);
       if (adminRes.success) setAdmins(adminRes.admins);
       if (roleRes.success) {

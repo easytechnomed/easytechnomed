@@ -1,10 +1,10 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
-import { requireSuperAdmin } from "@/lib/auth";
+import { verifySuperAdminAPI } from "@/lib/auth";
 
 export async function DELETE(req, { params }) {
   try {
-    await requireSuperAdmin();
+    await verifySuperAdminAPI();
     const { id } = await params;
     const workspaceId = parseInt(id);
 
@@ -19,6 +19,7 @@ export async function DELETE(req, { params }) {
     return NextResponse.json({ success: true, message: "Workspace deleted successfully." });
   } catch (error) {
     console.error("SuperAdmin Workspace DELETE Error:", error);
-    return NextResponse.json({ success: false, error: error.message }, { status: 500 });
+    const status = error.message === "Unauthorized" ? 401 : 500;
+    return NextResponse.json({ success: false, error: error.message }, { status });
   }
 }
