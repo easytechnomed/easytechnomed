@@ -662,11 +662,16 @@ export default function TestReportPage() {
   const handleKeyDown = (e) => {
     if (e.key === "Enter") {
       e.preventDefault();
-      const inputs = Array.from(document.querySelectorAll(".result-input-field input"));
+      const inputs = Array.from(document.querySelectorAll(
+        ".result-input-field input:not([type='hidden']), .result-input-field [role='combobox'], .result-input-field [role='button']"
+      ));
       const index = inputs.indexOf(e.target);
       if (index > -1 && index < inputs.length - 1) {
-        inputs[index + 1].focus();
-        inputs[index + 1].select();
+        const nextInput = inputs[index + 1];
+        nextInput.focus();
+        if (typeof nextInput.select === "function") {
+          nextInput.select();
+        }
       } else {
         const remarks = document.getElementById("remarks-field");
         if (remarks) {
@@ -1450,6 +1455,13 @@ export default function TestReportPage() {
                             const val = resultValues[param.id] || "";
                             const isAbnormal = isOutOfRange(val, ref.min, ref.max);
 
+                            const normalValLower = (ref.rangeStr || "").toLowerCase();
+                            const isNegativeOrPositive = normalValLower.includes("negative") || normalValLower.includes("positive");
+                            const dropdownOptions = ["Negative", "Positive"];
+                            if (val && !dropdownOptions.includes(val)) {
+                              dropdownOptions.push(val);
+                            }
+
                             return (
                               <TableRow key={param.id}>
                                 <TableCell>{index + 1}</TableCell>
@@ -1459,6 +1471,7 @@ export default function TestReportPage() {
                                 <TableCell>
                                   <TextField
                                     className="result-input-field"
+                                    select={isNegativeOrPositive}
                                     size="small"
                                     fullWidth
                                     value={val}
@@ -1482,7 +1495,16 @@ export default function TestReportPage() {
                                         </Tooltip>
                                       )
                                     }}
-                                  />
+                                  >
+                                    {isNegativeOrPositive ? (
+                                      [
+                                        <MenuItem key="empty" value=""><em>Select</em></MenuItem>,
+                                        ...dropdownOptions.map(opt => (
+                                          <MenuItem key={opt} value={opt}>{opt}</MenuItem>
+                                        ))
+                                      ]
+                                    ) : null}
+                                  </TextField>
                                 </TableCell>
                                 <TableCell>{param.order}</TableCell>
                               </TableRow>
