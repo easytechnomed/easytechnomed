@@ -463,7 +463,11 @@ export default function TestReportPage() {
         if (res.success && res.settings) {
           setAdminSettings({
             framePdfUrl: res.settings.framePdfUrl || "",
-            useFrameDefault: res.settings.useFrameDefault ?? true
+            useFrameDefault: res.settings.useFrameDefault ?? true,
+            companyName: res.settings.companyName || "",
+            email: res.settings.email || "",
+            mobileNumber: res.settings.mobileNumber || "",
+            address: res.settings.address || null
           });
         }
       } catch (err) {
@@ -605,6 +609,13 @@ export default function TestReportPage() {
       setSavingPayment(false);
     }
   };
+
+  const handlePrintReceipt = (reg) => {
+    if (!reg) return;
+    window.open(`/api/print-bill/${reg.id}`, "_blank");
+  };
+
+
 
   const triggerAction = (actionName) => {
     handleCloseMenu();
@@ -2221,19 +2232,37 @@ export default function TestReportPage() {
             </Box>
 
             {/* Footer Actions */}
-            <Box sx={{ p: 2, display: "flex", justifyContent: "flex-end", borderTop: "1px solid", borderColor: "divider", gap: 1.5 }}>
+            <Box sx={{ p: 2, display: "flex", justifyContent: "space-between", alignItems: "center", borderTop: "1px solid", borderColor: "divider" }}>
               <Button onClick={() => setReceiptDrawerOpen(false)} variant="outlined">
                 Cancel
               </Button>
-              <Button
-                variant="contained"
-                onClick={handleSavePayment}
-                startIcon={savingPayment ? <CircularProgress size={16} color="inherit" /> : <SaveIcon />}
-                disabled={savingPayment}
-                sx={{ px: 4 }}
-              >
-                {savingPayment ? "Saving..." : "Save Payment"}
-              </Button>
+              <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
+                <Button
+                  variant="contained"
+                  onClick={handleSavePayment}
+                  startIcon={savingPayment ? <CircularProgress size={16} color="inherit" /> : <SaveIcon />}
+                  disabled={savingPayment}
+                  sx={{ px: 4 }}
+                >
+                  {savingPayment ? "Saving..." : "Save"}
+                </Button>
+
+                <Tooltip title="Print Receipt">
+                  <IconButton onClick={() => handlePrintReceipt(selectedRegistration)} color="primary">
+                    <PrintIcon />
+                  </IconButton>
+                </Tooltip>
+                <Tooltip title="Email Receipt">
+                  <IconButton color="primary">
+                    <EmailIcon />
+                  </IconButton>
+                </Tooltip>
+                <Tooltip title="Worksheet">
+                  <IconButton color="primary">
+                    <WorksheetIcon />
+                  </IconButton>
+                </Tooltip>
+              </Box>
             </Box>
           </Box>
         ) : null}
