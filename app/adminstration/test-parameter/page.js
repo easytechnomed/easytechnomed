@@ -803,13 +803,9 @@ export default function DefaultTestsPage() {
       <Dialog
         open={editModalOpen}
         onClose={() => !saving && setEditModalOpen(false)}
-        maxWidth="md"
+        maxWidth="lg"
         fullWidth
-        aria-labelledby="edit-dialog-title"
       >
-        <DialogTitle id="edit-dialog-title" sx={{ fontWeight: 800 }}>
-          Edit Default Test & Parameters
-        </DialogTitle>
         <form onSubmit={handleSaveEdit}>
           <DialogContent sx={{ display: "flex", flexDirection: "column", gap: 3 }}>
             <Box>
@@ -852,239 +848,265 @@ export default function DefaultTestsPage() {
             <Divider />
 
             <Box>
-              <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 2 }}>
-                <Box>
-                  <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>
-                    Clinical Reference Parameters
-                  </Typography>
-                  <Typography variant="caption" color="text.secondary">
-                    Configure names, units, and age/gender-specific normal ranges for this test.
-                  </Typography>
-                </Box>
-                <Button
-                  variant="outlined"
-                  size="small"
-                  startIcon={<AddIcon />}
-                  onClick={handleAddParamRow}
-                >
-                  Add Parameter
-                </Button>
-              </Box>
 
-              <Box sx={{ display: "flex", flexDirection: "column", gap: 2.5, maxHeight: "400px", overflowY: "auto", pr: 1 }}>
-                {editForm.parameters.length === 0 ? (
-                  <Box sx={{ py: 4, textAlign: "center", border: "1px dashed", borderColor: "divider", borderRadius: 2 }}>
-                    <Typography variant="body2" color="text.secondary">
-                      No parameters added yet. Click "Add Parameter" to start.
-                    </Typography>
-                  </Box>
-                ) : (
-                  editForm.parameters.map((param, index) => (
-                    <Paper
-                      key={index}
-                      variant="outlined"
-                      sx={{ p: 2, borderRadius: 2, bgcolor: "#f8fafc", position: "relative" }}
-                    >
-                      <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 2 }}>
-                        <Typography variant="subtitle2" sx={{ fontWeight: 700, color: "primary.main" }}>
-                          Parameter #{index + 1}
-                        </Typography>
-                        <IconButton
-                          size="small"
-                          color="error"
-                          onClick={() => handleRemoveParamRow(index)}
-                        >
-                          <DeleteIcon fontSize="small" />
-                        </IconButton>
-                      </Box>
-
-                      <Grid container spacing={2}>
-                        <Grid size={{ xs: 12, md: 5 }}>
-                          <TextField
-                            fullWidth
-                            size="small"
-                            label="Parameter Name *"
-                            value={param.name}
-                            onChange={(e) => handleParamChange(index, "name", e.target.value)}
-                          />
-                        </Grid>
-                        <Grid size={{ xs: 6, md: 4 }}>
-                          <TextField
-                            fullWidth
-                            size="small"
-                            label="Unit (e.g. g/dL)"
-                            value={param.unit}
-                            onChange={(e) => handleParamChange(index, "unit", e.target.value)}
-                          />
-                        </Grid>
-                        <Grid size={{ xs: 6, md: 3 }}>
-                          <TextField
-                            fullWidth
-                            size="small"
-                            label="Display Order"
-                            type="number"
-                            value={param.order}
-                            onChange={(e) => handleParamChange(index, "order", e.target.value)}
-                          />
-                        </Grid>
-
-                        {/* Male Range */}
-                        <Grid size={{ xs: 12 }} sx={{ mt: 1 }}>
-                          <Typography variant="caption" sx={{ fontWeight: 700, color: "text.secondary", display: "block", mb: 0.5 }}>
-                            Male Reference Value
-                          </Typography>
-                        </Grid>
-                        <Grid size={{ xs: 4 }}>
-                          <TextField
-                            fullWidth
-                            size="small"
-                            label="Min Val"
-                            type="number"
-                            inputProps={{ step: "any" }}
-                            value={param.minValMale}
-                            onChange={(e) => handleParamChange(index, "minValMale", e.target.value)}
-                          />
-                        </Grid>
-                        <Grid size={{ xs: 4 }}>
-                          <TextField
-                            fullWidth
-                            size="small"
-                            label="Max Val"
-                            type="number"
-                            inputProps={{ step: "any" }}
-                            value={param.maxValMale}
-                            onChange={(e) => handleParamChange(index, "maxValMale", e.target.value)}
-                          />
-                        </Grid>
-                        <Grid size={{ xs: 4 }}>
-                          <TextField
-                            fullWidth
-                            size="small"
-                            label="Normal Range Text"
-                            placeholder="e.g. 13.5 - 17.5"
-                            value={param.normalRangeMale}
-                            onChange={(e) => handleParamChange(index, "normalRangeMale", e.target.value)}
-                          />
-                        </Grid>
-
-                        {/* Female Range */}
-                        <Grid size={{ xs: 12 }} sx={{ mt: 1 }}>
-                          <Typography variant="caption" sx={{ fontWeight: 700, color: "text.secondary", display: "block", mb: 0.5 }}>
-                            Female Reference Value
-                          </Typography>
-                        </Grid>
-                        <Grid size={{ xs: 4 }}>
-                          <TextField
-                            fullWidth
-                            size="small"
-                            label="Min Val"
-                            type="number"
-                            inputProps={{ step: "any" }}
-                            value={param.minValFemale}
-                            onChange={(e) => handleParamChange(index, "minValFemale", e.target.value)}
-                          />
-                        </Grid>
-                        <Grid size={{ xs: 4 }}>
-                          <TextField
-                            fullWidth
-                            size="small"
-                            label="Max Val"
-                            type="number"
-                            inputProps={{ step: "any" }}
-                            value={param.maxValFemale}
-                            onChange={(e) => handleParamChange(index, "maxValFemale", e.target.value)}
-                          />
-                        </Grid>
-                        <Grid size={{ xs: 4 }}>
-                          <TextField
-                            fullWidth
-                            size="small"
-                            label="Normal Range Text"
-                            placeholder="e.g. 12.0 - 15.5"
-                            value={param.normalRangeFemale}
-                            onChange={(e) => handleParamChange(index, "normalRangeFemale", e.target.value)}
-                          />
-                        </Grid>
-
-                        {/* Baby Range */}
-                        <Grid size={{ xs: 12 }} sx={{ mt: 1 }}>
-                          <Typography variant="caption" sx={{ fontWeight: 700, color: "text.secondary", display: "block", mb: 0.5 }}>
-                            Baby/Child Reference Value
-                          </Typography>
-                        </Grid>
-                        <Grid size={{ xs: 4 }}>
-                          <TextField
-                            fullWidth
-                            size="small"
-                            label="Min Val"
-                            type="number"
-                            inputProps={{ step: "any" }}
-                            value={param.minValBaby}
-                            onChange={(e) => handleParamChange(index, "minValBaby", e.target.value)}
-                          />
-                        </Grid>
-                        <Grid size={{ xs: 4 }}>
-                          <TextField
-                            fullWidth
-                            size="small"
-                            label="Max Val"
-                            type="number"
-                            inputProps={{ step: "any" }}
-                            value={param.maxValBaby}
-                            onChange={(e) => handleParamChange(index, "maxValBaby", e.target.value)}
-                          />
-                        </Grid>
-                        <Grid size={{ xs: 4 }}>
-                          <TextField
-                            fullWidth
-                            size="small"
-                            label="Normal Range Text"
-                            placeholder="e.g. 11.0 - 14.5"
-                            value={param.normalRangeBaby}
-                            onChange={(e) => handleParamChange(index, "normalRangeBaby", e.target.value)}
-                          />
-                        </Grid>
-
-                        {/* Fallback Range */}
-                        <Grid size={{ xs: 12 }} sx={{ mt: 1 }}>
-                          <Typography variant="caption" sx={{ fontWeight: 700, color: "text.secondary", display: "block", mb: 0.5 }}>
-                            Fallback Default Range
-                          </Typography>
-                        </Grid>
-                        <Grid size={{ xs: 12 }}>
-                          <TextField
-                            fullWidth
-                            size="small"
-                            label="Default Range Text (e.g. Negative, Desirable: < 200)"
-                            value={param.normalRangeDefault}
-                            onChange={(e) => handleParamChange(index, "normalRangeDefault", e.target.value)}
-                          />
-                        </Grid>
-                      </Grid>
-                    </Paper>
-                  ))
-                )}
-              </Box>
+              <TableContainer component={Paper} variant="outlined" sx={{ overflowX: "auto", maxHeight: "400px" }}>
+                <Table size="small" stickyHeader sx={{ minWidth: 1960 }}>
+                  <TableHead>
+                    <TableRow>
+                      <TableCell align="center" sx={{ fontWeight: 700, width: 40, bgcolor: "#f8fafc" }}>#</TableCell>
+                      <TableCell sx={{ fontWeight: 700, width: 260, bgcolor: "#f8fafc" }}>Parameter Name *</TableCell>
+                      <TableCell sx={{ fontWeight: 700, width: 130, bgcolor: "#f8fafc" }}>Unit</TableCell>
+                      <TableCell sx={{ fontWeight: 700, width: 100, bgcolor: "#f8fafc" }}>Order</TableCell>
+                      
+                      {/* Male */}
+                      <TableCell sx={{ fontWeight: 700, width: 110, bgcolor: "#eff6ff" }}>Male Min</TableCell>
+                      <TableCell sx={{ fontWeight: 700, width: 110, bgcolor: "#eff6ff" }}>Male Max</TableCell>
+                      <TableCell sx={{ fontWeight: 700, width: 160, bgcolor: "#eff6ff" }}>Male Range Text</TableCell>
+                      
+                      {/* Female */}
+                      <TableCell sx={{ fontWeight: 700, width: 110, bgcolor: "#fdf2f8" }}>Female Min</TableCell>
+                      <TableCell sx={{ fontWeight: 700, width: 110, bgcolor: "#fdf2f8" }}>Female Max</TableCell>
+                      <TableCell sx={{ fontWeight: 700, width: 160, bgcolor: "#fdf2f8" }}>Female Range Text</TableCell>
+                      
+                      {/* Baby */}
+                      <TableCell sx={{ fontWeight: 700, width: 110, bgcolor: "#f0fdf4" }}>Baby Min</TableCell>
+                      <TableCell sx={{ fontWeight: 700, width: 110, bgcolor: "#f0fdf4" }}>Baby Max</TableCell>
+                      <TableCell sx={{ fontWeight: 700, width: 180, bgcolor: "#f0fdf4" }}>Baby Range Text</TableCell>
+                      
+                      {/* Default */}
+                      <TableCell sx={{ fontWeight: 700, width: 200, bgcolor: "#fafaf9" }}>Default Range Text</TableCell>
+                      
+                      <TableCell align="center" sx={{ fontWeight: 700, width: 50, bgcolor: "#f8fafc" }}>Action</TableCell>
+                    </TableRow>
+                  </TableHead>
+                  <TableBody>
+                    {editForm.parameters.length === 0 ? (
+                      <TableRow>
+                        <TableCell colSpan={15} align="center" sx={{ py: 6, color: "text.secondary" }}>
+                          No parameters added yet. Click "Add Parameter" to start.
+                        </TableCell>
+                      </TableRow>
+                    ) : (
+                      editForm.parameters.map((param, index) => (
+                        <TableRow key={index} hover sx={{ '&:hover': { bgcolor: "rgba(0,0,0,0.01)" } }}>
+                          <TableCell align="center" sx={{ fontWeight: 700 }}>{index + 1}</TableCell>
+                          
+                          {/* Name */}
+                          <TableCell>
+                            <TextField
+                              fullWidth
+                              size="small"
+                              value={param.name}
+                              onChange={(e) => handleParamChange(index, "name", e.target.value)}
+                              placeholder="Name"
+                              sx={{ '& .MuiOutlinedInput-root': { borderRadius: 1 } }}
+                            />
+                          </TableCell>
+                          
+                          {/* Unit */}
+                          <TableCell>
+                            <TextField
+                              fullWidth
+                              size="small"
+                              value={param.unit}
+                              onChange={(e) => handleParamChange(index, "unit", e.target.value)}
+                              placeholder="e.g. g/dL"
+                              sx={{ '& .MuiOutlinedInput-root': { borderRadius: 1 } }}
+                            />
+                          </TableCell>
+                          
+                          {/* Order */}
+                          <TableCell>
+                            <TextField
+                              fullWidth
+                              size="small"
+                              type="number"
+                              value={param.order}
+                              onChange={(e) => handleParamChange(index, "order", e.target.value)}
+                              sx={{ '& .MuiOutlinedInput-root': { borderRadius: 1 } }}
+                            />
+                          </TableCell>
+                          
+                          {/* Male Min */}
+                          <TableCell sx={{ bgcolor: "#f8fafc" }}>
+                            <TextField
+                              fullWidth
+                              size="small"
+                              type="number"
+                              inputProps={{ step: "any" }}
+                              value={param.minValMale}
+                              onChange={(e) => handleParamChange(index, "minValMale", e.target.value)}
+                              placeholder="Min"
+                              sx={{ '& .MuiOutlinedInput-root': { borderRadius: 1 } }}
+                            />
+                          </TableCell>
+                          
+                          {/* Male Max */}
+                          <TableCell sx={{ bgcolor: "#f8fafc" }}>
+                            <TextField
+                              fullWidth
+                              size="small"
+                              type="number"
+                              inputProps={{ step: "any" }}
+                              value={param.maxValMale}
+                              onChange={(e) => handleParamChange(index, "maxValMale", e.target.value)}
+                              placeholder="Max"
+                              sx={{ '& .MuiOutlinedInput-root': { borderRadius: 1 } }}
+                            />
+                          </TableCell>
+                          
+                          {/* Male Range Text */}
+                          <TableCell sx={{ bgcolor: "#f8fafc" }}>
+                            <TextField
+                              fullWidth
+                              size="small"
+                              value={param.normalRangeMale}
+                              onChange={(e) => handleParamChange(index, "normalRangeMale", e.target.value)}
+                              placeholder="Range text"
+                              sx={{ '& .MuiOutlinedInput-root': { borderRadius: 1 } }}
+                            />
+                          </TableCell>
+                          
+                          {/* Female Min */}
+                          <TableCell sx={{ bgcolor: "#f8fafc" }}>
+                            <TextField
+                              fullWidth
+                              size="small"
+                              type="number"
+                              inputProps={{ step: "any" }}
+                              value={param.minValFemale}
+                              onChange={(e) => handleParamChange(index, "minValFemale", e.target.value)}
+                              placeholder="Min"
+                              sx={{ '& .MuiOutlinedInput-root': { borderRadius: 1 } }}
+                            />
+                          </TableCell>
+                          
+                          {/* Female Max */}
+                          <TableCell sx={{ bgcolor: "#f8fafc" }}>
+                            <TextField
+                              fullWidth
+                              size="small"
+                              type="number"
+                              inputProps={{ step: "any" }}
+                              value={param.maxValFemale}
+                              onChange={(e) => handleParamChange(index, "maxValFemale", e.target.value)}
+                              placeholder="Max"
+                              sx={{ '& .MuiOutlinedInput-root': { borderRadius: 1 } }}
+                            />
+                          </TableCell>
+                          
+                          {/* Female Range Text */}
+                          <TableCell sx={{ bgcolor: "#f8fafc" }}>
+                            <TextField
+                              fullWidth
+                              size="small"
+                              value={param.normalRangeFemale}
+                              onChange={(e) => handleParamChange(index, "normalRangeFemale", e.target.value)}
+                              placeholder="Range text"
+                              sx={{ '& .MuiOutlinedInput-root': { borderRadius: 1 } }}
+                            />
+                          </TableCell>
+                          
+                          {/* Baby Min */}
+                          <TableCell sx={{ bgcolor: "#f8fafc" }}>
+                            <TextField
+                              fullWidth
+                              size="small"
+                              type="number"
+                              inputProps={{ step: "any" }}
+                              value={param.minValBaby}
+                              onChange={(e) => handleParamChange(index, "minValBaby", e.target.value)}
+                              placeholder="Min"
+                              sx={{ '& .MuiOutlinedInput-root': { borderRadius: 1 } }}
+                            />
+                          </TableCell>
+                          
+                          {/* Baby Max */}
+                          <TableCell sx={{ bgcolor: "#f8fafc" }}>
+                            <TextField
+                              fullWidth
+                              size="small"
+                              type="number"
+                              inputProps={{ step: "any" }}
+                              value={param.maxValBaby}
+                              onChange={(e) => handleParamChange(index, "maxValBaby", e.target.value)}
+                              placeholder="Max"
+                              sx={{ '& .MuiOutlinedInput-root': { borderRadius: 1 } }}
+                            />
+                          </TableCell>
+                          
+                          {/* Baby Range Text */}
+                          <TableCell sx={{ bgcolor: "#f8fafc" }}>
+                            <TextField
+                              fullWidth
+                              size="small"
+                              value={param.normalRangeBaby}
+                              onChange={(e) => handleParamChange(index, "normalRangeBaby", e.target.value)}
+                              placeholder="Range text"
+                              sx={{ '& .MuiOutlinedInput-root': { borderRadius: 1 } }}
+                            />
+                          </TableCell>
+                          
+                          {/* Default Range Text */}
+                          <TableCell>
+                            <TextField
+                              fullWidth
+                              size="small"
+                              value={param.normalRangeDefault}
+                              onChange={(e) => handleParamChange(index, "normalRangeDefault", e.target.value)}
+                              placeholder="Default range"
+                              sx={{ '& .MuiOutlinedInput-root': { borderRadius: 1 } }}
+                            />
+                          </TableCell>
+                          
+                          {/* Delete Action */}
+                          <TableCell align="center">
+                            <IconButton
+                              size="small"
+                              color="error"
+                              onClick={() => handleRemoveParamRow(index)}
+                            >
+                              <DeleteIcon fontSize="small" />
+                            </IconButton>
+                          </TableCell>
+                        </TableRow>
+                      ))
+                    )}
+                  </TableBody>
+                </Table>
+              </TableContainer>
             </Box>
           </DialogContent>
-          <DialogActions sx={{ px: 3, pb: 3, gap: 1 }}>
+          <DialogActions sx={{ px: 3, pb: 3, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
             <Button
-              onClick={() => setEditModalOpen(false)}
-              color="inherit"
-              disabled={saving}
-              variant="text"
-            >
-              Cancel
-            </Button>
-            <Button
-              type="submit"
+              variant="outlined"
               color="primary"
-              disabled={saving}
-              variant="contained"
-              startIcon={saving ? <CircularProgress size={16} color="inherit" /> : <EditIcon />}
+              size="small"
+              startIcon={<AddIcon />}
+              onClick={handleAddParamRow}
+              sx={{ borderRadius: 2 }}
             >
-              {saving ? "Saving..." : "Save Changes"}
+              Add Parameter
             </Button>
+            <Box sx={{ display: "flex", gap: 1 }}>
+              <Button
+                onClick={() => setEditModalOpen(false)}
+                color="inherit"
+                disabled={saving}
+                variant="text"
+              >
+                Cancel
+              </Button>
+              <Button
+                type="submit"
+                color="primary"
+                disabled={saving}
+                variant="contained"
+                startIcon={saving ? <CircularProgress size={16} color="inherit" /> : <EditIcon />}
+              >
+                {saving ? "Saving..." : "Save Changes"}
+              </Button>
+            </Box>
           </DialogActions>
         </form>
       </Dialog>
