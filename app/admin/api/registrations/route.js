@@ -82,61 +82,82 @@ export async function POST(req) {
     const body = await req.json().catch(() => ({}));
     const validatedData = registrationSchema.parse(body);
 
-    const count = await prisma.registration.count();
-    const nextVal = count + 1;
-    const labId = String(nextVal).padStart(3, "0");
-    const regNo = `ETM-${String(nextVal).padStart(8, "0")}`;
-
     const barcodeNumber = Math.floor(100000000 + Math.random() * 900000000);
     const barcode = `,EDT${barcodeNumber} ${barcodeNumber}`;
 
     const expRptDate = validatedData.expRptDate ? new Date(validatedData.expRptDate) : null;
     const sampleDate = validatedData.sampleDate ? new Date(validatedData.sampleDate) : null;
 
-    const result = await prisma.$transaction(async (tx) => {
-      const registration = await tx.registration.create({
-        data: {
-          billOn: validatedData.billOn,
-          mobileNo: validatedData.mobileNo,
-          labId,
-          regNo,
-          title: validatedData.title,
-          name: validatedData.name,
-          city: validatedData.city,
-          age: validatedData.age,
-          ageUnit: validatedData.ageUnit,
-          gender: validatedData.gender,
-          refById: validatedData.refById,
-          secondRefId: validatedData.secondRefById,
-          remark: validatedData.remark,
-          colType: validatedData.colType,
-          expRptDate,
-          sampleDate,
-          sampleNo: validatedData.sampleNo,
-          sampleBy: validatedData.sampleBy,
-          paymentMode: validatedData.paymentMode,
-          paymentRefNo: validatedData.paymentRefNo,
-          totalAmount: validatedData.totalAmount,
-          collectionCharge: validatedData.collectionCharge,
-          discountPercent: validatedData.discountPercent,
-          discountAmount: validatedData.discountAmount,
-          receivedAmount: validatedData.receivedAmount,
-          dueAmount: validatedData.dueAmount,
-          stickerCount: validatedData.stickerCount,
-          barcode,
-          status: validatedData.dueAmount > 0 ? "Pending" : "Completed",
-          workspaceId: admin.workspaceId,
-        },
-      });
+    let result;
+    let attempts = 0;
+    const maxAttempts = 10;
 
-      const registrationTests = validatedData.testIds.map((testId) => ({
-        registrationId: registration.id,
-        testId: testId,
-      }));
+    while (attempts < maxAttempts) {
+      try {
+        result = await prisma.$transaction(async (tx) => {
+          const count = await tx.registration.count();
+          const nextVal = count + 1;
+          const labId = String(519 + nextVal);
+          const regNo = `QMP-${970282932 + nextVal}`;
 
-      await tx.registrationTest.createMany({ data: registrationTests });
-      return registration;
-    });
+          const registration = await tx.registration.create({
+            data: {
+              billOn: validatedData.billOn,
+              mobileNo: validatedData.mobileNo,
+              labId,
+              regNo,
+              title: validatedData.title,
+              name: validatedData.name,
+              city: validatedData.city,
+              age: validatedData.age,
+              ageUnit: validatedData.ageUnit,
+              gender: validatedData.gender,
+              refById: validatedData.refById,
+              secondRefId: validatedData.secondRefById,
+              remark: validatedData.remark,
+              colType: validatedData.colType,
+              expRptDate,
+              sampleDate,
+              sampleNo: validatedData.sampleNo,
+              sampleBy: validatedData.sampleBy,
+              paymentMode: validatedData.paymentMode,
+              paymentRefNo: validatedData.paymentRefNo,
+              totalAmount: validatedData.totalAmount,
+              collectionCharge: validatedData.collectionCharge,
+              discountPercent: validatedData.discountPercent,
+              discountAmount: validatedData.discountAmount,
+              receivedAmount: validatedData.receivedAmount,
+              dueAmount: validatedData.dueAmount,
+              stickerCount: validatedData.stickerCount,
+              barcode,
+              status: validatedData.dueAmount > 0 ? "Pending" : "Completed",
+              workspaceId: admin.workspaceId,
+            },
+          });
+
+          const registrationTests = validatedData.testIds.map((testId) => ({
+            registrationId: registration.id,
+            testId: testId,
+          }));
+
+          await tx.registrationTest.createMany({ data: registrationTests });
+          return registration;
+        });
+
+        break; // Success! Break out of the loop.
+      } catch (error) {
+        if (error.code === "P2002") {
+          attempts++;
+          if (attempts >= maxAttempts) {
+            throw new Error("Failed to generate a unique registration number after multiple attempts. Please try again.");
+          }
+          // Brief random delay to minimize collision chance
+          await new Promise((resolve) => setTimeout(resolve, Math.random() * 150));
+          continue;
+        }
+        throw error; // Propagate other errors
+      }
+    }
 
     return NextResponse.json({ success: true, message: "Registration created successfully!", registration: serializeData(result) });
   } catch (error) {
