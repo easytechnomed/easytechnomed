@@ -237,6 +237,17 @@ export default function DefaultTestsPage() {
     }
   };
 
+  const handleAddNewClick = () => {
+    setEditForm({
+      id: null,
+      name: "",
+      code: "",
+      price: "0.00",
+      parameters: []
+    });
+    setEditModalOpen(true);
+  };
+
   const handleEditClick = (test, e) => {
     if (e) e.stopPropagation();
     setEditForm({
@@ -349,8 +360,12 @@ export default function DefaultTestsPage() {
 
     setSaving(true);
     try {
-      const res = await fetch(`/adminstration/api/tests/${editForm.id}`, {
-        method: "PUT",
+      const isNew = editForm.id === null;
+      const url = isNew ? "/adminstration/api/tests" : `/adminstration/api/tests/${editForm.id}`;
+      const method = isNew ? "POST" : "PUT";
+      
+      const res = await fetch(url, {
+        method,
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           name: editForm.name,
@@ -361,15 +376,18 @@ export default function DefaultTestsPage() {
       }).then(r => r.json());
 
       if (res.success) {
-        toast.success(res.message || "Test updated successfully!");
+        toast.success(res.message || (isNew ? "Test created successfully!" : "Test updated successfully!"));
         setEditModalOpen(false);
         await fetchTests();
+        if (isNew && res.test) {
+          setSelectedTest(res.test);
+        }
       } else {
-        toast.error(res.error || "Failed to update test.");
+        toast.error(res.error || `Failed to ${isNew ? "create" : "update"} test.`);
       }
     } catch (error) {
-      console.error("Error saving edits:", error);
-      toast.error("An error occurred while saving edits.");
+      console.error("Error saving test:", error);
+      toast.error("An error occurred while saving.");
     } finally {
       setSaving(false);
     }
@@ -600,21 +618,33 @@ export default function DefaultTestsPage() {
                         <Typography variant="h6" sx={{ fontWeight: 800, whiteSpace: "nowrap" }}>
                           Default Tests
                         </Typography>
-                        <TextField
-                          size="small"
-                          variant="outlined"
-                          placeholder="Search tests..."
-                          value={searchQuery}
-                          onChange={handleSearchChange}
-                          sx={{ maxWidth: 300, flexGrow: 1 }}
-                          InputProps={{
-                            startAdornment: (
-                              <InputAdornment position="start">
-                                <SearchIcon sx={{ color: "text.secondary" }} />
-                              </InputAdornment>
-                            ),
-                          }}
-                        />
+                        <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, flexGrow: 1, justifyContent: "flex-end" }}>
+                          <TextField
+                            size="small"
+                            variant="outlined"
+                            placeholder="Search tests..."
+                            value={searchQuery}
+                            onChange={handleSearchChange}
+                            sx={{ maxWidth: 200, flexGrow: 1 }}
+                            InputProps={{
+                              startAdornment: (
+                                <InputAdornment position="start">
+                                  <SearchIcon sx={{ color: "text.secondary" }} />
+                                </InputAdornment>
+                              ),
+                            }}
+                          />
+                          <Button
+                            variant="contained"
+                            color="primary"
+                            size="small"
+                            startIcon={<AddIcon />}
+                            onClick={handleAddNewClick}
+                            sx={{ borderRadius: 2, whiteSpace: "nowrap" }}
+                          >
+                            Add Test
+                          </Button>
+                        </Box>
                       </Box>
 
                       {/* Test Catalog Table */}
@@ -862,6 +892,7 @@ export default function DefaultTestsPage() {
       >
         <form onSubmit={handleSaveEdit} style={{ display: "flex", flexDirection: "column", height: "100%", overflow: "hidden" }}>
           <DialogContent sx={{ display: "flex", flexDirection: "column", gap: 3, flexGrow: 1, overflowY: "auto" }}>
+
             <Box>
               <Typography variant="subtitle2" sx={{ fontWeight: 700, mb: 1.5 }}>
                 Test Metadata
@@ -1167,9 +1198,9 @@ export default function DefaultTestsPage() {
                 color="primary"
                 disabled={saving}
                 variant="contained"
-                startIcon={saving ? <CircularProgress size={16} color="inherit" /> : <EditIcon />}
+                startIcon={saving ? <CircularProgress size={16} color="inherit" /> : (editForm.id === null ? <AddIcon /> : <EditIcon />)}
               >
-                {saving ? "Saving..." : "Save Changes"}
+                {saving ? "Saving..." : (editForm.id === null ? "Create Test" : "Save Changes")}
               </Button>
             </Box>
           </DialogActions>
