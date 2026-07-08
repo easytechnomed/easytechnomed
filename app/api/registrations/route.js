@@ -84,8 +84,8 @@ export async function POST(req) {
 
     const count = await prisma.registration.count();
     const nextVal = count + 1;
-    const labId = String(519 + nextVal);
-    const regNo = `QMP-${970282932 + nextVal}`;
+    const labId = String(nextVal).padStart(3, "0");
+    const regNo = `ETM-${String(nextVal).padStart(8, "0")}`;
 
     const barcodeNumber = Math.floor(100000000 + Math.random() * 900000000);
     const barcode = `,EDT${barcodeNumber} ${barcodeNumber}`;
