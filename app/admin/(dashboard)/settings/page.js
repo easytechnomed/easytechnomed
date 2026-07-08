@@ -69,7 +69,11 @@ function SettingsContent() {
     framePdfUrl: "",
     headerMargin: 140,
     footerMargin: 100,
-    useFrameDefault: true
+    useFrameDefault: true,
+    authorizedSignatoryName1: "",
+    authorizedSignatoryDegree1: "",
+    authorizedSignatoryName2: "",
+    authorizedSignatoryDegree2: ""
   });
 
   // Profile states
@@ -123,7 +127,11 @@ function SettingsContent() {
             framePdfUrl: res.settings.framePdfUrl || "",
             headerMargin: res.settings.headerMargin ?? 140,
             footerMargin: res.settings.footerMargin ?? 100,
-            useFrameDefault: res.settings.useFrameDefault ?? true
+            useFrameDefault: res.settings.useFrameDefault ?? true,
+            authorizedSignatoryName1: res.settings.authorizedSignatoryName1 || "",
+            authorizedSignatoryDegree1: res.settings.authorizedSignatoryDegree1 || "",
+            authorizedSignatoryName2: res.settings.authorizedSignatoryName2 || "",
+            authorizedSignatoryDegree2: res.settings.authorizedSignatoryDegree2 || ""
           });
           setProfileName(res.settings.name || "");
           setProfileEmail(res.settings.email || "");
@@ -804,117 +812,222 @@ function SettingsContent() {
             <Typography variant="subtitle1" sx={{ fontWeight: 700, mb: 0.5, display: "flex", alignItems: "center", gap: 1 }}>
               📄 PDF Letterhead / Frame Overlay
             </Typography>
-            <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+            <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
               Upload a background A4 PDF that contains your pre-printed branding, logo header, and contact footer.
             </Typography>
             <Divider sx={{ mb: 3 }} />
 
-            <Box sx={{ mb: 4 }}>
-              <Typography variant="subtitle2" sx={{ fontWeight: 700, mb: 1 }}>
-                Current Frame Template URL
-              </Typography>
-
-              {settings.framePdfUrl ? (
-                <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, p: 1.5, bgcolor: "rgba(15, 118, 110, 0.05)", border: "1px solid", borderColor: "primary.light", borderRadius: 2 }}>
-                  <Typography variant="body2" sx={{ flexGrow: 1, fontStyle: "italic", wordBreak: "break-all", fontWeight: 500, color: "primary.dark" }}>
-                    {settings.framePdfUrl}
-                  </Typography>
-                  <Tooltip title="Preview PDF Template">
-                    <IconButton component="a" href={settings.framePdfUrl} target="_blank" color="primary" size="small">
-                      <PreviewIcon fontSize="small" />
-                    </IconButton>
-                  </Tooltip>
-                  <Tooltip title="Clear Template">
-                    <IconButton onClick={handleClearFrame} color="error" size="small">
-                      <ClearIcon fontSize="small" />
-                    </IconButton>
-                  </Tooltip>
-                </Box>
-              ) : (
-                <Box sx={{ p: 2, border: "2px dashed", borderColor: "grey.300", borderRadius: 3, textAlign: "center", bgcolor: "grey.50" }}>
-                  <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-                    No background frame PDF configured. Reports will generate on blank white pages.
-                  </Typography>
-                  <Button
-                    variant="outlined"
-                    component="label"
-                    startIcon={uploading ? <CircularProgress size={16} color="inherit" /> : <UploadIcon />}
-                    disabled={uploading}
-                    sx={{ textTransform: "none" }}
-                  >
-                    {uploading ? "Uploading..." : "Upload Letterhead PDF"}
-                    <input
-                      type="file"
-                      hidden
-                      accept="application/pdf"
-                      onChange={handleFileUpload}
+            <Grid container spacing={4}>
+              {/* Col 1: Preview */}
+              <Grid size={{ xs: 12, md: 5 }}>
+                <Typography variant="subtitle2" sx={{ fontWeight: 700, mb: 1.5 }}>
+                  Letterhead Frame Preview
+                </Typography>
+                {settings.framePdfUrl ? (
+                  <Box sx={{ border: "1px solid", borderColor: "divider", borderRadius: 3, overflow: "hidden", bgcolor: "#f8fafc", height: 420, position: "relative", boxShadow: "0 4px 12px rgba(0,0,0,0.05)" }}>
+                    <iframe
+                      src={`${settings.framePdfUrl}#toolbar=0&navpanes=0`}
+                      width="100%"
+                      height="100%"
+                      style={{ border: "none" }}
                     />
-                  </Button>
-                </Box>
-              )}
-            </Box>
-
-            <Grid container spacing={3}>
-              <Grid size={{ xs: 12, sm: 6 }}>
-                <Box sx={{ display: "flex", alignItems: "center", gap: 0.5, mb: 1 }}>
-                  <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>
-                    Header Margin (Top Space)
-                  </Typography>
-                  <Tooltip title="Height in points (pt) to leave blank at the top of the page for your letterhead logo & header (e.g. 1 inch = 72pt).">
-                    <IconButton size="small"><HelpIcon sx={{ fontSize: "1rem" }} /></IconButton>
-                  </Tooltip>
-                </Box>
-                <TextField
-                  type="number"
-                  size="small"
-                  fullWidth
-                  value={settings.headerMargin}
-                  onChange={(e) => handleInputChange("headerMargin", parseInt(e.target.value) || 0)}
-                  InputProps={{ inputProps: { min: 0 } }}
-                  placeholder="e.g. 140"
-                />
+                  </Box>
+                ) : (
+                  <Box sx={{ border: "2px dashed", borderColor: "grey.300", borderRadius: 3, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", p: 3, bgcolor: "grey.50", height: 420, textAlign: "center" }}>
+                    <Typography sx={{ fontSize: "3rem", mb: 1, filter: "grayscale(1)" }}>📄</Typography>
+                    <Typography variant="body2" color="text.secondary" sx={{ fontWeight: 600 }}>
+                      No Frame Uploaded
+                    </Typography>
+                    <Typography variant="caption" color="text.secondary" sx={{ maxWidth: 200, mt: 0.5 }}>
+                      Upload an A4 template on the right side to preview how your letters look here.
+                    </Typography>
+                  </Box>
+                )}
               </Grid>
 
-              <Grid size={{ xs: 12, sm: 6 }}>
-                <Box sx={{ display: "flex", alignItems: "center", gap: 0.5, mb: 1 }}>
-                  <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>
-                    Footer Margin (Bottom Space)
+              {/* Col 2: Upload and settings */}
+              <Grid size={{ xs: 12, md: 7 }}>
+                <Box sx={{ mb: 3 }}>
+                  <Typography variant="subtitle2" sx={{ fontWeight: 700, mb: 1.5 }}>
+                    Upload Letterhead File
                   </Typography>
-                  <Tooltip title="Height in points (pt) to leave blank at the bottom of the page for your letterhead footer (e.g. 1.4 inches = 100pt).">
-                    <IconButton size="small"><HelpIcon sx={{ fontSize: "1rem" }} /></IconButton>
-                  </Tooltip>
-                </Box>
-                <TextField
-                  type="number"
-                  size="small"
-                  fullWidth
-                  value={settings.footerMargin}
-                  onChange={(e) => handleInputChange("footerMargin", parseInt(e.target.value) || 0)}
-                  InputProps={{ inputProps: { min: 0 } }}
-                  placeholder="e.g. 100"
-                />
-              </Grid>
 
-              <Grid size={{ xs: 12 }}>
-                <FormControlLabel
-                  control={
-                    <Switch
-                      checked={settings.useFrameDefault}
-                      onChange={(e) => handleInputChange("useFrameDefault", e.target.checked)}
-                      color="primary"
-                    />
-                  }
-                  label={
-                    <Box>
-                      <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>
-                        Use Letterhead Frame by Default
-                      </Typography>
-                      <Typography variant="caption" color="text.secondary">
-                        When checked, the PDF print/export button will default to overlaying reports on the template frame.
-                      </Typography>
+                  {settings.framePdfUrl ? (
+                    <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, p: 2, bgcolor: "rgba(15, 118, 110, 0.05)", border: "1px solid", borderColor: "primary.light", borderRadius: 3, mb: 3 }}>
+                      <Box sx={{ display: "flex", flexDirection: "column", flexGrow: 1, minWidth: 0 }}>
+                        <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 700, textTransform: "uppercase" }}>
+                          Active PDF URL
+                        </Typography>
+                        <Typography variant="body2" sx={{ fontStyle: "italic", wordBreak: "break-all", fontWeight: 500, color: "primary.dark", mt: 0.5 }}>
+                          {settings.framePdfUrl.split("/").pop()}
+                        </Typography>
+                      </Box>
+                      <Tooltip title="Preview PDF Template in new tab">
+                        <IconButton component="a" href={settings.framePdfUrl} target="_blank" color="primary" size="small" sx={{ bgcolor: "white", boxShadow: "0 2px 5px rgba(0,0,0,0.05)" }}>
+                          <PreviewIcon fontSize="small" />
+                        </IconButton>
+                      </Tooltip>
+                      <Tooltip title="Delete/Clear Template">
+                        <IconButton onClick={handleClearFrame} color="error" size="small" sx={{ bgcolor: "white", boxShadow: "0 2px 5px rgba(0,0,0,0.05)" }}>
+                          <ClearIcon fontSize="small" />
+                        </IconButton>
+                      </Tooltip>
                     </Box>
-                  }
-                />
+                  ) : (
+                    <Box sx={{ p: 4, border: "2px dashed", borderColor: "grey.300", borderRadius: 3, textAlign: "center", bgcolor: "grey.50", mb: 3 }}>
+                      <Typography variant="body2" color="text.secondary" sx={{ mb: 2, fontWeight: 500 }}>
+                        No background frame PDF configured. Reports will generate on blank white pages.
+                      </Typography>
+                      <Button
+                        variant="contained"
+                        component="label"
+                        startIcon={uploading ? <CircularProgress size={16} color="inherit" /> : <UploadIcon />}
+                        disabled={uploading}
+                        sx={{ textTransform: "none", borderRadius: 2 }}
+                      >
+                        {uploading ? "Uploading..." : "Upload Letterhead PDF"}
+                        <input
+                          type="file"
+                          hidden
+                          accept="application/pdf"
+                          onChange={handleFileUpload}
+                        />
+                      </Button>
+                    </Box>
+                  )}
+                  {settings.framePdfUrl && (
+                    <Button
+                      variant="outlined"
+                      component="label"
+                      startIcon={uploading ? <CircularProgress size={16} color="inherit" /> : <UploadIcon />}
+                      disabled={uploading}
+                      sx={{ textTransform: "none", borderRadius: 2, mb: 3 }}
+                    >
+                      {uploading ? "Uploading..." : "Upload Different PDF"}
+                      <input
+                        type="file"
+                        hidden
+                        accept="application/pdf"
+                        onChange={handleFileUpload}
+                      />
+                    </Button>
+                  )}
+                </Box>
+
+                <Grid container spacing={3}>
+                  <Grid size={{ xs: 12, sm: 6 }}>
+                    <Box sx={{ display: "flex", alignItems: "center", gap: 0.5, mb: 1 }}>
+                      <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>
+                        Header Margin (Top Space)
+                      </Typography>
+                      <Tooltip title="Height in points (pt) to leave blank at the top of the page for your letterhead logo & header (e.g. 1 inch = 72pt).">
+                        <IconButton size="small"><HelpIcon sx={{ fontSize: "1rem" }} /></IconButton>
+                      </Tooltip>
+                    </Box>
+                    <TextField
+                      type="number"
+                      size="small"
+                      fullWidth
+                      value={settings.headerMargin}
+                      onChange={(e) => handleInputChange("headerMargin", parseInt(e.target.value) || 0)}
+                      InputProps={{ inputProps: { min: 0 } }}
+                      placeholder="e.g. 140"
+                    />
+                  </Grid>
+
+                  <Grid size={{ xs: 12, sm: 6 }}>
+                    <Box sx={{ display: "flex", alignItems: "center", gap: 0.5, mb: 1 }}>
+                      <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>
+                        Footer Margin (Bottom Space)
+                      </Typography>
+                      <Tooltip title="Height in points (pt) to leave blank at the bottom of the page for your letterhead footer (e.g. 1.4 inches = 100pt).">
+                        <IconButton size="small"><HelpIcon sx={{ fontSize: "1rem" }} /></IconButton>
+                      </Tooltip>
+                    </Box>
+                    <TextField
+                      type="number"
+                      size="small"
+                      fullWidth
+                      value={settings.footerMargin}
+                      onChange={(e) => handleInputChange("footerMargin", parseInt(e.target.value) || 0)}
+                      InputProps={{ inputProps: { min: 0 } }}
+                      placeholder="e.g. 100"
+                    />
+                  </Grid>
+
+                  <Grid size={{ xs: 12 }}>
+                    <FormControlLabel
+                      control={
+                        <Switch
+                          checked={settings.useFrameDefault}
+                          onChange={(e) => handleInputChange("useFrameDefault", e.target.checked)}
+                          color="primary"
+                        />
+                      }
+                      label={
+                        <Box>
+                          <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>
+                            Use Letterhead Frame by Default
+                          </Typography>
+                          <Typography variant="caption" color="text.secondary">
+                            When checked, the PDF print/export button will default to overlaying reports on the template frame.
+                          </Typography>
+                        </Box>
+                      }
+                    />
+                  </Grid>
+
+                  <Grid size={{ xs: 12 }}>
+                    <Typography variant="subtitle2" sx={{ fontWeight: 700, mt: 2, mb: 0.5, color: "text.primary" }}>
+                      Authorized Signatories (For Patient Reports)
+                    </Typography>
+                    <Divider sx={{ mb: 1 }} />
+                  </Grid>
+
+                  <Grid size={{ xs: 12, sm: 6 }}>
+                    <TextField
+                      label="Signatory 1 - Full Name"
+                      size="small"
+                      fullWidth
+                      value={settings.authorizedSignatoryName1 || ""}
+                      onChange={(e) => handleInputChange("authorizedSignatoryName1", e.target.value)}
+                      placeholder="e.g. Dr. Ramesh Kumar"
+                    />
+                  </Grid>
+
+                  <Grid size={{ xs: 12, sm: 6 }}>
+                    <TextField
+                      label="Signatory 1 - Qualifications / Degree"
+                      size="small"
+                      fullWidth
+                      value={settings.authorizedSignatoryDegree1 || ""}
+                      onChange={(e) => handleInputChange("authorizedSignatoryDegree1", e.target.value)}
+                      placeholder="e.g. MBBS, MD (Pathology)"
+                    />
+                  </Grid>
+
+                  <Grid size={{ xs: 12, sm: 6 }}>
+                    <TextField
+                      label="Signatory 2 - Full Name"
+                      size="small"
+                      fullWidth
+                      value={settings.authorizedSignatoryName2 || ""}
+                      onChange={(e) => handleInputChange("authorizedSignatoryName2", e.target.value)}
+                      placeholder="e.g. Dr. Anita Sharma"
+                    />
+                  </Grid>
+
+                  <Grid size={{ xs: 12, sm: 6 }}>
+                    <TextField
+                      label="Signatory 2 - Qualifications / Degree"
+                      size="small"
+                      fullWidth
+                      value={settings.authorizedSignatoryDegree2 || ""}
+                      onChange={(e) => handleInputChange("authorizedSignatoryDegree2", e.target.value)}
+                      placeholder="e.g. DCP, Consulting Pathologist"
+                    />
+                  </Grid>
+                </Grid>
               </Grid>
             </Grid>
 

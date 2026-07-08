@@ -114,6 +114,10 @@ export async function GET(req, { params }) {
         headerMargin: true,
         footerMargin: true,
         useFrameDefault: true,
+        authorizedSignatoryName1: true,
+        authorizedSignatoryDegree1: true,
+        authorizedSignatoryName2: true,
+        authorizedSignatoryDegree2: true,
       },
     });
 
@@ -413,25 +417,34 @@ export async function GET(req, { params }) {
     // Draw Pathologist Signatures and QR Code
     const sigY = tableActiveY - 50;
 
-    // Chief Medical Officer (Left)
-    currentPage.drawLine({
-      start: { x: leftMargin + 15, y: sigY + 12 },
-      end: { x: leftMargin + 155, y: sigY + 12 },
-      thickness: 0.5,
-      color: rgb(0.6, 0.6, 0.6),
-    });
-    drawText(currentPage, "Dr. Ahmadi", leftMargin + 15, sigY, 9, true);
-    drawText(currentPage, "M.B.B.S, Chief CMO", leftMargin + 15, sigY - 12, 8, false, rgb(0.4, 0.45, 0.5));
+    const hasSig1 = !!(configAdmin?.authorizedSignatoryName1 && configAdmin.authorizedSignatoryName1.trim());
+    const hasSig2 = !!(configAdmin?.authorizedSignatoryName2 && configAdmin.authorizedSignatoryName2.trim());
 
-    // Chief Pathologist (Middle-Right)
-    currentPage.drawLine({
-      start: { x: 240, y: sigY + 12 },
-      end: { x: 380, y: sigY + 12 },
-      thickness: 0.5,
-      color: rgb(0.6, 0.6, 0.6),
-    });
-    drawText(currentPage, "Dr. ANAND KUMAR", 240, sigY, 9, true);
-    drawText(currentPage, "M.D. (Pathology), Chief Pathologist", 240, sigY - 12, 8, false, rgb(0.4, 0.45, 0.5));
+    if (hasSig1) {
+      currentPage.drawLine({
+        start: { x: leftMargin + 15, y: sigY + 12 },
+        end: { x: leftMargin + 155, y: sigY + 12 },
+        thickness: 0.5,
+        color: rgb(0.6, 0.6, 0.6),
+      });
+      drawText(currentPage, configAdmin.authorizedSignatoryName1, leftMargin + 15, sigY, 9, true);
+      if (configAdmin.authorizedSignatoryDegree1) {
+        drawText(currentPage, configAdmin.authorizedSignatoryDegree1, leftMargin + 15, sigY - 12, 8, false, rgb(0.4, 0.45, 0.5));
+      }
+    }
+
+    if (hasSig2) {
+      currentPage.drawLine({
+        start: { x: 240, y: sigY + 12 },
+        end: { x: 380, y: sigY + 12 },
+        thickness: 0.5,
+        color: rgb(0.6, 0.6, 0.6),
+      });
+      drawText(currentPage, configAdmin.authorizedSignatoryName2, 240, sigY, 9, true);
+      if (configAdmin.authorizedSignatoryDegree2) {
+        drawText(currentPage, configAdmin.authorizedSignatoryDegree2, 240, sigY - 12, 8, false, rgb(0.4, 0.45, 0.5));
+      }
+    }
 
     // QR Code (Far Right)
     if (qrImage) {

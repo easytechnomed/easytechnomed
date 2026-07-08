@@ -14,6 +14,10 @@ export async function GET() {
         headerMargin: true,
         footerMargin: true,
         useFrameDefault: true,
+        authorizedSignatoryName1: true,
+        authorizedSignatoryDegree1: true,
+        authorizedSignatoryName2: true,
+        authorizedSignatoryDegree2: true,
       },
     });
     return NextResponse.json({ success: true, settings: adminRecord });
@@ -31,6 +35,10 @@ export async function POST(req) {
     const footerMargin = parseInt(body.footerMargin) || 100;
     const useFrameDefault = Boolean(body.useFrameDefault);
     const framePdfUrl = body.framePdfUrl || null;
+    const authorizedSignatoryName1 = body.authorizedSignatoryName1 || null;
+    const authorizedSignatoryDegree1 = body.authorizedSignatoryDegree1 || null;
+    const authorizedSignatoryName2 = body.authorizedSignatoryName2 || null;
+    const authorizedSignatoryDegree2 = body.authorizedSignatoryDegree2 || null;
 
     await prisma.admin.update({
       where: { id: admin.id },
@@ -39,6 +47,10 @@ export async function POST(req) {
         headerMargin,
         footerMargin,
         useFrameDefault,
+        authorizedSignatoryName1,
+        authorizedSignatoryDegree1,
+        authorizedSignatoryName2,
+        authorizedSignatoryDegree2,
       },
     });
 

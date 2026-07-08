@@ -117,6 +117,11 @@ model Admin {
   footerMargin    Int            @default(100)
   useFrameDefault Boolean        @default(true)
 
+  authorizedSignatoryName1   String?
+  authorizedSignatoryDegree1 String?
+  authorizedSignatoryName2   String?
+  authorizedSignatoryDegree2 String?
+
   startAt         DateTime?
   expireAt        DateTime?
 
