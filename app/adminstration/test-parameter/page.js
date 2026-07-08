@@ -51,7 +51,9 @@ import {
   Science as ScienceIcon,
   Delete as DeleteIcon,
   Search as SearchIcon,
-  Info as InfoIcon
+  Info as InfoIcon,
+  Edit as EditIcon,
+  Add as AddIcon
 } from "@mui/icons-material";
 import { toast } from "sonner";
 
@@ -110,6 +112,7 @@ export default function DefaultTestsPage() {
   const router = useRouter();
   const isMdUp = useMediaQuery(lightPurpleTheme.breakpoints.up("md"));
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [desktopDrawerOpen, setDesktopDrawerOpen] = useState(true);
   const [tests, setTests] = useState([]);
   const [selectedTest, setSelectedTest] = useState(null);
   const [searchQuery, setSearchQuery] = useState("");
@@ -125,6 +128,11 @@ export default function DefaultTestsPage() {
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [testToDelete, setTestToDelete] = useState(null);
   const [deleting, setDeleting] = useState(false);
+
+  // Edit state
+  const [editModalOpen, setEditModalOpen] = useState(false);
+  const [editForm, setEditForm] = useState({ id: null, name: "", code: "", price: "", parameters: [] });
+  const [saving, setSaving] = useState(false);
 
   const fetchTests = async (currentPage = page, query = searchQuery) => {
     setLoading(true);
@@ -215,6 +223,111 @@ export default function DefaultTestsPage() {
     }
   };
 
+  const handleEditClick = (test, e) => {
+    if (e) e.stopPropagation();
+    setEditForm({
+      id: test.id,
+      name: test.name,
+      code: test.code || "",
+      price: test.price.toString(),
+      parameters: test.parameters ? test.parameters.map(p => ({
+        id: p.id,
+        name: p.name || "",
+        unit: p.unit || "",
+        order: p.order?.toString() || "1",
+        minValMale: p.minValMale !== null ? p.minValMale.toString() : "",
+        maxValMale: p.maxValMale !== null ? p.maxValMale.toString() : "",
+        normalRangeMale: p.normalRangeMale || "",
+        minValFemale: p.minValFemale !== null ? p.minValFemale.toString() : "",
+        maxValFemale: p.maxValFemale !== null ? p.maxValFemale.toString() : "",
+        normalRangeFemale: p.normalRangeFemale || "",
+        minValBaby: p.minValBaby !== null ? p.minValBaby.toString() : "",
+        maxValBaby: p.maxValBaby !== null ? p.maxValBaby.toString() : "",
+        normalRangeBaby: p.normalRangeBaby || "",
+        normalRangeDefault: p.normalRangeDefault || ""
+      })) : []
+    });
+    setEditModalOpen(true);
+  };
+
+  const handleAddParamRow = () => {
+    setEditForm(prev => ({
+      ...prev,
+      parameters: [
+        ...prev.parameters,
+        {
+          name: "",
+          unit: "",
+          order: (prev.parameters.length + 1).toString(),
+          minValMale: "",
+          maxValMale: "",
+          normalRangeMale: "",
+          minValFemale: "",
+          maxValFemale: "",
+          normalRangeFemale: "",
+          minValBaby: "",
+          maxValBaby: "",
+          normalRangeBaby: "",
+          normalRangeDefault: ""
+        }
+      ]
+    }));
+  };
+
+  const handleRemoveParamRow = (index) => {
+    setEditForm(prev => ({
+      ...prev,
+      parameters: prev.parameters.filter((_, idx) => idx !== index)
+    }));
+  };
+
+  const handleParamChange = (index, field, value) => {
+    setEditForm(prev => {
+      const updatedParams = [...prev.parameters];
+      updatedParams[index] = { ...updatedParams[index], [field]: value };
+      return { ...prev, parameters: updatedParams };
+    });
+  };
+
+  const handleSaveEdit = async (e) => {
+    e.preventDefault();
+    if (!editForm.name) {
+      toast.error("Test name is required.");
+      return;
+    }
+    if (!editForm.price || isNaN(parseFloat(editForm.price))) {
+      toast.error("Valid test price is required.");
+      return;
+    }
+
+    setSaving(true);
+    try {
+      const res = await fetch(`/adminstration/api/tests/${editForm.id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: editForm.name,
+          code: editForm.code,
+          price: editForm.price,
+          parameters: editForm.parameters
+        })
+      }).then(r => r.json());
+
+      if (res.success) {
+        toast.success(res.message || "Test updated successfully!");
+        setEditModalOpen(false);
+        await fetchTests();
+      } else {
+        toast.error(res.error || "Failed to update test.");
+      }
+    } catch (error) {
+      console.error("Error saving edits:", error);
+      toast.error("An error occurred while saving edits.");
+    } finally {
+      setSaving(false);
+    }
+  };
+
   // Filtered tests is now managed server-side
 
   const menuItems = [
@@ -227,11 +340,17 @@ export default function DefaultTestsPage() {
 
   const drawerContent = (
     <Box sx={{ height: "100%", display: "flex", flexDirection: "column" }}>
-      <Toolbar sx={{ display: "flex", flexDirection: "column", alignItems: "flex-start", justifyContent: "center", px: 3, py: 2.5, gap: 0.5 }}>
-        <Box component="img" src="/logo/logobg.png" alt="EasyTechnoMed Logo" sx={{ height: 45, objectFit: "contain" }} />
-        <Typography variant="caption" sx={{ fontWeight: 800, color: "primary.main", letterSpacing: "1px", textTransform: "uppercase" }}>
-          SuperAdmin Console
-        </Typography>
+      <Toolbar sx={{ display: "flex", flexDirection: "column", alignItems: desktopDrawerOpen ? "flex-start" : "center", justifyContent: "center", px: desktopDrawerOpen ? 3 : 1, py: 2.5, gap: 0.5 }}>
+        {desktopDrawerOpen ? (
+          <Box component="img" src="/logo/logobg.png" alt="EasyTechnoMed Logo" sx={{ height: 45, objectFit: "contain" }} />
+        ) : (
+          <ScienceIcon color="primary" sx={{ fontSize: 32 }} />
+        )}
+        {desktopDrawerOpen && (
+          <Typography variant="caption" sx={{ fontWeight: 800, color: "primary.main", letterSpacing: "1px", textTransform: "uppercase" }}>
+            SuperAdmin Console
+          </Typography>
+        )}
       </Toolbar>
       <Divider />
       <Box sx={{ overflow: "auto", flexGrow: 1, py: 2 }}>
@@ -248,7 +367,8 @@ export default function DefaultTestsPage() {
                   sx={{
                     borderRadius: "8px",
                     py: 1.2,
-                    px: 2,
+                    px: desktopDrawerOpen ? 2 : 0,
+                    justifyContent: desktopDrawerOpen ? "initial" : "center",
                     backgroundColor: isActive ? "rgba(124, 58, 237, 0.08)" : "transparent",
                     color: isActive ? "primary.main" : "text.secondary",
                     "&:hover": {
@@ -258,20 +378,25 @@ export default function DefaultTestsPage() {
                         color: "primary.main",
                       },
                     },
-                    "& .MuiListItemIcon-root": {
-                      color: isActive ? "primary.main" : "text.secondary",
-                      minWidth: 40,
-                    },
                   }}
                 >
-                  <ListItemIcon>{item.icon}</ListItemIcon>
-                  <ListItemText
-                    primary={item.text}
-                    primaryTypographyProps={{
-                      fontWeight: isActive ? 700 : 500,
-                      fontSize: "0.9rem",
-                    }}
-                  />
+                  <ListItemIcon sx={{ 
+                    color: isActive ? "primary.main" : "text.secondary",
+                    minWidth: 0, 
+                    mr: desktopDrawerOpen ? 2 : 0, 
+                    justifyContent: "center" 
+                  }}>
+                    {item.icon}
+                  </ListItemIcon>
+                  {desktopDrawerOpen && (
+                    <ListItemText
+                      primary={item.text}
+                      primaryTypographyProps={{
+                        fontWeight: isActive ? 700 : 500,
+                        fontSize: "0.9rem",
+                      }}
+                    />
+                  )}
                 </ListItemButton>
               </ListItem>
             );
@@ -279,18 +404,20 @@ export default function DefaultTestsPage() {
         </List>
       </Box>
       <Divider />
-      <Box sx={{ p: 2, bgcolor: "rgba(0,0,0,0.02)", display: "flex", alignItems: "center", gap: 1.5 }}>
+      <Box sx={{ p: 2, bgcolor: "rgba(0,0,0,0.02)", display: "flex", alignItems: "center", gap: 1.5, justifyContent: desktopDrawerOpen ? "flex-start" : "center" }}>
         <Avatar sx={{ bgcolor: "primary.main", color: "primary.contrastText", width: 40, height: 40, fontWeight: 700 }}>
           S
         </Avatar>
-        <Box sx={{ minWidth: 0, flexGrow: 1 }}>
-          <Typography variant="subtitle2" noWrap sx={{ fontWeight: 700, color: "text.primary" }}>
-            System Admin
-          </Typography>
-          <Typography variant="caption" noWrap sx={{ display: "block", color: "text.secondary" }}>
-            superadmin@easytechnomed.com
-          </Typography>
-        </Box>
+        {desktopDrawerOpen && (
+          <Box sx={{ minWidth: 0, flexGrow: 1 }}>
+            <Typography variant="subtitle2" noWrap sx={{ fontWeight: 700, color: "text.primary" }}>
+              System Admin
+            </Typography>
+            <Typography variant="caption" noWrap sx={{ display: "block", color: "text.secondary" }}>
+              superadmin@easytechnomed.com
+            </Typography>
+          </Box>
+        )}
       </Box>
     </Box>
   );
@@ -298,10 +425,21 @@ export default function DefaultTestsPage() {
   return (
     <ThemeProvider theme={lightPurpleTheme}>
       <CssBaseline />
-      <Box sx={{ display: "flex", minHeight: "100vh", bgcolor: "background.default" }}>
+      <Box sx={{ display: "flex", height: "100dvh", overflow: "hidden", bgcolor: "background.default" }}>
         
         {/* Sidebar Navigation */}
-        <Box component="nav" sx={{ width: { md: drawerWidth }, flexShrink: { md: 0 } }}>
+        <Box
+          component="nav"
+          sx={{
+            width: { md: desktopDrawerOpen ? drawerWidth : 70 },
+            flexShrink: { md: 0 },
+            transition: (theme) =>
+              theme.transitions.create("width", {
+                easing: theme.transitions.easing.sharp,
+                duration: theme.transitions.duration.enteringScreen,
+              }),
+          }}
+        >
           {/* Mobile Drawer */}
           <Drawer
             variant="temporary"
@@ -321,7 +459,18 @@ export default function DefaultTestsPage() {
             variant="permanent"
             sx={{
               display: { xs: "none", md: "block" },
-              "& .MuiDrawer-paper": { boxSizing: "border-box", width: drawerWidth, borderRight: "1px solid", borderColor: "divider" },
+              "& .MuiDrawer-paper": {
+                boxSizing: "border-box",
+                width: desktopDrawerOpen ? drawerWidth : 70,
+                borderRight: "1px solid",
+                borderColor: "divider",
+                transition: (theme) =>
+                  theme.transitions.create("width", {
+                    easing: theme.transitions.easing.sharp,
+                    duration: theme.transitions.duration.enteringScreen,
+                  }),
+                overflowX: "hidden",
+              },
             }}
             open
           >
@@ -330,7 +479,22 @@ export default function DefaultTestsPage() {
         </Box>
 
         {/* Right Content Area */}
-        <Box sx={{ flexGrow: 1, display: "flex", flexDirection: "column", minWidth: 0 }}>
+        <Box
+          sx={{
+            flexGrow: 1,
+            display: "flex",
+            flexDirection: "column",
+            minWidth: 0,
+            height: "100%",
+            overflow: "hidden",
+            width: `calc(100% - ${desktopDrawerOpen ? drawerWidth : 70}px)`,
+            transition: (theme) =>
+              theme.transitions.create("width", {
+                easing: theme.transitions.easing.sharp,
+                duration: theme.transitions.duration.enteringScreen,
+              }),
+          }}
+        >
           {/* Header AppBar */}
           <AppBar
             position="static"
@@ -345,6 +509,13 @@ export default function DefaultTestsPage() {
                   edge="start"
                   onClick={() => setMobileOpen(true)}
                   sx={{ mr: 1, display: { md: "none" } }}
+                >
+                  <MenuIcon />
+                </IconButton>
+                <IconButton
+                  color="inherit"
+                  onClick={() => setDesktopDrawerOpen(!desktopDrawerOpen)}
+                  sx={{ mr: 1, display: { xs: "none", md: "inline-flex" } }}
                 >
                   <MenuIcon />
                 </IconButton>
@@ -367,47 +538,40 @@ export default function DefaultTestsPage() {
           </AppBar>
 
           {/* Main Workspace Body */}
-          <Box sx={{ flexGrow: 1, p: { xs: 2, md: 3 }, overflow: "auto" }}>
+          <Box sx={{ flexGrow: 1, p: { xs: 2, md: 3 }, overflow: "hidden", display: "flex", flexDirection: "column" }}>
             {loading && tests.length === 0 ? (
               <Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", height: "50vh" }}>
                 <CircularProgress color="primary" />
               </Box>
             ) : (
-              <Grid container spacing={3}>
+              <Grid container spacing={3} sx={{ flexGrow: 1, height: "100%", minHeight: 0 }}>
                 {/* Left Side: Test Directory list */}
-                <Grid size={{ xs: 12, md: 6 }}>
-                  <Card sx={{ height: "100%", display: "flex", flexDirection: "column" }}>
-                    <CardContent sx={{ p: 2.5, display: "flex", flexDirection: "column", gap: 2 }}>
-                      <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 1.5 }}>
-                        <Box>
-                          <Typography variant="h6" sx={{ fontWeight: 800 }}>
-                            Global Test Catalog
-                          </Typography>
-                          <Typography variant="caption" color="text.secondary">
-                            Manage default tests automatically copied to new client workspaces.
-                          </Typography>
-                        </Box>
+                <Grid size={{ xs: 12, md: 6 }} sx={{ height: "100%", display: "flex", flexDirection: "column" }}>
+                  <Card sx={{ height: "100%", display: "flex", flexDirection: "column", overflow: "hidden" }}>
+                    <CardContent sx={{ p: 2.5, display: "flex", flexDirection: "column", gap: 2, height: "100%", overflow: "hidden" }}>
+                      <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 2 }}>
+                        <Typography variant="h6" sx={{ fontWeight: 800, whiteSpace: "nowrap" }}>
+                          Default Tests
+                        </Typography>
+                        <TextField
+                          size="small"
+                          variant="outlined"
+                          placeholder="Search tests..."
+                          value={searchQuery}
+                          onChange={handleSearchChange}
+                          sx={{ maxWidth: 300, flexGrow: 1 }}
+                          InputProps={{
+                            startAdornment: (
+                              <InputAdornment position="start">
+                                <SearchIcon sx={{ color: "text.secondary" }} />
+                              </InputAdornment>
+                            ),
+                          }}
+                        />
                       </Box>
 
-                      {/* Search Input */}
-                      <TextField
-                        fullWidth
-                        size="small"
-                        variant="outlined"
-                        placeholder="Search test catalog by name or code..."
-                        value={searchQuery}
-                        onChange={handleSearchChange}
-                        InputProps={{
-                          startAdornment: (
-                            <InputAdornment position="start">
-                              <SearchIcon sx={{ color: "text.secondary" }} />
-                            </InputAdornment>
-                          ),
-                        }}
-                      />
-
                       {/* Test Catalog Table */}
-                      <TableContainer component={Paper} elevation={0} sx={{ border: "1px solid", borderColor: "divider", maxHeight: "calc(100vh - 280px)" }}>
+                      <TableContainer component={Paper} elevation={0} sx={{ border: "1px solid", borderColor: "divider", flexGrow: 1, overflowY: "auto" }}>
                         <Table stickyHeader size="small">
                           <TableHead>
                             <TableRow>
@@ -450,13 +614,22 @@ export default function DefaultTestsPage() {
                                       ₹{parseFloat(test.price).toFixed(2)}
                                     </TableCell>
                                     <TableCell align="center" onClick={(e) => e.stopPropagation()}>
-                                      <IconButton
-                                        size="small"
-                                        color="error"
-                                        onClick={(e) => handleDeleteClick(test, e)}
-                                      >
-                                        <DeleteIcon fontSize="small" />
-                                      </IconButton>
+                                      <Box sx={{ display: "flex", justifyContent: "center", gap: 0.5 }}>
+                                        <IconButton
+                                          size="small"
+                                          color="primary"
+                                          onClick={(e) => handleEditClick(test, e)}
+                                        >
+                                          <EditIcon fontSize="small" />
+                                        </IconButton>
+                                        <IconButton
+                                          size="small"
+                                          color="error"
+                                          onClick={(e) => handleDeleteClick(test, e)}
+                                        >
+                                          <DeleteIcon fontSize="small" />
+                                        </IconButton>
+                                      </Box>
                                     </TableCell>
                                   </TableRow>
                                 );
@@ -483,25 +656,37 @@ export default function DefaultTestsPage() {
                 </Grid>
 
                 {/* Right Side: Parameter Detail Card */}
-                <Grid size={{ xs: 12, md: 6 }}>
+                <Grid size={{ xs: 12, md: 6 }} sx={{ height: "100%", display: "flex", flexDirection: "column" }}>
                   {selectedTest ? (
-                    <Card sx={{ height: "100%", display: "flex", flexDirection: "column" }}>
-                      <CardContent sx={{ p: 2.5, display: "flex", flexDirection: "column", gap: 2 }}>
-                        <Box sx={{ borderBottom: "1px solid", borderColor: "divider", pb: 2 }}>
-                          <Typography variant="caption" color="primary" sx={{ fontWeight: 700, textTransform: "uppercase" }}>
-                            Selected Test Parameter configuration
-                          </Typography>
-                          <Typography variant="h6" sx={{ fontWeight: 800, mt: 0.5 }}>
-                            {selectedTest.name}
-                          </Typography>
-                          {selectedTest.code && (
-                            <Typography variant="caption" sx={{ display: "inline-block", bgcolor: "rgba(0,0,0,0.05)", px: 1, py: 0.2, borderRadius: 1, fontFamily: "monospace", mt: 0.5 }}>
-                              Code: {selectedTest.code}
+                    <Card sx={{ height: "100%", display: "flex", flexDirection: "column", overflow: "hidden" }}>
+                      <CardContent sx={{ p: 2.5, display: "flex", flexDirection: "column", gap: 2, height: "100%", overflow: "hidden" }}>
+                        <Box sx={{ borderBottom: "1px solid", borderColor: "divider", pb: 2, display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+                          <Box>
+                            <Typography variant="caption" color="primary" sx={{ fontWeight: 700, textTransform: "uppercase" }}>
+                              Selected Test Parameter configuration
                             </Typography>
-                          )}
+                            <Typography variant="h6" sx={{ fontWeight: 800, mt: 0.5 }}>
+                              {selectedTest.name}
+                            </Typography>
+                            {selectedTest.code && (
+                              <Typography variant="caption" sx={{ display: "inline-block", bgcolor: "rgba(0,0,0,0.05)", px: 1, py: 0.2, borderRadius: 1, fontFamily: "monospace", mt: 0.5 }}>
+                                Code: {selectedTest.code}
+                              </Typography>
+                            )}
+                          </Box>
+                          <Button
+                            variant="outlined"
+                            color="primary"
+                            size="small"
+                            startIcon={<EditIcon />}
+                            onClick={(e) => handleEditClick(selectedTest, e)}
+                            sx={{ borderRadius: 2 }}
+                          >
+                            Edit Test & Params
+                          </Button>
                         </Box>
 
-                        <Box sx={{ flexGrow: 1 }}>
+                        <Box sx={{ flexGrow: 1, display: "flex", flexDirection: "column", overflow: "hidden" }}>
                           {(!selectedTest.parameters || selectedTest.parameters.length === 0) ? (
                             <Box sx={{ py: 8, display: "flex", flexDirection: "column", alignItems: "center", gap: 1.5 }}>
                               <InfoIcon sx={{ fontSize: 40, color: "text.secondary", opacity: 0.5 }} />
@@ -510,12 +695,12 @@ export default function DefaultTestsPage() {
                               </Typography>
                             </Box>
                           ) : (
-                            <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
+                            <Box sx={{ display: "flex", flexDirection: "column", gap: 2, flexGrow: 1, overflow: "hidden" }}>
                               <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>
                                 Clinical Parameters ({selectedTest.parameters.length})
                               </Typography>
                               
-                              <Box sx={{ display: "flex", flexDirection: "column", gap: 2, maxHeight: "calc(100vh - 280px)", overflowY: "auto", pr: 0.5 }}>
+                              <Box sx={{ display: "flex", flexDirection: "column", gap: 2, flexGrow: 1, overflowY: "auto", pr: 0.5 }}>
                                 {selectedTest.parameters.map((param, index) => (
                                   <Paper
                                     key={param.id}
@@ -613,6 +798,296 @@ export default function DefaultTestsPage() {
           </Box>
         </Box>
       </Box>
+
+      {/* Edit Test & Parameters Dialog */}
+      <Dialog
+        open={editModalOpen}
+        onClose={() => !saving && setEditModalOpen(false)}
+        maxWidth="md"
+        fullWidth
+        aria-labelledby="edit-dialog-title"
+      >
+        <DialogTitle id="edit-dialog-title" sx={{ fontWeight: 800 }}>
+          Edit Default Test & Parameters
+        </DialogTitle>
+        <form onSubmit={handleSaveEdit}>
+          <DialogContent sx={{ display: "flex", flexDirection: "column", gap: 3 }}>
+            <Box>
+              <Typography variant="subtitle2" sx={{ fontWeight: 700, mb: 1.5 }}>
+                Test Metadata
+              </Typography>
+              <Grid container spacing={2}>
+                <Grid size={{ xs: 12, md: 5 }}>
+                  <TextField
+                    fullWidth
+                    size="small"
+                    label="Test Name *"
+                    value={editForm.name}
+                    onChange={(e) => setEditForm(prev => ({ ...prev, name: e.target.value }))}
+                  />
+                </Grid>
+                <Grid size={{ xs: 6, md: 3 }}>
+                  <TextField
+                    fullWidth
+                    size="small"
+                    label="Test Code"
+                    value={editForm.code}
+                    onChange={(e) => setEditForm(prev => ({ ...prev, code: e.target.value }))}
+                  />
+                </Grid>
+                <Grid size={{ xs: 6, md: 4 }}>
+                  <TextField
+                    fullWidth
+                    size="small"
+                    label="Base Price (₹) *"
+                    type="number"
+                    inputProps={{ step: "0.01" }}
+                    value={editForm.price}
+                    onChange={(e) => setEditForm(prev => ({ ...prev, price: e.target.value }))}
+                  />
+                </Grid>
+              </Grid>
+            </Box>
+
+            <Divider />
+
+            <Box>
+              <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 2 }}>
+                <Box>
+                  <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>
+                    Clinical Reference Parameters
+                  </Typography>
+                  <Typography variant="caption" color="text.secondary">
+                    Configure names, units, and age/gender-specific normal ranges for this test.
+                  </Typography>
+                </Box>
+                <Button
+                  variant="outlined"
+                  size="small"
+                  startIcon={<AddIcon />}
+                  onClick={handleAddParamRow}
+                >
+                  Add Parameter
+                </Button>
+              </Box>
+
+              <Box sx={{ display: "flex", flexDirection: "column", gap: 2.5, maxHeight: "400px", overflowY: "auto", pr: 1 }}>
+                {editForm.parameters.length === 0 ? (
+                  <Box sx={{ py: 4, textAlign: "center", border: "1px dashed", borderColor: "divider", borderRadius: 2 }}>
+                    <Typography variant="body2" color="text.secondary">
+                      No parameters added yet. Click "Add Parameter" to start.
+                    </Typography>
+                  </Box>
+                ) : (
+                  editForm.parameters.map((param, index) => (
+                    <Paper
+                      key={index}
+                      variant="outlined"
+                      sx={{ p: 2, borderRadius: 2, bgcolor: "#f8fafc", position: "relative" }}
+                    >
+                      <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 2 }}>
+                        <Typography variant="subtitle2" sx={{ fontWeight: 700, color: "primary.main" }}>
+                          Parameter #{index + 1}
+                        </Typography>
+                        <IconButton
+                          size="small"
+                          color="error"
+                          onClick={() => handleRemoveParamRow(index)}
+                        >
+                          <DeleteIcon fontSize="small" />
+                        </IconButton>
+                      </Box>
+
+                      <Grid container spacing={2}>
+                        <Grid size={{ xs: 12, md: 5 }}>
+                          <TextField
+                            fullWidth
+                            size="small"
+                            label="Parameter Name *"
+                            value={param.name}
+                            onChange={(e) => handleParamChange(index, "name", e.target.value)}
+                          />
+                        </Grid>
+                        <Grid size={{ xs: 6, md: 4 }}>
+                          <TextField
+                            fullWidth
+                            size="small"
+                            label="Unit (e.g. g/dL)"
+                            value={param.unit}
+                            onChange={(e) => handleParamChange(index, "unit", e.target.value)}
+                          />
+                        </Grid>
+                        <Grid size={{ xs: 6, md: 3 }}>
+                          <TextField
+                            fullWidth
+                            size="small"
+                            label="Display Order"
+                            type="number"
+                            value={param.order}
+                            onChange={(e) => handleParamChange(index, "order", e.target.value)}
+                          />
+                        </Grid>
+
+                        {/* Male Range */}
+                        <Grid size={{ xs: 12 }} sx={{ mt: 1 }}>
+                          <Typography variant="caption" sx={{ fontWeight: 700, color: "text.secondary", display: "block", mb: 0.5 }}>
+                            Male Reference Value
+                          </Typography>
+                        </Grid>
+                        <Grid size={{ xs: 4 }}>
+                          <TextField
+                            fullWidth
+                            size="small"
+                            label="Min Val"
+                            type="number"
+                            inputProps={{ step: "any" }}
+                            value={param.minValMale}
+                            onChange={(e) => handleParamChange(index, "minValMale", e.target.value)}
+                          />
+                        </Grid>
+                        <Grid size={{ xs: 4 }}>
+                          <TextField
+                            fullWidth
+                            size="small"
+                            label="Max Val"
+                            type="number"
+                            inputProps={{ step: "any" }}
+                            value={param.maxValMale}
+                            onChange={(e) => handleParamChange(index, "maxValMale", e.target.value)}
+                          />
+                        </Grid>
+                        <Grid size={{ xs: 4 }}>
+                          <TextField
+                            fullWidth
+                            size="small"
+                            label="Normal Range Text"
+                            placeholder="e.g. 13.5 - 17.5"
+                            value={param.normalRangeMale}
+                            onChange={(e) => handleParamChange(index, "normalRangeMale", e.target.value)}
+                          />
+                        </Grid>
+
+                        {/* Female Range */}
+                        <Grid size={{ xs: 12 }} sx={{ mt: 1 }}>
+                          <Typography variant="caption" sx={{ fontWeight: 700, color: "text.secondary", display: "block", mb: 0.5 }}>
+                            Female Reference Value
+                          </Typography>
+                        </Grid>
+                        <Grid size={{ xs: 4 }}>
+                          <TextField
+                            fullWidth
+                            size="small"
+                            label="Min Val"
+                            type="number"
+                            inputProps={{ step: "any" }}
+                            value={param.minValFemale}
+                            onChange={(e) => handleParamChange(index, "minValFemale", e.target.value)}
+                          />
+                        </Grid>
+                        <Grid size={{ xs: 4 }}>
+                          <TextField
+                            fullWidth
+                            size="small"
+                            label="Max Val"
+                            type="number"
+                            inputProps={{ step: "any" }}
+                            value={param.maxValFemale}
+                            onChange={(e) => handleParamChange(index, "maxValFemale", e.target.value)}
+                          />
+                        </Grid>
+                        <Grid size={{ xs: 4 }}>
+                          <TextField
+                            fullWidth
+                            size="small"
+                            label="Normal Range Text"
+                            placeholder="e.g. 12.0 - 15.5"
+                            value={param.normalRangeFemale}
+                            onChange={(e) => handleParamChange(index, "normalRangeFemale", e.target.value)}
+                          />
+                        </Grid>
+
+                        {/* Baby Range */}
+                        <Grid size={{ xs: 12 }} sx={{ mt: 1 }}>
+                          <Typography variant="caption" sx={{ fontWeight: 700, color: "text.secondary", display: "block", mb: 0.5 }}>
+                            Baby/Child Reference Value
+                          </Typography>
+                        </Grid>
+                        <Grid size={{ xs: 4 }}>
+                          <TextField
+                            fullWidth
+                            size="small"
+                            label="Min Val"
+                            type="number"
+                            inputProps={{ step: "any" }}
+                            value={param.minValBaby}
+                            onChange={(e) => handleParamChange(index, "minValBaby", e.target.value)}
+                          />
+                        </Grid>
+                        <Grid size={{ xs: 4 }}>
+                          <TextField
+                            fullWidth
+                            size="small"
+                            label="Max Val"
+                            type="number"
+                            inputProps={{ step: "any" }}
+                            value={param.maxValBaby}
+                            onChange={(e) => handleParamChange(index, "maxValBaby", e.target.value)}
+                          />
+                        </Grid>
+                        <Grid size={{ xs: 4 }}>
+                          <TextField
+                            fullWidth
+                            size="small"
+                            label="Normal Range Text"
+                            placeholder="e.g. 11.0 - 14.5"
+                            value={param.normalRangeBaby}
+                            onChange={(e) => handleParamChange(index, "normalRangeBaby", e.target.value)}
+                          />
+                        </Grid>
+
+                        {/* Fallback Range */}
+                        <Grid size={{ xs: 12 }} sx={{ mt: 1 }}>
+                          <Typography variant="caption" sx={{ fontWeight: 700, color: "text.secondary", display: "block", mb: 0.5 }}>
+                            Fallback Default Range
+                          </Typography>
+                        </Grid>
+                        <Grid size={{ xs: 12 }}>
+                          <TextField
+                            fullWidth
+                            size="small"
+                            label="Default Range Text (e.g. Negative, Desirable: < 200)"
+                            value={param.normalRangeDefault}
+                            onChange={(e) => handleParamChange(index, "normalRangeDefault", e.target.value)}
+                          />
+                        </Grid>
+                      </Grid>
+                    </Paper>
+                  ))
+                )}
+              </Box>
+            </Box>
+          </DialogContent>
+          <DialogActions sx={{ px: 3, pb: 3, gap: 1 }}>
+            <Button
+              onClick={() => setEditModalOpen(false)}
+              color="inherit"
+              disabled={saving}
+              variant="text"
+            >
+              Cancel
+            </Button>
+            <Button
+              type="submit"
+              color="primary"
+              disabled={saving}
+              variant="contained"
+              startIcon={saving ? <CircularProgress size={16} color="inherit" /> : <EditIcon />}
+            >
+              {saving ? "Saving..." : "Save Changes"}
+            </Button>
+          </DialogActions>
+        </form>
+      </Dialog>
 
       {/* Delete Confirmation Dialog */}
       <Dialog
