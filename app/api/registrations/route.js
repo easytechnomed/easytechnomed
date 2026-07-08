@@ -97,8 +97,8 @@ export async function POST(req) {
         result = await prisma.$transaction(async (tx) => {
           const count = await tx.registration.count();
           const nextVal = count + 1;
-          const labId = String(nextVal);
-          const regNo = `ETM-${nextVal}`;
+          const labId = String(nextVal).padStart(3, '0');
+          const regNo = `ETM-${String(nextVal).padStart(8, '0')}`;
 
           const registration = await tx.registration.create({
             data: {
