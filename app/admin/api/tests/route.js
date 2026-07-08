@@ -11,12 +11,15 @@ export async function GET(req) {
   try {
     const admin = await requireAdmin("admin:view");
     const searchParams = req.nextUrl.searchParams;
-    const page = parseInt(searchParams.get("page")) || 1;
-    const limit = parseInt(searchParams.get("limit")) || 20;
+    const pageParam = searchParams.get("page");
+    const limitParam = searchParams.get("limit");
+    const page = pageParam ? parseInt(pageParam) : null;
+    const limit = limitParam ? parseInt(limitParam) : null;
     const search = searchParams.get("search") || "";
 
     const allTests = await prisma.test.findMany({
       where: {
+        isDeleted: false,
         OR: [
           { workspaceId: admin.workspaceId },
           { workspaceId: null }
@@ -24,6 +27,7 @@ export async function GET(req) {
       },
       include: {
         parameters: {
+          where: { isDeleted: false },
           orderBy: { order: "asc" }
         }
       },
@@ -72,18 +76,20 @@ export async function GET(req) {
     tests.sort((a, b) => a.name.localeCompare(b.name));
 
     const totalCount = tests.length;
-    const totalPages = Math.ceil(totalCount / limit);
-    const startIndex = (page - 1) * limit;
-    const paginatedTests = tests.slice(startIndex, startIndex + limit);
+    let paginatedTests = tests;
+    if (page !== null && limit !== null) {
+      const startIndex = (page - 1) * limit;
+      paginatedTests = tests.slice(startIndex, startIndex + limit);
+    }
 
     return NextResponse.json({
       success: true,
       tests: serializeData(paginatedTests),
       pagination: {
-        page,
-        limit,
+        page: page || 1,
+        limit: limit || totalCount,
         totalCount,
-        totalPages
+        totalPages: limit ? Math.ceil(totalCount / limit) : 1
       }
     });
   } catch (error) {
@@ -120,6 +126,7 @@ export async function POST(req) {
       where: {
         workspaceId: admin.workspaceId,
         code: testCode,
+        isDeleted: false,
       },
     });
 
@@ -151,9 +158,14 @@ export async function POST(req) {
       },
     });
 
-    const testWithParams = await prisma.test.findUnique({
-      where: { id: newTest.id },
-      include: { parameters: { orderBy: { order: "asc" } } }
+    const testWithParams = await prisma.test.findFirst({
+      where: { id: newTest.id, isDeleted: false },
+      include: {
+        parameters: {
+          where: { isDeleted: false },
+          orderBy: { order: "asc" }
+        }
+      }
     });
 
     return NextResponse.json({
@@ -184,9 +196,13 @@ export async function PUT(req) {
     const testName = name && typeof name === "string" ? name.trim() : null;
 
     // Find the test
-    const test = await prisma.test.findUnique({
-      where: { id: parseInt(testId) },
-      include: { parameters: true },
+    const test = await prisma.test.findFirst({
+      where: { id: parseInt(testId), isDeleted: false },
+      include: {
+        parameters: {
+          where: { isDeleted: false }
+        }
+      },
     });
 
     if (!test) {
@@ -261,6 +277,70 @@ export async function PUT(req) {
     });
   } catch (error) {
     console.error("Workspace Tests PUT Error:", error);
+    return NextResponse.json({ success: false, error: error.message }, { status: 500 });
+  }
+}
+
+export async function DELETE(req) {
+  try {
+    const admin = await requireAdmin("admin:write");
+    const searchParams = req.nextUrl.searchParams;
+    let testId = searchParams.get("id") || searchParams.get("testId");
+
+    if (!testId) {
+      const body = await req.json().catch(() => ({}));
+      const id = body.testId || body.id;
+      if (!id) {
+        return NextResponse.json(
+          { success: false, message: "Test ID is required." },
+          { status: 400 }
+        );
+      }
+      testId = id;
+    }
+
+    const test = await prisma.test.findFirst({
+      where: { id: parseInt(testId), isDeleted: false },
+    });
+
+    if (!test) {
+      return NextResponse.json(
+        { success: false, message: "Test not found or already deleted." },
+        { status: 404 }
+      );
+    }
+
+    if (test.workspaceId !== admin.workspaceId && test.workspaceId !== null) {
+      return NextResponse.json(
+        { success: false, message: "Unauthorized to delete this test." },
+        { status: 403 }
+      );
+    }
+
+    // Soft delete the test
+    await prisma.test.update({
+      where: { id: test.id },
+      data: {
+        isDeleted: true,
+        deletedAt: new Date(),
+      },
+    });
+
+    // Also soft delete its parameters
+    await prisma.testParameter.updateMany({
+      where: { testId: test.id },
+      data: {
+        isDeleted: true,
+        deletedAt: new Date(),
+      },
+    });
+
+    return NextResponse.json({
+      success: true,
+      message: "Test deleted successfully.",
+    });
+  } catch (error) {
+    console.error("Workspace Tests DELETE Error:", error);
     return NextResponse.json({ success: false, error: error.message }, { status: 500 });
   }
 }

@@ -88,10 +88,14 @@ export async function POST(req) {
         },
       });
 
-      // 2. Fetch all global tests with parameters
+      // 2. Fetch all global tests with parameters (filtering out soft-deleted ones)
       const globalTests = await tx.test.findMany({
-        where: { workspaceId: null },
-        include: { parameters: true },
+        where: { workspaceId: null, isDeleted: false },
+        include: {
+          parameters: {
+            where: { isDeleted: false }
+          }
+        },
       });
 
       // 3. Prepare tests data for bulk insertion

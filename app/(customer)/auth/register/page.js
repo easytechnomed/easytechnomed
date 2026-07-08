@@ -68,14 +68,11 @@ export default function CustomerRegisterPage() {
         <div className="relative z-20 max-w-lg px-8 text-center md:text-left flex flex-col gap-6">
           <div className="flex items-center gap-3">
             <img src="/logo/logobg.png" alt="EasyTechnoMed Logo" className="h-14 w-auto drop-shadow-[0_4px_12px_rgba(20,184,166,0.15)] bg-white/80 p-1.5 rounded-2xl border border-teal-100" />
-            <div>
+            {/* <div>
               <h1 className="text-2xl font-normal tracking-tight text-slate-900">
                 Easy<span className="font-black">TechnoMed</span>
               </h1>
-              <p className="text-[10px] uppercase tracking-widest text-teal-600 font-extrabold">
-                Technology
-              </p>
-            </div>
+            </div> */}
           </div>
 
           <div className="space-y-3">
@@ -102,7 +99,7 @@ export default function CustomerRegisterPage() {
       </div>
 
       {/* Col 2: Register Input Fields (Gen-Z High-End B2B Redesign) */}
-      <div className="w-full md:w-1/2 flex items-center justify-center p-6 md:p-8 bg-gradient-to-br from-slate-50 via-teal-50/10 to-slate-100 relative overflow-hidden">
+      <div className="w-full md:w-1/2 min-h-[100dvh] md:min-h-0 flex items-center justify-center p-6 md:p-8 bg-gradient-to-br from-slate-50 via-teal-50/10 to-slate-100 relative overflow-hidden">
         {/* Modern grid-pattern overlay */}
         <div className="absolute inset-0 bg-[linear-gradient(to_right,#e2e8f0_1px,transparent_1px),linear-gradient(to_bottom,#e2e8f0_1px,transparent_1px)] bg-[size:4rem_4rem] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_0%,#000_70%,transparent_100%)] opacity-35" />
 
@@ -114,11 +111,10 @@ export default function CustomerRegisterPage() {
 
           {/* Logo showing on mobile only */}
           <div className="flex md:hidden items-center justify-center gap-2 mb-4">
-            <img src="/logo/logobg.png" alt="EasyTechnoMed Logo" className="h-10 w-auto bg-white p-1 rounded-xl shadow-sm border border-slate-100" />
-            <div>
+            <img src="/logo/logobg.png" alt="EasyTechnoMed Logo" className="h-20 w-auto bg-white p-1 rounded-xl shadow-sm border border-slate-100" />
+            {/* <div>
               <h1 className="text-lg font-normal tracking-tight text-slate-900">Easy<span className="font-black">TechnoMed</span></h1>
-              <p className="text-[8px] uppercase tracking-widest text-teal-600 font-extrabold">Technology</p>
-            </div>
+            </div> */}
           </div>
 
           {/* Heading with Gen-Z Tech Style */}

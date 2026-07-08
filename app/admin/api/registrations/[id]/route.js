@@ -50,7 +50,13 @@ export async function GET(req, { params }) {
 
     const registration = await prisma.registration.findFirst({
       where: { id: regId, workspaceId: admin.workspaceId, isDeleted: false },
-      include: { tests: true },
+      include: {
+        tests: {
+          include: {
+            test: true,
+          },
+        },
+      },
     });
 
     if (!registration) {

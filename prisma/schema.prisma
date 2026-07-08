@@ -181,6 +181,8 @@ model Test {
   isProcessed   Boolean            @default(false)
   registrations RegistrationTest[]
   parameters    TestParameter[]
+  isDeleted     Boolean            @default(false)
+  deletedAt     DateTime?
   createdAt     DateTime           @default(now())
   updatedAt     DateTime           @updatedAt
 
@@ -286,6 +288,8 @@ model TestParameter {
   unit                String?
   order               Int             @default(1)
   results             PatientResult[]
+  isDeleted           Boolean         @default(false)
+  deletedAt           DateTime?
   createdAt           DateTime        @default(now())
   updatedAt           DateTime        @updatedAt
 }

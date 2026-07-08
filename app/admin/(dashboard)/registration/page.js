@@ -188,8 +188,16 @@ export default function RegistrationPage() {
             if (doc) setSecondRef(doc);
           }
 
-          const testIdsList = reg.tests.map((rt) => rt.testId);
-          const mappedTests = tests.filter((t) => testIdsList.includes(t.id));
+          const mappedTests = reg.tests.map((rt) => {
+            let match = tests.find((t) => t.id === rt.testId);
+            if (!match && rt.test) {
+              match = tests.find((t) => 
+                (rt.test.code && t.code === rt.test.code) ||
+                (t.name.toLowerCase() === rt.test.name.toLowerCase())
+              );
+            }
+            return match;
+          }).filter(Boolean);
           setSelectedTests(mappedTests);
         } else {
           showNotification(res.message, "error");
