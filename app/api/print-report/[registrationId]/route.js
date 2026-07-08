@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { PDFDocument, rgb, StandardFonts } from "pdf-lib";
+import { cookies } from "next/headers";
 
 const isOutOfRange = (valStr, min, max) => {
   if (!valStr || min === null || max === null) return false;
@@ -104,6 +105,51 @@ export async function GET(req, { params }) {
 
     if (!reg) {
       return new Response("Registration not found", { status: 404 });
+    }
+
+    const cookieStore = await cookies();
+    const isAdminToken = cookieStore.get("admin_session_token")?.value;
+    const isSuperAdminToken = cookieStore.get("super_admin_session_token")?.value;
+    const isStaff = !!(isAdminToken || isSuperAdminToken);
+
+    if (!isStaff && parseFloat(reg.dueAmount || 0) > 0 && reg.status === "Completed") {
+      const htmlMsg = `
+        <html>
+          <head>
+            <meta charset="UTF-8">
+            <title>Report Hold - Pending Dues</title>
+            <style>
+              body { font-family: 'Arial', sans-serif; background-color: #f8fafc; color: #1e293b; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; padding: 20px; text-align: center; }
+              .card { background: white; padding: 40px; border-radius: 16px; box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1); max-width: 500px; width: 100%; border-top: 4px solid #ef4444; }
+              .icon { font-size: 48px; margin-bottom: 20px; }
+              h1 { font-size: 22px; margin-bottom: 12px; font-weight: 800; color: #ef4444; }
+              p { font-size: 15px; line-height: 1.6; color: #475569; margin-bottom: 24px; }
+              .details { background: #f1f5f9; padding: 12px; border-radius: 8px; font-size: 13px; text-align: left; margin-bottom: 24px; }
+              .details-row { display: flex; justify-content: space-between; margin-bottom: 6px; }
+              .details-row:last-child { margin-bottom: 0; }
+              .button { display: inline-block; background-color: #0f766e; color: white; padding: 10px 24px; border-radius: 8px; text-decoration: none; font-weight: bold; font-size: 14px; transition: background-color 0.2s; }
+              .button:hover { background-color: #0d5c56; }
+            </style>
+          </head>
+          <body>
+            <div class="card">
+              <div class="icon">⚠️</div>
+              <h1>Report on Hold</h1>
+              <p>Your report is complete, but because of outstanding dues, it cannot be displayed. Please contact the laboratory to clear your balance.</p>
+              <div class="details">
+                <div class="details-row"><strong>Patient Name:</strong> <span>${reg.title} ${reg.name}</span></div>
+                <div class="details-row"><strong>Reg No:</strong> <span>${reg.regNo}</span></div>
+                <div class="details-row"><strong>Pending Dues:</strong> <span>₹${parseFloat(reg.dueAmount).toFixed(2)}</span></div>
+              </div>
+              <a href="/api/print-bill/${reg.id}" target="_blank" class="button">View & Pay Bill</a>
+            </div>
+          </body>
+        </html>
+      `;
+      return new Response(htmlMsg, {
+        status: 200,
+        headers: { "Content-Type": "text/html; charset=utf-8" },
+      });
     }
 
     // Retrieve active PDF configuration settings from the admin in the same workspace
