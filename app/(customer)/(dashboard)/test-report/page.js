@@ -35,7 +35,7 @@ import {
   Drawer,
   Checkbox,
   FormControlLabel,
-
+  Chip
 } from "@mui/material";
 import {
   Search as SearchIcon,
@@ -74,7 +74,13 @@ import {
   Description as FormFIcon,
   Article as WorksheetIcon,
   Paid as PaidIcon,
-  LocationOn as LocationIcon
+  LocationOn as LocationIcon,
+  CheckCircle as CheckCircleIcon,
+  HourglassEmpty as HourglassIcon,
+  AssignmentTurnedIn as TestCompletedIcon,
+  AssignmentLate as TestPendingIcon,
+  ChevronLeft as ChevronLeftIcon,
+  ChevronRight as ChevronRightIcon
 } from "@mui/icons-material";
 // Server Action imports removed - using REST API instead
 
@@ -82,8 +88,8 @@ const menuButtonStyle = {
   justifyContent: "flex-start",
   textAlign: "left",
   textTransform: "none",
-  py: 0.6,
-  px: 1.2,
+  py: 1.0,
+  px: 1.5,
   borderRadius: 1.5,
   fontSize: "0.82rem",
   fontWeight: 600,
@@ -392,10 +398,105 @@ const getReferenceRange = (param, reg) => {
   };
 };
 
+const getPaymentChip = (reg) => {
+  const due = parseFloat(reg.dueAmount || 0);
+  const received = parseFloat(reg.receivedAmount || 0);
+  const total = parseFloat(reg.totalAmount || 0);
+
+  if (due === 0 && total > 0) {
+    return (
+      <Chip
+        icon={<CheckCircleIcon sx={{ fontSize: "0.85rem !important" }} />}
+        label="Paid"
+        size="small"
+        sx={{
+          fontSize: "0.68rem",
+          fontWeight: 700,
+          height: 20,
+          bgcolor: "#dcfce7",
+          color: "#166534",
+          "& .MuiChip-icon": { color: "#166534" }
+        }}
+      />
+    );
+  } else if (due > 0 && received > 0) {
+    return (
+      <Chip
+        icon={<HourglassIcon sx={{ fontSize: "0.85rem !important" }} />}
+        label="Partial Paid"
+        size="small"
+        sx={{
+          fontSize: "0.68rem",
+          fontWeight: 700,
+          height: 20,
+          bgcolor: "#fef3c7",
+          color: "#92400e",
+          "& .MuiChip-icon": { color: "#92400e" }
+        }}
+      />
+    );
+  } else {
+    return (
+      <Chip
+        icon={<CancelIcon sx={{ fontSize: "0.85rem !important" }} />}
+        label="Not Paid"
+        size="small"
+        sx={{
+          fontSize: "0.68rem",
+          fontWeight: 700,
+          height: 20,
+          bgcolor: "#fee2e2",
+          color: "#991b1b",
+          "& .MuiChip-icon": { color: "#991b1b" }
+        }}
+      />
+    );
+  }
+};
+
+const getTestChip = (reg) => {
+  if (reg.status === "Completed") {
+    return (
+      <Chip
+        icon={<TestCompletedIcon sx={{ fontSize: "0.85rem !important" }} />}
+        label="Test Completed"
+        size="small"
+        sx={{
+          fontSize: "0.68rem",
+          fontWeight: 700,
+          height: 20,
+          bgcolor: "#ccfbf1",
+          color: "#0f766e",
+          "& .MuiChip-icon": { color: "#0f766e" }
+        }}
+      />
+    );
+  } else {
+    return (
+      <Chip
+        icon={<TestPendingIcon sx={{ fontSize: "0.85rem !important" }} />}
+        label="Test Pending"
+        size="small"
+        sx={{
+          fontSize: "0.68rem",
+          fontWeight: 700,
+          height: 20,
+          bgcolor: "#ffedd5",
+          color: "#c2410c",
+          "& .MuiChip-icon": { color: "#c2410c" }
+        }}
+      />
+    );
+  }
+};
+
 export default function TestReportPage() {
   const router = useRouter();
   const [registrations, setRegistrations] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(50);
+  const [total, setTotal] = useState(0);
 
   // Filters
   const [startDate, setStartDate] = useState(() => {
@@ -479,10 +580,13 @@ export default function TestReportPage() {
       if (startDate) queryParams.set("startDate", `${startDate}T00:00:00.000Z`);
       if (endDate) queryParams.set("endDate", `${endDate}T23:59:59.999Z`);
       if (search) queryParams.set("search", search);
+      queryParams.set("page", page.toString());
+      queryParams.set("limit", limit.toString());
 
       const res = await fetch(`/api/registrations?${queryParams.toString()}`).then((r) => r.json());
       if (res.success) {
         setRegistrations(res.registrations);
+        setTotal(res.total || 0);
       }
     } catch (err) {
       console.error(err);
@@ -493,11 +597,14 @@ export default function TestReportPage() {
 
   useEffect(() => {
     loadData();
-  }, [startDate, endDate]);
+  }, [startDate, endDate, page, limit]);
 
   const handleSearchSubmit = (e) => {
     e.preventDefault();
-    loadData();
+    setPage(1);
+    if (page === 1) {
+      loadData();
+    }
   };
 
   const handleResetFilters = () => {
@@ -506,7 +613,10 @@ export default function TestReportPage() {
     setStartDate(d.toISOString().substring(0, 10));
     setEndDate(new Date().toISOString().substring(0, 10));
     setSearch("");
-    setTimeout(() => loadData(), 50);
+    setPage(1);
+    if (page === 1) {
+      loadData();
+    }
   };
 
   // Toast Helpers
@@ -981,7 +1091,7 @@ export default function TestReportPage() {
     }) + " " + d.toLocaleTimeString("en-US", {
       hour: "2-digit",
       minute: "2-digit",
-      hour12: false
+      hour12: true
     });
   };
 
@@ -1076,7 +1186,8 @@ export default function TestReportPage() {
           <Table size="small" sx={{ minWidth: 800 }}>
             <TableHead sx={{ bgcolor: "#e2e8f0" }}>
               <TableRow>
-                <TableCell sx={{ fontWeight: 700, fontSize: "0.82rem" }}>SLNO</TableCell>
+                <TableCell sx={{ fontWeight: 700, fontSize: "0.82rem", width: "50px" }}>SNO</TableCell>
+                <TableCell sx={{ fontWeight: 700, fontSize: "0.82rem", width: "60px" }} align="center">Actions</TableCell>
                 <TableCell sx={{ fontWeight: 700, fontSize: "0.82rem" }}>Reg.Date</TableCell>
                 <TableCell sx={{ fontWeight: 700, fontSize: "0.82rem" }}>Reg.No</TableCell>
                 <TableCell sx={{ fontWeight: 700, fontSize: "0.82rem" }}>Pat.ID</TableCell>
@@ -1088,7 +1199,6 @@ export default function TestReportPage() {
                 <TableCell sx={{ fontWeight: 700, fontSize: "0.82rem" }}>Rpt.Time</TableCell>
                 <TableCell sx={{ fontWeight: 700, fontSize: "0.82rem" }}>Barcode</TableCell>
                 <TableCell sx={{ fontWeight: 700, fontSize: "0.82rem" }}>Status</TableCell>
-                <TableCell sx={{ fontWeight: 700, fontSize: "0.82rem" }} align="center">Actions</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
@@ -1111,7 +1221,16 @@ export default function TestReportPage() {
                         transition: "background-color 0.2s"
                       }}
                     >
-                      <TableCell>{idx + 1}</TableCell>
+                      <TableCell sx={{ width: "50px" }}>{idx + 1}</TableCell>
+                      <TableCell align="center" sx={{ width: "60px" }}>
+                        <IconButton
+                          size="small"
+                          color="primary"
+                          onClick={(e) => handleOpenMenu(e, reg)}
+                        >
+                          <ActionsIcon fontSize="small" />
+                        </IconButton>
+                      </TableCell>
                       <TableCell sx={{ whiteSpace: "nowrap" }}>{formatDate(reg.date).split(" ")[0]}</TableCell>
                       <TableCell sx={{ fontWeight: 700, color: "primary.main" }}>{reg.regNo}</TableCell>
                       <TableCell>{reg.labId}</TableCell>
@@ -1126,34 +1245,17 @@ export default function TestReportPage() {
                         {reg.title} {reg.name}
                       </TableCell>
                       <TableCell>{reg.gender}</TableCell>
-                      <TableCell>{reg.age.toFixed(2)} {reg.ageUnit.charAt(0)}</TableCell>
+                      <TableCell>{Math.round(reg.age)}{reg.ageUnit.charAt(0)}</TableCell>
                       <TableCell>{reg.mobileNo}</TableCell>
                       <TableCell sx={{ whiteSpace: "nowrap" }}>{formatTimeOnly(reg.expRptDate)}</TableCell>
                       <TableCell sx={{ fontStyle: "italic", fontSize: "0.75rem" }}>
                         {reg.barcode ? reg.barcode.replace(/^,\s*/, "") : "-"}
                       </TableCell>
                       <TableCell>
-                        <Badge
-                          badgeContent={reg.status}
-                          color={reg.status === "Completed" ? "success" : "warning"}
-                          sx={{
-                            "& .MuiBadge-badge": {
-                              fontSize: "0.68rem",
-                              fontWeight: 700,
-                              height: 18,
-                              minWidth: 65
-                            }
-                          }}
-                        />
-                      </TableCell>
-                      <TableCell align="center">
-                        <IconButton
-                          size="small"
-                          color="primary"
-                          onClick={(e) => handleOpenMenu(e, reg)}
-                        >
-                          <ActionsIcon fontSize="small" />
-                        </IconButton>
+                        <Stack spacing={0.6} alignItems="center">
+                          {getTestChip(reg)}
+                          {getPaymentChip(reg)}
+                        </Stack>
                       </TableCell>
                     </TableRow>
                   );
@@ -1163,6 +1265,111 @@ export default function TestReportPage() {
           </Table>
         )}
       </TableContainer>
+
+      {/* Pagination Bar */}
+      {total > 0 && (
+        <Box
+          sx={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            p: 2,
+            borderTop: "1px solid",
+            borderColor: "divider",
+            bgcolor: "#ffffff",
+            borderBottomLeftRadius: 12,
+            borderBottomRightRadius: 12,
+          }}
+        >
+          {/* Left Side: 1-10 of 25 */}
+          <Typography variant="body2" sx={{ color: "text.secondary", fontWeight: 500 }}>
+            {`${(page - 1) * limit + 1}-${Math.min(page * limit, total)} of ${total}`}
+          </Typography>
+
+          {/* Right Side Controls */}
+          <Box sx={{ display: "flex", alignItems: "center", gap: 3 }}>
+            {/* Rows per page Selector */}
+            <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+              <Typography variant="body2" sx={{ color: "text.secondary", fontWeight: 500, fontSize: "0.82rem" }}>
+                Rows per page
+              </Typography>
+              <select
+                value={limit}
+                onChange={(e) => {
+                  setLimit(parseInt(e.target.value));
+                  setPage(1);
+                }}
+                style={{
+                  padding: "4px 8px",
+                  borderRadius: "6px",
+                  border: "1px solid rgba(0,0,0,0.15)",
+                  backgroundColor: "#ffffff",
+                  fontSize: "0.82rem",
+                  fontWeight: 600,
+                  color: "#334155",
+                  outline: "none",
+                  cursor: "pointer"
+                }}
+              >
+                {[10, 25, 50, 100].map((size) => (
+                  <option key={size} value={size}>
+                    {size}
+                  </option>
+                ))}
+              </select>
+            </Box>
+
+            {/* Go to Page Selector */}
+            <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+              <Typography variant="body2" sx={{ color: "text.secondary", fontWeight: 500, fontSize: "0.82rem" }}>
+                Go to Page
+              </Typography>
+              <select
+                value={page}
+                onChange={(e) => setPage(parseInt(e.target.value))}
+                style={{
+                  padding: "4px 8px",
+                  borderRadius: "6px",
+                  border: "1px solid rgba(0,0,0,0.15)",
+                  backgroundColor: "#ffffff",
+                  fontSize: "0.82rem",
+                  fontWeight: 600,
+                  color: "#334155",
+                  outline: "none",
+                  cursor: "pointer"
+                }}
+              >
+                {Array.from({ length: Math.ceil(total / limit) }, (_, i) => i + 1).map((pNum) => (
+                  <option key={pNum} value={pNum}>
+                    {pNum}
+                  </option>
+                ))}
+              </select>
+            </Box>
+
+            {/* Prev/Next buttons */}
+            <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
+              <IconButton
+                size="small"
+                disabled={page === 1}
+                onClick={() => setPage((prev) => Math.max(prev - 1, 1))}
+                sx={{ border: "1px solid rgba(0,0,0,0.1)", borderRadius: "6px", p: "4px" }}
+              >
+                <ChevronLeftIcon fontSize="small" />
+              </IconButton>
+              <IconButton
+                size="small"
+                disabled={page >= Math.ceil(total / limit)}
+                onClick={() => setPage((prev) => Math.min(prev + 1, Math.ceil(total / limit)))}
+                sx={{ border: "1px solid rgba(0,0,0,0.1)", borderRadius: "6px", p: "4px" }}
+              >
+                <ChevronRightIcon fontSize="small" />
+              </IconButton>
+            </Box>
+          </Box>
+        </Box>
+      )}
+
 
       {/* --- DOUBLE-COLUMN ACTIONS MENU POPOVER --- */}
       {selectedReg && (
@@ -1181,7 +1388,7 @@ export default function TestReportPage() {
           PaperProps={{
             sx: {
               p: 2.5,
-              width: 520,
+              width: 280,
               borderRadius: 3,
               boxShadow: "0px 10px 30px rgba(0,0,0,0.12)",
               border: "1px solid rgba(0,0,0,0.08)",
@@ -1189,33 +1396,32 @@ export default function TestReportPage() {
             }
           }}
         >
-          <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 1.5 }}>
-            <Box>
-              <Typography variant="subtitle1" sx={{ fontWeight: 800, color: "text.primary", lineHeight: 1.2 }}>
-                {selectedReg.title} {selectedReg.name}
-              </Typography>
-              <Typography variant="caption" sx={{ color: "text.secondary", fontWeight: 500 }}>
-                Reg No: {selectedReg.regNo}
-              </Typography>
-            </Box>
-            <IconButton size="small" onClick={handleCloseMenu} sx={{ color: "text.secondary" }}>
-              <CloseIcon fontSize="small" />
-            </IconButton>
+          <Box sx={{ mb: 1.5, p: 1 }}>
+            <Typography variant="subtitle1" sx={{ fontWeight: 800, color: "text.primary", lineHeight: 1.2 }}>
+              {selectedReg.title} {selectedReg.name}
+            </Typography>
+            <Typography variant="caption" sx={{ color: "text.secondary", fontWeight: 500 }}>
+              Reg No: {selectedReg.regNo}
+            </Typography>
           </Box>
           <Divider sx={{ mb: 2 }} />
 
           <Box sx={{ display: "flex", gap: 2 }}>
             {/* Left Column */}
             <Box sx={{ flex: 1, display: "flex", flexDirection: "column", gap: 0.5 }}>
+              {/*
               <Button size="small" variant="text" sx={menuButtonStyle} startIcon={<AssignmentIcon />} onClick={() => triggerAction("Assign Collection")}>
                 Assign Collection
               </Button>
+              */}
               <Button size="small" variant="text" sx={activeMenuButtonStyle} startIcon={<SampleIcon />} onClick={handleOpenSampleManagement}>
                 Sample Management
               </Button>
+              {/*
               <Button size="small" variant="text" sx={menuButtonStyle} startIcon={<AddBoxIcon />} onClick={() => triggerAction("Add / Edit product")}>
                 Add / Edit product
               </Button>
+              */}
 
               <Divider sx={{ my: 0.5, opacity: 0.6 }} />
 
@@ -1228,39 +1434,44 @@ export default function TestReportPage() {
               <Button size="small" variant="text" sx={menuButtonStyle} startIcon={<PrintIcon />} onClick={handlePrintReport}>
                 Report Print
               </Button>
+              {/*
               <Button size="small" variant="text" sx={menuButtonStyle} startIcon={<BarcodeIcon />} onClick={() => triggerAction("Print Barcode")}>
                 Print Barcode
               </Button>
+              */}
 
               <Divider sx={{ my: 0.5, opacity: 0.6 }} />
 
               <Button size="small" variant="text" sx={menuButtonStyle} startIcon={<ReceiptIcon />} onClick={() => triggerAction("Money Receipt")}>
                 Money Receipt
               </Button>
+              {/*
               <Button size="small" variant="text" sx={menuButtonStyle} startIcon={<PaymentIcon />} onClick={() => triggerAction("Receipt inplace")}>
                 Receipt inplace
               </Button>
               <Button size="small" variant="text" sx={menuButtonStyle} startIcon={<PaidIcon />} onClick={() => triggerAction("Receipt All")}>
                 Receipt All
               </Button>
+              */}
 
               <Divider sx={{ my: 0.5, opacity: 0.6 }} />
 
               <Button size="small" variant="text" sx={menuButtonStyle} startIcon={<EditIcon />} onClick={handleEditRegistration}>
                 Edit
               </Button>
+              {/*
               <Button size="small" variant="text" sx={dangerMenuButtonStyle} startIcon={<CancelIcon />} onClick={() => triggerAction("Cancel")}>
                 Cancel
               </Button>
+              */}
               <Button size="small" variant="text" sx={dangerMenuButtonStyle} startIcon={<DeleteIcon />} onClick={handleDeleteRegistration}>
                 Delete
               </Button>
             </Box>
 
-            {/* Vertical Divider */}
+            {/* Vertical Divider & Right Column commented out since they are not used */}
+            {/*
             <Divider orientation="vertical" flexItem sx={{ opacity: 0.6 }} />
-
-            {/* Right Column */}
             <Box sx={{ flex: 1, display: "flex", flexDirection: "column", gap: 0.5 }}>
               <Button size="small" variant="text" sx={menuButtonStyle} startIcon={<ReminderIcon />} onClick={() => triggerAction("Add / Edit reminder")}>
                 Add / Edit reminder
@@ -1311,6 +1522,7 @@ export default function TestReportPage() {
                 Worksheet
               </Button>
             </Box>
+            */}
           </Box>
         </Popover>
       )}
@@ -2242,6 +2454,7 @@ export default function TestReportPage() {
                     <PrintIcon />
                   </IconButton>
                 </Tooltip>
+                {/*
                 <Tooltip title="Email Receipt">
                   <IconButton color="primary">
                     <EmailIcon />
@@ -2252,6 +2465,7 @@ export default function TestReportPage() {
                     <WorksheetIcon />
                   </IconButton>
                 </Tooltip>
+                */}
               </Box>
             </Box>
           </Box>

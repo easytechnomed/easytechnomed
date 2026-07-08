@@ -45,6 +45,11 @@ export async function GET(req) {
     const search = searchParams.get("search");
     const startDate = searchParams.get("startDate");
     const endDate = searchParams.get("endDate");
+    
+    // Pagination parameters
+    const page = parseInt(searchParams.get("page") || "1");
+    const limit = parseInt(searchParams.get("limit") || "50");
+    const skip = (page - 1) * limit;
 
     const where = { workspaceId: admin.workspaceId, isDeleted: false };
     if (startDate || endDate) {
@@ -60,16 +65,27 @@ export async function GET(req) {
       ];
     }
 
-    const registrations = await prisma.registration.findMany({
-      where,
-      include: {
-        refBy: true,
-        tests: { include: { test: true } },
-      },
-      orderBy: { date: "desc" },
-    });
+    const [total, registrations] = await Promise.all([
+      prisma.registration.count({ where }),
+      prisma.registration.findMany({
+        where,
+        include: {
+          refBy: true,
+          tests: { include: { test: true } },
+        },
+        orderBy: { date: "desc" },
+        skip,
+        take: limit,
+      })
+    ]);
 
-    return NextResponse.json({ success: true, registrations: serializeData(registrations) });
+    return NextResponse.json({
+      success: true,
+      registrations: serializeData(registrations),
+      total,
+      page,
+      limit
+    });
   } catch (error) {
     console.error("Workspace Registrations GET Error:", error);
     return NextResponse.json({ success: false, error: error.message }, { status: 500 });
