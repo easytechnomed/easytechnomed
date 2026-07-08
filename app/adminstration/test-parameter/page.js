@@ -60,6 +60,34 @@ import { toast } from "sonner";
 
 const drawerWidth = 260;
 
+const COMMON_LAB_UNITS = [
+  "g/dL",
+  "mg/dL",
+  "μg/dL",
+  "ng/mL",
+  "pg/mL",
+  "mIU/L",
+  "μIU/mL",
+  "mEQ/L",
+  "mmol/L",
+  "μmol/L",
+  "U/L",
+  "IU/L",
+  "IU/mL",
+  "fL",
+  "%",
+  "cells/cu.mm",
+  "million/cu.mm",
+  "10^3/µL",
+  "10^6/µL",
+  "/HPF",
+  "/LPF",
+  "Ratio",
+  "Index",
+  "g/L",
+  "mg/L"
+];
+
 // Custom light purple theme matching the SuperAdmin dashboard theme
 const lightPurpleTheme = createTheme({
   palette: {
@@ -133,6 +161,7 @@ export default function DefaultTestsPage() {
   // Edit state
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [editForm, setEditForm] = useState({ id: null, name: "", code: "", price: "", parameters: [] });
+  const [initialParameters, setInitialParameters] = useState([]);
   const [saving, setSaving] = useState(false);
   const [parameterDictionary, setParameterDictionary] = useState([]);
 
@@ -245,44 +274,51 @@ export default function DefaultTestsPage() {
       price: "0.00",
       parameters: []
     });
+    setInitialParameters([]);
     setEditModalOpen(true);
   };
 
   const handleEditClick = (test, e) => {
     if (e) e.stopPropagation();
+    const paramsCopy = test.parameters ? test.parameters.map(p => ({
+      id: p.id,
+      name: p.name || "",
+      unit: p.unit || "",
+      order: p.order?.toString() || "1",
+      minValMale: p.minValMale !== null ? p.minValMale.toString() : "",
+      maxValMale: p.maxValMale !== null ? p.maxValMale.toString() : "",
+      normalRangeMale: p.normalRangeMale || "",
+      minValFemale: p.minValFemale !== null ? p.minValFemale.toString() : "",
+      maxValFemale: p.maxValFemale !== null ? p.maxValFemale.toString() : "",
+      normalRangeFemale: p.normalRangeFemale || "",
+      minValBaby: p.minValBaby !== null ? p.minValBaby.toString() : "",
+      maxValBaby: p.maxValBaby !== null ? p.maxValBaby.toString() : "",
+      normalRangeBaby: p.normalRangeBaby || "",
+      normalRangeDefault: p.normalRangeDefault || ""
+    })) : [];
+
     setEditForm({
       id: test.id,
       name: test.name,
       code: test.code || "",
       price: test.price.toString(),
-      parameters: test.parameters ? test.parameters.map(p => ({
-        id: p.id,
-        name: p.name || "",
-        unit: p.unit || "",
-        order: p.order?.toString() || "1",
-        minValMale: p.minValMale !== null ? p.minValMale.toString() : "",
-        maxValMale: p.maxValMale !== null ? p.maxValMale.toString() : "",
-        normalRangeMale: p.normalRangeMale || "",
-        minValFemale: p.minValFemale !== null ? p.minValFemale.toString() : "",
-        maxValFemale: p.maxValFemale !== null ? p.maxValFemale.toString() : "",
-        normalRangeFemale: p.normalRangeFemale || "",
-        minValBaby: p.minValBaby !== null ? p.minValBaby.toString() : "",
-        maxValBaby: p.maxValBaby !== null ? p.maxValBaby.toString() : "",
-        normalRangeBaby: p.normalRangeBaby || "",
-        normalRangeDefault: p.normalRangeDefault || ""
-      })) : []
+      parameters: paramsCopy
     });
+    setInitialParameters(paramsCopy);
     setEditModalOpen(true);
   };
 
   const handleAddParamRow = () => {
+    const lastParam = editForm.parameters[editForm.parameters.length - 1];
+    const defaultUnit = lastParam ? (lastParam.unit || "") : "";
+
     setEditForm(prev => ({
       ...prev,
       parameters: [
         ...prev.parameters,
         {
           name: "",
-          unit: "",
+          unit: defaultUnit,
           order: (prev.parameters.length + 1).toString(),
           minValMale: "",
           maxValMale: "",
@@ -900,12 +936,12 @@ export default function DefaultTestsPage() {
             <Box>
 
               <TableContainer component={Paper} variant="outlined" sx={{ overflowX: "auto", maxHeight: "330px" }}>
-                <Table size="small" stickyHeader sx={{ minWidth: 1960 }}>
+                <Table size="small" stickyHeader sx={{ minWidth: 2000 }}>
                   <TableHead>
                     <TableRow>
                       <TableCell align="center" sx={{ fontWeight: 700, width: 40, bgcolor: "#f8fafc" }}>#</TableCell>
                       <TableCell sx={{ fontWeight: 700, width: 260, bgcolor: "#f8fafc" }}>Parameter Name *</TableCell>
-                      <TableCell sx={{ fontWeight: 700, width: 130, bgcolor: "#f8fafc" }}>Unit</TableCell>
+                      <TableCell sx={{ fontWeight: 700, width: 170, bgcolor: "#f8fafc" }}>Unit</TableCell>
                       <TableCell sx={{ fontWeight: 700, width: 100, bgcolor: "#f8fafc" }}>Order</TableCell>
 
                       {/* Male */}
@@ -966,13 +1002,42 @@ export default function DefaultTestsPage() {
 
                           {/* Unit */}
                           <TableCell>
-                            <TextField
-                              fullWidth
+                            <Autocomplete
+                              freeSolo
                               size="small"
-                              value={param.unit}
-                              onChange={(e) => handleParamChange(index, "unit", e.target.value)}
-                              placeholder="e.g. g/dL"
-                              sx={{ '& .MuiOutlinedInput-root': { borderRadius: 1 } }}
+                              options={COMMON_LAB_UNITS}
+                              value={param.unit || ""}
+                              onChange={(event, newValue) => {
+                                handleParamChange(index, "unit", newValue || "");
+                              }}
+                              onInputChange={(event, newInputValue) => {
+                                handleParamChange(index, "unit", newInputValue);
+                              }}
+                              onBlur={() => {
+                                if (!param.unit || param.unit.trim() === "") {
+                                  // 1. Try to restore original unit configured at the time the dialog was opened
+                                  const initialParam = initialParameters[index];
+                                  if (initialParam && initialParam.unit && initialParam.unit.trim() !== "") {
+                                    handleParamChange(index, "unit", initialParam.unit);
+                                    return;
+                                  }
+                                  
+                                  // 2. Fallback: Search upwards for closest preceding parameter with a unit
+                                  for (let i = index - 1; i >= 0; i--) {
+                                    if (editForm.parameters[i].unit && editForm.parameters[i].unit.trim() !== "") {
+                                      handleParamChange(index, "unit", editForm.parameters[i].unit);
+                                      break;
+                                    }
+                                  }
+                                }
+                              }}
+                              renderInput={(params) => (
+                                <TextField
+                                  {...params}
+                                  placeholder="e.g. g/dL"
+                                  sx={{ '& .MuiOutlinedInput-root': { borderRadius: 1 } }}
+                                />
+                              )}
                             />
                           </TableCell>
 
