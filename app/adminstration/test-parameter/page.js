@@ -39,7 +39,8 @@ import {
   CircularProgress,
   InputAdornment,
   useMediaQuery,
-  Pagination
+  Pagination,
+  Autocomplete
 } from "@mui/material";
 import {
   ExitToApp as LogoutIcon,
@@ -133,6 +134,7 @@ export default function DefaultTestsPage() {
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [editForm, setEditForm] = useState({ id: null, name: "", code: "", price: "", parameters: [] });
   const [saving, setSaving] = useState(false);
+  const [parameterDictionary, setParameterDictionary] = useState([]);
 
   const fetchTests = async (currentPage = page, query = searchQuery) => {
     setLoading(true);
@@ -165,9 +167,21 @@ export default function DefaultTestsPage() {
     }
   };
 
+  const fetchParameterDictionary = async () => {
+    try {
+      const res = await fetch("/adminstration/api/parameters").then((r) => r.json());
+      if (res.success) {
+        setParameterDictionary(res.parameters || []);
+      }
+    } catch (err) {
+      console.error("Error fetching parameter dictionary:", err);
+    }
+  };
+
   // Fetch when page changes
   useEffect(() => {
     fetchTests(page, searchQuery);
+    fetchParameterDictionary();
   }, [page]);
 
   // Handle search text changes
@@ -287,6 +301,39 @@ export default function DefaultTestsPage() {
       updatedParams[index] = { ...updatedParams[index], [field]: value };
       return { ...prev, parameters: updatedParams };
     });
+  };
+
+  const handleParamNameSelect = (index, name) => {
+    if (!name) return;
+    
+    // Find the parameter template in our dictionary
+    const template = parameterDictionary.find(
+      (p) => p.name.toLowerCase().trim() === name.toLowerCase().trim()
+    );
+    
+    if (template) {
+      setEditForm((prev) => {
+        const newParams = [...prev.parameters];
+        newParams[index] = {
+          ...newParams[index],
+          name: template.name,
+          unit: template.unit || "",
+          minValMale: template.minValMale !== null ? template.minValMale.toString() : "",
+          maxValMale: template.maxValMale !== null ? template.maxValMale.toString() : "",
+          normalRangeMale: template.normalRangeMale || "",
+          minValFemale: template.minValFemale !== null ? template.minValFemale.toString() : "",
+          maxValFemale: template.maxValFemale !== null ? template.maxValFemale.toString() : "",
+          normalRangeFemale: template.normalRangeFemale || "",
+          minValBaby: template.minValBaby !== null ? template.minValBaby.toString() : "",
+          maxValBaby: template.maxValBaby !== null ? template.maxValBaby.toString() : "",
+          normalRangeBaby: template.normalRangeBaby || "",
+          normalRangeDefault: template.normalRangeDefault || "",
+        };
+        return { ...prev, parameters: newParams };
+      });
+    } else {
+      handleParamChange(index, "name", name);
+    }
   };
 
   const handleSaveEdit = async (e) => {
@@ -900,13 +947,24 @@ export default function DefaultTestsPage() {
 
                           {/* Name */}
                           <TableCell>
-                            <TextField
-                              fullWidth
+                            <Autocomplete
+                              freeSolo
                               size="small"
+                              options={parameterDictionary.map((option) => option.name)}
                               value={param.name}
-                              onChange={(e) => handleParamChange(index, "name", e.target.value)}
-                              placeholder="Name"
-                              sx={{ '& .MuiOutlinedInput-root': { borderRadius: 1 } }}
+                              onChange={(event, newValue) => {
+                                handleParamNameSelect(index, newValue);
+                              }}
+                              onInputChange={(event, newInputValue) => {
+                                handleParamChange(index, "name", newInputValue);
+                              }}
+                              renderInput={(params) => (
+                                <TextField
+                                  {...params}
+                                  placeholder="Name"
+                                  sx={{ '& .MuiOutlinedInput-root': { borderRadius: 1 } }}
+                                />
+                              )}
                             />
                           </TableCell>
 
