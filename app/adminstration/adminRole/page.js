@@ -51,7 +51,8 @@ import {
   AppRegistration as RegIcon,
   Security as SecurityIcon,
   CloudUpload as UploadIcon,
-  Menu as MenuIcon
+  Menu as MenuIcon,
+  Science as ScienceIcon
 } from "@mui/icons-material";
 import { toast } from "sonner";
 
@@ -244,6 +245,7 @@ export default function AdminRolesPage() {
     { text: "Administrators", icon: <PeopleIcon />, path: "/adminstration/dashboard?tab=admins", index: 1 },
     { text: "Admin Roles", icon: <SecurityIcon />, path: "/adminstration/adminRole", index: 2 },
     { text: "Import Lab Tests", icon: <UploadIcon />, path: "/adminstration/dashboard?tab=importer", index: 3 },
+    { text: "Default Tests & Params", icon: <ScienceIcon />, path: "/adminstration/test-parameter", index: 4 },
   ];
 
   const drawerContent = (

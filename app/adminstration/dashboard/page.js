@@ -61,7 +61,8 @@ import {
   CheckCircle as CheckCircleIcon,
   Error as ErrorIcon,
   ChevronLeft as ChevronLeftIcon,
-  Menu as MenuIcon
+  Menu as MenuIcon,
+  Science as ScienceIcon
 } from "@mui/icons-material";
 import { toast } from "sonner";
 import * as XLSX from "xlsx";
@@ -501,6 +502,7 @@ function SuperAdminDashboard() {
     { text: "Administrators", icon: <PeopleIcon />, tabIndex: 1 },
     { text: "Admin Roles", icon: <SecurityIcon />, tabIndex: 2 },
     { text: "Import Lab Tests", icon: <UploadIcon />, tabIndex: 3 },
+    { text: "Default Tests & Params", icon: <ScienceIcon />, tabIndex: 4 },
   ];
 
   const drawerContent = (
@@ -523,6 +525,8 @@ function SuperAdminDashboard() {
                     setMobileOpen(false);
                     if (item.tabIndex === 2) {
                       router.push("/adminstration/adminRole");
+                    } else if (item.tabIndex === 4) {
+                      router.push("/adminstration/test-parameter");
                     } else {
                       const paths = {
                         0: "/adminstration/dashboard?tab=workspaces",
