@@ -34,12 +34,7 @@ import {
   Stack,
   Drawer,
   Checkbox,
-  FormControlLabel,
-  TableContainer,
-  TableHead,
-  TableRow,
-  TableCell,
-  TableBody
+  FormControlLabel
 } from "@mui/material";
 import {
   Search as SearchIcon,
