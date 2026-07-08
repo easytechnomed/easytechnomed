@@ -380,11 +380,11 @@ export default function DefaultTestsPage() {
                     },
                   }}
                 >
-                  <ListItemIcon sx={{ 
+                  <ListItemIcon sx={{
                     color: isActive ? "primary.main" : "text.secondary",
-                    minWidth: 0, 
-                    mr: desktopDrawerOpen ? 2 : 0, 
-                    justifyContent: "center" 
+                    minWidth: 0,
+                    mr: desktopDrawerOpen ? 2 : 0,
+                    justifyContent: "center"
                   }}>
                     {item.icon}
                   </ListItemIcon>
@@ -426,7 +426,7 @@ export default function DefaultTestsPage() {
     <ThemeProvider theme={lightPurpleTheme}>
       <CssBaseline />
       <Box sx={{ display: "flex", height: "100dvh", overflow: "hidden", bgcolor: "background.default" }}>
-        
+
         {/* Sidebar Navigation */}
         <Box
           component="nav"
@@ -699,7 +699,7 @@ export default function DefaultTestsPage() {
                               <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>
                                 Clinical Parameters ({selectedTest.parameters.length})
                               </Typography>
-                              
+
                               <Box sx={{ display: "flex", flexDirection: "column", gap: 2, flexGrow: 1, overflowY: "auto", pr: 0.5 }}>
                                 {selectedTest.parameters.map((param, index) => (
                                   <Paper
@@ -717,9 +717,9 @@ export default function DefaultTestsPage() {
                                         </Typography>
                                       )}
                                     </Box>
-                                    
+
                                     <Divider sx={{ my: 1, borderColor: "rgba(0,0,0,0.04)" }} />
-                                    
+
                                     <Grid container spacing={1.5}>
                                       {/* Male Range */}
                                       <Grid size={{ xs: 6 }}>
@@ -805,9 +805,16 @@ export default function DefaultTestsPage() {
         onClose={() => !saving && setEditModalOpen(false)}
         maxWidth="lg"
         fullWidth
+        PaperProps={{
+          sx: {
+            maxHeight: "90vh",
+            display: "flex",
+            flexDirection: "column",
+          }
+        }}
       >
-        <form onSubmit={handleSaveEdit}>
-          <DialogContent sx={{ display: "flex", flexDirection: "column", gap: 3 }}>
+        <form onSubmit={handleSaveEdit} style={{ display: "flex", flexDirection: "column", height: "100%", overflow: "hidden" }}>
+          <DialogContent sx={{ display: "flex", flexDirection: "column", gap: 3, flexGrow: 1, overflowY: "auto" }}>
             <Box>
               <Typography variant="subtitle2" sx={{ fontWeight: 700, mb: 1.5 }}>
                 Test Metadata
@@ -849,7 +856,7 @@ export default function DefaultTestsPage() {
 
             <Box>
 
-              <TableContainer component={Paper} variant="outlined" sx={{ overflowX: "auto", maxHeight: "400px" }}>
+              <TableContainer component={Paper} variant="outlined" sx={{ overflowX: "auto", maxHeight: "330px" }}>
                 <Table size="small" stickyHeader sx={{ minWidth: 1960 }}>
                   <TableHead>
                     <TableRow>
@@ -857,25 +864,25 @@ export default function DefaultTestsPage() {
                       <TableCell sx={{ fontWeight: 700, width: 260, bgcolor: "#f8fafc" }}>Parameter Name *</TableCell>
                       <TableCell sx={{ fontWeight: 700, width: 130, bgcolor: "#f8fafc" }}>Unit</TableCell>
                       <TableCell sx={{ fontWeight: 700, width: 100, bgcolor: "#f8fafc" }}>Order</TableCell>
-                      
+
                       {/* Male */}
                       <TableCell sx={{ fontWeight: 700, width: 110, bgcolor: "#eff6ff" }}>Male Min</TableCell>
                       <TableCell sx={{ fontWeight: 700, width: 110, bgcolor: "#eff6ff" }}>Male Max</TableCell>
                       <TableCell sx={{ fontWeight: 700, width: 160, bgcolor: "#eff6ff" }}>Male Range Text</TableCell>
-                      
+
                       {/* Female */}
                       <TableCell sx={{ fontWeight: 700, width: 110, bgcolor: "#fdf2f8" }}>Female Min</TableCell>
                       <TableCell sx={{ fontWeight: 700, width: 110, bgcolor: "#fdf2f8" }}>Female Max</TableCell>
                       <TableCell sx={{ fontWeight: 700, width: 160, bgcolor: "#fdf2f8" }}>Female Range Text</TableCell>
-                      
+
                       {/* Baby */}
                       <TableCell sx={{ fontWeight: 700, width: 110, bgcolor: "#f0fdf4" }}>Baby Min</TableCell>
                       <TableCell sx={{ fontWeight: 700, width: 110, bgcolor: "#f0fdf4" }}>Baby Max</TableCell>
                       <TableCell sx={{ fontWeight: 700, width: 180, bgcolor: "#f0fdf4" }}>Baby Range Text</TableCell>
-                      
+
                       {/* Default */}
                       <TableCell sx={{ fontWeight: 700, width: 200, bgcolor: "#fafaf9" }}>Default Range Text</TableCell>
-                      
+
                       <TableCell align="center" sx={{ fontWeight: 700, width: 50, bgcolor: "#f8fafc" }}>Action</TableCell>
                     </TableRow>
                   </TableHead>
@@ -890,7 +897,7 @@ export default function DefaultTestsPage() {
                       editForm.parameters.map((param, index) => (
                         <TableRow key={index} hover sx={{ '&:hover': { bgcolor: "rgba(0,0,0,0.01)" } }}>
                           <TableCell align="center" sx={{ fontWeight: 700 }}>{index + 1}</TableCell>
-                          
+
                           {/* Name */}
                           <TableCell>
                             <TextField
@@ -902,7 +909,7 @@ export default function DefaultTestsPage() {
                               sx={{ '& .MuiOutlinedInput-root': { borderRadius: 1 } }}
                             />
                           </TableCell>
-                          
+
                           {/* Unit */}
                           <TableCell>
                             <TextField
@@ -914,7 +921,7 @@ export default function DefaultTestsPage() {
                               sx={{ '& .MuiOutlinedInput-root': { borderRadius: 1 } }}
                             />
                           </TableCell>
-                          
+
                           {/* Order */}
                           <TableCell>
                             <TextField
@@ -926,7 +933,7 @@ export default function DefaultTestsPage() {
                               sx={{ '& .MuiOutlinedInput-root': { borderRadius: 1 } }}
                             />
                           </TableCell>
-                          
+
                           {/* Male Min */}
                           <TableCell sx={{ bgcolor: "#f8fafc" }}>
                             <TextField
@@ -940,7 +947,7 @@ export default function DefaultTestsPage() {
                               sx={{ '& .MuiOutlinedInput-root': { borderRadius: 1 } }}
                             />
                           </TableCell>
-                          
+
                           {/* Male Max */}
                           <TableCell sx={{ bgcolor: "#f8fafc" }}>
                             <TextField
@@ -954,7 +961,7 @@ export default function DefaultTestsPage() {
                               sx={{ '& .MuiOutlinedInput-root': { borderRadius: 1 } }}
                             />
                           </TableCell>
-                          
+
                           {/* Male Range Text */}
                           <TableCell sx={{ bgcolor: "#f8fafc" }}>
                             <TextField
@@ -966,7 +973,7 @@ export default function DefaultTestsPage() {
                               sx={{ '& .MuiOutlinedInput-root': { borderRadius: 1 } }}
                             />
                           </TableCell>
-                          
+
                           {/* Female Min */}
                           <TableCell sx={{ bgcolor: "#f8fafc" }}>
                             <TextField
@@ -980,7 +987,7 @@ export default function DefaultTestsPage() {
                               sx={{ '& .MuiOutlinedInput-root': { borderRadius: 1 } }}
                             />
                           </TableCell>
-                          
+
                           {/* Female Max */}
                           <TableCell sx={{ bgcolor: "#f8fafc" }}>
                             <TextField
@@ -994,7 +1001,7 @@ export default function DefaultTestsPage() {
                               sx={{ '& .MuiOutlinedInput-root': { borderRadius: 1 } }}
                             />
                           </TableCell>
-                          
+
                           {/* Female Range Text */}
                           <TableCell sx={{ bgcolor: "#f8fafc" }}>
                             <TextField
@@ -1006,7 +1013,7 @@ export default function DefaultTestsPage() {
                               sx={{ '& .MuiOutlinedInput-root': { borderRadius: 1 } }}
                             />
                           </TableCell>
-                          
+
                           {/* Baby Min */}
                           <TableCell sx={{ bgcolor: "#f8fafc" }}>
                             <TextField
@@ -1020,7 +1027,7 @@ export default function DefaultTestsPage() {
                               sx={{ '& .MuiOutlinedInput-root': { borderRadius: 1 } }}
                             />
                           </TableCell>
-                          
+
                           {/* Baby Max */}
                           <TableCell sx={{ bgcolor: "#f8fafc" }}>
                             <TextField
@@ -1034,7 +1041,7 @@ export default function DefaultTestsPage() {
                               sx={{ '& .MuiOutlinedInput-root': { borderRadius: 1 } }}
                             />
                           </TableCell>
-                          
+
                           {/* Baby Range Text */}
                           <TableCell sx={{ bgcolor: "#f8fafc" }}>
                             <TextField
@@ -1046,7 +1053,7 @@ export default function DefaultTestsPage() {
                               sx={{ '& .MuiOutlinedInput-root': { borderRadius: 1 } }}
                             />
                           </TableCell>
-                          
+
                           {/* Default Range Text */}
                           <TableCell>
                             <TextField
@@ -1058,7 +1065,7 @@ export default function DefaultTestsPage() {
                               sx={{ '& .MuiOutlinedInput-root': { borderRadius: 1 } }}
                             />
                           </TableCell>
-                          
+
                           {/* Delete Action */}
                           <TableCell align="center">
                             <IconButton
@@ -1077,7 +1084,7 @@ export default function DefaultTestsPage() {
               </TableContainer>
             </Box>
           </DialogContent>
-          <DialogActions sx={{ px: 3, pb: 3, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+          <DialogActions sx={{ px: 3, py: 2, display: "flex", justifyContent: "space-between", alignItems: "center", borderTop: "1px solid", borderColor: "divider", bgcolor: "background.paper" }}>
             <Button
               variant="outlined"
               color="primary"
