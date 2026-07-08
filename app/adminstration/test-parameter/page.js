@@ -316,12 +316,12 @@ export default function DefaultTestsPage() {
 
   const handleParamNameSelect = (index, name) => {
     if (!name) return;
-    
+
     // Find the parameter template in our dictionary
     const template = parameterDictionary.find(
       (p) => p.name.toLowerCase().trim() === name.toLowerCase().trim()
     );
-    
+
     if (template) {
       setEditForm((prev) => {
         const newParams = [...prev.parameters];
@@ -363,7 +363,7 @@ export default function DefaultTestsPage() {
       const isNew = editForm.id === null;
       const url = isNew ? "/adminstration/api/tests" : `/adminstration/api/tests/${editForm.id}`;
       const method = isNew ? "POST" : "PUT";
-      
+
       const res = await fetch(url, {
         method,
         headers: { "Content-Type": "application/json" },
@@ -737,16 +737,13 @@ export default function DefaultTestsPage() {
                   {selectedTest ? (
                     <Card sx={{ height: "100%", display: "flex", flexDirection: "column", overflow: "hidden" }}>
                       <CardContent sx={{ p: 2.5, display: "flex", flexDirection: "column", gap: 2, height: "100%", overflow: "hidden" }}>
-                        <Box sx={{ borderBottom: "1px solid", borderColor: "divider", pb: 2, display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
-                          <Box>
-                            <Typography variant="caption" color="primary" sx={{ fontWeight: 700, textTransform: "uppercase" }}>
-                              Selected Test Parameter configuration
-                            </Typography>
-                            <Typography variant="h6" sx={{ fontWeight: 800, mt: 0.5 }}>
+                        <Box sx={{ borderBottom: "1px solid", borderColor: "divider", pb: 1.5, display: "flex", justifyContent: "space-between", alignItems: "center", minWidth: 0, gap: 2 }}>
+                          <Box sx={{ display: "flex", alignItems: "center", gap: 1, minWidth: 0, flexShrink: 1 }}>
+                            <Typography variant="subtitle1" noWrap sx={{ fontWeight: 800, textOverflow: "ellipsis", overflow: "hidden" }}>
                               {selectedTest.name}
                             </Typography>
                             {selectedTest.code && (
-                              <Typography variant="caption" sx={{ display: "inline-block", bgcolor: "rgba(0,0,0,0.05)", px: 1, py: 0.2, borderRadius: 1, fontFamily: "monospace", mt: 0.5 }}>
+                              <Typography variant="caption" sx={{ bgcolor: "rgba(0,0,0,0.05)", px: 1, py: 0.2, borderRadius: 1, fontFamily: "monospace", fontWeight: 700, flexShrink: 0 }}>
                                 Code: {selectedTest.code}
                               </Typography>
                             )}
@@ -757,9 +754,9 @@ export default function DefaultTestsPage() {
                             size="small"
                             startIcon={<EditIcon />}
                             onClick={(e) => handleEditClick(selectedTest, e)}
-                            sx={{ borderRadius: 2 }}
+                            sx={{ borderRadius: 2, flexShrink: 0 }}
                           >
-                            Edit Test & Params
+                            Edit Test
                           </Button>
                         </Box>
 
@@ -777,76 +774,44 @@ export default function DefaultTestsPage() {
                                 Clinical Parameters ({selectedTest.parameters.length})
                               </Typography>
 
-                              <Box sx={{ display: "flex", flexDirection: "column", gap: 2, flexGrow: 1, overflowY: "auto", pr: 0.5 }}>
-                                {selectedTest.parameters.map((param, index) => (
-                                  <Paper
-                                    key={param.id}
-                                    variant="outlined"
-                                    sx={{ p: 2, borderRadius: 2, bgcolor: "#f8fafc" }}
-                                  >
-                                    <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", mb: 1 }}>
-                                      <Typography variant="body2" sx={{ fontWeight: 700, color: "text.primary" }}>
-                                        {index + 1}. {param.name}
-                                      </Typography>
-                                      {param.unit && (
-                                        <Typography variant="caption" sx={{ bgcolor: "primary.light", color: "primary.contrastText", px: 1, py: 0.1, borderRadius: 1, fontWeight: 600 }}>
-                                          {param.unit}
-                                        </Typography>
-                                      )}
-                                    </Box>
+                              <TableContainer component={Paper} elevation={0} sx={{ border: "1px solid", borderColor: "divider", flexGrow: 1, overflowY: "auto" }}>
+                                <Table stickyHeader size="small">
+                                  <TableHead>
+                                    <TableRow>
+                                      <TableCell sx={{ fontWeight: 700, bgcolor: "#f8fafc" }}>Name</TableCell>
+                                      <TableCell sx={{ fontWeight: 700, bgcolor: "#f8fafc" }}>Unit</TableCell>
+                                      <TableCell sx={{ fontWeight: 700, bgcolor: "#f8fafc" }}>Male Range</TableCell>
+                                      <TableCell sx={{ fontWeight: 700, bgcolor: "#f8fafc" }}>Female Range</TableCell>
+                                      <TableCell sx={{ fontWeight: 700, bgcolor: "#f8fafc" }}>Baby Range</TableCell>
+                                      <TableCell sx={{ fontWeight: 700, bgcolor: "#f8fafc" }}>Default Range</TableCell>
+                                    </TableRow>
+                                  </TableHead>
+                                  <TableBody>
+                                    {selectedTest.parameters.map((param) => {
+                                      const maleRange = param.normalRangeMale || (param.minValMale !== null || param.maxValMale !== null
+                                        ? `${param.minValMale ?? 0} - ${param.maxValMale ?? 0}`
+                                        : "-");
+                                      const femaleRange = param.normalRangeFemale || (param.minValFemale !== null || param.maxValFemale !== null
+                                        ? `${param.minValFemale ?? 0} - ${param.maxValFemale ?? 0}`
+                                        : "-");
+                                      const babyRange = param.normalRangeBaby || (param.minValBaby !== null || param.maxValBaby !== null
+                                        ? `${param.minValBaby ?? 0} - ${param.maxValBaby ?? 0}`
+                                        : "-");
 
-                                    <Divider sx={{ my: 1, borderColor: "rgba(0,0,0,0.04)" }} />
-
-                                    <Grid container spacing={1.5}>
-                                      {/* Male Range */}
-                                      <Grid size={{ xs: 6 }}>
-                                        <Typography variant="caption" color="text.secondary" sx={{ display: "block" }}>
-                                          Male Range:
-                                        </Typography>
-                                        <Typography variant="body2" sx={{ fontWeight: 500 }}>
-                                          {param.normalRangeMale || (param.minValMale !== null || param.maxValMale !== null
-                                            ? `${param.minValMale ?? 0} - ${param.maxValMale ?? 0}`
-                                            : "N/A")}
-                                        </Typography>
-                                      </Grid>
-
-                                      {/* Female Range */}
-                                      <Grid size={{ xs: 6 }}>
-                                        <Typography variant="caption" color="text.secondary" sx={{ display: "block" }}>
-                                          Female Range:
-                                        </Typography>
-                                        <Typography variant="body2" sx={{ fontWeight: 500 }}>
-                                          {param.normalRangeFemale || (param.minValFemale !== null || param.maxValFemale !== null
-                                            ? `${param.minValFemale ?? 0} - ${param.maxValFemale ?? 0}`
-                                            : "N/A")}
-                                        </Typography>
-                                      </Grid>
-
-                                      {/* Baby Range */}
-                                      <Grid size={{ xs: 6 }}>
-                                        <Typography variant="caption" color="text.secondary" sx={{ display: "block" }}>
-                                          Baby Range:
-                                        </Typography>
-                                        <Typography variant="body2" sx={{ fontWeight: 500 }}>
-                                          {param.normalRangeBaby || (param.minValBaby !== null || param.maxValBaby !== null
-                                            ? `${param.minValBaby ?? 0} - ${param.maxValBaby ?? 0}`
-                                            : "N/A")}
-                                        </Typography>
-                                      </Grid>
-
-                                      {/* Default Range */}
-                                      <Grid size={{ xs: 6 }}>
-                                        <Typography variant="caption" color="text.secondary" sx={{ display: "block" }}>
-                                          Default Range:
-                                        </Typography>
-                                        <Typography variant="body2" sx={{ fontWeight: 500 }}>
-                                          {param.normalRangeDefault || "N/A"}
-                                        </Typography>
-                                      </Grid>
-                                    </Grid>
-                                  </Paper>
-                                ))}
-                              </Box>
+                                      return (
+                                        <TableRow key={param.id} hover>
+                                          <TableCell sx={{ fontWeight: 600 }}>{param.name}</TableCell>
+                                          <TableCell sx={{ color: "text.secondary" }}>{param.unit || "-"}</TableCell>
+                                          <TableCell sx={{ fontSize: "0.82rem" }}>{maleRange}</TableCell>
+                                          <TableCell sx={{ fontSize: "0.82rem" }}>{femaleRange}</TableCell>
+                                          <TableCell sx={{ fontSize: "0.82rem" }}>{babyRange}</TableCell>
+                                          <TableCell sx={{ fontSize: "0.82rem" }}>{param.normalRangeDefault || "-"}</TableCell>
+                                        </TableRow>
+                                      );
+                                    })}
+                                  </TableBody>
+                                </Table>
+                              </TableContainer>
                             </Box>
                           )}
                         </Box>

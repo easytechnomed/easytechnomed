@@ -123,7 +123,6 @@ export async function POST(req) {
               maxValBaby: p.maxValBaby !== "" && !isNaN(parseFloat(p.maxValBaby)) ? parseFloat(p.maxValBaby) : null,
               normalRangeBaby: p.normalRangeBaby && p.normalRangeBaby.trim() !== "" ? p.normalRangeBaby.trim() : null,
               normalRangeDefault: p.normalRangeDefault && p.normalRangeDefault.trim() !== "" ? p.normalRangeDefault.trim() : null,
-              workspaceId: null,
               isDeleted: false,
             })),
           },
