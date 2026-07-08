@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { PDFDocument, rgb, StandardFonts } from "pdf-lib";
 import { cookies } from "next/headers";
+import { verifyToken } from "@/lib/auth";
 
 const isOutOfRange = (valStr, min, max) => {
   if (!valStr || min === null || max === null) return false;
@@ -110,7 +111,37 @@ export async function GET(req, { params }) {
     const cookieStore = await cookies();
     const isAdminToken = cookieStore.get("admin_session_token")?.value;
     const isSuperAdminToken = cookieStore.get("super_admin_session_token")?.value;
-    const isStaff = !!(isAdminToken || isSuperAdminToken);
+    
+    let isStaff = false;
+
+    if (isAdminToken) {
+      const decoded = verifyToken(isAdminToken);
+      if (decoded) {
+        const session = await prisma.adminSession.findUnique({
+          where: { token: isAdminToken },
+          include: { admin: true },
+        });
+        if (session && session.expiresAt > new Date() && session.admin.isActive) {
+          const admin = session.admin;
+          if (admin.workspaceId !== reg.workspaceId) {
+            return new Response("Unauthorized: You do not have permission to access reports from this laboratory.", { status: 403 });
+          }
+          isStaff = true;
+        }
+      }
+    }
+
+    if (isSuperAdminToken) {
+      const decoded = verifyToken(isSuperAdminToken);
+      if (decoded) {
+        const session = await prisma.superAdminSession.findUnique({
+          where: { token: isSuperAdminToken },
+        });
+        if (session && session.expiresAt > new Date()) {
+          isStaff = true;
+        }
+      }
+    }
 
     if (!isStaff && parseFloat(reg.dueAmount || 0) > 0 && reg.status === "Completed") {
       const htmlMsg = `
