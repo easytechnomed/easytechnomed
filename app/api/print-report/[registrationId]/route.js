@@ -190,29 +190,6 @@ export async function GET(req, { params }) {
     };
 
     const drawDefaultHeaderFooter = (page) => {
-      // Default blank page header
-      page.drawRectangle({
-        x: leftMargin,
-        y: pageHeight - 75,
-        width: contentWidth,
-        height: 40,
-        color: rgb(0.06, 0.46, 0.43), // Teal
-      });
-      page.drawText("PATHLAB REPORT SYSTEM", {
-        x: leftMargin + 15,
-        y: pageHeight - 58,
-        size: 14,
-        font: fontBold,
-        color: rgb(1, 1, 1),
-      });
-      page.drawText("Premium Clinical Diagnosis and Pathology Lab Services", {
-        x: leftMargin + 15,
-        y: pageHeight - 70,
-        size: 8,
-        font: fontOblique,
-        color: rgb(0.8, 0.95, 0.95),
-      });
-
       // Default blank page footer
       page.drawText("Report generated automatically by PathLab System. All rights reserved.", {
         x: leftMargin,
