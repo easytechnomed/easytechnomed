@@ -1453,7 +1453,14 @@ export default function TestReportPage() {
 
                             const normalValLower = (ref.rangeStr || "").toLowerCase();
                             const isNegativeOrPositive = normalValLower.includes("negative") || normalValLower.includes("positive");
-                            const dropdownOptions = ["Negative", "Positive"];
+                            const isReactiveOrNonReactive = normalValLower.includes("reactive");
+                            const showDropdown = isNegativeOrPositive || isReactiveOrNonReactive;
+                            let dropdownOptions = [];
+                            if (isReactiveOrNonReactive) {
+                              dropdownOptions = ["Non-reactive", "Reactive"];
+                            } else if (isNegativeOrPositive) {
+                              dropdownOptions = ["Negative", "Positive"];
+                            }
                             if (val && !dropdownOptions.includes(val)) {
                               dropdownOptions.push(val);
                             }
@@ -1467,7 +1474,7 @@ export default function TestReportPage() {
                                 <TableCell>
                                   <TextField
                                     className="result-input-field"
-                                    select={isNegativeOrPositive}
+                                    select={showDropdown}
                                     size="small"
                                     fullWidth
                                     value={val}
@@ -1492,7 +1499,7 @@ export default function TestReportPage() {
                                       )
                                     }}
                                   >
-                                    {isNegativeOrPositive ? (
+                                    {showDropdown ? (
                                       [
                                         <MenuItem key="empty" value=""><em>Select</em></MenuItem>,
                                         ...dropdownOptions.map(opt => (
