@@ -7,7 +7,7 @@ export async function PUT(req) {
   try {
     const admin = await requireAdmin();
     const body = await req.json().catch(() => ({}));
-    const { name, oldPassword, newPassword, confirmPassword } = body;
+    const { name, oldPassword, newPassword, confirmPassword, companyName, mobileNumber } = body;
 
     if (!name || typeof name !== "string" || name.trim() === "") {
       return NextResponse.json(
@@ -28,7 +28,11 @@ export async function PUT(req) {
       );
     }
 
-    const updateData = { name: name.trim() };
+    const updateData = {
+      name: name.trim(),
+      companyName: companyName ? companyName.trim() : null,
+      mobileNumber: mobileNumber ? mobileNumber.trim() : null,
+    };
 
     // If attempting to change password
     if (oldPassword) {

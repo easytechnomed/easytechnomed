@@ -135,6 +135,18 @@ export async function POST(req) {
             },
           });
 
+          if (validatedData.receivedAmount > 0) {
+            await tx.registrationPayment.create({
+              data: {
+                registrationId: registration.id,
+                amount: validatedData.receivedAmount,
+                paymentMode: validatedData.paymentMode,
+                paymentRefNo: validatedData.paymentRefNo,
+                remark: "Initial Payment",
+              },
+            });
+          }
+
           const registrationTests = validatedData.testIds.map((testId) => ({
             registrationId: registration.id,
             testId: testId,

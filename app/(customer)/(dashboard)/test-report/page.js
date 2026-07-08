@@ -31,7 +31,11 @@ import {
   MenuItem,
   Snackbar,
   Alert,
-  Stack
+  Stack,
+  Drawer,
+  Checkbox,
+  FormControlLabel,
+
 } from "@mui/material";
 import {
   Search as SearchIcon,
@@ -69,7 +73,8 @@ import {
   UploadFile as UploadFileIcon,
   Description as FormFIcon,
   Article as WorksheetIcon,
-  Paid as PaidIcon
+  Paid as PaidIcon,
+  LocationOn as LocationIcon
 } from "@mui/icons-material";
 // Server Action imports removed - using REST API instead
 
@@ -432,6 +437,20 @@ export default function TestReportPage() {
   const [previewData, setPreviewData] = useState(null);
   const [adminSettings, setAdminSettings] = useState({ framePdfUrl: "", useFrameDefault: true });
 
+  // Money Receipt Drawer states
+  const [receiptDrawerOpen, setReceiptDrawerOpen] = useState(false);
+  const [loadingReceipt, setLoadingReceipt] = useState(false);
+  const [selectedRegistration, setSelectedRegistration] = useState(null);
+  const [receivedInput, setReceivedInput] = useState(0);
+  const [discountInput, setDiscountInput] = useState(0);
+  const [discountPercentInput, setDiscountPercentInput] = useState(0);
+  const [paymentModeInput, setPaymentModeInput] = useState("Cash");
+  const [paymentRefNoInput, setPaymentRefNoInput] = useState("");
+  const [remarkInput, setRemarkInput] = useState("");
+  const [savingPayment, setSavingPayment] = useState(false);
+  const [sendSms, setSendSms] = useState(false);
+  const [sendMail, setSendMail] = useState(false);
+
   useEffect(() => {
     async function fetchSettings() {
       try {
@@ -501,9 +520,94 @@ export default function TestReportPage() {
     setAnchorEl(null);
   };
 
+  const handleOpenReceiptDrawer = async (reg) => {
+    setLoadingReceipt(true);
+    setReceiptDrawerOpen(true);
+    try {
+      const res = await fetch(`/api/registrations/${reg.id}`).then((r) => r.json());
+      if (res.success && res.registration) {
+        setSelectedRegistration(res.registration);
+
+        // Initialize inputs
+        const total = parseFloat(res.registration.totalAmount || 0);
+        const discount = parseFloat(res.registration.discountAmount || 0);
+        const alreadyPaid = parseFloat(res.registration.receivedAmount || 0);
+        const remainingDue = Math.max(0, total - discount - alreadyPaid);
+
+        setDiscountInput(discount);
+        setDiscountPercentInput(parseFloat(res.registration.discountPercent || 0));
+        setReceivedInput(remainingDue); // default received input to remaining due
+        setPaymentModeInput(res.registration.paymentMode || "Cash");
+        setPaymentRefNoInput(res.registration.paymentRefNo || "");
+        setRemarkInput("");
+      } else {
+        showToast(res.error || "Failed to load registration details.", "error");
+        setReceiptDrawerOpen(false);
+      }
+    } catch (err) {
+      console.error(err);
+      showToast("Error loading registration details.", "error");
+      setReceiptDrawerOpen(false);
+    } finally {
+      setLoadingReceipt(false);
+    }
+  };
+
+  const handleDiscountAmountChange = (val) => {
+    const amt = parseFloat(val) || 0;
+    setDiscountInput(amt);
+    const total = parseFloat(selectedRegistration?.totalAmount || 0);
+    if (total > 0) {
+      setDiscountPercentInput(Math.round((amt / total) * 10000) / 100);
+    }
+  };
+
+  const handleDiscountPercentChange = (val) => {
+    const pct = parseFloat(val) || 0;
+    setDiscountPercentInput(pct);
+    const total = parseFloat(selectedRegistration?.totalAmount || 0);
+    setDiscountInput(Math.round(total * (pct / 100) * 100) / 100);
+  };
+
+  const handleSavePayment = async () => {
+    if (!selectedRegistration) return;
+    setSavingPayment(true);
+    try {
+      const res = await fetch(`/api/registrations/${selectedRegistration.id}/payment`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          received: parseFloat(receivedInput) || 0,
+          discountPercent: parseFloat(discountPercentInput) || 0,
+          discountAmount: parseFloat(discountInput) || 0,
+          paymentMode: paymentModeInput,
+          paymentRefNo: paymentRefNoInput,
+          remark: remarkInput,
+        })
+      }).then((r) => r.json());
+
+      if (res.success) {
+        showToast("Payment recorded successfully!", "success");
+        setReceiptDrawerOpen(false);
+        loadData(); // reload test reports table list
+      } else {
+        showToast(res.error || "Failed to record payment.", "error");
+      }
+    } catch (err) {
+      console.error(err);
+      showToast("An error occurred while saving payment.", "error");
+    } finally {
+      setSavingPayment(false);
+    }
+  };
+
   const triggerAction = (actionName) => {
     handleCloseMenu();
-    showToast(`Action "${actionName}" triggered for patient ${selectedReg.name}`, "info");
+    if (actionName === "Money Receipt") {
+      handleOpenReceiptDrawer(selectedReg);
+    } else {
+      showToast(`Action "${actionName}" triggered for patient ${selectedReg.name}`, "info");
+    }
   };
 
   // Edit Registration
@@ -1885,6 +1989,247 @@ export default function TestReportPage() {
           </Button>
         </DialogActions>
       </Dialog>
+
+      {/* Money Receipt Drawer */}
+      <Drawer
+        anchor="right"
+        open={receiptDrawerOpen}
+        onClose={() => setReceiptDrawerOpen(false)}
+        PaperProps={{
+          sx: { width: { xs: "100%", sm: "800px" }, p: 0, borderTopLeftRadius: 16, borderBottomLeftRadius: 16 }
+        }}
+      >
+        {loadingReceipt ? (
+          <Box sx={{ display: "flex", flexDirection: "column", justifyContent: "center", alignItems: "center", minHeight: "100vh", width: { xs: "100%", sm: "800px" }, gap: 2 }}>
+            <CircularProgress size={45} />
+            <Typography variant="body2" color="text.secondary">Loading receipt details...</Typography>
+          </Box>
+        ) : selectedRegistration ? (
+          <Box sx={{ height: "100%", display: "flex", flexDirection: "column" }}>
+            {/* Header */}
+            <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", bgcolor: "primary.main", color: "primary.contrastText", px: 3, py: 2 }}>
+              <Typography variant="h6" sx={{ fontWeight: 800 }}>
+                💳 Bill Entry / Money Receipt
+              </Typography>
+              <IconButton onClick={() => setReceiptDrawerOpen(false)} size="small" sx={{ color: "primary.contrastText" }}>
+                <CloseIcon />
+              </IconButton>
+            </Box>
+
+            {/* Content (Scrollable) */}
+            <Box sx={{ flexGrow: 1, overflowY: "auto", p: 3 }}>
+              <Grid container spacing={3}>
+
+                {/* Left Column - Patient & Previous Payments */}
+                <Grid size={{ xs: 12, md: 6 }}>
+                  <Card variant="outlined" sx={{ mb: 3, borderRadius: 2, bgcolor: "grey.50" }}>
+                    <CardContent sx={{ p: 2 }}>
+                      <Typography variant="subtitle2" sx={{ fontWeight: 700, mb: 2, color: "primary.main" }}>
+                        Patient Details
+                      </Typography>
+                      <Grid container spacing={1.5}>
+                        <Grid size={{ xs: 6 }}>
+                          <Typography variant="caption" color="text.secondary" sx={{ display: "block" }}>Reg. No</Typography>
+                          <Typography variant="body2" sx={{ fontWeight: 600 }}>{selectedRegistration.regNo}</Typography>
+                        </Grid>
+                        <Grid size={{ xs: 6 }}>
+                          <Typography variant="caption" color="text.secondary" sx={{ display: "block" }}>Lab ID</Typography>
+                          <Typography variant="body2" sx={{ fontWeight: 600 }}>{selectedRegistration.labId}</Typography>
+                        </Grid>
+                        <Grid size={{ xs: 12 }}>
+                          <Typography variant="caption" color="text.secondary" sx={{ display: "block" }}>Patient Name</Typography>
+                          <Typography variant="body2" sx={{ fontWeight: 600 }}>{selectedRegistration.title} {selectedRegistration.name}</Typography>
+                        </Grid>
+                        <Grid size={{ xs: 6 }}>
+                          <Typography variant="caption" color="text.secondary" sx={{ display: "block" }}>Age / Gender</Typography>
+                          <Typography variant="body2">{selectedRegistration.age} {selectedRegistration.ageUnit} / {selectedRegistration.gender}</Typography>
+                        </Grid>
+                        <Grid size={{ xs: 6 }}>
+                          <Typography variant="caption" color="text.secondary" sx={{ display: "block" }}>Date</Typography>
+                          <Typography variant="body2">{new Date(selectedRegistration.date).toLocaleDateString()}</Typography>
+                        </Grid>
+                        <Grid size={{ xs: 12 }}>
+                          <Typography variant="caption" color="text.secondary" sx={{ display: "block" }}>Ref By</Typography>
+                          <Typography variant="body2">{selectedRegistration.refBy?.name || "Self"}</Typography>
+                        </Grid>
+                      </Grid>
+                    </CardContent>
+                  </Card>
+
+                  <Typography variant="subtitle2" sx={{ fontWeight: 700, mb: 1, color: "text.primary" }}>
+                    Other Payments
+                  </Typography>
+                  <TableContainer component={Paper} variant="outlined" sx={{ borderRadius: 2 }}>
+                    <Table size="small">
+                      <TableHead sx={{ bgcolor: "grey.100" }}>
+                        <TableRow>
+                          <TableCell sx={{ fontWeight: 700 }}>Date</TableCell>
+                          <TableCell sx={{ fontWeight: 700 }}>Ref / Mode</TableCell>
+                          <TableCell align="right" sx={{ fontWeight: 700 }}>Amount</TableCell>
+                        </TableRow>
+                      </TableHead>
+                      <TableBody>
+                        {selectedRegistration.payments && selectedRegistration.payments.length > 0 ? (
+                          selectedRegistration.payments.map((p) => (
+                            <TableRow key={p.id}>
+                              <TableCell>{new Date(p.createdAt).toLocaleString(undefined, { dateStyle: "short", timeStyle: "short" })}</TableCell>
+                              <TableCell>{p.paymentMode} {p.paymentRefNo ? `(${p.paymentRefNo})` : ""}</TableCell>
+                              <TableCell align="right">₹{parseFloat(p.amount).toFixed(2)}</TableCell>
+                            </TableRow>
+                          ))
+                        ) : (
+                          <TableRow>
+                            <TableCell colSpan={3} align="center" color="text.secondary" sx={{ py: 2 }}>
+                              No payments recorded.
+                            </TableCell>
+                          </TableRow>
+                        )}
+                      </TableBody>
+                    </Table>
+                  </TableContainer>
+                </Grid>
+
+                {/* Right Column - Test Listing & Calculator */}
+                <Grid size={{ xs: 12, md: 6 }}>
+                  <Typography variant="subtitle2" sx={{ fontWeight: 700, mb: 1, color: "text.primary" }}>
+                    Test Details
+                  </Typography>
+                  <TableContainer component={Paper} variant="outlined" sx={{ borderRadius: 2, mb: 3 }}>
+                    <Table size="small">
+                      <TableHead sx={{ bgcolor: "grey.100" }}>
+                        <TableRow>
+                          <TableCell sx={{ fontWeight: 700 }}>Test Name</TableCell>
+                          <TableCell align="right" sx={{ fontWeight: 700 }}>Amount</TableCell>
+                        </TableRow>
+                      </TableHead>
+                      <TableBody>
+                        {selectedRegistration.tests?.map((t) => (
+                          <TableRow key={t.testId}>
+                            <TableCell>{t.test?.name}</TableCell>
+                            <TableCell align="right">₹{parseFloat(t.test?.price || 0).toFixed(2)}</TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </TableContainer>
+
+                  <Card variant="outlined" sx={{ borderRadius: 2 }}>
+                    <CardContent sx={{ p: 3, display: "flex", flexDirection: "column", gap: 2 }}>
+                      <Box sx={{ display: "flex", justifyContent: "space-between" }}>
+                        <Typography variant="body2" sx={{ fontWeight: 600 }}>Total Amount:</Typography>
+                        <Typography variant="body2" sx={{ fontWeight: 700 }}>₹{parseFloat(selectedRegistration.totalAmount).toFixed(2)}</Typography>
+                      </Box>
+
+                      <Box sx={{ display: "flex", gap: 2 }}>
+                        <TextField
+                          label="Dis%"
+                          size="small"
+                          type="number"
+                          value={discountPercentInput}
+                          onChange={(e) => handleDiscountPercentChange(e.target.value)}
+                          slotProps={{ htmlInput: { min: 0, max: 100, step: 0.1 } }}
+                          fullWidth
+                        />
+                        <TextField
+                          label="Discount Amount"
+                          size="small"
+                          type="number"
+                          value={discountInput}
+                          onChange={(e) => handleDiscountAmountChange(e.target.value)}
+                          fullWidth
+                        />
+                      </Box>
+
+                      <Box sx={{ display: "flex", justifyContent: "space-between" }}>
+                        <Typography variant="body2" sx={{ color: "text.secondary" }}>Already Paid:</Typography>
+                        <Typography variant="body2" sx={{ fontWeight: 600 }}>₹{parseFloat(selectedRegistration.receivedAmount).toFixed(2)}</Typography>
+                      </Box>
+
+                      <TextField
+                        label="Received Amount"
+                        size="small"
+                        type="number"
+                        value={receivedInput}
+                        onChange={(e) => setReceivedInput(parseFloat(e.target.value) || 0)}
+                        fullWidth
+                      />
+
+                      <Box sx={{ display: "flex", justifyContent: "space-between", bgcolor: "error.lighter", p: 1, borderRadius: 1 }}>
+                        <Typography variant="subtitle2" sx={{ color: "error.main", fontWeight: 700 }}>Due Amount:</Typography>
+                        <Typography variant="subtitle2" sx={{ color: "error.main", fontWeight: 800 }}>
+                          ₹{Math.max(0, parseFloat(selectedRegistration.totalAmount) - discountInput - parseFloat(selectedRegistration.receivedAmount) - receivedInput).toFixed(2)}
+                        </Typography>
+                      </Box>
+
+                      <Divider />
+
+                      <TextField
+                        select
+                        label="Payment Mode"
+                        size="small"
+                        value={paymentModeInput}
+                        onChange={(e) => setPaymentModeInput(e.target.value)}
+                        fullWidth
+                      >
+                        <MenuItem value="Cash">Cash</MenuItem>
+                        <MenuItem value="UPI">UPI</MenuItem>
+                        <MenuItem value="Card">Card</MenuItem>
+                        <MenuItem value="Net Banking">Net Banking</MenuItem>
+                      </TextField>
+
+                      <TextField
+                        label="Payment Ref.No"
+                        size="small"
+                        value={paymentRefNoInput}
+                        onChange={(e) => setPaymentRefNoInput(e.target.value)}
+                        placeholder="Transaction ID / Check No"
+                        fullWidth
+                      />
+
+                      <TextField
+                        label="Remark"
+                        size="small"
+                        value={remarkInput}
+                        onChange={(e) => setRemarkInput(e.target.value)}
+                        placeholder="Add payment remark"
+                        fullWidth
+                      />
+
+                      <Box sx={{ display: "flex", gap: 2, mt: 1 }}>
+                        <FormControlLabel
+                          control={<Checkbox checked={sendSms} onChange={(e) => setSendSms(e.target.checked)} size="small" />}
+                          label={<Typography variant="body2">Send SMS</Typography>}
+                        />
+                        <FormControlLabel
+                          control={<Checkbox checked={sendMail} onChange={(e) => setSendMail(e.target.checked)} size="small" />}
+                          label={<Typography variant="body2">Send Mail</Typography>}
+                        />
+                      </Box>
+                    </CardContent>
+                  </Card>
+                </Grid>
+
+              </Grid>
+            </Box>
+
+            {/* Footer Actions */}
+            <Box sx={{ p: 2, display: "flex", justifyContent: "flex-end", borderTop: "1px solid", borderColor: "divider", gap: 1.5 }}>
+              <Button onClick={() => setReceiptDrawerOpen(false)} variant="outlined">
+                Cancel
+              </Button>
+              <Button
+                variant="contained"
+                onClick={handleSavePayment}
+                startIcon={savingPayment ? <CircularProgress size={16} color="inherit" /> : <SaveIcon />}
+                disabled={savingPayment}
+                sx={{ px: 4 }}
+              >
+                {savingPayment ? "Saving..." : "Save Payment"}
+              </Button>
+            </Box>
+          </Box>
+        ) : null}
+      </Drawer>
 
       {/* --- TOAST ALERTS --- */}
       <Snackbar

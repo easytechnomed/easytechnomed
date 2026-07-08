@@ -149,6 +149,7 @@ export default function AdminLayoutClient({ admin, children }) {
       icon: <SettingsIcon />,
       subItems: [
         { text: "Profile Setting", path: "/settings?tab=profile" },
+        { text: "Address Setting", path: "/settings/address" },
         { text: "Test & Parameter", path: "/settings?tab=tests" },
         { text: "PDF Frame Setting", path: "/settings?tab=pdf" },
       ]
@@ -170,11 +171,14 @@ export default function AdminLayoutClient({ admin, children }) {
       <Box sx={{ overflow: "auto", flexGrow: 1, py: 2 }}>
         <List sx={{ px: 2 }}>
           {menuItems.map((item) => {
-            const isActive = pathname === item.path || pathname.startsWith(item.path + "/");
+            const isAdmin = pathname.startsWith("/admin");
+            const cleanPath = isAdmin ? pathname.slice(6) || "/" : pathname;
+            const isActive = cleanPath === item.path || cleanPath.startsWith(item.path + "/");
+            const itemHref = isAdmin ? `/admin${item.path}` : item.path;
             return (
               <React.Fragment key={item.text}>
                 <ListItem disablePadding sx={{ mb: 0.5 }}>
-                  <Link href={item.path} style={{ textDecoration: "none", width: "100%" }}>
+                  <Link href={itemHref} style={{ textDecoration: "none", width: "100%" }}>
                     <ListItemButton
                       onClick={() => mounted && !isMdUp && handleDrawerClose()}
                       sx={{
@@ -214,12 +218,15 @@ export default function AdminLayoutClient({ admin, children }) {
                     {item.subItems.map((sub) => {
                       const searchParamsStr = sub.path.split("?")[1] || "";
                       const tabName = searchParamsStr.split("=")[1] || "";
-                      const currentTab = searchParams.get("tab") || "profile";
-                      const isSubActive = pathname === "/settings" && currentTab === tabName;
+                      const currentTab = searchParams.get("tab") || (cleanPath === "/settings" ? "profile" : "");
+                      const isSubActive = sub.path.includes("?")
+                        ? (cleanPath === "/settings" && currentTab === tabName)
+                        : (cleanPath === sub.path || cleanPath.startsWith(sub.path + "/"));
+                      const subHref = isAdmin ? `/admin${sub.path}` : sub.path;
 
                       return (
                         <ListItem key={sub.text} disablePadding sx={{ mb: 0.5 }}>
-                          <Link href={sub.path} style={{ textDecoration: "none", width: "100%" }}>
+                          <Link href={subHref} style={{ textDecoration: "none", width: "100%" }}>
                             <ListItemButton
                               onClick={() => mounted && !isMdUp && handleDrawerClose()}
                               sx={{

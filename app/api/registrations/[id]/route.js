@@ -56,6 +56,11 @@ export async function GET(req, { params }) {
             test: true,
           },
         },
+        payments: {
+          orderBy: {
+            createdAt: "asc",
+          },
+        },
       },
     });
 

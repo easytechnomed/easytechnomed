@@ -127,6 +127,10 @@ model Admin {
 
   workspaceId     Int?
   workspace       Workspace?     @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  companyName     String?
+  mobileNumber    String?
+  address         AdminAddress?
 }
 
 model AdminSession {
@@ -237,6 +241,7 @@ model Registration {
   deletedAt        DateTime?
   createdAt        DateTime           @default(now())
   updatedAt        DateTime           @updatedAt
+  payments         RegistrationPayment[]
 
   workspaceId      Int?
   workspace        Workspace?         @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
@@ -317,5 +322,31 @@ model Lead {
   contact   String   @unique
   type      String   // "email" or "mobile"
   createdAt DateTime @default(now())
+}
+
+model AdminAddress {
+  id          Int      @id @default(autoincrement())
+  address1    String?
+  address2    String?
+  city        String?
+  state       String?
+  pincode     String?
+  country     String?
+  adminId     Int      @unique
+  admin       Admin    @relation(fields: [adminId], references: [id], onDelete: Cascade)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model RegistrationPayment {
+  id             Int          @id @default(autoincrement())
+  registrationId Int
+  registration   Registration @relation(fields: [registrationId], references: [id], onDelete: Cascade)
+  amount         Decimal      @db.Decimal(10, 2)
+  paymentMode    String       @default("Cash")
+  paymentRefNo   String?
+  remark         String?
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
 }
 

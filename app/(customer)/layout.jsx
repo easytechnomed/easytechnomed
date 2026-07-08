@@ -1,8 +1,9 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
-import { ThemeProvider, createTheme, CssBaseline, Box } from "@mui/material";
+import { useRouter, usePathname } from "next/navigation";
+import { ThemeProvider, createTheme } from "@mui/material/styles";
+import { CssBaseline, Box } from "@mui/material";
 import Navbar from "./home/Navbar";
 import Footer from "./home/Footer";
 
@@ -73,6 +74,7 @@ const navLinks = [
 
 export default function CustomerLayout({ children }) {
   const router = useRouter();
+  const pathname = usePathname();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
 
@@ -88,21 +90,31 @@ export default function CustomerLayout({ children }) {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
+  const isDashboard = pathname.startsWith("/dashboard") ||
+                      pathname.startsWith("/registration") ||
+                      pathname.startsWith("/test-report") ||
+                      pathname.startsWith("/doctor-summary") ||
+                      pathname.startsWith("/members") ||
+                      pathname.startsWith("/settings") ||
+                      pathname.startsWith("/userApprove");
+
   return (
     <ThemeProvider theme={theme}>
       <CssBaseline />
       <Box sx={{ minHeight: "100vh", display: "flex", flexDirection: "column", bgcolor: "background.default" }}>
-        <Navbar
-          scrolled={scrolled}
-          mobileMenuOpen={mobileMenuOpen}
-          setMobileMenuOpen={setMobileMenuOpen}
-          navLinks={navLinks}
-          router={router}
-        />
-        <Box component="main" sx={{ flexGrow: 1 }}>
+        {!isDashboard && (
+          <Navbar
+            scrolled={scrolled}
+            mobileMenuOpen={mobileMenuOpen}
+            setMobileMenuOpen={setMobileMenuOpen}
+            navLinks={navLinks}
+            router={router}
+          />
+        )}
+        <Box component="main" sx={{ flexGrow: 1, display: "flex", flexDirection: "column" }}>
           {children}
         </Box>
-        <Footer navLinks={navLinks} />
+        {!isDashboard && <Footer navLinks={navLinks} />}
       </Box>
     </ThemeProvider>
   );

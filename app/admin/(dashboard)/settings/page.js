@@ -79,6 +79,8 @@ function SettingsContent() {
   // Profile states
   const [profileName, setProfileName] = useState("");
   const [profileEmail, setProfileEmail] = useState("");
+  const [companyName, setCompanyName] = useState("");
+  const [mobileNumber, setMobileNumber] = useState("");
   const [oldPassword, setOldPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -135,6 +137,8 @@ function SettingsContent() {
           });
           setProfileName(res.settings.name || "");
           setProfileEmail(res.settings.email || "");
+          setCompanyName(res.settings.companyName || "");
+          setMobileNumber(res.settings.mobileNumber || "");
         }
       } catch (err) {
         console.error(err);
@@ -277,6 +281,8 @@ function SettingsContent() {
           oldPassword: oldPassword || null,
           newPassword: newPassword || null,
           confirmPassword: confirmPassword || null,
+          companyName: companyName || null,
+          mobileNumber: mobileNumber || null,
         }),
       }).then((r) => r.json());
 
@@ -601,6 +607,28 @@ function SettingsContent() {
                   value={profileName}
                   onChange={(e) => setProfileName(e.target.value)}
                   required
+                />
+              </Grid>
+
+              <Grid size={{ xs: 12 }}>
+                <TextField
+                  label="Company Name"
+                  fullWidth
+                  size="small"
+                  value={companyName}
+                  onChange={(e) => setCompanyName(e.target.value)}
+                  placeholder="Enter company name"
+                />
+              </Grid>
+
+              <Grid size={{ xs: 12 }}>
+                <TextField
+                  label="Mobile Number"
+                  fullWidth
+                  size="small"
+                  value={mobileNumber}
+                  onChange={(e) => setMobileNumber(e.target.value)}
+                  placeholder="Enter mobile number"
                 />
               </Grid>
 

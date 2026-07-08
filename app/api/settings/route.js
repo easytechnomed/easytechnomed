@@ -18,6 +18,9 @@ export async function GET() {
         authorizedSignatoryDegree1: true,
         authorizedSignatoryName2: true,
         authorizedSignatoryDegree2: true,
+        companyName: true,
+        mobileNumber: true,
+        address: true,
       },
     });
     return NextResponse.json({ success: true, settings: adminRecord });
