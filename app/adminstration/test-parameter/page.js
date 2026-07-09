@@ -175,7 +175,7 @@ export default function DefaultTestsPage() {
   const [initialParameters, setInitialParameters] = useState([]);
   const [saving, setSaving] = useState(false);
   const [parameterDictionary, setParameterDictionary] = useState([]);
-  const [draggedIndex, setDraggedIndex] = useState(null);
+  const [draggedKey, setDraggedKey] = useState(null);
 
   // New parameter catalog & merge-delete states
   const [activeTab, setActiveTab] = useState("tests"); // "tests" or "parameters"
@@ -205,26 +205,37 @@ export default function DefaultTestsPage() {
     (paramPage - 1) * paramLimit + paramLimit
   );
 
-  const handleDragStart = (e, index) => {
-    setDraggedIndex(index);
+  const handleDragStart = (e, key) => {
+    setDraggedKey(key);
     e.dataTransfer.effectAllowed = "move";
-    e.dataTransfer.setData("text/plain", index);
   };
 
   const handleDragEnd = () => {
-    setDraggedIndex(null);
+    setDraggedKey(null);
   };
 
-  const handleDragOver = (e) => {
+  const handleDragOver = (e, targetIndex) => {
     e.preventDefault();
-  };
 
-  const handleDrop = (e, targetIndex) => {
-    e.preventDefault();
-    const sourceIndex = parseInt(e.dataTransfer.getData("text/plain"), 10);
-    if (isNaN(sourceIndex) || sourceIndex === targetIndex) return;
+    // Auto-scroll the TableContainer when dragging near boundaries
+    const container = e.currentTarget.closest(".MuiTableContainer-root");
+    if (container) {
+      const rect = container.getBoundingClientRect();
+      const relativeY = e.clientY - rect.top;
+
+      if (relativeY < 60) {
+        container.scrollTop -= 12;
+      } else if (rect.bottom - e.clientY < 60) {
+        container.scrollTop += 12;
+      }
+    }
+
+    if (draggedKey === null) return;
 
     setEditForm((prev) => {
+      const sourceIndex = prev.parameters.findIndex((p) => p.key === draggedKey);
+      if (sourceIndex === -1 || sourceIndex === targetIndex) return prev;
+
       const updatedParams = [...prev.parameters];
       const [movedParam] = updatedParams.splice(sourceIndex, 1);
       updatedParams.splice(targetIndex, 0, movedParam);
@@ -240,6 +251,11 @@ export default function DefaultTestsPage() {
         parameters: reSequencedParams
       };
     });
+  };
+
+  const handleDrop = (e) => {
+    e.preventDefault();
+    setDraggedKey(null);
   };
 
   const fetchTests = async (currentPage = page, query = searchQuery) => {
@@ -283,6 +299,19 @@ export default function DefaultTestsPage() {
       console.error("Error fetching parameter dictionary:", err);
     }
   };
+
+  // Prevent text selection across the page while dragging parameter rows
+  useEffect(() => {
+    const handleSelectStart = (e) => {
+      if (draggedKey !== null) {
+        e.preventDefault();
+      }
+    };
+    window.addEventListener("selectstart", handleSelectStart);
+    return () => {
+      window.removeEventListener("selectstart", handleSelectStart);
+    };
+  }, [draggedKey]);
 
   // Fetch when page or limit changes
   useEffect(() => {
@@ -473,7 +502,8 @@ export default function DefaultTestsPage() {
 
   const handleEditClick = (test, e) => {
     if (e) e.stopPropagation();
-    const paramsCopy = test.parameters ? test.parameters.map(p => ({
+    const paramsCopy = test.parameters ? test.parameters.map((p, index) => ({
+      key: p.id || `param-${Date.now()}-${index}-${Math.random()}`,
       id: p.id,
       name: p.name || "",
       unit: p.unit || "",
@@ -510,6 +540,7 @@ export default function DefaultTestsPage() {
       parameters: [
         ...prev.parameters,
         {
+          key: `new-${Date.now()}-${Math.random()}`,
           name: "",
           unit: defaultUnit,
           order: (prev.parameters.length + 1).toString(),
@@ -1582,13 +1613,13 @@ export default function DefaultTestsPage() {
                     ) : (
                       editForm.parameters.map((param, index) => (
                         <TableRow
-                          key={index}
+                          key={param.key}
                           hover
-                          onDragOver={handleDragOver}
-                          onDrop={(e) => handleDrop(e, index)}
+                          onDragOver={(e) => handleDragOver(e, index)}
+                          onDrop={handleDrop}
                           sx={{
-                            opacity: draggedIndex === index ? 0.4 : 1,
-                            bgcolor: draggedIndex === index ? "rgba(124, 58, 237, 0.04)" : "inherit",
+                            opacity: draggedKey === param.key ? 0.4 : 1,
+                            bgcolor: draggedKey === param.key ? "rgba(124, 58, 237, 0.04)" : "inherit",
                             '&:hover': { bgcolor: "rgba(0,0,0,0.01)" }
                           }}
                         >
@@ -1597,7 +1628,7 @@ export default function DefaultTestsPage() {
                               size="small"
                               sx={{ cursor: "grab", color: "text.secondary" }}
                               draggable
-                              onDragStart={(e) => handleDragStart(e, index)}
+                              onDragStart={(e) => handleDragStart(e, param.key)}
                               onDragEnd={handleDragEnd}
                             >
                               <DragIndicatorIcon fontSize="small" />

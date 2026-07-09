@@ -115,7 +115,7 @@ export default function CustomerRegisterPage() {
           <div className="space-y-2 text-center md:text-left">
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-bold bg-teal-50 text-teal-700 border border-teal-100/50">
               <span className="flex h-2 w-2 rounded-full bg-teal-500 animate-pulse" />
-              Claim 3-Day Free Trial 🎁
+              Claim 5-Day Free Trial 🎁
             </div>
             <div className="space-y-0.5">
               <h2 className="text-3xl md:text-4xl font-black tracking-tight text-slate-950">
@@ -204,7 +204,7 @@ export default function CustomerRegisterPage() {
                   className="w-full bg-slate-900 hover:bg-slate-800 text-white font-extrabold py-3 rounded-2xl transition-all duration-300 flex items-center justify-center gap-2 border-0 shadow-[0_10px_20px_rgba(15,23,42,0.15)] hover:shadow-[0_15px_25px_rgba(20,184,166,0.2)] transform hover:-translate-y-0.5"
                   isLoading={isLoading}
                 >
-                  Start 3-Day Free Trial
+                  Start 5-Day Free Trial
                   <ArrowRight className="h-4 w-4" />
                 </Button>
 

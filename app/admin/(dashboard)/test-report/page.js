@@ -81,7 +81,8 @@ import {
   AssignmentTurnedIn as TestCompletedIcon,
   AssignmentLate as TestPendingIcon,
   ChevronLeft as ChevronLeftIcon,
-  ChevronRight as ChevronRightIcon
+  ChevronRight as ChevronRightIcon,
+  DragIndicator as DragIndicatorIcon
 } from "@mui/icons-material";
 // Server Action imports removed - using REST API instead
 
@@ -532,6 +533,7 @@ export default function TestReportPage() {
   const [configDialogOpen, setConfigDialogOpen] = useState(false);
   const [configTest, setConfigTest] = useState(null);
   const [configParams, setConfigParams] = useState([]);
+  const [draggedKey, setDraggedKey] = useState(null);
 
   // Toast notifications
   const [toast, setToast] = useState({ open: false, message: "", severity: "success" });
@@ -969,11 +971,68 @@ export default function TestReportPage() {
     return false;
   };
 
+  // Prevent text selection across the page while dragging configuration parameters
+  useEffect(() => {
+    const handleSelectStart = (e) => {
+      if (draggedKey !== null) {
+        e.preventDefault();
+      }
+    };
+    window.addEventListener("selectstart", handleSelectStart);
+    return () => {
+      window.removeEventListener("selectstart", handleSelectStart);
+    };
+  }, [draggedKey]);
+
+  const handleDragStart = (e, key) => {
+    setDraggedKey(key);
+    e.dataTransfer.effectAllowed = "move";
+  };
+
+  const handleDragEnd = () => {
+    setDraggedKey(null);
+  };
+
+  const handleDragOver = (e, targetIndex) => {
+    e.preventDefault();
+
+    // Auto-scroll the Stack container when dragging near boundaries
+    const container = e.currentTarget.closest(".config-stack-container");
+    if (container) {
+      const rect = container.getBoundingClientRect();
+      const relativeY = e.clientY - rect.top;
+
+      if (relativeY < 60) {
+        container.scrollTop -= 12;
+      } else if (rect.bottom - e.clientY < 60) {
+        container.scrollTop += 12;
+      }
+    }
+
+    if (draggedKey === null) return;
+
+    setConfigParams((prev) => {
+      const sourceIndex = prev.findIndex((p) => p.key === draggedKey);
+      if (sourceIndex === -1 || sourceIndex === targetIndex) return prev;
+
+      const updated = [...prev];
+      const [moved] = updated.splice(sourceIndex, 1);
+      updated.splice(targetIndex, 0, moved);
+      return updated;
+    });
+  };
+
+  const handleDrop = (e) => {
+    e.preventDefault();
+    setDraggedKey(null);
+  };
+
   // --- PARAMETER CONFIGURATOR ---
   const handleOpenConfigurator = (test) => {
     setConfigTest(test);
     // Clone parameters list
-    const params = test.parameters.map((p) => ({
+    const params = test.parameters.map((p, pIdx) => ({
+      key: p.id || `param-${Date.now()}-${pIdx}-${Math.random()}`,
       id: p.id,
       name: p.name,
       minValMale: p.minValMale !== null ? String(p.minValMale) : "",
@@ -1020,6 +1079,7 @@ export default function TestReportPage() {
     setConfigParams([
       ...configParams,
       {
+        key: `new-${Date.now()}-${Math.random()}`,
         name: "",
         minValMale: "",
         maxValMale: "",
@@ -1938,11 +1998,33 @@ export default function TestReportPage() {
                 </Typography>
               </Box>
             ) : (
-              <Stack spacing={2} sx={{ maxHeight: 450, overflowY: "auto", pr: 1 }}>
+              <Stack className="config-stack-container" spacing={2} sx={{ maxHeight: 450, overflowY: "auto", pr: 1 }}>
                 {configParams.map((param, index) => (
-                  <Card variant="outlined" key={index} sx={{ p: 2, overflow: "visible" }}>
+                  <Card 
+                    variant="outlined" 
+                    key={param.key} 
+                    onDragOver={(e) => handleDragOver(e, index)}
+                    onDrop={handleDrop}
+                    sx={{ 
+                      p: 2, 
+                      overflow: "visible",
+                      opacity: draggedKey === param.key ? 0.4 : 1,
+                      bgcolor: draggedKey === param.key ? "rgba(15, 118, 110, 0.04)" : "inherit"
+                    }}
+                  >
                     <Grid container spacing={2} alignItems="center">
-                      <Grid size={{ xs: 5.5 }}>
+                      <Grid size={{ xs: 0.6 }} sx={{ display: "flex", alignItems: "center", justifyContent: "center" }}>
+                        <IconButton
+                          size="small"
+                          sx={{ cursor: "grab", color: "text.secondary" }}
+                          draggable
+                          onDragStart={(e) => handleDragStart(e, param.key)}
+                          onDragEnd={handleDragEnd}
+                        >
+                          <DragIndicatorIcon fontSize="small" />
+                        </IconButton>
+                      </Grid>
+                      <Grid size={{ xs: 4.9 }}>
                         <TextField
                           label="Parameter Name"
                           size="small"

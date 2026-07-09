@@ -87,12 +87,12 @@ export default function Contact({
                                 >
                                     Contact Us & Support
                                 </Typography>
-                                <Typography
+                                    <Typography
                                     variant="body1"
                                     color="text.secondary"
                                     sx={{ mb: 3.5, lineHeight: 1.6, fontSize: { xs: "0.9rem", sm: "0.95rem" } }}
                                 >
-                                    Enter your email address or mobile number below to claim your 3-day free trial or to ask any questions. Our team will get in touch with you shortly.
+                                    Enter your email address or mobile number below to claim your 5-day free trial or to ask any questions. Our team will get in touch with you shortly.
                                 </Typography>
 
                                 {/* Contact Lead Capture Form */}

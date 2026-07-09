@@ -146,6 +146,9 @@ export async function POST(req, { params }) {
         });
         index++;
       }
+    }, {
+      maxWait: 15000,
+      timeout: 30000
     });
 
     return NextResponse.json({ success: true, message: "Parameters updated successfully." });

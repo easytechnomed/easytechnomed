@@ -39,7 +39,7 @@ export async function POST(req) {
     const expires = new Date(Date.now() + 24 * 60 * 60 * 1000);
 
     const now = new Date();
-    const trialEnd = new Date(now.getTime() + 3 * 24 * 60 * 60 * 1000); // 3 days free trial
+    const trialEnd = new Date(now.getTime() + 5 * 24 * 60 * 60 * 1000); // 5 days free trial
 
     await prisma.user.create({
       data: {

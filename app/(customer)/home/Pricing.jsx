@@ -29,9 +29,9 @@ export default function Pricing() {
             title: "Free Trial",
             desc: "Try it out first.",
             price: "₹0",
-            period: "/ 3 Days",
+            period: "/ 5 Days",
             features: [
-                "3 Days Access",
+                "5 Days Access",
                 "No limitations on features",
                 "Create patient profiles",
                 "Generate reports",
@@ -105,7 +105,7 @@ export default function Pricing() {
                         Transparent Pricing Built for Labs
                     </Typography>
                     <Typography variant="body1" color="text.secondary" sx={{ fontSize: { xs: "0.95rem", md: "1.05rem" } }}>
-                        Activate your account in seconds. Test the full platform for 3 days without any credit card or limitations.
+                        Activate your account in seconds. Test the full platform for 5 days without any credit card or limitations.
                     </Typography>
                 </Box>
 

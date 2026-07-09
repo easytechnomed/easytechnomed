@@ -50,7 +50,7 @@ export default function Hero({
                             {/* Badges/Chips */}
                             <Chip
                                 icon={<OfferIcon sx={{ fontSize: "0.95rem !important", color: "primary.main" }} />}
-                                label="WELCOME OFFER • 3 DAYS FREE TRIAL"
+                                label="WELCOME OFFER • 5 DAYS FREE TRIAL"
                                 color="primary"
                                 variant="outlined"
                                 sx={{
@@ -218,7 +218,7 @@ export default function Hero({
                                         }
                                     }}
                                 >
-                                    Claim 3 Days Trial
+                                    Claim 5 Days Trial
                                 </Button>
 
                                 {/* Bullet points */}
@@ -233,7 +233,7 @@ export default function Hero({
                                         mt: 0.5
                                     }}
                                 >
-                                    <span>🚀</span> <b>3 Days Free Trial</b> • No Credit Card Required • Setup in 2 mins
+                                    <span>🚀</span> <b>5 Days Free Trial</b> • No Credit Card Required • Setup in 2 mins
                                 </Typography>
                             </Box>
                         </Box>

@@ -34,7 +34,7 @@ export async function POST(req) {
       },
     });
 
-    return NextResponse.json({ success: true, message: "Successfully registered for the 3-day free trial!" });
+    return NextResponse.json({ success: true, message: "Successfully registered for the 5-day free trial!" });
   } catch (error) {
     console.error("Lead Capture API Error:", error);
     return NextResponse.json({ success: false, error: error.message }, { status: 500 });
