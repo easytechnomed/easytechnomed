@@ -171,6 +171,23 @@ export default function DefaultTestsPage() {
   const [parameterDictionary, setParameterDictionary] = useState([]);
   const [draggedIndex, setDraggedIndex] = useState(null);
 
+  // New parameter catalog & merge-delete states
+  const [activeTab, setActiveTab] = useState("tests"); // "tests" or "parameters"
+  const [paramSearchQuery, setParamSearchQuery] = useState("");
+  const [editParamModalOpen, setEditParamModalOpen] = useState(false);
+  const [editParamForm, setEditParamForm] = useState({
+    id: null, name: "", unit: "",
+    minValMale: "", maxValMale: "", normalRangeMale: "",
+    minValFemale: "", maxValFemale: "", normalRangeFemale: "",
+    minValBaby: "", maxValBaby: "", normalRangeBaby: "",
+    normalRangeDefault: ""
+  });
+  const [deleteParamConfirmOpen, setDeleteParamConfirmOpen] = useState(false);
+  const [paramToDelete, setParamToDelete] = useState(null);
+  const [paramUsages, setParamUsages] = useState([]);
+  const [mergeTargetParamId, setMergeTargetParamId] = useState("");
+  const [loadingUsages, setLoadingUsages] = useState(false);
+
   const handleDragStart = (e, index) => {
     setDraggedIndex(index);
     e.dataTransfer.effectAllowed = "move";
@@ -304,6 +321,117 @@ export default function DefaultTestsPage() {
     } catch (error) {
       console.error("Error deleting test:", error);
       toast.error("An error occurred while deleting the test.");
+    } finally {
+      setDeleting(false);
+    }
+  };
+
+  const handleEditParamClick = (param, e) => {
+    e.stopPropagation();
+    setEditParamForm({
+      id: param.id,
+      name: param.name || "",
+      unit: param.unit || "",
+      minValMale: param.minValMale !== null && param.minValMale !== undefined ? param.minValMale.toString() : "",
+      maxValMale: param.maxValMale !== null && param.maxValMale !== undefined ? param.maxValMale.toString() : "",
+      normalRangeMale: param.normalRangeMale || "",
+      minValFemale: param.minValFemale !== null && param.minValFemale !== undefined ? param.minValFemale.toString() : "",
+      maxValFemale: param.maxValFemale !== null && param.maxValFemale !== undefined ? param.maxValFemale.toString() : "",
+      normalRangeFemale: param.normalRangeFemale || "",
+      minValBaby: param.minValBaby !== null && param.minValBaby !== undefined ? param.minValBaby.toString() : "",
+      maxValBaby: param.maxValBaby !== null && param.maxValBaby !== undefined ? param.maxValBaby.toString() : "",
+      normalRangeBaby: param.normalRangeBaby || "",
+      normalRangeDefault: param.normalRangeDefault || ""
+    });
+    setEditParamModalOpen(true);
+  };
+
+  const handleSaveParamEdit = async (e) => {
+    e.preventDefault();
+    if (!editParamForm.name.trim()) {
+      toast.error("Parameter name is required.");
+      return;
+    }
+    setSaving(true);
+    try {
+      const res = await fetch(`/adminstration/api/parameters/${editParamForm.id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(editParamForm)
+      }).then(r => r.json());
+
+      if (res.success) {
+        toast.success(res.message || "Parameter updated successfully.");
+        setEditParamModalOpen(false);
+        await fetchParameterDictionary();
+        await fetchTests(); // Refresh tests to sync changes
+      } else {
+        toast.error(res.error || "Failed to update parameter.");
+      }
+    } catch (err) {
+      console.error(err);
+      toast.error("An error occurred.");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleDeleteParamClick = async (param, e) => {
+    e.stopPropagation();
+    setParamToDelete(param);
+    setLoadingUsages(true);
+    setParamUsages([]);
+    setMergeTargetParamId("");
+    setDeleteParamConfirmOpen(true);
+    try {
+      const res = await fetch(`/adminstration/api/parameters/${param.id}/usages`).then(r => r.json());
+      if (res.success) {
+        setParamUsages(res.tests || []);
+      } else {
+        toast.error("Failed to load parameter usage links.");
+      }
+    } catch (err) {
+      console.error(err);
+      toast.error("Error loading usages.");
+    } finally {
+      setLoadingUsages(false);
+    }
+  };
+
+  const handleConfirmDeleteParam = async () => {
+    if (!paramToDelete) return;
+    setDeleting(true);
+    try {
+      let res;
+      if (paramUsages.length > 0) {
+        if (!mergeTargetParamId) {
+          toast.error("Please select a target parameter to merge/re-map references.");
+          setDeleting(false);
+          return;
+        }
+        res = await fetch(`/adminstration/api/parameters/${paramToDelete.id}/merge-delete`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ targetParameterId: mergeTargetParamId })
+        }).then(r => r.json());
+      } else {
+        res = await fetch(`/adminstration/api/parameters/${paramToDelete.id}`, {
+          method: "DELETE"
+        }).then(r => r.json());
+      }
+
+      if (res.success) {
+        toast.success(res.message || "Parameter deleted successfully.");
+        setDeleteParamConfirmOpen(false);
+        setParamToDelete(null);
+        await fetchParameterDictionary();
+        await fetchTests(); // Refresh tests since mappings might have changed
+      } else {
+        toast.error(res.error || "Failed to delete parameter.");
+      }
+    } catch (err) {
+      console.error(err);
+      toast.error("An error occurred.");
     } finally {
       setDeleting(false);
     }
@@ -784,122 +912,237 @@ export default function DefaultTestsPage() {
               </Box>
             ) : (
               <Grid container spacing={3} sx={{ flexGrow: 1, height: "100%", minHeight: 0 }}>
-                {/* Left Side: Test Directory list */}
+                {/* Left Side: Test Directory list / Parameter Dictionary List */}
                 <Grid size={{ xs: 12, md: 6 }} sx={{ height: "100%", display: "flex", flexDirection: "column" }}>
                   <Card sx={{ height: "100%", display: "flex", flexDirection: "column", overflow: "hidden" }}>
                     <CardContent sx={{ p: 2.5, display: "flex", flexDirection: "column", gap: 2, height: "100%", overflow: "hidden" }}>
-                      <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 2 }}>
-                        <Typography variant="h6" sx={{ fontWeight: 800, whiteSpace: "nowrap" }}>
-                          Default Tests
-                        </Typography>
-                        <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, flexGrow: 1, justifyContent: "flex-end" }}>
-                          <TextField
-                            size="small"
-                            variant="outlined"
-                            placeholder="Search tests..."
-                            value={searchQuery}
-                            onChange={handleSearchChange}
-                            sx={{ maxWidth: 200, flexGrow: 1 }}
-                            InputProps={{
-                              startAdornment: (
-                                <InputAdornment position="start">
-                                  <SearchIcon sx={{ color: "text.secondary" }} />
-                                </InputAdornment>
-                              ),
-                            }}
-                          />
+                      
+                      {/* Tab switching bar */}
+                      <Box sx={{ borderBottom: 1, borderColor: "divider", mb: 1 }}>
+                        <Box sx={{ display: "flex", gap: 1 }}>
                           <Button
-                            variant="contained"
-                            color="primary"
-                            size="small"
-                            startIcon={<AddIcon />}
-                            onClick={handleAddNewClick}
-                            sx={{ borderRadius: 2, whiteSpace: "nowrap" }}
+                            onClick={() => setActiveTab("tests")}
+                            sx={{
+                              fontWeight: 800,
+                              fontSize: "0.85rem",
+                              color: activeTab === "tests" ? "primary.main" : "text.secondary",
+                              borderBottom: activeTab === "tests" ? "3px solid" : "none",
+                              borderColor: "primary.main",
+                              borderRadius: 0,
+                              px: 1.5,
+                              pb: 1,
+                              minWidth: 0
+                            }}
                           >
-                            Add Test
+                            Tests Catalog
+                          </Button>
+                          <Button
+                            onClick={() => setActiveTab("parameters")}
+                            sx={{
+                              fontWeight: 800,
+                              fontSize: "0.85rem",
+                              color: activeTab === "parameters" ? "primary.main" : "text.secondary",
+                              borderBottom: activeTab === "parameters" ? "3px solid" : "none",
+                              borderColor: "primary.main",
+                              borderRadius: 0,
+                              px: 1.5,
+                              pb: 1,
+                              minWidth: 0
+                            }}
+                          >
+                            Parameters Library
                           </Button>
                         </Box>
                       </Box>
 
-                      {/* Test Catalog Table */}
-                      <TableContainer component={Paper} elevation={0} sx={{ border: "1px solid", borderColor: "divider", flexGrow: 1, overflowY: "auto" }}>
-                        <Table stickyHeader size="small">
-                          <TableHead>
-                            <TableRow>
-                              <TableCell sx={{ fontWeight: 700, bgcolor: "#f8fafc" }}>Test Name</TableCell>
-                              <TableCell sx={{ fontWeight: 700, bgcolor: "#f8fafc" }}>Code</TableCell>
-                              <TableCell align="right" sx={{ fontWeight: 700, bgcolor: "#f8fafc" }}>Base Price</TableCell>
-                              <TableCell align="center" sx={{ fontWeight: 700, bgcolor: "#f8fafc", width: 80 }}>Action</TableCell>
-                            </TableRow>
-                          </TableHead>
-                          <TableBody>
-                            {tests.length === 0 ? (
-                              <TableRow>
-                                <TableCell colSpan={4} align="center" sx={{ py: 6, color: "text.secondary" }}>
-                                  No default tests found matching current filters.
-                                </TableCell>
-                              </TableRow>
-                            ) : (
-                              tests.map((test) => {
-                                const isSelected = selectedTest?.id === test.id;
-                                return (
-                                  <TableRow
-                                    key={test.id}
-                                    hover
-                                    onClick={() => setSelectedTest(test)}
-                                    sx={{
-                                      cursor: "pointer",
-                                      backgroundColor: isSelected ? "rgba(124, 58, 237, 0.06)" : "transparent",
-                                      "&:hover": {
-                                        backgroundColor: isSelected ? "rgba(124, 58, 237, 0.1)" : "rgba(0,0,0,0.02)",
-                                      },
-                                    }}
-                                  >
-                                    <TableCell sx={{ fontWeight: 600, color: isSelected ? "primary.main" : "text.primary" }}>
-                                      {test.name}
-                                    </TableCell>
-                                    <TableCell sx={{ color: "text.secondary", fontFamily: "monospace" }}>
-                                      {test.code || "-"}
-                                    </TableCell>
-                                    <TableCell align="right" sx={{ fontWeight: 500 }}>
-                                      ₹{parseFloat(test.price).toFixed(2)}
-                                    </TableCell>
-                                    <TableCell align="center" onClick={(e) => e.stopPropagation()}>
-                                      <Box sx={{ display: "flex", justifyContent: "center", gap: 0.5 }}>
-                                        <IconButton
-                                          size="small"
-                                          color="primary"
-                                          onClick={(e) => handleEditClick(test, e)}
-                                        >
-                                          <EditIcon fontSize="small" />
-                                        </IconButton>
-                                        <IconButton
-                                          size="small"
-                                          color="error"
-                                          onClick={(e) => handleDeleteClick(test, e)}
-                                        >
-                                          <DeleteIcon fontSize="small" />
-                                        </IconButton>
-                                      </Box>
+                      {activeTab === "tests" ? (
+                        <>
+                          <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 2 }}>
+                            <Typography variant="subtitle1" sx={{ fontWeight: 800, whiteSpace: "nowrap" }}>
+                              Default Tests
+                            </Typography>
+                            <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, flexGrow: 1, justifyContent: "flex-end" }}>
+                              <TextField
+                                size="small"
+                                variant="outlined"
+                                placeholder="Search tests..."
+                                value={searchQuery}
+                                onChange={handleSearchChange}
+                                sx={{ maxWidth: 180, flexGrow: 1 }}
+                                InputProps={{
+                                  startAdornment: (
+                                    <InputAdornment position="start">
+                                      <SearchIcon sx={{ color: "text.secondary" }} />
+                                    </InputAdornment>
+                                  ),
+                                }}
+                              />
+                              <Button
+                                variant="contained"
+                                color="primary"
+                                size="small"
+                                startIcon={<AddIcon />}
+                                onClick={handleAddNewClick}
+                                sx={{ borderRadius: 2, whiteSpace: "nowrap" }}
+                              >
+                                Add Test
+                              </Button>
+                            </Box>
+                          </Box>
+
+                          {/* Test Catalog Table */}
+                          <TableContainer component={Paper} elevation={0} sx={{ border: "1px solid", borderColor: "divider", flexGrow: 1, overflowY: "auto" }}>
+                            <Table stickyHeader size="small">
+                              <TableHead>
+                                <TableRow>
+                                  <TableCell sx={{ fontWeight: 700, bgcolor: "#f8fafc" }}>Test Name</TableCell>
+                                  <TableCell sx={{ fontWeight: 700, bgcolor: "#f8fafc" }}>Code</TableCell>
+                                  <TableCell align="right" sx={{ fontWeight: 700, bgcolor: "#f8fafc" }}>Base Price</TableCell>
+                                  <TableCell align="center" sx={{ fontWeight: 700, bgcolor: "#f8fafc", width: 80 }}>Action</TableCell>
+                                </TableRow>
+                              </TableHead>
+                              <TableBody>
+                                {tests.length === 0 ? (
+                                  <TableRow>
+                                    <TableCell colSpan={4} align="center" sx={{ py: 6, color: "text.secondary" }}>
+                                      No default tests found matching current filters.
                                     </TableCell>
                                   </TableRow>
-                                );
-                              })
-                            )}
-                          </TableBody>
-                        </Table>
-                      </TableContainer>
+                                ) : (
+                                  tests.map((test) => {
+                                    const isSelected = selectedTest?.id === test.id;
+                                    return (
+                                      <TableRow
+                                        key={test.id}
+                                        hover
+                                        onClick={() => setSelectedTest(test)}
+                                        sx={{
+                                          cursor: "pointer",
+                                          backgroundColor: isSelected ? "rgba(124, 58, 237, 0.06)" : "transparent",
+                                          "&:hover": {
+                                            backgroundColor: isSelected ? "rgba(124, 58, 237, 0.1)" : "rgba(0,0,0,0.02)",
+                                          },
+                                        }}
+                                      >
+                                        <TableCell sx={{ fontWeight: 600, color: isSelected ? "primary.main" : "text.primary" }}>
+                                          {test.name}
+                                        </TableCell>
+                                        <TableCell sx={{ color: "text.secondary", fontFamily: "monospace" }}>
+                                          {test.code || "-"}
+                                        </TableCell>
+                                        <TableCell align="right" sx={{ fontWeight: 500 }}>
+                                          ₹{parseFloat(test.price).toFixed(2)}
+                                        </TableCell>
+                                        <TableCell align="center" onClick={(e) => e.stopPropagation()}>
+                                          <Box sx={{ display: "flex", justifyContent: "center", gap: 0.5 }}>
+                                            <IconButton
+                                              size="small"
+                                              color="primary"
+                                              onClick={(e) => handleEditClick(test, e)}
+                                            >
+                                              <EditIcon fontSize="small" />
+                                            </IconButton>
+                                            <IconButton
+                                              size="small"
+                                              color="error"
+                                              onClick={(e) => handleDeleteClick(test, e)}
+                                            >
+                                              <DeleteIcon fontSize="small" />
+                                            </IconButton>
+                                          </Box>
+                                        </TableCell>
+                                      </TableRow>
+                                    );
+                                  })
+                                )}
+                              </TableBody>
+                            </Table>
+                          </TableContainer>
 
-                      {/* Pagination Controls */}
-                      {totalPages > 1 && (
-                        <Box sx={{ display: "flex", justifyContent: "center", mt: 2 }}>
-                          <Pagination
-                            count={totalPages}
-                            page={page}
-                            onChange={(e, val) => setPage(val)}
-                            color="primary"
-                            size="small"
-                          />
+                          {/* Pagination Controls */}
+                          {totalPages > 1 && (
+                            <Box sx={{ display: "flex", justifyContent: "center", mt: 2 }}>
+                              <Pagination
+                                count={totalPages}
+                                page={page}
+                                onChange={(e, val) => setPage(val)}
+                                color="primary"
+                                size="small"
+                              />
+                            </Box>
+                          )}
+                        </>
+                      ) : (
+                        <Box sx={{ display: "flex", flexDirection: "column", gap: 2, flexGrow: 1, overflow: "hidden" }}>
+                          <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 2 }}>
+                            <Typography variant="subtitle1" sx={{ fontWeight: 800, whiteSpace: "nowrap" }}>
+                              Parameters Library
+                            </Typography>
+                            <TextField
+                              size="small"
+                              variant="outlined"
+                              placeholder="Search parameters..."
+                              value={paramSearchQuery}
+                              onChange={(e) => setParamSearchQuery(e.target.value)}
+                              sx={{ maxWidth: 220, flexGrow: 1 }}
+                              InputProps={{
+                                startAdornment: (
+                                  <InputAdornment position="start">
+                                    <SearchIcon sx={{ color: "text.secondary" }} />
+                                  </InputAdornment>
+                                ),
+                              }}
+                            />
+                          </Box>
+
+                          {/* Parameters Table */}
+                          <TableContainer component={Paper} elevation={0} sx={{ border: "1px solid", borderColor: "divider", flexGrow: 1, overflowY: "auto" }}>
+                            <Table stickyHeader size="small">
+                              <TableHead>
+                                <TableRow>
+                                  <TableCell sx={{ fontWeight: 700, bgcolor: "#f8fafc" }}>Name</TableCell>
+                                  <TableCell sx={{ fontWeight: 700, bgcolor: "#f8fafc" }}>Unit</TableCell>
+                                  <TableCell align="center" sx={{ fontWeight: 700, bgcolor: "#f8fafc", width: 90 }}>Action</TableCell>
+                                </TableRow>
+                              </TableHead>
+                              <TableBody>
+                                {parameterDictionary.filter(p => (p.name || "").toLowerCase().includes(paramSearchQuery.toLowerCase())).length === 0 ? (
+                                  <TableRow>
+                                    <TableCell colSpan={3} align="center" sx={{ py: 6, color: "text.secondary" }}>
+                                      No parameters found matching current search.
+                                    </TableCell>
+                                  </TableRow>
+                                ) : (
+                                  parameterDictionary
+                                    .filter(p => (p.name || "").toLowerCase().includes(paramSearchQuery.toLowerCase()))
+                                    .map((param) => (
+                                      <TableRow key={param.id} hover>
+                                        <TableCell sx={{ fontWeight: 600 }}>{param.name}</TableCell>
+                                        <TableCell sx={{ color: "text.secondary" }}>{param.unit || "-"}</TableCell>
+                                        <TableCell align="center">
+                                          <Box sx={{ display: "flex", justifyContent: "center", gap: 0.5 }}>
+                                            <IconButton
+                                              size="small"
+                                              color="primary"
+                                              onClick={(e) => handleEditParamClick(param, e)}
+                                            >
+                                              <EditIcon fontSize="small" />
+                                            </IconButton>
+                                            <IconButton
+                                              size="small"
+                                              color="error"
+                                              onClick={(e) => handleDeleteParamClick(param, e)}
+                                            >
+                                              <DeleteIcon fontSize="small" />
+                                            </IconButton>
+                                          </Box>
+                                        </TableCell>
+                                      </TableRow>
+                                    ))
+                                )}
+                              </TableBody>
+                            </Table>
+                          </TableContainer>
                         </Box>
                       )}
                     </CardContent>
@@ -1432,6 +1675,149 @@ export default function DefaultTestsPage() {
             startIcon={deleting ? <CircularProgress size={16} color="inherit" /> : <DeleteIcon />}
           >
             {deleting ? "Deleting..." : "Soft Delete"}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Edit Parameter Dialog */}
+      <Dialog
+        open={editParamModalOpen}
+        onClose={() => !saving && setEditParamModalOpen(false)}
+        maxWidth="md"
+        fullWidth
+      >
+        <form onSubmit={handleSaveParamEdit}>
+          <DialogTitle sx={{ fontWeight: 800 }}>Edit Parameter Dictionary Entry</DialogTitle>
+          <Divider />
+          <DialogContent sx={{ display: "flex", flexDirection: "column", gap: 3, pt: 3 }}>
+            <Grid container spacing={2}>
+              <Grid size={{ xs: 12, sm: 8 }}>
+                <TextField
+                  required
+                  fullWidth
+                  label="Parameter Name *"
+                  size="small"
+                  value={editParamForm.name}
+                  onChange={(e) => setEditParamForm(prev => ({ ...prev, name: e.target.value }))}
+                />
+              </Grid>
+              <Grid size={{ xs: 12, sm: 4 }}>
+                <TextField
+                  fullWidth
+                  label="Unit"
+                  size="small"
+                  value={editParamForm.unit}
+                  onChange={(e) => setEditParamForm(prev => ({ ...prev, unit: e.target.value }))}
+                />
+              </Grid>
+            </Grid>
+
+            <Divider />
+            <Typography variant="subtitle2" sx={{ fontWeight: 800 }}>
+              Reference Values & Ranges
+            </Typography>
+
+            <Grid container spacing={3}>
+              {/* Male Ranges */}
+              <Grid size={{ xs: 12, md: 4 }}>
+                <Typography variant="caption" sx={{ fontWeight: 700, color: "primary.main", display: "block", mb: 1 }}>Male References</Typography>
+                <Box sx={{ display: "flex", flexDirection: "column", gap: 1.5 }}>
+                  <TextField fullWidth size="small" type="number" inputProps={{ step: "any" }} label="Min Value" value={editParamForm.minValMale} onChange={(e) => setEditParamForm(prev => ({ ...prev, minValMale: e.target.value }))} />
+                  <TextField fullWidth size="small" type="number" inputProps={{ step: "any" }} label="Max Value" value={editParamForm.maxValMale} onChange={(e) => setEditParamForm(prev => ({ ...prev, maxValMale: e.target.value }))} />
+                  <TextField fullWidth size="small" label="Range Text" value={editParamForm.normalRangeMale} onChange={(e) => setEditParamForm(prev => ({ ...prev, normalRangeMale: e.target.value }))} />
+                </Box>
+              </Grid>
+
+              {/* Female Ranges */}
+              <Grid size={{ xs: 12, md: 4 }}>
+                <Typography variant="caption" sx={{ fontWeight: 700, color: "secondary.main", display: "block", mb: 1 }}>Female References</Typography>
+                <Box sx={{ display: "flex", flexDirection: "column", gap: 1.5 }}>
+                  <TextField fullWidth size="small" type="number" inputProps={{ step: "any" }} label="Min Value" value={editParamForm.minValFemale} onChange={(e) => setEditParamForm(prev => ({ ...prev, minValFemale: e.target.value }))} />
+                  <TextField fullWidth size="small" type="number" inputProps={{ step: "any" }} label="Max Value" value={editParamForm.maxValFemale} onChange={(e) => setEditParamForm(prev => ({ ...prev, maxValFemale: e.target.value }))} />
+                  <TextField fullWidth size="small" label="Range Text" value={editParamForm.normalRangeFemale} onChange={(e) => setEditParamForm(prev => ({ ...prev, normalRangeFemale: e.target.value }))} />
+                </Box>
+              </Grid>
+
+              {/* Baby Ranges */}
+              <Grid size={{ xs: 12, md: 4 }}>
+                <Typography variant="caption" sx={{ fontWeight: 700, color: "success.main", display: "block", mb: 1 }}>Baby References</Typography>
+                <Box sx={{ display: "flex", flexDirection: "column", gap: 1.5 }}>
+                  <TextField fullWidth size="small" type="number" inputProps={{ step: "any" }} label="Min Value" value={editParamForm.minValBaby} onChange={(e) => setEditParamForm(prev => ({ ...prev, minValBaby: e.target.value }))} />
+                  <TextField fullWidth size="small" type="number" inputProps={{ step: "any" }} label="Max Value" value={editParamForm.maxValBaby} onChange={(e) => setEditParamForm(prev => ({ ...prev, maxValBaby: e.target.value }))} />
+                  <TextField fullWidth size="small" label="Range Text" value={editParamForm.normalRangeBaby} onChange={(e) => setEditParamForm(prev => ({ ...prev, normalRangeBaby: e.target.value }))} />
+                </Box>
+              </Grid>
+            </Grid>
+
+            <Grid container spacing={2}>
+              <Grid size={{ xs: 12 }}>
+                <TextField fullWidth size="small" label="Default Fallback Range Text" value={editParamForm.normalRangeDefault} onChange={(e) => setEditParamForm(prev => ({ ...prev, normalRangeDefault: e.target.value }))} />
+              </Grid>
+            </Grid>
+          </DialogContent>
+          <Divider />
+          <DialogActions sx={{ px: 3, py: 2 }}>
+            <Button onClick={() => setEditParamModalOpen(false)} color="inherit">Cancel</Button>
+            <Button type="submit" variant="contained" disabled={saving}>{saving ? "Saving..." : "Save Changes"}</Button>
+          </DialogActions>
+        </form>
+      </Dialog>
+
+      {/* Parameter Delete / Merge Dialog */}
+      <Dialog
+        open={deleteParamConfirmOpen}
+        onClose={() => !deleting && setDeleteParamConfirmOpen(false)}
+        maxWidth="sm"
+        fullWidth
+      >
+        <DialogTitle sx={{ fontWeight: 800 }}>Delete Parameter Entry</DialogTitle>
+        <Divider />
+        <DialogContent sx={{ display: "flex", flexDirection: "column", gap: 2, pt: 3 }}>
+          {loadingUsages ? (
+            <Box sx={{ display: "flex", justifyContent: "center", py: 4 }}><CircularProgress size={30} /></Box>
+          ) : paramUsages.length > 0 ? (
+            <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
+              <Typography variant="body2" sx={{ color: "error.main", fontWeight: 700 }}>
+                ⚠️ This parameter is currently linked to {paramUsages.length} active default test(s):
+              </Typography>
+              <Box sx={{ maxHeight: 120, overflowY: "auto", border: "1px solid rgba(0,0,0,0.1)", borderRadius: 1, p: 1.5, bgcolor: "rgba(0,0,0,0.01)" }}>
+                {paramUsages.map((t, idx) => (
+                  <Typography key={idx} variant="caption" sx={{ display: "block", color: "text.primary" }}>
+                    • <strong>{t.name}</strong> ({t.code || "No Code"}) - {t.workspace}
+                  </Typography>
+                ))}
+              </Box>
+              <Typography variant="body2" sx={{ fontWeight: 500 }}>
+                To delete this parameter, you must select another parameter from the library to merge/re-map these active tests to:
+              </Typography>
+              <Autocomplete
+                size="small"
+                options={parameterDictionary.filter(p => p.id !== paramToDelete?.id)}
+                getOptionLabel={(option) => `${option.name} (${option.unit || "no unit"})`}
+                onChange={(event, newValue) => {
+                  setMergeTargetParamId(newValue ? newValue.id.toString() : "");
+                }}
+                renderInput={(params) => (
+                  <TextField {...params} label="Select Target Parameter to Merge Into" required />
+                )}
+              />
+            </Box>
+          ) : (
+            <DialogContentText>
+              Are you sure you want to delete parameter <strong>{paramToDelete?.name}</strong>? This entry is not linked to any active tests and will be removed permanently.
+            </DialogContentText>
+          )}
+        </DialogContent>
+        <Divider />
+        <DialogActions sx={{ px: 3, py: 2.5 }}>
+          <Button onClick={() => setDeleteParamConfirmOpen(false)} color="inherit" disabled={deleting}>Cancel</Button>
+          <Button
+            onClick={handleConfirmDeleteParam}
+            variant="contained"
+            color="error"
+            disabled={deleting || (paramUsages.length > 0 && !mergeTargetParamId)}
+          >
+            {deleting ? "Deleting..." : (paramUsages.length > 0 ? "Merge & Delete" : "Delete Permanent")}
           </Button>
         </DialogActions>
       </Dialog>

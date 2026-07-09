@@ -2,9 +2,39 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { requireAdmin } from "@/lib/auth";
 
-// Helper to serialize Decimal and Dates
-function serializeData(data) {
-  return JSON.parse(JSON.stringify(data));
+// Helper to serialize Decimal, Dates, and flatten parameter fields so frontend continues to see them directly
+function serializeRegistration(reg) {
+  if (!reg) return null;
+  const serialized = JSON.parse(JSON.stringify(reg));
+  if (serialized.tests) {
+    serialized.tests = serialized.tests.map(t => {
+      if (t.test && t.test.parameters) {
+        t.test.parameters = t.test.parameters.map(tp => {
+          if (tp.parameter) {
+            const { parameter, ...rest } = tp;
+            return {
+              ...rest,
+              name: parameter.name,
+              unit: parameter.unit,
+              minValMale: parameter.minValMale,
+              maxValMale: parameter.maxValMale,
+              normalRangeMale: parameter.normalRangeMale,
+              minValFemale: parameter.minValFemale,
+              maxValFemale: parameter.maxValFemale,
+              normalRangeFemale: parameter.normalRangeFemale,
+              minValBaby: parameter.minValBaby,
+              maxValBaby: parameter.maxValBaby,
+              normalRangeBaby: parameter.normalRangeBaby,
+              normalRangeDefault: parameter.normalRangeDefault,
+            };
+          }
+          return tp;
+        });
+      }
+      return t;
+    });
+  }
+  return serialized;
 }
 
 export async function GET(req, { params }) {
@@ -24,7 +54,11 @@ export async function GET(req, { params }) {
           include: {
             test: {
               include: {
-                parameters: { orderBy: { order: "asc" } },
+                parameters: {
+                  where: { isDeleted: false },
+                  orderBy: { order: "asc" },
+                  include: { parameter: true }
+                },
               },
             },
           },
@@ -37,7 +71,7 @@ export async function GET(req, { params }) {
       return NextResponse.json({ success: false, message: "Registration not found." }, { status: 404 });
     }
 
-    return NextResponse.json({ success: true, registration: serializeData(registration) });
+    return NextResponse.json({ success: true, registration: serializeRegistration(registration) });
   } catch (error) {
     console.error("Workspace Registration Parameters GET Error:", error);
     return NextResponse.json({ success: false, error: error.message }, { status: 500 });
@@ -56,26 +90,58 @@ export async function POST(req, { params }) {
       return NextResponse.json({ success: false, error: "Invalid test ID" }, { status: 400 });
     }
 
+    const incomingList = Array.isArray(parametersList) ? parametersList : [];
+
     await prisma.$transaction(async (tx) => {
+      // Clear legacy parameter mappings for this test
       await tx.testParameter.deleteMany({ where: { testId } });
-      const dataToCreate = parametersList.map((param, index) => ({
-        testId,
-        name: param.name,
-        minValMale: param.minValMale !== undefined && param.minValMale !== null && param.minValMale !== "" ? parseFloat(param.minValMale) : null,
-        maxValMale: param.maxValMale !== undefined && param.maxValMale !== null && param.maxValMale !== "" ? parseFloat(param.maxValMale) : null,
-        normalRangeMale: param.normalRangeMale || null,
-        minValFemale: param.minValFemale !== undefined && param.minValFemale !== null && param.minValFemale !== "" ? parseFloat(param.minValFemale) : null,
-        maxValFemale: param.maxValFemale !== undefined && param.maxValFemale !== null && param.maxValFemale !== "" ? parseFloat(param.maxValFemale) : null,
-        normalRangeFemale: param.normalRangeFemale || null,
-        minValBaby: param.minValBaby !== undefined && param.minValBaby !== null && param.minValBaby !== "" ? parseFloat(param.minValBaby) : null,
-        maxValBaby: param.maxValBaby !== undefined && param.maxValBaby !== null && param.maxValBaby !== "" ? parseFloat(param.maxValBaby) : null,
-        normalRangeBaby: param.normalRangeBaby || null,
-        normalRangeDefault: param.normalRangeDefault || null,
-        unit: param.unit || "-NA-",
-        order: index + 1,
-      }));
-      if (dataToCreate.length > 0) {
-        await tx.testParameter.createMany({ data: dataToCreate });
+
+      let index = 0;
+      for (const param of incomingList) {
+        const normName = (param.name || "").trim();
+        if (!normName) continue;
+
+        // Resolve or create parameter in the master dictionary
+        let parameter = await tx.parameter.findFirst({
+          where: { name: { equals: normName } }
+        });
+
+        const pData = {
+          name: normName,
+          minValMale: param.minValMale !== undefined && param.minValMale !== null && param.minValMale !== "" ? parseFloat(param.minValMale) : null,
+          maxValMale: param.maxValMale !== undefined && param.maxValMale !== null && param.maxValMale !== "" ? parseFloat(param.maxValMale) : null,
+          normalRangeMale: param.normalRangeMale || null,
+          minValFemale: param.minValFemale !== undefined && param.minValFemale !== null && param.minValFemale !== "" ? parseFloat(param.minValFemale) : null,
+          maxValFemale: param.maxValFemale !== undefined && param.maxValFemale !== null && param.maxValFemale !== "" ? parseFloat(param.maxValFemale) : null,
+          normalRangeFemale: param.normalRangeFemale || null,
+          minValBaby: param.minValBaby !== undefined && param.minValBaby !== null && param.minValBaby !== "" ? parseFloat(param.minValBaby) : null,
+          maxValBaby: param.maxValBaby !== undefined && param.maxValBaby !== null && param.maxValBaby !== "" ? parseFloat(param.maxValBaby) : null,
+          normalRangeBaby: param.normalRangeBaby || null,
+          normalRangeDefault: param.normalRangeDefault || null,
+          unit: param.unit || "-NA-",
+        };
+
+        if (!parameter) {
+          parameter = await tx.parameter.create({
+            data: pData
+          });
+        } else {
+          // Keep shared ranges in sync
+          parameter = await tx.parameter.update({
+            where: { id: parameter.id },
+            data: pData
+          });
+        }
+
+        await tx.testParameter.create({
+          data: {
+            testId,
+            parameterId: parameter.id,
+            order: index + 1,
+            isDeleted: false,
+          }
+        });
+        index++;
       }
     });
 

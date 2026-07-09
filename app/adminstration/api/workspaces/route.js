@@ -93,7 +93,8 @@ export async function POST(req) {
         where: { workspaceId: null, isDeleted: false },
         include: {
           parameters: {
-            where: { isDeleted: false }
+            where: { isDeleted: false },
+            include: { parameter: true }
           }
         },
       });
@@ -125,22 +126,13 @@ export async function POST(req) {
         );
         if (clonedTest && gt.parameters && gt.parameters.length > 0) {
           for (const p of gt.parameters) {
-            allClonedParams.push({
-              testId: clonedTest.id,
-              name: p.name,
-              minValMale: p.minValMale,
-              maxValMale: p.maxValMale,
-              normalRangeMale: p.normalRangeMale,
-              minValFemale: p.minValFemale,
-              maxValFemale: p.maxValFemale,
-              normalRangeFemale: p.normalRangeFemale,
-              minValBaby: p.minValBaby,
-              maxValBaby: p.maxValBaby,
-              normalRangeBaby: p.normalRangeBaby,
-              normalRangeDefault: p.normalRangeDefault,
-              unit: p.unit,
-              order: p.order,
-            });
+            if (p.parameterId) {
+              allClonedParams.push({
+                testId: clonedTest.id,
+                parameterId: p.parameterId,
+                order: p.order,
+              });
+            }
           }
         }
       }

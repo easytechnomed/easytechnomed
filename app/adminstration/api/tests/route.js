@@ -2,9 +2,63 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { verifySuperAdminAPI } from "@/lib/auth";
 
-// Helper to serialize Decimal and Dates
-function serializeData(data) {
-  return JSON.parse(JSON.stringify(data));
+// Helper to serialize Decimal, Dates, and flatten parameter fields so frontend continues to see them directly
+function serializeTests(tests) {
+  return JSON.parse(JSON.stringify(tests)).map(test => {
+    if (test.parameters) {
+      test.parameters = test.parameters.map(tp => {
+        if (tp.parameter) {
+          const { parameter, ...rest } = tp;
+          return {
+            ...rest,
+            name: parameter.name,
+            unit: parameter.unit,
+            minValMale: parameter.minValMale,
+            maxValMale: parameter.maxValMale,
+            normalRangeMale: parameter.normalRangeMale,
+            minValFemale: parameter.minValFemale,
+            maxValFemale: parameter.maxValFemale,
+            normalRangeFemale: parameter.normalRangeFemale,
+            minValBaby: parameter.minValBaby,
+            maxValBaby: parameter.maxValBaby,
+            normalRangeBaby: parameter.normalRangeBaby,
+            normalRangeDefault: parameter.normalRangeDefault,
+          };
+        }
+        return tp;
+      });
+    }
+    return test;
+  });
+}
+
+function serializeSingleTest(test) {
+  if (!test) return null;
+  const serialized = JSON.parse(JSON.stringify(test));
+  if (serialized.parameters) {
+    serialized.parameters = serialized.parameters.map(tp => {
+      if (tp.parameter) {
+        const { parameter, ...rest } = tp;
+        return {
+          ...rest,
+          name: parameter.name,
+          unit: parameter.unit,
+          minValMale: parameter.minValMale,
+          maxValMale: parameter.maxValMale,
+          normalRangeMale: parameter.normalRangeMale,
+          minValFemale: parameter.minValFemale,
+          maxValFemale: parameter.maxValFemale,
+          normalRangeFemale: parameter.normalRangeFemale,
+          minValBaby: parameter.minValBaby,
+          maxValBaby: parameter.maxValBaby,
+          normalRangeBaby: parameter.normalRangeBaby,
+          normalRangeDefault: parameter.normalRangeDefault,
+        };
+      }
+      return tp;
+    });
+  }
+  return serialized;
 }
 
 export async function GET(req) {
@@ -38,6 +92,9 @@ export async function GET(req) {
         parameters: {
           where: { isDeleted: false },
           orderBy: { order: "asc" },
+          include: {
+            parameter: true
+          }
         },
       },
       orderBy: { name: "asc" },
@@ -47,7 +104,7 @@ export async function GET(req) {
 
     return NextResponse.json({
       success: true,
-      tests: serializeData(defaultTests),
+      tests: serializeTests(defaultTests),
       pagination: {
         page,
         limit,
@@ -101,45 +158,89 @@ export async function POST(req) {
 
     // Create the test and its parameters in a transaction
     const newTest = await prisma.$transaction(async (tx) => {
-      return await tx.test.create({
+      const testRecord = await tx.test.create({
         data: {
           name: name.trim(),
           code: code && code.trim() !== "" ? code.trim() : null,
           price: parseFloat(price),
           workspaceId: null,
           isDeleted: false,
-          parameters: {
-            create: paramList.map((p) => ({
-              name: p.name.trim(),
+        }
+      });
+
+      for (const p of paramList) {
+        const normName = p.name.trim();
+
+        // Resolve or create parameter
+        let parameter = await tx.parameter.findFirst({
+          where: { name: { equals: normName } }
+        });
+
+        if (!parameter) {
+          parameter = await tx.parameter.create({
+            data: {
+              name: normName,
               unit: p.unit && p.unit.trim() !== "" ? p.unit.trim() : null,
-              order: parseInt(p.order) || 1,
-              minValMale: p.minValMale !== "" && !isNaN(parseFloat(p.minValMale)) ? parseFloat(p.minValMale) : null,
-              maxValMale: p.maxValMale !== "" && !isNaN(parseFloat(p.maxValMale)) ? parseFloat(p.maxValMale) : null,
+              minValMale: p.minValMale !== "" && p.minValMale !== undefined && !isNaN(parseFloat(p.minValMale)) ? parseFloat(p.minValMale) : null,
+              maxValMale: p.maxValMale !== "" && p.maxValMale !== undefined && !isNaN(parseFloat(p.maxValMale)) ? parseFloat(p.maxValMale) : null,
               normalRangeMale: p.normalRangeMale && p.normalRangeMale.trim() !== "" ? p.normalRangeMale.trim() : null,
-              minValFemale: p.minValFemale !== "" && !isNaN(parseFloat(p.minValFemale)) ? parseFloat(p.minValFemale) : null,
-              maxValFemale: p.maxValFemale !== "" && !isNaN(parseFloat(p.maxValFemale)) ? parseFloat(p.maxValFemale) : null,
+              minValFemale: p.minValFemale !== "" && p.minValFemale !== undefined && !isNaN(parseFloat(p.minValFemale)) ? parseFloat(p.minValFemale) : null,
+              maxValFemale: p.maxValFemale !== "" && p.maxValFemale !== undefined && !isNaN(parseFloat(p.maxValFemale)) ? parseFloat(p.maxValFemale) : null,
               normalRangeFemale: p.normalRangeFemale && p.normalRangeFemale.trim() !== "" ? p.normalRangeFemale.trim() : null,
-              minValBaby: p.minValBaby !== "" && !isNaN(parseFloat(p.minValBaby)) ? parseFloat(p.minValBaby) : null,
-              maxValBaby: p.maxValBaby !== "" && !isNaN(parseFloat(p.maxValBaby)) ? parseFloat(p.maxValBaby) : null,
+              minValBaby: p.minValBaby !== "" && p.minValBaby !== undefined && !isNaN(parseFloat(p.minValBaby)) ? parseFloat(p.minValBaby) : null,
+              maxValBaby: p.maxValBaby !== "" && p.maxValBaby !== undefined && !isNaN(parseFloat(p.maxValBaby)) ? parseFloat(p.maxValBaby) : null,
               normalRangeBaby: p.normalRangeBaby && p.normalRangeBaby.trim() !== "" ? p.normalRangeBaby.trim() : null,
               normalRangeDefault: p.normalRangeDefault && p.normalRangeDefault.trim() !== "" ? p.normalRangeDefault.trim() : null,
-              isDeleted: false,
-            })),
-          },
-        },
+            }
+          });
+        } else {
+          // Keep shared dictionary updated with any recent range inputs
+          parameter = await tx.parameter.update({
+            where: { id: parameter.id },
+            data: {
+              unit: p.unit && p.unit.trim() !== "" ? p.unit.trim() : parameter.unit,
+              minValMale: p.minValMale !== "" && p.minValMale !== undefined && !isNaN(parseFloat(p.minValMale)) ? parseFloat(p.minValMale) : parameter.minValMale,
+              maxValMale: p.maxValMale !== "" && p.maxValMale !== undefined && !isNaN(parseFloat(p.maxValMale)) ? parseFloat(p.maxValMale) : parameter.maxValMale,
+              normalRangeMale: p.normalRangeMale && p.normalRangeMale.trim() !== "" ? p.normalRangeMale.trim() : parameter.normalRangeMale,
+              minValFemale: p.minValFemale !== "" && p.minValFemale !== undefined && !isNaN(parseFloat(p.minValFemale)) ? parseFloat(p.minValFemale) : parameter.minValFemale,
+              maxValFemale: p.maxValFemale !== "" && p.maxValFemale !== undefined && !isNaN(parseFloat(p.maxValFemale)) ? parseFloat(p.maxValFemale) : parameter.maxValFemale,
+              normalRangeFemale: p.normalRangeFemale && p.normalRangeFemale.trim() !== "" ? p.normalRangeFemale.trim() : parameter.normalRangeFemale,
+              minValBaby: p.minValBaby !== "" && p.minValBaby !== undefined && !isNaN(parseFloat(p.minValBaby)) ? parseFloat(p.minValBaby) : parameter.minValBaby,
+              maxValBaby: p.maxValBaby !== "" && p.maxValBaby !== undefined && !isNaN(parseFloat(p.maxValBaby)) ? parseFloat(p.maxValBaby) : parameter.maxValBaby,
+              normalRangeBaby: p.normalRangeBaby && p.normalRangeBaby.trim() !== "" ? p.normalRangeBaby.trim() : parameter.normalRangeBaby,
+              normalRangeDefault: p.normalRangeDefault && p.normalRangeDefault.trim() !== "" ? p.normalRangeDefault.trim() : parameter.normalRangeDefault,
+            }
+          });
+        }
+
+        await tx.testParameter.create({
+          data: {
+            testId: testRecord.id,
+            parameterId: parameter.id,
+            order: parseInt(p.order) || 1,
+            isDeleted: false,
+          }
+        });
+      }
+
+      return await tx.test.findUnique({
+        where: { id: testRecord.id },
         include: {
           parameters: {
             where: { isDeleted: false },
             orderBy: { order: "asc" },
-          },
-        },
+            include: {
+              parameter: true
+            }
+          }
+        }
       });
     });
 
     return NextResponse.json({
       success: true,
       message: "Default test created successfully.",
-      test: serializeData(newTest)
+      test: serializeSingleTest(newTest)
     });
   } catch (error) {
     console.error("SuperAdmin Default Test POST Error:", error);

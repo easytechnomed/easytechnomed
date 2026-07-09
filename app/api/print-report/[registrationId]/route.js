@@ -64,7 +64,9 @@ export async function GET(req, { params }) {
               test: {
                 include: {
                   parameters: {
+                    where: { isDeleted: false },
                     orderBy: { order: "asc" },
+                    include: { parameter: true }
                   },
                 },
               },
@@ -93,7 +95,9 @@ export async function GET(req, { params }) {
               test: {
                 include: {
                   parameters: {
+                    where: { isDeleted: false },
                     orderBy: { order: "asc" },
+                    include: { parameter: true }
                   },
                 },
               },
@@ -180,6 +184,35 @@ export async function GET(req, { params }) {
       return new Response(htmlMsg, {
         status: 200,
         headers: { "Content-Type": "text/html; charset=utf-8" },
+      });
+    }
+
+    // Flatten parameter fields so downstream PDF drawing logic sees them directly
+    if (reg.tests) {
+      reg.tests.forEach(t => {
+        if (t.test && t.test.parameters) {
+          t.test.parameters = t.test.parameters.map(tp => {
+            if (tp.parameter) {
+              const { parameter, ...rest } = tp;
+              return {
+                ...rest,
+                name: parameter.name,
+                unit: parameter.unit,
+                minValMale: parameter.minValMale,
+                maxValMale: parameter.maxValMale,
+                normalRangeMale: parameter.normalRangeMale,
+                minValFemale: parameter.minValFemale,
+                maxValFemale: parameter.maxValFemale,
+                normalRangeFemale: parameter.normalRangeFemale,
+                minValBaby: parameter.minValBaby,
+                maxValBaby: parameter.maxValBaby,
+                normalRangeBaby: parameter.normalRangeBaby,
+                normalRangeDefault: parameter.normalRangeDefault,
+              };
+            }
+            return tp;
+          });
+        }
       });
     }
 

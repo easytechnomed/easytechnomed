@@ -141,10 +141,41 @@ async function seedParametersForTest(tx, testId, name) {
     });
   }
 
-  if (parametersToCreate.length > 0) {
-    await tx.testParameter.createMany({
-      data: parametersToCreate,
-      skipDuplicates: true
+  for (const p of parametersToCreate) {
+    const normName = p.name.trim();
+
+    // Resolve or create parameter in the master Parameter table
+    let parameter = await tx.parameter.findFirst({
+      where: { name: { equals: normName } }
+    });
+
+    const pData = {
+      name: normName,
+      unit: p.unit,
+      minValMale: p.minValMale,
+      maxValMale: p.maxValMale,
+      normalRangeMale: p.normalRangeMale,
+      minValFemale: p.minValFemale,
+      maxValFemale: p.maxValFemale,
+      normalRangeFemale: p.normalRangeFemale,
+      minValBaby: p.minValBaby,
+      maxValBaby: p.maxValBaby,
+      normalRangeBaby: p.normalRangeBaby,
+      normalRangeDefault: p.normalRangeDefault,
+    };
+
+    if (!parameter) {
+      parameter = await tx.parameter.create({
+        data: pData
+      });
+    }
+
+    await tx.testParameter.create({
+      data: {
+        testId: p.testId,
+        parameterId: parameter.id,
+        order: p.order,
+      }
     });
   }
 }

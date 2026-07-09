@@ -272,30 +272,35 @@ model RegistrationTest {
   @@id([registrationId, testId])
 }
 
+model Parameter {
+  id                  Int             @id @default(autoincrement())
+  name                String          @unique
+  unit                String?
+  minValMale          Float?
+  maxValMale          Float?
+  normalRangeMale     String?
+  minValFemale        Float?
+  maxValFemale        Float?
+  normalRangeFemale   String?
+  minValBaby          Float?
+  maxValBaby          Float?
+  normalRangeBaby     String?
+  normalRangeDefault  String?
+
+  testMappings        TestParameter[]
+  createdAt           DateTime        @default(now())
+  updatedAt           DateTime        @updatedAt
+}
+
 model TestParameter {
   id                  Int             @id @default(autoincrement())
   testId              Int
   test                Test            @relation(fields: [testId], references: [id], onDelete: Cascade)
-  name                String
-  
-  // Male reference values
-  minValMale          Float?
-  maxValMale          Float?
-  normalRangeMale     String?
-  
-  // Female reference values
-  minValFemale        Float?
-  maxValFemale        Float?
-  normalRangeFemale   String?
-  
-  // Baby/Child reference values
-  minValBaby          Float?
-  maxValBaby          Float?
-  normalRangeBaby     String?
 
-  // Fallback default range
-  normalRangeDefault  String?
-  unit                String?
+  // Normalized relation
+  parameterId         Int
+  parameter           Parameter       @relation(fields: [parameterId], references: [id], onDelete: Cascade)
+
   order               Int             @default(1)
   results             PatientResult[]
   isDeleted           Boolean         @default(false)

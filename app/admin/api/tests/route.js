@@ -2,9 +2,63 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { requireAdmin } from "@/lib/auth";
 
-// Helper to serialize Decimal and Dates
-function serializeData(data) {
-  return JSON.parse(JSON.stringify(data));
+// Helper to serialize Decimal, Dates, and flatten parameter fields so frontend continues to see them directly
+function serializeTests(tests) {
+  return JSON.parse(JSON.stringify(tests)).map(test => {
+    if (test.parameters) {
+      test.parameters = test.parameters.map(tp => {
+        if (tp.parameter) {
+          const { parameter, ...rest } = tp;
+          return {
+            ...rest,
+            name: parameter.name,
+            unit: parameter.unit,
+            minValMale: parameter.minValMale,
+            maxValMale: parameter.maxValMale,
+            normalRangeMale: parameter.normalRangeMale,
+            minValFemale: parameter.minValFemale,
+            maxValFemale: parameter.maxValFemale,
+            normalRangeFemale: parameter.normalRangeFemale,
+            minValBaby: parameter.minValBaby,
+            maxValBaby: parameter.maxValBaby,
+            normalRangeBaby: parameter.normalRangeBaby,
+            normalRangeDefault: parameter.normalRangeDefault,
+          };
+        }
+        return tp;
+      });
+    }
+    return test;
+  });
+}
+
+function serializeSingleTest(test) {
+  if (!test) return null;
+  const serialized = JSON.parse(JSON.stringify(test));
+  if (serialized.parameters) {
+    serialized.parameters = serialized.parameters.map(tp => {
+      if (tp.parameter) {
+        const { parameter, ...rest } = tp;
+        return {
+          ...rest,
+          name: parameter.name,
+          unit: parameter.unit,
+          minValMale: parameter.minValMale,
+          maxValMale: parameter.maxValMale,
+          normalRangeMale: parameter.normalRangeMale,
+          minValFemale: parameter.minValFemale,
+          maxValFemale: parameter.maxValFemale,
+          normalRangeFemale: parameter.normalRangeFemale,
+          minValBaby: parameter.minValBaby,
+          maxValBaby: parameter.maxValBaby,
+          normalRangeBaby: parameter.normalRangeBaby,
+          normalRangeDefault: parameter.normalRangeDefault,
+        };
+      }
+      return tp;
+    });
+  }
+  return serialized;
 }
 
 export async function GET(req) {
@@ -28,7 +82,8 @@ export async function GET(req) {
       include: {
         parameters: {
           where: { isDeleted: false },
-          orderBy: { order: "asc" }
+          orderBy: { order: "asc" },
+          include: { parameter: true }
         }
       },
       orderBy: { name: "asc" },
@@ -84,7 +139,7 @@ export async function GET(req) {
 
     return NextResponse.json({
       success: true,
-      tests: serializeData(paginatedTests),
+      tests: serializeTests(paginatedTests),
       pagination: {
         page: page || 1,
         limit: limit || totalCount,
@@ -147,13 +202,25 @@ export async function POST(req) {
       },
     });
 
+    // Resolve or create Parameter "Result"
+    let defaultParam = await prisma.parameter.findUnique({
+      where: { name: "Result" }
+    });
+    if (!defaultParam) {
+      defaultParam = await prisma.parameter.create({
+        data: {
+          name: "Result",
+          normalRangeDefault: "As per report",
+          unit: ""
+        }
+      });
+    }
+
     // Create a default result parameter so user can type results in reports
     await prisma.testParameter.create({
       data: {
         testId: newTest.id,
-        name: "Result",
-        normalRangeDefault: "As per report",
-        unit: "",
+        parameterId: defaultParam.id,
         order: 1,
       },
     });
@@ -163,7 +230,8 @@ export async function POST(req) {
       include: {
         parameters: {
           where: { isDeleted: false },
-          orderBy: { order: "asc" }
+          orderBy: { order: "asc" },
+          include: { parameter: true }
         }
       }
     });
@@ -171,7 +239,7 @@ export async function POST(req) {
     return NextResponse.json({
       success: true,
       message: "Test added successfully!",
-      test: serializeData(testWithParams),
+      test: serializeSingleTest(testWithParams),
     });
   } catch (error) {
     console.error("Workspace Tests POST Error:", error);
@@ -200,7 +268,8 @@ export async function PUT(req) {
       where: { id: parseInt(testId), isDeleted: false },
       include: {
         parameters: {
-          where: { isDeleted: false }
+          where: { isDeleted: false },
+          include: { parameter: true }
         }
       },
     });
@@ -226,7 +295,7 @@ export async function PUT(req) {
       return NextResponse.json({
         success: true,
         message: "Test details updated successfully!",
-        test: serializeData(updatedTest),
+        test: serializeSingleTest(updatedTest),
       });
     }
 
@@ -243,22 +312,11 @@ export async function PUT(req) {
         },
       });
 
-      // 2. Clone its parameters
+      // 2. Clone its parameters mapping records
       if (test.parameters && test.parameters.length > 0) {
         const clonedParams = test.parameters.map((p) => ({
           testId: clonedTest.id,
-          name: p.name,
-          minValMale: p.minValMale,
-          maxValMale: p.maxValMale,
-          normalRangeMale: p.normalRangeMale,
-          minValFemale: p.minValFemale,
-          maxValFemale: p.maxValFemale,
-          normalRangeFemale: p.normalRangeFemale,
-          minValBaby: p.minValBaby,
-          maxValBaby: p.maxValBaby,
-          normalRangeBaby: p.normalRangeBaby,
-          normalRangeDefault: p.normalRangeDefault,
-          unit: p.unit,
+          parameterId: p.parameterId, // Keep it pointed to the same master parameter
           order: p.order,
         }));
 
@@ -273,7 +331,7 @@ export async function PUT(req) {
     return NextResponse.json({
       success: true,
       message: "Test details updated successfully (cloned for your workspace)!",
-      test: serializeData(newTest),
+      test: serializeSingleTest(newTest),
     });
   } catch (error) {
     console.error("Workspace Tests PUT Error:", error);
