@@ -26,7 +26,7 @@ export async function GET() {
     return NextResponse.json({ success: true, settings: adminRecord });
   } catch (error) {
     if (error.message === "NEXT_REDIRECT" || (error.digest && error.digest.startsWith("NEXT_REDIRECT"))) {
-      throw error;
+      return NextResponse.json({ success: false, error: "Unauthorized" }, { status: 401 });
     }
     console.error("Workspace Settings GET Error:", error);
     return NextResponse.json({ success: false, error: error.message }, { status: 500 });
@@ -63,7 +63,7 @@ export async function POST(req) {
     return NextResponse.json({ success: true, message: "Settings saved successfully!" });
   } catch (error) {
     if (error.message === "NEXT_REDIRECT" || (error.digest && error.digest.startsWith("NEXT_REDIRECT"))) {
-      throw error;
+      return NextResponse.json({ success: false, error: "Unauthorized" }, { status: 401 });
     }
     console.error("Workspace Settings POST Error:", error);
     return NextResponse.json({ success: false, error: error.message }, { status: 500 });
