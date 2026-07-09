@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import {
   Box,
   Typography,
@@ -40,7 +40,8 @@ import {
   InputAdornment,
   useMediaQuery,
   Pagination,
-  Autocomplete
+  Autocomplete,
+  Tooltip
 } from "@mui/material";
 import {
   ExitToApp as LogoutIcon,
@@ -55,7 +56,9 @@ import {
   Info as InfoIcon,
   Edit as EditIcon,
   Add as AddIcon,
-  DragIndicator as DragIndicatorIcon
+  DragIndicator as DragIndicatorIcon,
+  TrendingUp as TrendingUpIcon,
+  Email as EmailIcon
 } from "@mui/icons-material";
 import { toast } from "sonner";
 
@@ -140,6 +143,7 @@ const lightPurpleTheme = createTheme({
 
 export default function DefaultTestsPage() {
   const router = useRouter();
+  const pathname = usePathname();
   const isMdUp = useMediaQuery(lightPurpleTheme.breakpoints.up("md"));
   const [mobileOpen, setMobileOpen] = useState(false);
   const [desktopDrawerOpen, setDesktopDrawerOpen] = useState(true);
@@ -548,6 +552,94 @@ export default function DefaultTestsPage() {
               </ListItem>
             );
           })}
+
+          {/* Lead Management Group */}
+          <Divider sx={{ my: 1.5 }} />
+          {desktopDrawerOpen ? (
+            <ListItem sx={{ px: 2, pb: 0.5 }}>
+              <Typography variant="caption" sx={{ fontWeight: 800, color: "text.disabled", letterSpacing: "1px", textTransform: "uppercase" }}>
+                Lead Management
+              </Typography>
+            </ListItem>
+          ) : null}
+
+          <ListItem disablePadding sx={{ mb: 0.5 }}>
+            <Tooltip title={!desktopDrawerOpen ? "Leads" : ""} placement="right" arrow>
+              <ListItemButton
+                onClick={() => {
+                  setMobileOpen(false);
+                  router.push("/adminstration/leads");
+                }}
+                sx={{
+                  borderRadius: "8px",
+                  py: 1.2,
+                  px: desktopDrawerOpen ? 2 : 0,
+                  justifyContent: desktopDrawerOpen ? "initial" : "center",
+                  backgroundColor: pathname === "/adminstration/leads" ? "rgba(124, 58, 237, 0.08)" : "transparent",
+                  color: pathname === "/adminstration/leads" ? "primary.main" : "text.secondary",
+                  "&:hover": {
+                    backgroundColor: "rgba(124, 58, 237, 0.12)",
+                    color: "primary.main",
+                    "& .MuiListItemIcon-root": { color: "primary.main" }
+                  }
+                }}
+              >
+                <ListItemIcon sx={{
+                  color: pathname === "/adminstration/leads" ? "primary.main" : "text.secondary",
+                  minWidth: 0,
+                  mr: desktopDrawerOpen ? 2 : 0,
+                  justifyContent: "center"
+                }}>
+                  <TrendingUpIcon />
+                </ListItemIcon>
+                {desktopDrawerOpen && (
+                  <ListItemText
+                    primary="Leads"
+                    primaryTypographyProps={{ fontWeight: pathname === "/adminstration/leads" ? 700 : 500, fontSize: "0.9rem" }}
+                  />
+                )}
+              </ListItemButton>
+            </Tooltip>
+          </ListItem>
+
+          <ListItem disablePadding sx={{ mb: 0.5 }}>
+            <Tooltip title={!desktopDrawerOpen ? "Contact Inquiries" : ""} placement="right" arrow>
+              <ListItemButton
+                onClick={() => {
+                  setMobileOpen(false);
+                  router.push("/adminstration/contact");
+                }}
+                sx={{
+                  borderRadius: "8px",
+                  py: 1.2,
+                  px: desktopDrawerOpen ? 2 : 0,
+                  justifyContent: desktopDrawerOpen ? "initial" : "center",
+                  backgroundColor: pathname === "/adminstration/contact" ? "rgba(124, 58, 237, 0.08)" : "transparent",
+                  color: pathname === "/adminstration/contact" ? "primary.main" : "text.secondary",
+                  "&:hover": {
+                    backgroundColor: "rgba(124, 58, 237, 0.12)",
+                    color: "primary.main",
+                    "& .MuiListItemIcon-root": { color: "primary.main" }
+                  }
+                }}
+              >
+                <ListItemIcon sx={{
+                  color: pathname === "/adminstration/contact" ? "primary.main" : "text.secondary",
+                  minWidth: 0,
+                  mr: desktopDrawerOpen ? 2 : 0,
+                  justifyContent: "center"
+                }}>
+                  <EmailIcon />
+                </ListItemIcon>
+                {desktopDrawerOpen && (
+                  <ListItemText
+                    primary="Contact Inquiries"
+                    primaryTypographyProps={{ fontWeight: pathname === "/adminstration/contact" ? 700 : 500, fontSize: "0.9rem" }}
+                  />
+                )}
+              </ListItemButton>
+            </Tooltip>
+          </ListItem>
         </List>
       </Box>
       <Divider />

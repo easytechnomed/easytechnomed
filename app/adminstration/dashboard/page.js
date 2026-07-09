@@ -1,6 +1,6 @@
 "use client";
 import React, { useState, useEffect, Suspense } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams, usePathname } from "next/navigation";
 import {
   Box,
   Typography,
@@ -62,7 +62,9 @@ import {
   Error as ErrorIcon,
   ChevronLeft as ChevronLeftIcon,
   Menu as MenuIcon,
-  Science as ScienceIcon
+  Science as ScienceIcon,
+  TrendingUp as TrendingUpIcon,
+  Email as EmailIcon
 } from "@mui/icons-material";
 import { toast } from "sonner";
 import * as XLSX from "xlsx";
@@ -138,6 +140,7 @@ const AVAILABLE_PERMISSIONS = [
 function SuperAdminDashboard() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const pathname = usePathname();
   const tab = searchParams.get("tab");
 
   const [tabValue, setTabValue] = useState(0);
@@ -577,6 +580,70 @@ function SuperAdminDashboard() {
               </ListItem>
             );
           })}
+
+          {/* Lead Management Group */}
+          <Divider sx={{ my: 1.5 }} />
+          <ListItem sx={{ px: 2, pb: 0.5 }}>
+            <Typography variant="caption" sx={{ fontWeight: 800, color: "text.disabled", letterSpacing: "1px", textTransform: "uppercase" }}>
+              Lead Management
+            </Typography>
+          </ListItem>
+
+          <ListItem disablePadding sx={{ mb: 0.5 }}>
+            <ListItemButton
+              onClick={() => {
+                setMobileOpen(false);
+                router.push("/adminstration/leads");
+              }}
+              sx={{
+                borderRadius: "8px",
+                py: 1.2,
+                px: 2,
+                backgroundColor: pathname === "/adminstration/leads" ? "rgba(124, 58, 237, 0.08)" : "transparent",
+                color: pathname === "/adminstration/leads" ? "primary.main" : "text.secondary",
+                "&:hover": {
+                  backgroundColor: "rgba(124, 58, 237, 0.12)",
+                  color: "primary.main",
+                  "& .MuiListItemIcon-root": { color: "primary.main" }
+                },
+                "& .MuiListItemIcon-root": { color: pathname === "/adminstration/leads" ? "primary.main" : "text.secondary", minWidth: 40 }
+              }}
+            >
+              <ListItemIcon><TrendingUpIcon /></ListItemIcon>
+              <ListItemText
+                primary="Leads"
+                primaryTypographyProps={{ fontWeight: pathname === "/adminstration/leads" ? 700 : 500, fontSize: "0.9rem" }}
+              />
+            </ListItemButton>
+          </ListItem>
+
+          <ListItem disablePadding sx={{ mb: 0.5 }}>
+            <ListItemButton
+              onClick={() => {
+                setMobileOpen(false);
+                router.push("/adminstration/contact");
+              }}
+              sx={{
+                borderRadius: "8px",
+                py: 1.2,
+                px: 2,
+                backgroundColor: pathname === "/adminstration/contact" ? "rgba(124, 58, 237, 0.08)" : "transparent",
+                color: pathname === "/adminstration/contact" ? "primary.main" : "text.secondary",
+                "&:hover": {
+                  backgroundColor: "rgba(124, 58, 237, 0.12)",
+                  color: "primary.main",
+                  "& .MuiListItemIcon-root": { color: "primary.main" }
+                },
+                "& .MuiListItemIcon-root": { color: pathname === "/adminstration/contact" ? "primary.main" : "text.secondary", minWidth: 40 }
+              }}
+            >
+              <ListItemIcon><EmailIcon /></ListItemIcon>
+              <ListItemText
+                primary="Contact Inquiries"
+                primaryTypographyProps={{ fontWeight: pathname === "/adminstration/contact" ? 700 : 500, fontSize: "0.9rem" }}
+              />
+            </ListItemButton>
+          </ListItem>
         </List>
       </Box>
       <Divider />
