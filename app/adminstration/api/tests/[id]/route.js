@@ -92,97 +92,100 @@ export async function PUT(req, { params }) {
     }
 
     // Process parameters update and deletion
-    await prisma.$transaction(async (tx) => {
-      // 1. Update Test record
-      await tx.test.update({
-        where: { id: testId },
-        data: {
-          name: name.trim(),
-          code: code ? code.trim() : null,
-          price: parseFloat(price),
-        }
-      });
-
-      // 2. Identify existing parameters
-      const existingParams = await tx.testParameter.findMany({
-        where: { testId, isDeleted: false }
-      });
-      const existingIds = existingParams.map(p => p.id);
-
-      const incomingParams = parameters || [];
-      const incomingIds = incomingParams.map(p => p.id).filter(Boolean);
-
-      // 3. Delete parameters not in incoming payload
-      const toDeleteIds = existingIds.filter(id => !incomingIds.includes(id));
-      if (toDeleteIds.length > 0) {
-        await tx.testParameter.updateMany({
-          where: { id: { in: toDeleteIds } },
+    await prisma.$transaction(
+      async (tx) => {
+        // 1. Update Test record
+        await tx.test.update({
+          where: { id: testId },
           data: {
-            isDeleted: true,
-            deletedAt: new Date()
+            name: name.trim(),
+            code: code ? code.trim() : null,
+            price: parseFloat(price),
           }
         });
-      }
 
-      // 4. Update or Create incoming parameters
-      for (const p of incomingParams) {
-        const normName = (p.name || "").trim();
-        if (!normName) continue;
-
-        // Resolve or create parameter in the master table
-        let parameter = await tx.parameter.findFirst({
-          where: { name: { equals: normName } }
+        // 2. Identify existing parameters
+        const existingParams = await tx.testParameter.findMany({
+          where: { testId, isDeleted: false }
         });
+        const existingIds = existingParams.map(p => p.id);
 
-        const pData = {
-          name: normName,
-          minValMale: p.minValMale !== undefined && p.minValMale !== null && p.minValMale !== "" ? parseFloat(p.minValMale) : null,
-          maxValMale: p.maxValMale !== undefined && p.maxValMale !== null && p.maxValMale !== "" ? parseFloat(p.maxValMale) : null,
-          normalRangeMale: p.normalRangeMale || null,
-          minValFemale: p.minValFemale !== undefined && p.minValFemale !== null && p.minValFemale !== "" ? parseFloat(p.minValFemale) : null,
-          maxValFemale: p.maxValFemale !== undefined && p.maxValFemale !== null && p.maxValFemale !== "" ? parseFloat(p.maxValFemale) : null,
-          normalRangeFemale: p.normalRangeFemale || null,
-          minValBaby: p.minValBaby !== undefined && p.minValBaby !== null && p.minValBaby !== "" ? parseFloat(p.minValBaby) : null,
-          maxValBaby: p.maxValBaby !== undefined && p.maxValBaby !== null && p.maxValBaby !== "" ? parseFloat(p.maxValBaby) : null,
-          normalRangeBaby: p.normalRangeBaby || null,
-          normalRangeDefault: p.normalRangeDefault || null,
-          unit: p.unit || null,
-        };
+        const incomingParams = parameters || [];
+        const incomingIds = incomingParams.map(p => p.id).filter(Boolean);
 
-        if (!parameter) {
-          parameter = await tx.parameter.create({
-            data: pData
-          });
-        } else {
-          // Update the shared parameters dictionary globally
-          parameter = await tx.parameter.update({
-            where: { id: parameter.id },
-            data: pData
-          });
-        }
-
-        if (p.id) {
-          await tx.testParameter.update({
-            where: { id: p.id },
+        // 3. Delete parameters not in incoming payload
+        const toDeleteIds = existingIds.filter(id => !incomingIds.includes(id));
+        if (toDeleteIds.length > 0) {
+          await tx.testParameter.updateMany({
+            where: { id: { in: toDeleteIds } },
             data: {
-              parameterId: parameter.id,
-              order: parseInt(p.order) || 1,
-              isDeleted: false,
-              deletedAt: null
-            }
-          });
-        } else {
-          await tx.testParameter.create({
-            data: {
-              testId,
-              parameterId: parameter.id,
-              order: parseInt(p.order) || 1,
-              isDeleted: false
+              isDeleted: true,
+              deletedAt: new Date()
             }
           });
         }
-      }
-    });
+
+        // 4. Update or Create incoming parameters
+        for (const p of incomingParams) {
+          const normName = (p.name || "").trim();
+          if (!normName) continue;
+
+          // Resolve or create parameter in the master table
+          let parameter = await tx.parameter.findFirst({
+            where: { name: { equals: normName } }
+          });
+
+          const pData = {
+            name: normName,
+            minValMale: p.minValMale !== undefined && p.minValMale !== null && p.minValMale !== "" ? parseFloat(p.minValMale) : null,
+            maxValMale: p.maxValMale !== undefined && p.maxValMale !== null && p.maxValMale !== "" ? parseFloat(p.maxValMale) : null,
+            normalRangeMale: p.normalRangeMale || null,
+            minValFemale: p.minValFemale !== undefined && p.minValFemale !== null && p.minValFemale !== "" ? parseFloat(p.minValFemale) : null,
+            maxValFemale: p.maxValFemale !== undefined && p.maxValFemale !== null && p.maxValFemale !== "" ? parseFloat(p.maxValFemale) : null,
+            normalRangeFemale: p.normalRangeFemale || null,
+            minValBaby: p.minValBaby !== undefined && p.minValBaby !== null && p.minValBaby !== "" ? parseFloat(p.minValBaby) : null,
+            maxValBaby: p.maxValBaby !== undefined && p.maxValBaby !== null && p.maxValBaby !== "" ? parseFloat(p.maxValBaby) : null,
+            normalRangeBaby: p.normalRangeBaby || null,
+            normalRangeDefault: p.normalRangeDefault || null,
+            unit: p.unit || null,
+          };
+
+          if (!parameter) {
+            parameter = await tx.parameter.create({
+              data: pData
+            });
+          } else {
+            // Update the shared parameters dictionary globally
+            parameter = await tx.parameter.update({
+              where: { id: parameter.id },
+              data: pData
+            });
+          }
+
+          if (p.id) {
+            await tx.testParameter.update({
+              where: { id: p.id },
+              data: {
+                parameterId: parameter.id,
+                order: parseInt(p.order) || 1,
+                isDeleted: false,
+                deletedAt: null
+              }
+            });
+          } else {
+            await tx.testParameter.create({
+              data: {
+                testId,
+                parameterId: parameter.id,
+                order: parseInt(p.order) || 1,
+                isDeleted: false
+              }
+            });
+          }
+        }
+      },
+      { maxWait: 20000, timeout: 45000 }
+    );
 
     return NextResponse.json({ success: true, message: "Default test and parameters updated successfully!" });
   } catch (error) {

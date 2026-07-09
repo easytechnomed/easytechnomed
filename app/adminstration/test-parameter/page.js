@@ -397,6 +397,25 @@ export default function DefaultTestsPage() {
     setEditParamModalOpen(true);
   };
 
+  const handleAddNewParamClick = () => {
+    setEditParamForm({
+      id: null,
+      name: "",
+      unit: "",
+      minValMale: "",
+      maxValMale: "",
+      normalRangeMale: "",
+      minValFemale: "",
+      maxValFemale: "",
+      normalRangeFemale: "",
+      minValBaby: "",
+      maxValBaby: "",
+      normalRangeBaby: "",
+      normalRangeDefault: ""
+    });
+    setEditParamModalOpen(true);
+  };
+
   const handleSaveParamEdit = async (e) => {
     e.preventDefault();
     if (!editParamForm.name.trim()) {
@@ -405,19 +424,23 @@ export default function DefaultTestsPage() {
     }
     setSaving(true);
     try {
-      const res = await fetch(`/adminstration/api/parameters/${editParamForm.id}`, {
-        method: "PUT",
+      const isNew = editParamForm.id === null;
+      const url = isNew ? "/adminstration/api/parameters" : `/adminstration/api/parameters/${editParamForm.id}`;
+      const method = isNew ? "POST" : "PUT";
+
+      const res = await fetch(url, {
+        method,
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(editParamForm)
       }).then(r => r.json());
 
       if (res.success) {
-        toast.success(res.message || "Parameter updated successfully.");
+        toast.success(res.message || (isNew ? "Parameter created successfully." : "Parameter updated successfully."));
         setEditParamModalOpen(false);
         await fetchParameterDictionary();
         await fetchTests(); // Refresh tests to sync changes
       } else {
-        toast.error(res.error || "Failed to update parameter.");
+        toast.error(res.error || `Failed to ${isNew ? "create" : "update"} parameter.`);
       }
     } catch (err) {
       console.error(err);
@@ -1226,21 +1249,33 @@ export default function DefaultTestsPage() {
                             <Typography variant="subtitle1" sx={{ fontWeight: 800, whiteSpace: "nowrap" }}>
                               Parameters Library
                             </Typography>
-                            <TextField
-                              size="small"
-                              variant="outlined"
-                              placeholder="Search parameters..."
-                              value={paramSearchQuery}
-                              onChange={(e) => setParamSearchQuery(e.target.value)}
-                              sx={{ maxWidth: 220, flexGrow: 1 }}
-                              InputProps={{
-                                startAdornment: (
-                                  <InputAdornment position="start">
-                                    <SearchIcon sx={{ color: "text.secondary" }} />
-                                  </InputAdornment>
-                                ),
-                              }}
-                            />
+                            <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, flexGrow: 1, justifyContent: "flex-end" }}>
+                              <TextField
+                                size="small"
+                                variant="outlined"
+                                placeholder="Search parameters..."
+                                value={paramSearchQuery}
+                                onChange={(e) => setParamSearchQuery(e.target.value)}
+                                sx={{ maxWidth: 180, flexGrow: 1 }}
+                                InputProps={{
+                                  startAdornment: (
+                                    <InputAdornment position="start">
+                                      <SearchIcon sx={{ color: "text.secondary" }} />
+                                    </InputAdornment>
+                                  ),
+                                }}
+                              />
+                              <Button
+                                variant="contained"
+                                color="primary"
+                                size="small"
+                                startIcon={<AddIcon />}
+                                onClick={handleAddNewParamClick}
+                                sx={{ borderRadius: 2, whiteSpace: "nowrap" }}
+                              >
+                                Add Parameter
+                              </Button>
+                            </Box>
                           </Box>
 
                           {/* Parameters Table */}
@@ -1932,89 +1967,89 @@ export default function DefaultTestsPage() {
         </DialogActions>
       </Dialog>
 
-      {/* Edit Parameter Dialog */}
-      <Dialog
-        open={editParamModalOpen}
-        onClose={() => !saving && setEditParamModalOpen(false)}
-        maxWidth="md"
-        fullWidth
-      >
-        <form onSubmit={handleSaveParamEdit}>
-          <DialogTitle sx={{ fontWeight: 800 }}>Edit Parameter Dictionary Entry</DialogTitle>
-          <Divider />
-          <DialogContent sx={{ display: "flex", flexDirection: "column", gap: 3, pt: 3 }}>
-            <Grid container spacing={2}>
-              <Grid size={{ xs: 12, sm: 8 }}>
-                <TextField
-                  required
-                  fullWidth
-                  label="Parameter Name *"
-                  size="small"
-                  value={editParamForm.name}
-                  onChange={(e) => setEditParamForm(prev => ({ ...prev, name: e.target.value }))}
-                />
-              </Grid>
-              <Grid size={{ xs: 12, sm: 4 }}>
-                <TextField
-                  fullWidth
-                  label="Unit"
-                  size="small"
-                  value={editParamForm.unit}
-                  onChange={(e) => setEditParamForm(prev => ({ ...prev, unit: e.target.value }))}
-                />
-              </Grid>
-            </Grid>
+       {/* Edit Parameter Dialog */}
+       <Dialog
+         open={editParamModalOpen}
+         onClose={() => !saving && setEditParamModalOpen(false)}
+         maxWidth="md"
+         fullWidth
+       >
+         <form onSubmit={handleSaveParamEdit}>
+           <DialogTitle sx={{ fontWeight: 800 }}>{editParamForm.id === null ? "Add New Parameter" : "Edit Parameter Dictionary Entry"}</DialogTitle>
+           <Divider />
+           <DialogContent sx={{ display: "flex", flexDirection: "column", gap: 3, pt: 3 }}>
+             <Grid container spacing={2}>
+               <Grid size={{ xs: 12, sm: 8 }}>
+                 <TextField
+                   required
+                   fullWidth
+                   label="Parameter Name *"
+                   size="small"
+                   value={editParamForm.name}
+                   onChange={(e) => setEditParamForm(prev => ({ ...prev, name: e.target.value }))}
+                 />
+               </Grid>
+               <Grid size={{ xs: 12, sm: 4 }}>
+                 <TextField
+                   fullWidth
+                   label="Unit"
+                   size="small"
+                   value={editParamForm.unit}
+                   onChange={(e) => setEditParamForm(prev => ({ ...prev, unit: e.target.value }))}
+                 />
+               </Grid>
+             </Grid>
 
-            <Divider />
-            <Typography variant="subtitle2" sx={{ fontWeight: 800 }}>
-              Reference Values & Ranges
-            </Typography>
+             <Divider />
+             <Typography variant="subtitle2" sx={{ fontWeight: 800 }}>
+               Reference Values & Ranges
+             </Typography>
 
-            <Grid container spacing={3}>
-              {/* Male Ranges */}
-              <Grid size={{ xs: 12, md: 4 }}>
-                <Typography variant="caption" sx={{ fontWeight: 700, color: "primary.main", display: "block", mb: 1 }}>Male References</Typography>
-                <Box sx={{ display: "flex", flexDirection: "column", gap: 1.5 }}>
-                  <TextField fullWidth size="small" type="number" inputProps={{ step: "any" }} label="Min Value" value={editParamForm.minValMale} onChange={(e) => setEditParamForm(prev => ({ ...prev, minValMale: e.target.value }))} />
-                  <TextField fullWidth size="small" type="number" inputProps={{ step: "any" }} label="Max Value" value={editParamForm.maxValMale} onChange={(e) => setEditParamForm(prev => ({ ...prev, maxValMale: e.target.value }))} />
-                  <TextField fullWidth size="small" label="Range Text" value={editParamForm.normalRangeMale} onChange={(e) => setEditParamForm(prev => ({ ...prev, normalRangeMale: e.target.value }))} />
-                </Box>
-              </Grid>
+             <Grid container spacing={3}>
+               {/* Male Ranges */}
+               <Grid size={{ xs: 12, md: 4 }}>
+                 <Typography variant="caption" sx={{ fontWeight: 700, color: "primary.main", display: "block", mb: 1 }}>Male References</Typography>
+                 <Box sx={{ display: "flex", flexDirection: "column", gap: 1.5 }}>
+                   <TextField fullWidth size="small" type="number" inputProps={{ step: "any" }} label="Min Value" value={editParamForm.minValMale} onChange={(e) => setEditParamForm(prev => ({ ...prev, minValMale: e.target.value }))} />
+                   <TextField fullWidth size="small" type="number" inputProps={{ step: "any" }} label="Max Value" value={editParamForm.maxValMale} onChange={(e) => setEditParamForm(prev => ({ ...prev, maxValMale: e.target.value }))} />
+                   <TextField fullWidth size="small" label="Range Text" value={editParamForm.normalRangeMale} onChange={(e) => setEditParamForm(prev => ({ ...prev, normalRangeMale: e.target.value }))} />
+                 </Box>
+               </Grid>
 
-              {/* Female Ranges */}
-              <Grid size={{ xs: 12, md: 4 }}>
-                <Typography variant="caption" sx={{ fontWeight: 700, color: "secondary.main", display: "block", mb: 1 }}>Female References</Typography>
-                <Box sx={{ display: "flex", flexDirection: "column", gap: 1.5 }}>
-                  <TextField fullWidth size="small" type="number" inputProps={{ step: "any" }} label="Min Value" value={editParamForm.minValFemale} onChange={(e) => setEditParamForm(prev => ({ ...prev, minValFemale: e.target.value }))} />
-                  <TextField fullWidth size="small" type="number" inputProps={{ step: "any" }} label="Max Value" value={editParamForm.maxValFemale} onChange={(e) => setEditParamForm(prev => ({ ...prev, maxValFemale: e.target.value }))} />
-                  <TextField fullWidth size="small" label="Range Text" value={editParamForm.normalRangeFemale} onChange={(e) => setEditParamForm(prev => ({ ...prev, normalRangeFemale: e.target.value }))} />
-                </Box>
-              </Grid>
+               {/* Female Ranges */}
+               <Grid size={{ xs: 12, md: 4 }}>
+                 <Typography variant="caption" sx={{ fontWeight: 700, color: "secondary.main", display: "block", mb: 1 }}>Female References</Typography>
+                 <Box sx={{ display: "flex", flexDirection: "column", gap: 1.5 }}>
+                   <TextField fullWidth size="small" type="number" inputProps={{ step: "any" }} label="Min Value" value={editParamForm.minValFemale} onChange={(e) => setEditParamForm(prev => ({ ...prev, minValFemale: e.target.value }))} />
+                   <TextField fullWidth size="small" type="number" inputProps={{ step: "any" }} label="Max Value" value={editParamForm.maxValFemale} onChange={(e) => setEditParamForm(prev => ({ ...prev, maxValFemale: e.target.value }))} />
+                   <TextField fullWidth size="small" label="Range Text" value={editParamForm.normalRangeFemale} onChange={(e) => setEditParamForm(prev => ({ ...prev, normalRangeFemale: e.target.value }))} />
+                 </Box>
+               </Grid>
 
-              {/* Baby Ranges */}
-              <Grid size={{ xs: 12, md: 4 }}>
-                <Typography variant="caption" sx={{ fontWeight: 700, color: "success.main", display: "block", mb: 1 }}>Baby References</Typography>
-                <Box sx={{ display: "flex", flexDirection: "column", gap: 1.5 }}>
-                  <TextField fullWidth size="small" type="number" inputProps={{ step: "any" }} label="Min Value" value={editParamForm.minValBaby} onChange={(e) => setEditParamForm(prev => ({ ...prev, minValBaby: e.target.value }))} />
-                  <TextField fullWidth size="small" type="number" inputProps={{ step: "any" }} label="Max Value" value={editParamForm.maxValBaby} onChange={(e) => setEditParamForm(prev => ({ ...prev, maxValBaby: e.target.value }))} />
-                  <TextField fullWidth size="small" label="Range Text" value={editParamForm.normalRangeBaby} onChange={(e) => setEditParamForm(prev => ({ ...prev, normalRangeBaby: e.target.value }))} />
-                </Box>
-              </Grid>
-            </Grid>
+               {/* Baby Ranges */}
+               <Grid size={{ xs: 12, md: 4 }}>
+                 <Typography variant="caption" sx={{ fontWeight: 700, color: "success.main", display: "block", mb: 1 }}>Baby References</Typography>
+                 <Box sx={{ display: "flex", flexDirection: "column", gap: 1.5 }}>
+                   <TextField fullWidth size="small" type="number" inputProps={{ step: "any" }} label="Min Value" value={editParamForm.minValBaby} onChange={(e) => setEditParamForm(prev => ({ ...prev, minValBaby: e.target.value }))} />
+                   <TextField fullWidth size="small" type="number" inputProps={{ step: "any" }} label="Max Value" value={editParamForm.maxValBaby} onChange={(e) => setEditParamForm(prev => ({ ...prev, maxValBaby: e.target.value }))} />
+                   <TextField fullWidth size="small" label="Range Text" value={editParamForm.normalRangeBaby} onChange={(e) => setEditParamForm(prev => ({ ...prev, normalRangeBaby: e.target.value }))} />
+                 </Box>
+               </Grid>
+             </Grid>
 
-            <Grid container spacing={2}>
-              <Grid size={{ xs: 12 }}>
-                <TextField fullWidth size="small" label="Default Fallback Range Text" value={editParamForm.normalRangeDefault} onChange={(e) => setEditParamForm(prev => ({ ...prev, normalRangeDefault: e.target.value }))} />
-              </Grid>
-            </Grid>
-          </DialogContent>
-          <Divider />
-          <DialogActions sx={{ px: 3, py: 2 }}>
-            <Button onClick={() => setEditParamModalOpen(false)} color="inherit">Cancel</Button>
-            <Button type="submit" variant="contained" disabled={saving}>{saving ? "Saving..." : "Save Changes"}</Button>
-          </DialogActions>
-        </form>
-      </Dialog>
+             <Grid container spacing={2}>
+               <Grid size={{ xs: 12 }}>
+                 <TextField fullWidth size="small" label="Default Fallback Range Text" value={editParamForm.normalRangeDefault} onChange={(e) => setEditParamForm(prev => ({ ...prev, normalRangeDefault: e.target.value }))} />
+               </Grid>
+             </Grid>
+           </DialogContent>
+           <Divider />
+           <DialogActions sx={{ px: 3, py: 2 }}>
+             <Button onClick={() => setEditParamModalOpen(false)} color="inherit">Cancel</Button>
+             <Button type="submit" variant="contained" disabled={saving}>{saving ? "Saving..." : (editParamForm.id === null ? "Create Parameter" : "Save Changes")}</Button>
+           </DialogActions>
+         </form>
+       </Dialog>
 
       {/* Parameter Delete / Merge Dialog */}
       <Dialog

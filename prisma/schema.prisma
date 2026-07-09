@@ -1,10 +1,10 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
 datasource db {
   provider = "mysql"
   url      = env("DATABASE_URL")
-}
-
-generator client {
-  provider = "prisma-client-js"
 }
 
 model Workspace {
@@ -14,13 +14,13 @@ model Workspace {
   isActive      Boolean        @default(true)
   createdAt     DateTime       @default(now())
   updatedAt     DateTime       @updatedAt
-  isDeleted     Boolean        @default(false)
   deletedAt     DateTime?
+  isDeleted     Boolean        @default(false)
   admins        Admin[]
   doctors       Doctor[]
   registrations Registration[]
-  users         User[]
   tests         Test[]
+  users         User[]
 }
 
 model SuperAdmin {
@@ -42,6 +42,8 @@ model SuperAdminSession {
   userAgent    String?
   createdAt    DateTime   @default(now())
   superAdmin   SuperAdmin @relation(fields: [superAdminId], references: [id], onDelete: Cascade)
+
+  @@index([superAdminId], map: "SuperAdminSession_superAdminId_fkey")
 }
 
 model User {
@@ -51,7 +53,7 @@ model User {
   password                 String?
   provider                 String        @default("credentials")
   googleId                 String?       @unique
-  roleId                   Int           @default(2) // Default customer role
+  roleId                   Int           @default(2)
   isEmailVerified          Boolean       @default(false)
   isApproved               Boolean       @default(false)
   rejected                 Boolean       @default(false)
@@ -59,14 +61,15 @@ model User {
   verificationTokenExpires DateTime?
   createdAt                DateTime      @default(now())
   updatedAt                DateTime      @updatedAt
-  role                     UserRole      @relation(fields: [roleId], references: [id])
-  sessions                 UserSession[]
-  
-  startAt                  DateTime?
-  expireAt                 DateTime?
-
   workspaceId              Int?
+  expireAt                 DateTime?
+  startAt                  DateTime?
+  role                     UserRole      @relation(fields: [roleId], references: [id])
   workspace                Workspace?    @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  sessions                 UserSession[]
+
+  @@index([roleId], map: "User_roleId_fkey")
+  @@index([workspaceId], map: "User_workspaceId_fkey")
 }
 
 model UserSession {
@@ -78,6 +81,8 @@ model UserSession {
   userAgent String?
   createdAt DateTime @default(now())
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId], map: "UserSession_userId_fkey")
 }
 
 model UserRole {
@@ -97,40 +102,37 @@ model UserRolePermission {
 }
 
 model Admin {
-  id              Int            @id @default(autoincrement())
-  name            String
-  email           String         @unique
-  password        String
-  provider        String         @default("credentials")
-  roleId          Int            @default(1) // Default admin role
-  isEmailVerified Boolean        @default(true)
-  isApproved      Boolean        @default(true)
-  isActive        Boolean        @default(true)
-  createdAt       DateTime       @default(now())
-  updatedAt       DateTime       @updatedAt
-  role            AdminRole      @relation(fields: [roleId], references: [id])
-  sessions        AdminSession[]
-
-  // PDF letterhead configurations
-  framePdfUrl     String?        @db.VarChar(500)
-  headerMargin    Int            @default(140)
-  footerMargin    Int            @default(100)
-  useFrameDefault Boolean        @default(true)
-
-  authorizedSignatoryName1   String?
+  id                         Int            @id @default(autoincrement())
+  name                       String
+  email                      String         @unique
+  password                   String
+  provider                   String         @default("credentials")
+  roleId                     Int            @default(1)
+  isEmailVerified            Boolean        @default(true)
+  isApproved                 Boolean        @default(true)
+  createdAt                  DateTime       @default(now())
+  updatedAt                  DateTime       @updatedAt
+  footerMargin               Int            @default(100)
+  framePdfUrl                String?        @db.VarChar(500)
+  headerMargin               Int            @default(140)
+  useFrameDefault            Boolean        @default(true)
+  isActive                   Boolean        @default(true)
+  workspaceId                Int?
+  expireAt                   DateTime?
+  startAt                    DateTime?
   authorizedSignatoryDegree1 String?
-  authorizedSignatoryName2   String?
   authorizedSignatoryDegree2 String?
+  authorizedSignatoryName1   String?
+  authorizedSignatoryName2   String?
+  companyName                String?
+  mobileNumber               String?
+  role                       AdminRole      @relation(fields: [roleId], references: [id])
+  workspace                  Workspace?     @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  address                    AdminAddress?
+  sessions                   AdminSession[]
 
-  startAt         DateTime?
-  expireAt        DateTime?
-
-  workspaceId     Int?
-  workspace       Workspace?     @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
-
-  companyName     String?
-  mobileNumber    String?
-  address         AdminAddress?
+  @@index([roleId])
+  @@index([workspaceId], map: "Admin_workspaceId_fkey")
 }
 
 model AdminSession {
@@ -142,13 +144,15 @@ model AdminSession {
   userAgent String?
   createdAt DateTime @default(now())
   admin     Admin    @relation(fields: [adminId], references: [id], onDelete: Cascade)
+
+  @@index([adminId], map: "AdminSession_adminId_fkey")
 }
 
 model AdminRole {
-  id          Int                    @id @default(autoincrement())
-  name        String                 @unique
-  isDeleted   Boolean                @default(false)
+  id          Int                   @id @default(autoincrement())
+  name        String                @unique
   deletedAt   DateTime?
+  isDeleted   Boolean               @default(false)
   admins      Admin[]
   permissions AdminRolePermission[]
 }
@@ -166,18 +170,17 @@ model Doctor {
   id                  Int            @id @default(autoincrement())
   name                String
   code                String?
-  degree              String?
-  address             String?
-  clinicName          String?
-  incentivePercent    Decimal        @db.Decimal(5, 2) @default(0.00)
   lastPaid            DateTime?
-  registrations       Registration[] @relation("RefBy")
-  secondRegistrations Registration[] @relation("SecondRef")
   createdAt           DateTime       @default(now())
   updatedAt           DateTime       @updatedAt
-
   workspaceId         Int?
+  incentivePercent    Decimal        @default(0.00) @db.Decimal(5, 2)
+  address             String?
+  clinicName          String?
+  degree              String?
   workspace           Workspace?     @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  registrations       Registration[] @relation("RefBy")
+  secondRegistrations Registration[] @relation("SecondRef")
 
   @@unique([workspaceId, code])
 }
@@ -187,172 +190,174 @@ model Test {
   name          String
   code          String?
   price         Decimal            @db.Decimal(10, 2)
-  isProcessed   Boolean            @default(false)
-  registrations RegistrationTest[]
-  parameters    TestParameter[]
-  isDeleted     Boolean            @default(false)
-  deletedAt     DateTime?
   createdAt     DateTime           @default(now())
   updatedAt     DateTime           @updatedAt
-
+  isProcessed   Boolean            @default(false)
   workspaceId   Int?
+  deletedAt     DateTime?
+  isDeleted     Boolean            @default(false)
+  registrations RegistrationTest[]
   workspace     Workspace?         @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  parameters    TestParameter[]
 
   @@unique([workspaceId, code])
 }
 
 model Registration {
-  id               Int                @id @default(autoincrement())
-  billOn           String             @default("Patient Rate")
+  id               Int                   @id @default(autoincrement())
+  billOn           String                @default("Patient Rate")
   mobileNo         String
   labId            String
   regNo            String
-  date             DateTime           @default(now())
-  title            String             // Mr., Mrs., Dr.
+  date             DateTime              @default(now())
+  title            String
   name             String
-  city             String             @default("-NA-")
+  city             String                @default("-NA-")
   age              Float
-  ageUnit          String             @default("Year") // Year, Month, Day
-  gender           String             // Male, Female, Other
+  ageUnit          String                @default("Year")
+  gender           String
   refById          Int?
-  refBy            Doctor?            @relation("RefBy", fields: [refById], references: [id])
   secondRefId      Int?
-  secondRef        Doctor?            @relation("SecondRef", fields: [secondRefId], references: [id])
   remark           String?
-  colType          String             @default("Camp")
+  colType          String                @default("Camp")
   expRptDate       DateTime?
   sampleDate       DateTime?
   sampleNo         String?
-  sampleBy         String             @default("-NA-")
-  paymentMode      String             @default("Cash")
+  sampleBy         String                @default("-NA-")
+  paymentMode      String                @default("Cash")
   paymentRefNo     String?
-  totalAmount      Decimal            @db.Decimal(10, 2) @default(0.00)
-  collectionCharge Decimal            @db.Decimal(10, 2) @default(0.00)
-  discountPercent  Decimal            @db.Decimal(10, 2) @default(0.00)
-  discountAmount   Decimal            @db.Decimal(10, 2) @default(0.00)
-  receivedAmount   Decimal            @db.Decimal(10, 2) @default(0.00)
-  dueAmount        Decimal            @db.Decimal(10, 2) @default(0.00)
-  stickerCount     Int                @default(1)
+  totalAmount      Decimal               @default(0.00) @db.Decimal(10, 2)
+  collectionCharge Decimal               @default(0.00) @db.Decimal(10, 2)
+  discountPercent  Decimal               @default(0.00) @db.Decimal(10, 2)
+  discountAmount   Decimal               @default(0.00) @db.Decimal(10, 2)
+  receivedAmount   Decimal               @default(0.00) @db.Decimal(10, 2)
+  dueAmount        Decimal               @default(0.00) @db.Decimal(10, 2)
+  stickerCount     Int                   @default(1)
   barcode          String?
-  status           String             @default("Pending") // Pending, Completed
-  tests            RegistrationTest[]
-  results          PatientResult[]
-  isDeleted        Boolean            @default(false)
-  deletedAt        DateTime?
-  createdAt        DateTime           @default(now())
-  updatedAt        DateTime           @updatedAt
-  payments         RegistrationPayment[]
-
+  status           String                @default("Pending")
+  createdAt        DateTime              @default(now())
+  updatedAt        DateTime              @updatedAt
   workspaceId      Int?
-  workspace        Workspace?         @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  deletedAt        DateTime?
+  isDeleted        Boolean               @default(false)
+  results          PatientResult[]
+  refBy            Doctor?               @relation("RefBy", fields: [refById], references: [id])
+  secondRef        Doctor?               @relation("SecondRef", fields: [secondRefId], references: [id])
+  workspace        Workspace?            @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  payments         RegistrationPayment[]
+  tests            RegistrationTest[]
 
   @@unique([workspaceId, labId])
   @@unique([workspaceId, regNo])
   @@index([date])
   @@index([mobileNo])
+  @@index([refById], map: "Registration_refById_fkey")
+  @@index([secondRefId], map: "Registration_secondRefId_fkey")
+  @@index([workspaceId])
 }
 
 model RegistrationTest {
   registrationId Int
   testId         Int
-  registration   Registration @relation(fields: [registrationId], references: [id], onDelete: Cascade)
-  test           Test         @relation(fields: [testId], references: [id], onDelete: Cascade)
-  
-  // Sample Management fields
-  sampleStatus   String       @default("Pending") // Pending, Accepted, Rejected
+  assessNo       String?
+  collectedBy    String       @default("-NA-")
+  expense        Decimal      @default(0.00) @db.Decimal(10, 2)
+  pathologist    String       @default("-NA-")
+  product        String       @default("-NA-")
   sampleBarcode  String?
   sampleRemark   String?
+  sampleStatus   String       @default("Pending")
   sendTo         String       @default("-NA-")
-  expense        Decimal      @db.Decimal(10, 2) @default(0.00)
-  assessNo       String?
-  pathologist    String       @default("-NA-")
-  collectedBy    String       @default("-NA-")
-  product        String       @default("-NA-")
+  registration   Registration @relation(fields: [registrationId], references: [id], onDelete: Cascade)
+  test           Test         @relation(fields: [testId], references: [id], onDelete: Cascade)
 
   @@id([registrationId, testId])
+  @@index([testId], map: "RegistrationTest_testId_fkey")
 }
 
 model Parameter {
-  id                  Int             @id @default(autoincrement())
-  name                String          @unique
-  unit                String?
-  minValMale          Float?
-  maxValMale          Float?
-  normalRangeMale     String?
-  minValFemale        Float?
-  maxValFemale        Float?
-  normalRangeFemale   String?
-  minValBaby          Float?
-  maxValBaby          Float?
-  normalRangeBaby     String?
-  normalRangeDefault  String?
-
-  testMappings        TestParameter[]
-  createdAt           DateTime        @default(now())
-  updatedAt           DateTime        @updatedAt
+  id                 Int             @id @default(autoincrement())
+  name               String          @unique
+  unit               String?
+  minValMale         Float?
+  maxValMale         Float?
+  normalRangeMale    String?
+  minValFemale       Float?
+  maxValFemale       Float?
+  normalRangeFemale  String?
+  minValBaby         Float?
+  maxValBaby         Float?
+  normalRangeBaby    String?
+  normalRangeDefault String?
+  createdAt          DateTime        @default(now())
+  updatedAt          DateTime        @updatedAt
+  testMappings       TestParameter[]
 }
 
 model TestParameter {
-  id                  Int             @id @default(autoincrement())
-  testId              Int
-  test                Test            @relation(fields: [testId], references: [id], onDelete: Cascade)
+  id          Int             @id @default(autoincrement())
+  testId      Int
+  order       Int             @default(1)
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+  deletedAt   DateTime?
+  isDeleted   Boolean         @default(false)
+  parameterId Int
+  results     PatientResult[]
+  parameter   Parameter       @relation(fields: [parameterId], references: [id], onDelete: Cascade)
+  test        Test            @relation(fields: [testId], references: [id], onDelete: Cascade)
 
-  // Normalized relation
-  parameterId         Int
-  parameter           Parameter       @relation(fields: [parameterId], references: [id], onDelete: Cascade)
-
-  order               Int             @default(1)
-  results             PatientResult[]
-  isDeleted           Boolean         @default(false)
-  deletedAt           DateTime?
-  createdAt           DateTime        @default(now())
-  updatedAt           DateTime        @updatedAt
+  @@index([parameterId], map: "TestParameter_parameterId_fkey")
+  @@index([testId], map: "TestParameter_testId_fkey")
 }
 
 model PatientResult {
   id              Int           @id @default(autoincrement())
   registrationId  Int
-  registration    Registration  @relation(fields: [registrationId], references: [id], onDelete: Cascade)
   testParameterId Int
-  testParameter   TestParameter @relation(fields: [testParameterId], references: [id], onDelete: Cascade)
   value           String
   createdAt       DateTime      @default(now())
   updatedAt       DateTime      @updatedAt
+  registration    Registration  @relation(fields: [registrationId], references: [id], onDelete: Cascade)
+  testParameter   TestParameter @relation(fields: [testParameterId], references: [id], onDelete: Cascade)
 
   @@unique([registrationId, testParameterId])
+  @@index([testParameterId], map: "PatientResult_testParameterId_fkey")
 }
 
 model Lead {
   id        Int      @id @default(autoincrement())
   contact   String   @unique
-  type      String   // "email" or "mobile"
+  type      String
   createdAt DateTime @default(now())
 }
 
 model AdminAddress {
-  id          Int      @id @default(autoincrement())
-  address1    String?
-  address2    String?
-  city        String?
-  state       String?
-  pincode     String?
-  country     String?
-  adminId     Int      @unique
-  admin       Admin    @relation(fields: [adminId], references: [id], onDelete: Cascade)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id        Int      @id @default(autoincrement())
+  address1  String?
+  address2  String?
+  city      String?
+  state     String?
+  pincode   String?
+  country   String?
+  adminId   Int      @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  admin     Admin    @relation(fields: [adminId], references: [id], onDelete: Cascade)
 }
 
 model RegistrationPayment {
   id             Int          @id @default(autoincrement())
   registrationId Int
-  registration   Registration @relation(fields: [registrationId], references: [id], onDelete: Cascade)
   amount         Decimal      @db.Decimal(10, 2)
   paymentMode    String       @default("Cash")
   paymentRefNo   String?
   remark         String?
   createdAt      DateTime     @default(now())
   updatedAt      DateTime     @updatedAt
+  registration   Registration @relation(fields: [registrationId], references: [id], onDelete: Cascade)
+
+  @@index([registrationId], map: "RegistrationPayment_registrationId_fkey")
 }
 
 model LeadContact {
@@ -366,5 +371,3 @@ model LeadContact {
   createdAt    DateTime  @default(now())
   updatedAt    DateTime  @updatedAt
 }
-
-
