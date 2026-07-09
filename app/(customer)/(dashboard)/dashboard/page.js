@@ -38,7 +38,7 @@ export const dynamic = "force-dynamic";
 
 export default async function AdminDashboardPage({ searchParams }) {
   // Ensure user is admin
-  const admin = await requireAdmin("admin:view");
+  const admin = await requireAdmin("REGISTRATION_READ");
   const params = await searchParams;
   const range = params?.range || "7days";
 

@@ -3,9 +3,49 @@ import { prisma } from "@/lib/db";
 import { requireAdmin } from "@/lib/auth";
 import bcrypt from "bcryptjs";
 
-export async function PUT(req) {
+export async function GET() {
   try {
     const admin = await requireAdmin();
+    const adminRecord = await prisma.admin.findUnique({
+      where: { id: admin.id },
+      include: {
+        role: {
+          include: {
+            permissions: true,
+          },
+        },
+      },
+    });
+
+    if (!adminRecord) {
+      return NextResponse.json({ success: false, error: "Admin profile not found" }, { status: 404 });
+    }
+
+    const permissions = adminRecord.role?.permissions.map(p => p.permission) || [];
+
+    return NextResponse.json({
+      success: true,
+      admin: {
+        id: adminRecord.id,
+        name: adminRecord.name,
+        email: adminRecord.email,
+        companyName: adminRecord.companyName,
+        mobileNumber: adminRecord.mobileNumber,
+        role: {
+          name: adminRecord.role?.name || "Admin",
+          permissions,
+        },
+      },
+    });
+  } catch (error) {
+    console.error("Workspace Admin Profile GET Error:", error);
+    return NextResponse.json({ success: false, error: error.message }, { status: 500 });
+  }
+}
+
+export async function PUT(req) {
+  try {
+    const admin = await requireAdmin("SETTINGS_WRITE");
     const body = await req.json().catch(() => ({}));
     const { name, oldPassword, newPassword, confirmPassword, companyName, mobileNumber } = body;
 

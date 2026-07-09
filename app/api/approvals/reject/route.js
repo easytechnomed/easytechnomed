@@ -5,7 +5,7 @@ import { sendRejectionEmail } from "@/lib/mail";
 
 export async function POST(req) {
   try {
-    await requireAdmin("admin:reject");
+    await requireAdmin("APPROVAL_WRITE");
     const body = await req.json().catch(() => ({}));
     const { userId } = body;
 

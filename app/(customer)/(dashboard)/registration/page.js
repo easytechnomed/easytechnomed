@@ -30,7 +30,8 @@ import {
   DialogContent,
   DialogActions,
   Menu,
-  createFilterOptions
+  createFilterOptions,
+  Tooltip
 } from "@mui/material";
 import {
   Delete as DeleteIcon,
@@ -41,10 +42,13 @@ import {
   Edit as EditIcon
 } from "@mui/icons-material";
 import { useSearchParams, useRouter } from "next/navigation";
+import { useAdminPermissions } from "@/lib/clientAuth";
 
 const filter = createFilterOptions();
 
 export default function RegistrationPage() {
+  const { hasPermission } = useAdminPermissions();
+  const canWrite = hasPermission("REGISTRATION_WRITE");
   // Page states
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -1248,26 +1252,35 @@ export default function RegistrationPage() {
 
             {/* Save / Reset Footer */}
             <Box sx={{ p: 2, display: "flex", flexWrap: "wrap", gap: 1.5 }}>
-              <Button
-                variant="contained"
-                color="primary"
-                fullWidth
-                startIcon={submitting ? <CircularProgress size={20} color="inherit" /> : <SaveIcon />}
-                disabled={submitting}
-                onClick={handleSave}
-              >
-                Save (F10)
-              </Button>
+              <Tooltip title={!canWrite ? "You do not have permission to save registrations" : ""} style={{ width: "100%" }}>
+                <span>
+                  <Button
+                    variant="contained"
+                    color="primary"
+                    fullWidth
+                    startIcon={submitting ? <CircularProgress size={20} color="inherit" /> : <SaveIcon />}
+                    disabled={submitting || !canWrite}
+                    onClick={handleSave}
+                  >
+                    Save (F10)
+                  </Button>
+                </span>
+              </Tooltip>
               <Box sx={{ display: "flex", width: "100%", gap: 1 }}>
-                <Button
-                  variant="outlined"
-                  color="secondary"
-                  fullWidth
-                  startIcon={<RefreshIcon />}
-                  onClick={handleReset}
-                >
-                  Clear Form
-                </Button>
+                <Tooltip title={!canWrite ? "You do not have permission to reset the form" : ""} style={{ width: "100%" }}>
+                  <span>
+                    <Button
+                      variant="outlined"
+                      color="secondary"
+                      fullWidth
+                      startIcon={<RefreshIcon />}
+                      onClick={handleReset}
+                      disabled={!canWrite}
+                    >
+                      Clear Form
+                    </Button>
+                  </span>
+                </Tooltip>
               </Box>
             </Box>
           </Card>
@@ -1346,13 +1359,17 @@ export default function RegistrationPage() {
           <Button onClick={() => setOpenAddDocDialog(false)} color="inherit" disabled={isAddingDoc}>
             Cancel
           </Button>
-          <Button
-            onClick={handleAddDoctorSave}
-            variant="contained"
-            disabled={isAddingDoc || !newDocName.trim()}
-          >
-            {isAddingDoc ? <CircularProgress size={24} /> : "Add & Select"}
-          </Button>
+          <Tooltip title={!canWrite ? "You do not have permission to add doctors" : ""}>
+            <span>
+              <Button
+                onClick={handleAddDoctorSave}
+                variant="contained"
+                disabled={isAddingDoc || !newDocName.trim() || !canWrite}
+              >
+                {isAddingDoc ? <CircularProgress size={24} /> : "Add & Select"}
+              </Button>
+            </span>
+          </Tooltip>
         </DialogActions>
       </Dialog>
 

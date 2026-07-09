@@ -40,7 +40,7 @@ const registrationSchema = z.object({
 
 export async function GET(req) {
   try {
-    const admin = await requireAdmin("admin:view");
+    const admin = await requireAdmin("REGISTRATION_READ");
     const searchParams = req.nextUrl.searchParams;
     const search = searchParams.get("search");
     const startDate = searchParams.get("startDate");
@@ -94,7 +94,7 @@ export async function GET(req) {
 
 export async function POST(req) {
   try {
-    const admin = await requireAdmin("admin:create");
+    const admin = await requireAdmin("REGISTRATION_WRITE");
     const body = await req.json().catch(() => ({}));
     const validatedData = registrationSchema.parse(body);
 

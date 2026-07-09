@@ -51,8 +51,12 @@ import {
   Delete as DeleteIcon
 } from "@mui/icons-material";
 import { useSearchParams, useRouter } from "next/navigation";
+import { useAdminPermissions } from "@/lib/clientAuth";
 
 function SettingsContent() {
+  const { hasPermission } = useAdminPermissions();
+  const canWriteSettings = hasPermission("SETTINGS_WRITE");
+  const canWriteTests = hasPermission("TEST_WRITE");
   const searchParams = useSearchParams();
   const router = useRouter();
   const tab = searchParams.get("tab");
@@ -679,15 +683,19 @@ function SettingsContent() {
             <Divider sx={{ my: 3 }} />
 
             <Box sx={{ display: "flex", justifyContent: "flex-end" }}>
-              <Button
-                variant="contained"
-                onClick={handleProfileUpdate}
-                startIcon={updatingProfile ? <CircularProgress size={16} color="inherit" /> : <SaveIcon />}
-                disabled={updatingProfile}
-                sx={{ px: 4 }}
-              >
-                {updatingProfile ? "Updating..." : "Update Profile"}
-              </Button>
+              <Tooltip title={!canWriteSettings ? "You do not have permission to update profiles" : ""}>
+                <span>
+                  <Button
+                    variant="contained"
+                    onClick={handleProfileUpdate}
+                    startIcon={updatingProfile ? <CircularProgress size={16} color="inherit" /> : <SaveIcon />}
+                    disabled={updatingProfile || !canWriteSettings}
+                    sx={{ px: 4 }}
+                  >
+                    {updatingProfile ? "Updating..." : "Update Profile"}
+                  </Button>
+                </span>
+              </Tooltip>
             </Box>
           </CardContent>
         </Card>
@@ -705,13 +713,18 @@ function SettingsContent() {
                   Create new tests or override baseline pricing specifically for your lab workspace.
                 </Typography>
               </Box>
-              <Button
-                variant="contained"
-                startIcon={<AddIcon />}
-                onClick={() => setOpenAddTestDialog(true)}
-              >
-                Add Custom Test
-              </Button>
+              <Tooltip title={!canWriteTests ? "You do not have permission to add custom tests" : ""}>
+                <span>
+                  <Button
+                    variant="contained"
+                    startIcon={<AddIcon />}
+                    onClick={() => setOpenAddTestDialog(true)}
+                    disabled={!canWriteTests}
+                  >
+                    Add Custom Test
+                  </Button>
+                </span>
+              </Tooltip>
             </Box>
             <Divider sx={{ mb: 3 }} />
 
@@ -741,7 +754,7 @@ function SettingsContent() {
             ) : (
               <>
                 <TableContainer component={Paper} variant="outlined" sx={{ maxHeight: 500 }}>
-                  <Table size="small" stickyHeader>
+                  <Table size="small" stickyHeader sx={{ minWidth: 650 }}>
                     <TableHead>
                       <TableRow>
                         <TableCell sx={{ fontWeight: 700, bgcolor: "grey.50" }}>Test Code</TableCell>
@@ -781,28 +794,34 @@ function SettingsContent() {
                             </TableCell>
                             <TableCell align="center">
                               <Box sx={{ display: "flex", gap: 1, justifyContent: "center" }}>
-                                <Tooltip title="Edit Details & Price">
-                                  <IconButton
-                                    size="small"
-                                    color="primary"
-                                    onClick={() => {
-                                      setEditingTest(test);
-                                      setEditingPrice(String(test.price));
-                                      setEditingName(test.name);
-                                      setOpenEditPriceDialog(true);
-                                    }}
-                                  >
-                                    <EditIcon fontSize="small" />
-                                  </IconButton>
+                                <Tooltip title={!canWriteTests ? "You do not have permission to edit tests" : "Edit Details & Price"}>
+                                  <span>
+                                    <IconButton
+                                      size="small"
+                                      color="primary"
+                                      onClick={() => {
+                                        setEditingTest(test);
+                                        setEditingPrice(String(test.price));
+                                        setEditingName(test.name);
+                                        setOpenEditPriceDialog(true);
+                                      }}
+                                      disabled={!canWriteTests}
+                                    >
+                                      <EditIcon fontSize="small" />
+                                    </IconButton>
+                                  </span>
                                 </Tooltip>
-                                <Tooltip title="Configure Parameters">
-                                  <IconButton
-                                    size="small"
-                                    color="secondary"
-                                    onClick={() => handleOpenParams(test)}
-                                  >
-                                    <ListIcon fontSize="small" />
-                                  </IconButton>
+                                <Tooltip title={!canWriteTests ? "You do not have permission to configure parameters" : "Configure Parameters"}>
+                                  <span>
+                                    <IconButton
+                                      size="small"
+                                      color="secondary"
+                                      onClick={() => handleOpenParams(test)}
+                                      disabled={!canWriteTests}
+                                    >
+                                      <ListIcon fontSize="small" />
+                                    </IconButton>
+                                  </span>
                                 </Tooltip>
                               </Box>
                             </TableCell>
@@ -895,10 +914,12 @@ function SettingsContent() {
                           <PreviewIcon fontSize="small" />
                         </IconButton>
                       </Tooltip>
-                      <Tooltip title="Delete/Clear Template">
-                        <IconButton onClick={handleClearFrame} color="error" size="small" sx={{ bgcolor: "white", boxShadow: "0 2px 5px rgba(0,0,0,0.05)" }}>
-                          <ClearIcon fontSize="small" />
-                        </IconButton>
+                      <Tooltip title={!canWriteSettings ? "You do not have permission to clear templates" : "Delete/Clear Template"}>
+                        <span>
+                          <IconButton onClick={handleClearFrame} color="error" size="small" sx={{ bgcolor: "white", boxShadow: "0 2px 5px rgba(0,0,0,0.05)" }} disabled={!canWriteSettings}>
+                            <ClearIcon fontSize="small" />
+                          </IconButton>
+                        </span>
                       </Tooltip>
                     </Box>
                   ) : (
@@ -906,39 +927,47 @@ function SettingsContent() {
                       <Typography variant="body2" color="text.secondary" sx={{ mb: 2, fontWeight: 500 }}>
                         No background frame PDF configured. Reports will generate on blank white pages.
                       </Typography>
-                      <Button
-                        variant="contained"
-                        component="label"
-                        startIcon={uploading ? <CircularProgress size={16} color="inherit" /> : <UploadIcon />}
-                        disabled={uploading}
-                        sx={{ textTransform: "none", borderRadius: 2 }}
-                      >
-                        {uploading ? "Uploading..." : "Upload Letterhead PDF"}
-                        <input
-                          type="file"
-                          hidden
-                          accept="application/pdf"
-                          onChange={handleFileUpload}
-                        />
-                      </Button>
+                      <Tooltip title={!canWriteSettings ? "You do not have permission to upload PDF templates" : ""}>
+                        <span>
+                          <Button
+                            variant="contained"
+                            component="label"
+                            startIcon={uploading ? <CircularProgress size={16} color="inherit" /> : <UploadIcon />}
+                            disabled={uploading || !canWriteSettings}
+                            sx={{ textTransform: "none", borderRadius: 2 }}
+                          >
+                            {uploading ? "Uploading..." : "Upload Letterhead PDF"}
+                            <input
+                              type="file"
+                              hidden
+                              accept="application/pdf"
+                              onChange={handleFileUpload}
+                            />
+                          </Button>
+                        </span>
+                      </Tooltip>
                     </Box>
                   )}
                   {settings.framePdfUrl && (
-                    <Button
-                      variant="outlined"
-                      component="label"
-                      startIcon={uploading ? <CircularProgress size={16} color="inherit" /> : <UploadIcon />}
-                      disabled={uploading}
-                      sx={{ textTransform: "none", borderRadius: 2, mb: 3 }}
-                    >
-                      {uploading ? "Uploading..." : "Upload Different PDF"}
-                      <input
-                        type="file"
-                        hidden
-                        accept="application/pdf"
-                        onChange={handleFileUpload}
-                      />
-                    </Button>
+                    <Tooltip title={!canWriteSettings ? "You do not have permission to upload PDF templates" : ""}>
+                      <span>
+                        <Button
+                          variant="outlined"
+                          component="label"
+                          startIcon={uploading ? <CircularProgress size={16} color="inherit" /> : <UploadIcon />}
+                          disabled={uploading || !canWriteSettings}
+                          sx={{ textTransform: "none", borderRadius: 2, mb: 3 }}
+                        >
+                          {uploading ? "Uploading..." : "Upload Different PDF"}
+                          <input
+                            type="file"
+                            hidden
+                            accept="application/pdf"
+                            onChange={handleFileUpload}
+                          />
+                        </Button>
+                      </span>
+                    </Tooltip>
                   )}
                 </Box>
 
@@ -1062,15 +1091,19 @@ function SettingsContent() {
             <Divider sx={{ my: 3 }} />
 
             <Box sx={{ display: "flex", justifyContent: "flex-end" }}>
-              <Button
-                variant="contained"
-                onClick={handleSave}
-                startIcon={saving ? <CircularProgress size={16} color="inherit" /> : <SaveIcon />}
-                disabled={saving || uploading}
-                sx={{ px: 4 }}
-              >
-                {saving ? "Saving..." : "Save Settings"}
-              </Button>
+              <Tooltip title={!canWriteSettings ? "You do not have permission to modify settings" : ""}>
+                <span>
+                  <Button
+                    variant="contained"
+                    onClick={handleSave}
+                    startIcon={saving ? <CircularProgress size={16} color="inherit" /> : <SaveIcon />}
+                    disabled={saving || uploading || !canWriteSettings}
+                    sx={{ px: 4 }}
+                  >
+                    {saving ? "Saving..." : "Save Settings"}
+                  </Button>
+                </span>
+              </Tooltip>
             </Box>
           </CardContent>
         </Card>
@@ -1334,23 +1367,31 @@ function SettingsContent() {
               </Box>
             ))}
 
-            <Button variant="outlined" onClick={handleAddParameterRow} startIcon={<AddIcon />} sx={{ mt: 1 }}>
-              Add Parameter Row
-            </Button>
+            <Tooltip title={!canWriteTests ? "You do not have permission to configure tests" : ""}>
+              <span>
+                <Button variant="outlined" onClick={handleAddParameterRow} startIcon={<AddIcon />} sx={{ mt: 1 }} disabled={!canWriteTests}>
+                  Add Parameter Row
+                </Button>
+              </span>
+            </Tooltip>
           </Box>
         </DialogContent>
         <DialogActions sx={{ px: 3, pb: 2 }}>
           <Button onClick={() => setOpenParamsDialog(false)} color="inherit" disabled={savingParams}>
             Cancel
           </Button>
-          <Button
-            onClick={handleSaveParameters}
-            variant="contained"
-            disabled={savingParams || parametersList.length === 0}
-            startIcon={savingParams ? <CircularProgress size={16} color="inherit" /> : <SaveIcon />}
-          >
-            {savingParams ? "Saving..." : "Save Parameters"}
-          </Button>
+          <Tooltip title={!canWriteTests ? "You do not have permission to configure tests" : ""}>
+            <span>
+              <Button
+                onClick={handleSaveParameters}
+                variant="contained"
+                disabled={savingParams || parametersList.length === 0 || !canWriteTests}
+                startIcon={savingParams ? <CircularProgress size={16} color="inherit" /> : <SaveIcon />}
+              >
+                {savingParams ? "Saving..." : "Save Parameters"}
+              </Button>
+            </span>
+          </Tooltip>
         </DialogActions>
       </Dialog>
 

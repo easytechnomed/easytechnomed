@@ -119,12 +119,20 @@ const lightPurpleTheme = createTheme({
 });
 
 const AVAILABLE_PERMISSIONS = [
-  { value: "admin:view", label: "Read Workspace Data (view patient reports, stats)" },
-  { value: "admin:create", label: "Create patient registrations" },
-  { value: "admin:write", label: "Update patient registrations & enter lab parameters" },
-  { value: "admin:delete", label: "Delete patient registrations" },
-  { value: "admin:approve", label: "Approve users" },
-  { value: "admin:reject", label: "Reject users" },
+  { value: "ALL", label: "Full Administrator bypass (unrestricted access)" },
+  { value: "REGISTRATION_READ", label: "View registration records, patient lists & billing history" },
+  { value: "REGISTRATION_WRITE", label: "Create patient registrations, edit records, enter report results & process payments" },
+  { value: "REGISTRATION_DELETE", label: "Delete patient registrations" },
+  { value: "TEST_READ", label: "View baseline tests and pricing" },
+  { value: "TEST_WRITE", label: "Add custom tests, modify pricing, and configure baseline parameters" },
+  { value: "SETTINGS_READ", label: "View workspace settings and office address details" },
+  { value: "SETTINGS_WRITE", label: "Modify settings, upload letterhead PDFs, update addresses, and profiles" },
+  { value: "MEMBER_READ", label: "View workspace members list and roles list" },
+  { value: "MEMBER_WRITE", label: "Create and configure new laboratory admin members" },
+  { value: "DOCTOR_READ", label: "View referral doctors list and access doctor summaries" },
+  { value: "DOCTOR_WRITE", label: "Add and modify doctor referral details" },
+  { value: "APPROVAL_READ", label: "View customer portal registration approvals list" },
+  { value: "APPROVAL_WRITE", label: "Approve/reject customer registrations and assign roles" },
 ];
 
 function SuperAdminDashboard() {

@@ -5,7 +5,7 @@ import bcrypt from "bcryptjs";
 
 export async function GET() {
   try {
-    const admin = await requireAdmin("admin:view");
+    const admin = await requireAdmin("MEMBER_READ");
     const members = await prisma.admin.findMany({
       where: { workspaceId: admin.workspaceId },
       select: {
@@ -33,7 +33,7 @@ export async function GET() {
 
 export async function POST(req) {
   try {
-    const admin = await requireAdmin();
+    const admin = await requireAdmin("MEMBER_WRITE");
     const body = await req.json().catch(() => ({}));
 
     const name = body.name?.trim();

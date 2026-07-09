@@ -4,7 +4,7 @@ import { requireAdmin } from "@/lib/auth";
 
 export async function POST(req) {
   try {
-    await requireAdmin("admin:approve");
+    await requireAdmin("APPROVAL_WRITE");
     const body = await req.json().catch(() => ({}));
     const { userId, roleId } = body;
     const parsedRoleId = parseInt(roleId);

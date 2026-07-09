@@ -4,7 +4,7 @@ import { requireAdmin } from "@/lib/auth";
 
 export async function GET() {
   try {
-    const admin = await requireAdmin();
+    const admin = await requireAdmin("SETTINGS_READ");
     const adminRecord = await prisma.admin.findUnique({
       where: { id: admin.id },
       select: {
@@ -32,7 +32,7 @@ export async function GET() {
 
 export async function POST(req) {
   try {
-    const admin = await requireAdmin();
+    const admin = await requireAdmin("SETTINGS_WRITE");
     const body = await req.json().catch(() => ({}));
     const headerMargin = parseInt(body.headerMargin) || 140;
     const footerMargin = parseInt(body.footerMargin) || 100;

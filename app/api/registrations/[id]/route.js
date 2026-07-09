@@ -40,7 +40,7 @@ const registrationSchema = z.object({
 
 export async function GET(req, { params }) {
   try {
-    const admin = await requireAdmin("admin:view");
+    const admin = await requireAdmin("REGISTRATION_READ");
     const { id } = await params;
     const regId = parseInt(id);
 
@@ -77,7 +77,7 @@ export async function GET(req, { params }) {
 
 export async function PUT(req, { params }) {
   try {
-    const admin = await requireAdmin("admin:write");
+    const admin = await requireAdmin("REGISTRATION_WRITE");
     const { id } = await params;
     const regId = parseInt(id);
     const body = await req.json().catch(() => ({}));
@@ -152,7 +152,7 @@ export async function PUT(req, { params }) {
 
 export async function DELETE(req, { params }) {
   try {
-    const admin = await requireAdmin("admin:delete");
+    const admin = await requireAdmin("REGISTRATION_DELETE");
     const { id } = await params;
     const regId = parseInt(id);
 

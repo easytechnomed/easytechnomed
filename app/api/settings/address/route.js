@@ -4,7 +4,7 @@ import { requireAdmin } from "@/lib/auth";
 
 export async function GET() {
   try {
-    const admin = await requireAdmin();
+    const admin = await requireAdmin("SETTINGS_READ");
 
     const addressRecord = await prisma.adminAddress.findUnique({
       where: { adminId: admin.id },
@@ -29,7 +29,7 @@ export async function GET() {
 
 export async function POST(req) {
   try {
-    const admin = await requireAdmin();
+    const admin = await requireAdmin("SETTINGS_WRITE");
     const body = await req.json().catch(() => ({}));
 
     const { address1, address2, city, state, pincode, country } = body;

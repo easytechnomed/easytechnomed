@@ -4,7 +4,7 @@ import { requireAdmin } from "@/lib/auth";
 
 export async function GET() {
   try {
-    await requireAdmin();
+    await requireAdmin("MEMBER_READ");
     const roles = await prisma.adminRole.findMany({
       where: { isDeleted: false },
       select: { id: true, name: true },

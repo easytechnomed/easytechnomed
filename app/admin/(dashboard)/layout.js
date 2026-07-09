@@ -5,15 +5,16 @@ import AdminLayoutClient from "@/components/AdminLayoutClient";
 export const dynamic = "force-dynamic";
 
 export default async function AdminDashboardLayout({ children }) {
-  // Ensure user is admin with view permissions
-  const admin = await requireAdmin("admin:view");
+  // Ensure user is admin
+  const admin = await requireAdmin();
 
   // Format admin profile safely
   const safeAdmin = {
     id: admin.id,
     name: admin.name,
     email: admin.email,
-    role: admin.role ? { name: admin.role.name } : { name: "Admin" }
+    role: admin.role ? { name: admin.role.name } : { name: "Admin" },
+    permissions: admin.role?.permissions?.map(p => p.permission) || []
   };
 
   return (

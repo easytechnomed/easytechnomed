@@ -25,13 +25,16 @@ import {
   FormControl,
   InputLabel,
   Select,
-  MenuItem
+  MenuItem,
+  Tooltip
 } from "@mui/material";
 import { Add as AddIcon, People as PeopleIcon } from "@mui/icons-material";
 import { toast } from "sonner";
-// Action imports removed - using REST API instead
+import { useAdminPermissions } from "@/lib/clientAuth";
 
 export default function WorkspaceMembersPage() {
+  const { hasPermission } = useAdminPermissions();
+  const canWrite = hasPermission("MEMBER_WRITE");
   const [members, setMembers] = useState([]);
   const [roles, setRoles] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -139,14 +142,19 @@ export default function WorkspaceMembersPage() {
             </Typography>
           </Box>
         </Box>
-        <Button
-          variant="contained"
-          startIcon={<AddIcon />}
-          onClick={handleOpen}
-          sx={{ fontWeight: 600, py: 1, px: 2, width: { xs: "100%", sm: "auto" } }}
-        >
-          Add Workspace Member
-        </Button>
+        <Tooltip title={!canWrite ? "You do not have permission to add members" : ""}>
+          <span>
+            <Button
+              variant="contained"
+              startIcon={<AddIcon />}
+              onClick={handleOpen}
+              disabled={!canWrite}
+              sx={{ fontWeight: 600, py: 1, px: 2, width: { xs: "100%", sm: "auto" } }}
+            >
+              Add Workspace Member
+            </Button>
+          </span>
+        </Tooltip>
       </Box>
 
       {/* Members table */}

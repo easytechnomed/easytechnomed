@@ -25,13 +25,16 @@ import {
   FormControl,
   InputLabel,
   Select,
-  MenuItem
+  MenuItem,
+  Tooltip
 } from "@mui/material";
 import { Add as AddIcon, People as PeopleIcon } from "@mui/icons-material";
 import { toast } from "sonner";
-// Action imports removed - using REST API instead
+import { useAdminPermissions } from "@/lib/clientAuth";
 
 export default function WorkspaceMembersPage() {
+  const { hasPermission } = useAdminPermissions();
+  const canWrite = hasPermission("MEMBER_WRITE");
   const [members, setMembers] = useState([]);
   const [roles, setRoles] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -73,6 +76,7 @@ export default function WorkspaceMembersPage() {
     }
   };
 
+  // Sync data on mount
   useEffect(() => {
     fetchData();
   }, []);
@@ -127,7 +131,7 @@ export default function WorkspaceMembersPage() {
   return (
     <Box sx={{ flexGrow: 1 }}>
       {/* Header section */}
-      <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 4 }}>
+      <Box sx={{ display: "flex", flexDirection: { xs: "column", sm: "row" }, justifyContent: "space-between", alignItems: { xs: "flex-start", sm: "center" }, mb: 4, gap: 2 }}>
         <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
           <PeopleIcon color="primary" sx={{ fontSize: 32 }} />
           <Box>
@@ -139,14 +143,19 @@ export default function WorkspaceMembersPage() {
             </Typography>
           </Box>
         </Box>
-        <Button
-          variant="contained"
-          startIcon={<AddIcon />}
-          onClick={handleOpen}
-          sx={{ fontWeight: 600, py: 1, px: 2 }}
-        >
-          Add Workspace Member
-        </Button>
+        <Tooltip title={!canWrite ? "You do not have permission to add members" : ""}>
+          <span>
+            <Button
+              variant="contained"
+              startIcon={<AddIcon />}
+              onClick={handleOpen}
+              disabled={!canWrite}
+              sx={{ fontWeight: 600, py: 1, px: 2, width: { xs: "100%", sm: "auto" } }}
+            >
+              Add Workspace Member
+            </Button>
+          </span>
+        </Tooltip>
       </Box>
 
       {/* Members table */}
@@ -158,7 +167,7 @@ export default function WorkspaceMembersPage() {
             </Box>
           ) : (
             <TableContainer component={Paper} elevation={0}>
-              <Table>
+              <Table sx={{ minWidth: 650 }}>
                 <TableHead sx={{ bgcolor: "grey.50" }}>
                   <TableRow>
                     <TableCell sx={{ fontWeight: 700 }}>Name</TableCell>

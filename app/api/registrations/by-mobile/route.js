@@ -9,7 +9,7 @@ function serializeData(data) {
 
 export async function GET(req) {
   try {
-    const admin = await requireAdmin("admin:view");
+    const admin = await requireAdmin("REGISTRATION_READ");
     const searchParams = req.nextUrl.searchParams;
     const mobileNo = searchParams.get("mobileNo");
 

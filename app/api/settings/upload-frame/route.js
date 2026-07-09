@@ -4,7 +4,7 @@ import { uploadFileToR2 } from "@/lib/r2";
 
 export async function POST(req) {
   try {
-    await requireAdmin();
+    await requireAdmin("SETTINGS_WRITE");
     const formData = await req.formData();
     const file = formData.get("file");
 

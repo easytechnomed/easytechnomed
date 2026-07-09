@@ -4,7 +4,7 @@ import { requireAdmin } from "@/lib/auth";
 
 export async function GET() {
   try {
-    await requireAdmin("admin:view");
+    await requireAdmin("APPROVAL_READ");
     const users = await prisma.user.findMany({
       orderBy: { createdAt: "desc" },
       include: { role: true },

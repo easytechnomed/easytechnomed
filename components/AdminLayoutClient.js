@@ -19,11 +19,14 @@ import {
   Avatar,
   Menu,
   MenuItem,
+  MenuList,
   Button,
   useMediaQuery,
   ThemeProvider,
   createTheme,
-  CssBaseline
+  CssBaseline,
+  Popper,
+  Paper
 } from "@mui/material";
 import {
   Menu as MenuIcon,
@@ -90,8 +93,43 @@ const theme = createTheme({
 
 export default function AdminLayoutClient({ admin, children }) {
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [desktopOpen, setDesktopOpen] = useState(true);
   const [isClosing, setIsClosing] = useState(false);
   const [anchorEl, setAnchorEl] = useState(null);
+  const [hoverAnchorEl, setHoverAnchorEl] = useState(null);
+  const [hoveredItem, setHoveredItem] = useState(null);
+  const hoverTimeoutRef = React.useRef(null);
+
+  const handleItemHover = (event, item) => {
+    if (!isDrawerExpanded && item.subItems) {
+      if (hoverTimeoutRef.current) {
+        clearTimeout(hoverTimeoutRef.current);
+      }
+      setHoverAnchorEl(event.currentTarget);
+      setHoveredItem(item);
+    }
+  };
+
+  const handleItemLeave = () => {
+    if (!isDrawerExpanded) {
+      hoverTimeoutRef.current = setTimeout(() => {
+        setHoverAnchorEl(null);
+        setHoveredItem(null);
+      }, 300);
+    }
+  };
+
+  const handleMenuEnter = () => {
+    if (hoverTimeoutRef.current) {
+      clearTimeout(hoverTimeoutRef.current);
+    }
+  };
+
+  const handleMenuLeave = () => {
+    setHoverAnchorEl(null);
+    setHoveredItem(null);
+  };
+
   const pathname = usePathname();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -99,9 +137,15 @@ export default function AdminLayoutClient({ admin, children }) {
   const [mounted, setMounted] = useState(false);
   useEffect(() => {
     setMounted(true);
-  }, []);
+    if (admin) {
+      sessionStorage.setItem("admin_profile", JSON.stringify(admin));
+    }
+  }, [admin]);
 
   const isMdUp = useMediaQuery(theme.breakpoints.up("md"));
+
+  const currentDrawerWidth = isMdUp ? (desktopOpen ? drawerWidth : 72) : drawerWidth;
+  const isDrawerExpanded = isMdUp ? desktopOpen : true;
 
   const handleDrawerClose = () => {
     setIsClosing(true);
@@ -113,8 +157,12 @@ export default function AdminLayoutClient({ admin, children }) {
   };
 
   const handleDrawerToggle = () => {
-    if (!isClosing) {
-      setMobileOpen(!mobileOpen);
+    if (isMdUp) {
+      setDesktopOpen(!desktopOpen);
+    } else {
+      if (!isClosing) {
+        setMobileOpen(!mobileOpen);
+      }
     }
   };
 
@@ -157,9 +205,13 @@ export default function AdminLayoutClient({ admin, children }) {
   ];
 
   const drawerContent = (
-    <Box sx={{ height: "100%", display: "flex", flexDirection: "column" }}>
-      <Toolbar sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", px: [2] }}>
-        <Box component="img" src="/logo/logobg.png" alt="PathLab Logo" sx={{ height: 64, width: "100%", borderRadius: "4px" }} />
+    <Box sx={{ height: "100%", display: "flex", flexDirection: "column", overflowX: "hidden" }}>
+      <Toolbar sx={{ display: "flex", alignItems: "center", justifyContent: isDrawerExpanded ? "space-between" : "center", px: [2] }}>
+        {isDrawerExpanded ? (
+          <Box component="img" src="/logo/logobg.png" alt="PathLab Logo" sx={{ height: 48, width: "auto", maxWidth: "100%", borderRadius: "4px" }} />
+        ) : (
+          <Box component="img" src="/android-chrome-512x512.png" alt="Logo" sx={{ height: 36, width: 36, borderRadius: "6px" }} />
+        )}
 
         {mounted && !isMdUp && (
           <IconButton onClick={handleDrawerClose}>
@@ -168,8 +220,8 @@ export default function AdminLayoutClient({ admin, children }) {
         )}
       </Toolbar>
       <Divider />
-      <Box sx={{ overflow: "auto", flexGrow: 1, py: 2 }}>
-        <List sx={{ px: 2 }}>
+      <Box sx={{ overflowY: "auto", overflowX: "hidden", flexGrow: 1, py: 2 }}>
+        <List sx={{ px: isDrawerExpanded ? 2 : 1 }}>
           {menuItems.map((item) => {
             const isAdmin = pathname.startsWith("/admin");
             const cleanPath = isAdmin ? pathname.slice(6) || "/" : pathname;
@@ -181,12 +233,15 @@ export default function AdminLayoutClient({ admin, children }) {
                   <Link href={itemHref} style={{ textDecoration: "none", width: "100%" }}>
                     <ListItemButton
                       onClick={() => mounted && !isMdUp && handleDrawerClose()}
+                      onMouseEnter={(e) => handleItemHover(e, item)}
+                      onMouseLeave={handleItemLeave}
                       sx={{
                         borderRadius: "8px",
                         py: 1.2,
-                        px: 2,
+                        px: 2.5,
                         backgroundColor: isActive ? "primary.light" : "transparent",
                         color: isActive ? "primary.contrastText" : "text.secondary",
+                        justifyContent: isDrawerExpanded ? "initial" : "center",
                         "&:hover": {
                           backgroundColor: isActive ? "primary.main" : "rgba(15, 118, 110, 0.08)",
                           color: isActive ? "primary.contrastText" : "primary.main",
@@ -194,17 +249,32 @@ export default function AdminLayoutClient({ admin, children }) {
                             color: isActive ? "primary.contrastText" : "primary.main",
                           },
                         },
-                        "& .MuiListItemIcon-root": {
-                          color: isActive ? "primary.contrastText" : "text.secondary",
-                          minWidth: 40,
-                        },
                       }}
                     >
-                      <ListItemIcon sx={{ color: isActive ? "primary.contrastText" : "text.secondary" }}>
+                      <ListItemIcon
+                        sx={{
+                          color: isActive ? "primary.contrastText" : "text.secondary",
+                          display: "flex",
+                          justifyContent: "center",
+                          minWidth: 0,
+                          mr: isDrawerExpanded ? 3 : "auto",
+                        }}
+                      >
                         {item.icon}
                       </ListItemIcon>
                       <ListItemText
                         primary={item.text}
+                        sx={{
+                          opacity: isDrawerExpanded ? 1 : 0,
+                          whiteSpace: "nowrap",
+                          overflow: "hidden",
+                          width: isDrawerExpanded ? "auto" : 0,
+                          transition: (theme) =>
+                            theme.transitions.create("opacity", {
+                              easing: theme.transitions.easing.sharp,
+                              duration: theme.transitions.duration.shorter,
+                            }),
+                        }}
                         primaryTypographyProps={{
                           fontWeight: isActive ? 700 : 500,
                           fontSize: "0.9rem",
@@ -213,7 +283,7 @@ export default function AdminLayoutClient({ admin, children }) {
                     </ListItemButton>
                   </Link>
                 </ListItem>
-                {item.subItems && (
+                {isDrawerExpanded && item.subItems && (
                   <List component="div" disablePadding sx={{ pl: 4, mb: 1 }}>
                     {item.subItems.map((sub) => {
                       const searchParamsStr = sub.path.split("?")[1] || "";
@@ -291,13 +361,17 @@ export default function AdminLayoutClient({ admin, children }) {
         <AppBar
           position="fixed"
           sx={{
-            width: { md: `calc(100% - ${drawerWidth}px)` },
-            ml: { md: `${drawerWidth}px` },
+            width: { md: `calc(100% - ${currentDrawerWidth}px)` },
+            ml: { md: `${currentDrawerWidth}px` },
             backgroundColor: "background.paper",
             color: "text.primary",
             boxShadow: "0 1px 3px 0 rgba(0,0,0,0.05)",
             borderBottom: "1px solid",
             borderColor: "divider",
+            transition: (theme) => theme.transitions.create(["width", "margin"], {
+              easing: theme.transitions.easing.sharp,
+              duration: theme.transitions.duration.enteringScreen,
+            }),
           }}
         >
           <Toolbar sx={{ justifyContent: "space-between", px: 3 }}>
@@ -307,7 +381,7 @@ export default function AdminLayoutClient({ admin, children }) {
                 aria-label="open drawer"
                 edge="start"
                 onClick={handleDrawerToggle}
-                sx={{ mr: 2, display: { md: "none" } }}
+                sx={{ mr: 2 }}
               >
                 <MenuIcon />
               </IconButton>
@@ -369,7 +443,14 @@ export default function AdminLayoutClient({ admin, children }) {
         {/* Sidebar Drawer */}
         <Box
           component="nav"
-          sx={{ width: { md: drawerWidth }, flexShrink: { md: 0 } }}
+          sx={{
+            width: { md: currentDrawerWidth },
+            flexShrink: { md: 0 },
+            transition: (theme) => theme.transitions.create("width", {
+              easing: theme.transitions.easing.sharp,
+              duration: theme.transitions.duration.enteringScreen,
+            })
+          }}
           aria-label="mailbox folders"
         >
           {/* Temporary Drawer for Mobile */}
@@ -393,7 +474,17 @@ export default function AdminLayoutClient({ admin, children }) {
             variant="permanent"
             sx={{
               display: { xs: "none", md: "block" },
-              "& .MuiDrawer-paper": { boxSizing: "border-box", width: drawerWidth, borderRight: "1px solid", borderColor: "divider" },
+              "& .MuiDrawer-paper": {
+                boxSizing: "border-box",
+                width: currentDrawerWidth,
+                borderRight: "1px solid",
+                borderColor: "divider",
+                overflowX: "hidden",
+                transition: (theme) => theme.transitions.create("width", {
+                  easing: theme.transitions.easing.sharp,
+                  duration: theme.transitions.duration.enteringScreen,
+                }),
+              },
             }}
             open
           >
@@ -407,15 +498,84 @@ export default function AdminLayoutClient({ admin, children }) {
           sx={{
             flexGrow: 1,
             p: { xs: 1.5, sm: 3 },
-            width: { md: `calc(100% - ${drawerWidth}px)` },
+            width: { md: `calc(100% - ${currentDrawerWidth}px)` },
             minWidth: 0,
             mt: "64px",
             backgroundColor: "background.default",
             minHeight: "calc(100vh - 64px)",
+            transition: (theme) => theme.transitions.create(["width", "margin"], {
+              easing: theme.transitions.easing.sharp,
+              duration: theme.transitions.duration.enteringScreen,
+            }),
           }}
         >
           {children}
         </Box>
+
+        {/* Floating Submenu for Collapsed Drawer */}
+        <Popper
+          open={Boolean(hoverAnchorEl)}
+          anchorEl={hoverAnchorEl}
+          placement="right-start"
+          style={{ zIndex: 1400 }}
+        >
+          <Paper
+            onMouseEnter={handleMenuEnter}
+            onMouseLeave={handleMenuLeave}
+            sx={{
+              boxShadow: "0 4px 20px rgba(0,0,0,0.08)",
+              border: "1px solid",
+              borderColor: "divider",
+              minWidth: 180,
+              py: 0.5,
+              ml: 0.5
+            }}
+          >
+            <Box sx={{ px: 2, py: 0.8, bgcolor: "rgba(15, 118, 110, 0.04)" }}>
+              <Typography variant="caption" sx={{ fontWeight: 700, color: "primary.main", textTransform: "uppercase", letterSpacing: 0.5 }}>
+                {hoveredItem?.text}
+              </Typography>
+            </Box>
+            <Divider sx={{ opacity: 0.6 }} />
+            <MenuList>
+              {hoveredItem?.subItems?.map((sub) => {
+                const isAdmin = pathname.startsWith("/admin");
+                const cleanPath = isAdmin ? pathname.slice(6) || "/" : pathname;
+                const searchParamsStr = sub.path.split("?")[1] || "";
+                const tabName = searchParamsStr.split("=")[1] || "";
+                const currentTab = searchParams.get("tab") || (cleanPath === "/settings" ? "profile" : "");
+                const isSubActive = sub.path.includes("?")
+                  ? (cleanPath === "/settings" && currentTab === tabName)
+                  : (cleanPath === sub.path || cleanPath.startsWith(sub.path + "/"));
+                const subHref = isAdmin ? `/admin${sub.path}` : sub.path;
+
+                return (
+                  <MenuItem
+                    key={sub.text}
+                    onClick={() => {
+                      handleMenuLeave();
+                      router.push(subHref);
+                    }}
+                    sx={{
+                      py: 1,
+                      px: 2,
+                      fontSize: "0.825rem",
+                      fontWeight: isSubActive ? 700 : 500,
+                      color: isSubActive ? "primary.main" : "text.secondary",
+                      backgroundColor: isSubActive ? "rgba(15, 118, 110, 0.08)" : "transparent",
+                      "&:hover": {
+                        backgroundColor: "rgba(15, 118, 110, 0.04)",
+                        color: "primary.main"
+                      }
+                    }}
+                  >
+                    {sub.text}
+                  </MenuItem>
+                );
+              })}
+            </MenuList>
+          </Paper>
+        </Popper>
       </Box>
     </ThemeProvider>
   );

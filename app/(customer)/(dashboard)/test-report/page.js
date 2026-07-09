@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { useAdminPermissions } from "@/lib/clientAuth";
 import {
   Box,
   Card,
@@ -492,6 +493,9 @@ const getTestChip = (reg) => {
 
 export default function TestReportPage() {
   const router = useRouter();
+  const { hasPermission } = useAdminPermissions();
+  const canWrite = hasPermission("REGISTRATION_WRITE");
+  const canDelete = hasPermission("REGISTRATION_DELETE");
   const [registrations, setRegistrations] = useState([]);
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);
@@ -1458,17 +1462,25 @@ export default function TestReportPage() {
 
               <Divider sx={{ my: 0.5, opacity: 0.6 }} />
 
-              <Button size="small" variant="text" sx={menuButtonStyle} startIcon={<EditIcon />} onClick={handleEditRegistration}>
-                Edit
-              </Button>
+              <Tooltip title={!canWrite ? "You do not have permission to edit registrations" : ""}>
+                <span>
+                  <Button size="small" variant="text" sx={menuButtonStyle} startIcon={<EditIcon />} onClick={handleEditRegistration} disabled={!canWrite}>
+                    Edit
+                  </Button>
+                </span>
+              </Tooltip>
               {/*
               <Button size="small" variant="text" sx={dangerMenuButtonStyle} startIcon={<CancelIcon />} onClick={() => triggerAction("Cancel")}>
                 Cancel
               </Button>
               */}
-              <Button size="small" variant="text" sx={dangerMenuButtonStyle} startIcon={<DeleteIcon />} onClick={handleDeleteRegistration}>
-                Delete
-              </Button>
+              <Tooltip title={!canDelete ? "You do not have permission to delete registrations" : ""}>
+                <span>
+                  <Button size="small" variant="text" sx={dangerMenuButtonStyle} startIcon={<DeleteIcon />} onClick={handleDeleteRegistration} disabled={!canDelete}>
+                    Delete
+                  </Button>
+                </span>
+              </Tooltip>
             </Box>
 
             {/* Vertical Divider & Right Column commented out since they are not used */}
@@ -1677,15 +1689,19 @@ export default function TestReportPage() {
         </DialogContent>
         <DialogActions sx={{ px: 3, pb: 2 }}>
           <Button onClick={() => setSampleDialogOpen(false)} variant="outlined" size="small">Cancel</Button>
-          <Button
-            onClick={handleSaveSamples}
-            variant="contained"
-            size="small"
-            startIcon={sampleSaving ? <CircularProgress size={16} color="inherit" /> : <SaveIcon />}
-            disabled={sampleSaving}
-          >
-            Save Samples
-          </Button>
+          <Tooltip title={!canWrite ? "You do not have permission to modify samples" : ""}>
+            <span>
+              <Button
+                onClick={handleSaveSamples}
+                variant="contained"
+                size="small"
+                startIcon={sampleSaving ? <CircularProgress size={16} color="inherit" /> : <SaveIcon />}
+                disabled={sampleSaving || !canWrite}
+              >
+                Save Samples
+              </Button>
+            </span>
+          </Tooltip>
         </DialogActions>
       </Dialog>
 
@@ -1865,15 +1881,19 @@ export default function TestReportPage() {
           </DialogContent>
           <DialogActions sx={{ px: 3, pb: 2 }}>
             <Button onClick={() => setResultDialogOpen(false)} variant="outlined" size="small">Cancel</Button>
-            <Button
-              onClick={handleSaveResults}
-              variant="contained"
-              size="small"
-              startIcon={resultSaving ? <CircularProgress size={16} color="inherit" /> : <SaveIcon />}
-              disabled={resultSaving}
-            >
-              Save Results & Complete
-            </Button>
+            <Tooltip title={!canWrite ? "You do not have permission to enter results" : ""}>
+              <span>
+                <Button
+                  onClick={handleSaveResults}
+                  variant="contained"
+                  size="small"
+                  startIcon={resultSaving ? <CircularProgress size={16} color="inherit" /> : <SaveIcon />}
+                  disabled={resultSaving || !canWrite}
+                >
+                  Save Results & Complete
+                </Button>
+              </span>
+            </Tooltip>
           </DialogActions>
         </Dialog>
       )}
@@ -1999,9 +2019,13 @@ export default function TestReportPage() {
           </DialogContent>
           <DialogActions sx={{ px: 3, pb: 2 }}>
             <Button onClick={() => setConfigDialogOpen(false)} variant="outlined" size="small">Cancel</Button>
-            <Button onClick={handleSaveConfigParameters} variant="contained" size="small" startIcon={<SaveIcon />}>
-              Save Parameters Setup
-            </Button>
+            <Tooltip title={!canWrite ? "You do not have permission to save configuration parameters" : ""}>
+              <span>
+                <Button onClick={handleSaveConfigParameters} variant="contained" size="small" startIcon={<SaveIcon />} disabled={!canWrite}>
+                  Save Parameters Setup
+                </Button>
+              </span>
+            </Tooltip>
           </DialogActions>
         </Dialog>
       )}
@@ -2441,15 +2465,19 @@ export default function TestReportPage() {
                 Cancel
               </Button>
               <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
-                <Button
-                  variant="contained"
-                  onClick={handleSavePayment}
-                  startIcon={savingPayment ? <CircularProgress size={16} color="inherit" /> : <SaveIcon />}
-                  disabled={savingPayment}
-                  sx={{ px: 4 }}
-                >
-                  {savingPayment ? "Saving..." : "Save"}
-                </Button>
+                <Tooltip title={!canWrite ? "You do not have permission to process payments" : ""}>
+                  <span>
+                    <Button
+                      variant="contained"
+                      onClick={handleSavePayment}
+                      startIcon={savingPayment ? <CircularProgress size={16} color="inherit" /> : <SaveIcon />}
+                      disabled={savingPayment || !canWrite}
+                      sx={{ px: 4 }}
+                    >
+                      {savingPayment ? "Saving..." : "Save"}
+                    </Button>
+                  </span>
+                </Tooltip>
 
                 <Tooltip title="Print Receipt">
                   <IconButton onClick={() => handlePrintReceipt(selectedRegistration)} color="primary">

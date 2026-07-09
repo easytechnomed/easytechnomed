@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { useAdminPermissions } from "@/lib/clientAuth";
 import {
   Box,
   Card,
@@ -61,7 +62,6 @@ import {
   ReceiptLong as ReceiptIcon,
   Payment as PaymentIcon,
   Block as CancelIcon,
-  BorderColor as EditInplaceIcon,
   Notifications as ReminderIcon,
   CloudUpload as UploadIcon,
   PersonAdd as PersonAddIcon,
@@ -493,6 +493,9 @@ const getTestChip = (reg) => {
 
 export default function TestReportPage() {
   const router = useRouter();
+  const { hasPermission } = useAdminPermissions();
+  const canWrite = hasPermission("REGISTRATION_WRITE");
+  const canDelete = hasPermission("REGISTRATION_DELETE");
   const [registrations, setRegistrations] = useState([]);
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);
@@ -642,7 +645,7 @@ export default function TestReportPage() {
       const res = await fetch(`/api/registrations/${reg.id}`).then((r) => r.json());
       if (res.success && res.registration) {
         setSelectedRegistration(res.registration);
-        
+
         // Initialize inputs
         const total = parseFloat(res.registration.totalAmount || 0);
         const discount = parseFloat(res.registration.discountAmount || 0);
@@ -720,8 +723,6 @@ export default function TestReportPage() {
     if (!reg) return;
     window.open(`/api/print-bill/${reg.id}`, "_blank");
   };
-
-
 
   const triggerAction = (actionName) => {
     handleCloseMenu();
@@ -1189,7 +1190,7 @@ export default function TestReportPage() {
           <Table size="small" sx={{ minWidth: 800 }}>
             <TableHead sx={{ bgcolor: "#e2e8f0" }}>
               <TableRow>
-                <TableCell sx={{ fontWeight: 700, fontSize: "0.82rem", width: "50px" }}>SLNO</TableCell>
+                <TableCell sx={{ fontWeight: 700, fontSize: "0.82rem", width: "50px" }}>SNO</TableCell>
                 <TableCell sx={{ fontWeight: 700, fontSize: "0.82rem", width: "60px" }} align="center">Actions</TableCell>
                 <TableCell sx={{ fontWeight: 700, fontSize: "0.82rem" }}>Reg.Date</TableCell>
                 <TableCell sx={{ fontWeight: 700, fontSize: "0.82rem" }}>Reg.No</TableCell>
@@ -1274,8 +1275,10 @@ export default function TestReportPage() {
         <Box
           sx={{
             display: "flex",
+            flexDirection: { xs: "column", sm: "row" },
             justifyContent: "space-between",
             alignItems: "center",
+            gap: { xs: 2, sm: 0 },
             p: 2,
             borderTop: "1px solid",
             borderColor: "divider",
@@ -1290,7 +1293,7 @@ export default function TestReportPage() {
           </Typography>
 
           {/* Right Side Controls */}
-          <Box sx={{ display: "flex", alignItems: "center", gap: 3 }}>
+          <Box sx={{ display: "flex", flexWrap: "wrap", justifyContent: "center", alignItems: "center", gap: { xs: 2, sm: 3 } }}>
             {/* Rows per page Selector */}
             <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
               <Typography variant="body2" sx={{ color: "text.secondary", fontWeight: 500, fontSize: "0.82rem" }}>
@@ -1399,7 +1402,7 @@ export default function TestReportPage() {
             }
           }}
         >
-          <Box sx={{ mb: 1.5 }}>
+          <Box sx={{ mb: 1.5, p: 1 }}>
             <Typography variant="subtitle1" sx={{ fontWeight: 800, color: "text.primary", lineHeight: 1.2 }}>
               {selectedReg.title} {selectedReg.name}
             </Typography>
@@ -1459,20 +1462,25 @@ export default function TestReportPage() {
 
               <Divider sx={{ my: 0.5, opacity: 0.6 }} />
 
-              <Button size="small" variant="text" sx={menuButtonStyle} startIcon={<EditIcon />} onClick={handleEditRegistration}>
-                Edit
-              </Button>
+              <Tooltip title={!canWrite ? "You do not have permission to edit registrations" : ""}>
+                <span>
+                  <Button size="small" variant="text" sx={menuButtonStyle} startIcon={<EditIcon />} onClick={handleEditRegistration} disabled={!canWrite}>
+                    Edit
+                  </Button>
+                </span>
+              </Tooltip>
               {/*
-              <Button size="small" variant="text" sx={menuButtonStyle} startIcon={<EditInplaceIcon />} onClick={() => triggerAction("Edit Inplace")}>
-                Edit Inplace
-              </Button>
               <Button size="small" variant="text" sx={dangerMenuButtonStyle} startIcon={<CancelIcon />} onClick={() => triggerAction("Cancel")}>
                 Cancel
               </Button>
               */}
-              <Button size="small" variant="text" sx={dangerMenuButtonStyle} startIcon={<DeleteIcon />} onClick={handleDeleteRegistration}>
-                Delete
-              </Button>
+              <Tooltip title={!canDelete ? "You do not have permission to delete registrations" : ""}>
+                <span>
+                  <Button size="small" variant="text" sx={dangerMenuButtonStyle} startIcon={<DeleteIcon />} onClick={handleDeleteRegistration} disabled={!canDelete}>
+                    Delete
+                  </Button>
+                </span>
+              </Tooltip>
             </Box>
 
             {/* Vertical Divider & Right Column commented out since they are not used */}
@@ -1681,15 +1689,19 @@ export default function TestReportPage() {
         </DialogContent>
         <DialogActions sx={{ px: 3, pb: 2 }}>
           <Button onClick={() => setSampleDialogOpen(false)} variant="outlined" size="small">Cancel</Button>
-          <Button
-            onClick={handleSaveSamples}
-            variant="contained"
-            size="small"
-            startIcon={sampleSaving ? <CircularProgress size={16} color="inherit" /> : <SaveIcon />}
-            disabled={sampleSaving}
-          >
-            Save Samples
-          </Button>
+          <Tooltip title={!canWrite ? "You do not have permission to modify samples" : ""}>
+            <span>
+              <Button
+                onClick={handleSaveSamples}
+                variant="contained"
+                size="small"
+                startIcon={sampleSaving ? <CircularProgress size={16} color="inherit" /> : <SaveIcon />}
+                disabled={sampleSaving || !canWrite}
+              >
+                Save Samples
+              </Button>
+            </span>
+          </Tooltip>
         </DialogActions>
       </Dialog>
 
@@ -1869,15 +1881,19 @@ export default function TestReportPage() {
           </DialogContent>
           <DialogActions sx={{ px: 3, pb: 2 }}>
             <Button onClick={() => setResultDialogOpen(false)} variant="outlined" size="small">Cancel</Button>
-            <Button
-              onClick={handleSaveResults}
-              variant="contained"
-              size="small"
-              startIcon={resultSaving ? <CircularProgress size={16} color="inherit" /> : <SaveIcon />}
-              disabled={resultSaving}
-            >
-              Save Results & Complete
-            </Button>
+            <Tooltip title={!canWrite ? "You do not have permission to enter results" : ""}>
+              <span>
+                <Button
+                  onClick={handleSaveResults}
+                  variant="contained"
+                  size="small"
+                  startIcon={resultSaving ? <CircularProgress size={16} color="inherit" /> : <SaveIcon />}
+                  disabled={resultSaving || !canWrite}
+                >
+                  Save Results & Complete
+                </Button>
+              </span>
+            </Tooltip>
           </DialogActions>
         </Dialog>
       )}
@@ -2003,9 +2019,13 @@ export default function TestReportPage() {
           </DialogContent>
           <DialogActions sx={{ px: 3, pb: 2 }}>
             <Button onClick={() => setConfigDialogOpen(false)} variant="outlined" size="small">Cancel</Button>
-            <Button onClick={handleSaveConfigParameters} variant="contained" size="small" startIcon={<SaveIcon />}>
-              Save Parameters Setup
-            </Button>
+            <Tooltip title={!canWrite ? "You do not have permission to save configuration parameters" : ""}>
+              <span>
+                <Button onClick={handleSaveConfigParameters} variant="contained" size="small" startIcon={<SaveIcon />} disabled={!canWrite}>
+                  Save Parameters Setup
+                </Button>
+              </span>
+            </Tooltip>
           </DialogActions>
         </Dialog>
       )}
@@ -2246,7 +2266,7 @@ export default function TestReportPage() {
             {/* Content (Scrollable) */}
             <Box sx={{ flexGrow: 1, overflowY: "auto", p: 3 }}>
               <Grid container spacing={3}>
-                
+
                 {/* Left Column - Patient & Previous Payments */}
                 <Grid size={{ xs: 12, md: 6 }}>
                   <Card variant="outlined" sx={{ mb: 3, borderRadius: 2, bgcolor: "grey.50" }}>
@@ -2445,15 +2465,19 @@ export default function TestReportPage() {
                 Cancel
               </Button>
               <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
-                <Button
-                  variant="contained"
-                  onClick={handleSavePayment}
-                  startIcon={savingPayment ? <CircularProgress size={16} color="inherit" /> : <SaveIcon />}
-                  disabled={savingPayment}
-                  sx={{ px: 4 }}
-                >
-                  {savingPayment ? "Saving..." : "Save"}
-                </Button>
+                <Tooltip title={!canWrite ? "You do not have permission to process payments" : ""}>
+                  <span>
+                    <Button
+                      variant="contained"
+                      onClick={handleSavePayment}
+                      startIcon={savingPayment ? <CircularProgress size={16} color="inherit" /> : <SaveIcon />}
+                      disabled={savingPayment || !canWrite}
+                      sx={{ px: 4 }}
+                    >
+                      {savingPayment ? "Saving..." : "Save"}
+                    </Button>
+                  </span>
+                </Tooltip>
 
                 <Tooltip title="Print Receipt">
                   <IconButton onClick={() => handlePrintReceipt(selectedRegistration)} color="primary">

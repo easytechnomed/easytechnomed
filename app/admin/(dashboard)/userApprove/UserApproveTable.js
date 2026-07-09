@@ -4,6 +4,7 @@ import React, { useState, useTransition } from "react";
 import { toast } from "sonner";
 import { Search, Check, X, Clock, ShieldCheck, LogOut } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { useAdminPermissions } from "@/lib/clientAuth";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/Card";
 import { Table, TableHeader, TableBody, TableHead, TableRow, TableCell } from "@/components/ui/Table";
 import { Button } from "@/components/ui/Button";
@@ -13,6 +14,8 @@ import { Avatar } from "@/components/ui/Avatar";
 
 export default function UserApproveTable({ initialUsers = [], roles = [] }) {
   const router = useRouter();
+  const { hasPermission } = useAdminPermissions();
+  const canApprove = hasPermission("APPROVAL_WRITE");
   const [users, setUsers] = useState(initialUsers);
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
@@ -159,11 +162,11 @@ export default function UserApproveTable({ initialUsers = [], roles = [] }) {
             Manage incoming registration requests and assign dynamic user roles
           </p>
         </div>
-        <div className="flex gap-3">
-          <Button variant="outline" className="border-slate-300 text-slate-700 bg-white hover:bg-slate-50" onClick={() => router.push("/dashboard")}>
+        <div className="flex flex-wrap gap-3 w-full sm:w-auto">
+          <Button variant="outline" className="border-slate-300 text-slate-700 bg-white hover:bg-slate-50 flex-1 sm:flex-initial" onClick={() => router.push("/dashboard")}>
             Admin Dashboard
           </Button>
-          <Button variant="outline" className="border-slate-300 text-slate-700 bg-white hover:bg-slate-50" onClick={handleLogout}>
+          <Button variant="outline" className="border-slate-300 text-slate-700 bg-white hover:bg-slate-50 flex-1 sm:flex-initial" onClick={handleLogout}>
             <LogOut className="mr-2 h-4 w-4" />
             Logout Admin
           </Button>
@@ -197,7 +200,8 @@ export default function UserApproveTable({ initialUsers = [], roles = [] }) {
 
       {/* Table Container */}
       <Card className="glass overflow-hidden shadow-sm">
-        <Table>
+        <div className="overflow-x-auto">
+          <Table>
           <TableHeader>
             <TableRow>
               <TableHead>User Details</TableHead>
@@ -225,8 +229,9 @@ export default function UserApproveTable({ initialUsers = [], roles = [] }) {
                     <select
                       className="rounded border border-slate-300 bg-white px-2 py-1 text-xs text-slate-700 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 font-medium"
                       value={user.roleId}
-                      disabled={pendingActionId?.id === user.id && pendingActionId?.type === "role"}
+                      disabled={(pendingActionId?.id === user.id && pendingActionId?.type === "role") || !canApprove}
                       onChange={(e) => handleRoleChange(user.id, e.target.value)}
+                      title={!canApprove ? "You do not have permission to change roles" : ""}
                     >
                       {roles.map((r) => (
                         <option key={r.id} value={r.id}>
@@ -258,6 +263,8 @@ export default function UserApproveTable({ initialUsers = [], roles = [] }) {
                           variant="default"
                           className="bg-emerald-600 hover:bg-emerald-700 text-white"
                           onClick={() => handleApprove(user.id)}
+                          disabled={!canApprove}
+                          title={!canApprove ? "You do not have permission to approve users" : ""}
                           isLoading={
                             pendingActionId?.id === user.id &&
                             pendingActionId?.type === "approve"
@@ -271,6 +278,8 @@ export default function UserApproveTable({ initialUsers = [], roles = [] }) {
                           size="sm"
                           variant="destructive"
                           onClick={() => handleReject(user.id)}
+                          disabled={!canApprove}
+                          title={!canApprove ? "You do not have permission to reject users" : ""}
                           isLoading={
                             pendingActionId?.id === user.id &&
                             pendingActionId?.type === "reject"
@@ -292,6 +301,7 @@ export default function UserApproveTable({ initialUsers = [], roles = [] }) {
             )}
           </TableBody>
         </Table>
+        </div>
       </Card>
     </div>
   );

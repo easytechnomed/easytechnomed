@@ -9,7 +9,7 @@ function serializeData(data) {
 
 export async function GET(req, { params }) {
   try {
-    const admin = await requireAdmin("admin:view");
+    const admin = await requireAdmin("REGISTRATION_READ");
     const { id } = await params;
     const registrationId = parseInt(id);
 
@@ -46,7 +46,7 @@ export async function GET(req, { params }) {
 
 export async function POST(req, { params }) {
   try {
-    await requireAdmin("admin:write");
+    await requireAdmin("REGISTRATION_WRITE");
     const { id } = await params;
     const testId = parseInt(id); // Dynamic ID parameter represents testId in parameters configuration
     const body = await req.json().catch(() => ({}));

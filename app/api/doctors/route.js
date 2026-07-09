@@ -9,7 +9,7 @@ function serializeData(data) {
 
 export async function GET() {
   try {
-    const admin = await requireAdmin("admin:view");
+    const admin = await requireAdmin("DOCTOR_READ");
     const doctors = await prisma.doctor.findMany({
       where: { workspaceId: admin.workspaceId },
       orderBy: { name: "asc" },
@@ -23,7 +23,7 @@ export async function GET() {
 
 export async function POST(req) {
   try {
-    const admin = await requireAdmin("admin:write");
+    const admin = await requireAdmin("DOCTOR_WRITE");
     const body = await req.json().catch(() => ({}));
     const { name, code, incentivePercent, degree, address, clinicName } = body;
 

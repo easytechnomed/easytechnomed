@@ -7,7 +7,7 @@ export const dynamic = "force-dynamic";
 
 export default async function AdminUserApprovePage() {
   // Ensure user is authenticated and has admin privileges
-  await requireAdmin("admin:view");
+  await requireAdmin("APPROVAL_READ");
 
   // Fetch all registered users
   const users = await prisma.user.findMany({

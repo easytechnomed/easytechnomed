@@ -9,7 +9,7 @@ function serializeData(data) {
 
 export async function GET(req) {
   try {
-    const admin = await requireAdmin("admin:view");
+    const admin = await requireAdmin("TEST_READ");
     const searchParams = req.nextUrl.searchParams;
     const pageParam = searchParams.get("page");
     const limitParam = searchParams.get("limit");
@@ -100,7 +100,7 @@ export async function GET(req) {
 
 export async function POST(req) {
   try {
-    const admin = await requireAdmin("admin:write");
+    const admin = await requireAdmin("TEST_WRITE");
     const body = await req.json().catch(() => ({}));
     const { name, code, price } = body;
 
@@ -181,7 +181,7 @@ export async function POST(req) {
 
 export async function PUT(req) {
   try {
-    const admin = await requireAdmin("admin:write");
+    const admin = await requireAdmin("TEST_WRITE");
     const body = await req.json().catch(() => ({}));
     const { testId, price, name } = body;
 
@@ -283,7 +283,7 @@ export async function PUT(req) {
 
 export async function DELETE(req) {
   try {
-    const admin = await requireAdmin("admin:write");
+    const admin = await requireAdmin("TEST_WRITE");
     const searchParams = req.nextUrl.searchParams;
     let testId = searchParams.get("id") || searchParams.get("testId");
 

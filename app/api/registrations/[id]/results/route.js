@@ -4,7 +4,7 @@ import { requireAdmin } from "@/lib/auth";
 
 export async function POST(req, { params }) {
   try {
-    const admin = await requireAdmin("admin:write");
+    const admin = await requireAdmin("REGISTRATION_WRITE");
     const { id } = await params;
     const registrationId = parseInt(id);
     const body = await req.json().catch(() => ({}));
