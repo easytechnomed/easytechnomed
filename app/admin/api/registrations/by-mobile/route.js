@@ -48,6 +48,9 @@ export async function GET(req) {
 
     return NextResponse.json({ success: true, patients: serializeData(patients) });
   } catch (error) {
+    if (error.message === "NEXT_REDIRECT" || (error.digest && error.digest.startsWith("NEXT_REDIRECT"))) {
+      throw error;
+    }
     console.error("Workspace Registrations GET by mobile Error:", error);
     return NextResponse.json({ success: false, error: error.message }, { status: 500 });
   }
