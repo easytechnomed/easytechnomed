@@ -46,8 +46,8 @@ const CustomTooltip = ({ active, payload, label, isCurrency }) => {
 
 export function RegistrationChart({ data }) {
   return (
-    <Box sx={{ width: "100%", height: 200, mt: 2 }}>
-      <ResponsiveContainer width="100%" height="100%">
+    <Box sx={{ width: "100%", height: 200, mt: 2, minWidth: 0 }}>
+      <ResponsiveContainer width="99%" height="100%">
         <BarChart
           data={data}
           margin={{ top: 10, right: 5, left: -25, bottom: 0 }}
@@ -97,8 +97,8 @@ export function RevenueChart({ data }) {
   };
 
   return (
-    <Box sx={{ width: "100%", height: 200, mt: 2 }}>
-      <ResponsiveContainer width="100%" height="100%">
+    <Box sx={{ width: "100%", height: 200, mt: 2, minWidth: 0 }}>
+      <ResponsiveContainer width="99%" height="100%">
         <BarChart
           data={data}
           margin={{ top: 10, right: 5, left: -20, bottom: 0 }}

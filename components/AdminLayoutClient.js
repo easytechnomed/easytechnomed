@@ -406,8 +406,9 @@ export default function AdminLayoutClient({ admin, children }) {
           component="main"
           sx={{
             flexGrow: 1,
-            p: 3,
+            p: { xs: 1.5, sm: 3 },
             width: { md: `calc(100% - ${drawerWidth}px)` },
+            minWidth: 0,
             mt: "64px",
             backgroundColor: "background.default",
             minHeight: "calc(100vh - 64px)",

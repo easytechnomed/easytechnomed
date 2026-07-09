@@ -243,7 +243,7 @@ export default async function AdminDashboardPage({ searchParams }) {
   ];
 
   return (
-    <Box sx={{ flexGrow: 1 }}>
+    <Box sx={{ flexGrow: 1, overflowX: "hidden" }}>
       {/* Header Overview */}
       <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 2, mb: 4 }}>
         <Box>
