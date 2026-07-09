@@ -10,11 +10,6 @@ export default function manifest() {
     orientation: "portrait",
     icons: [
       {
-        src: "/favicon.ico",
-        sizes: "any",
-        type: "image/x-icon",
-      },
-      {
         src: "/android-chrome-192x192.png",
         sizes: "192x192",
         type: "image/png",
