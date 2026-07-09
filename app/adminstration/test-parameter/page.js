@@ -54,7 +54,8 @@ import {
   Search as SearchIcon,
   Info as InfoIcon,
   Edit as EditIcon,
-  Add as AddIcon
+  Add as AddIcon,
+  DragIndicator as DragIndicatorIcon
 } from "@mui/icons-material";
 import { toast } from "sonner";
 
@@ -164,6 +165,44 @@ export default function DefaultTestsPage() {
   const [initialParameters, setInitialParameters] = useState([]);
   const [saving, setSaving] = useState(false);
   const [parameterDictionary, setParameterDictionary] = useState([]);
+  const [draggedIndex, setDraggedIndex] = useState(null);
+
+  const handleDragStart = (e, index) => {
+    setDraggedIndex(index);
+    e.dataTransfer.effectAllowed = "move";
+    e.dataTransfer.setData("text/plain", index);
+  };
+
+  const handleDragEnd = () => {
+    setDraggedIndex(null);
+  };
+
+  const handleDragOver = (e) => {
+    e.preventDefault();
+  };
+
+  const handleDrop = (e, targetIndex) => {
+    e.preventDefault();
+    const sourceIndex = parseInt(e.dataTransfer.getData("text/plain"), 10);
+    if (isNaN(sourceIndex) || sourceIndex === targetIndex) return;
+
+    setEditForm((prev) => {
+      const updatedParams = [...prev.parameters];
+      const [movedParam] = updatedParams.splice(sourceIndex, 1);
+      updatedParams.splice(targetIndex, 0, movedParam);
+
+      // Auto adjust order sequence based on index (1-based index)
+      const reSequencedParams = updatedParams.map((param, idx) => ({
+        ...param,
+        order: (idx + 1).toString()
+      }));
+
+      return {
+        ...prev,
+        parameters: reSequencedParams
+      };
+    });
+  };
 
   const fetchTests = async (currentPage = page, query = searchQuery) => {
     setLoading(true);
@@ -336,10 +375,17 @@ export default function DefaultTestsPage() {
   };
 
   const handleRemoveParamRow = (index) => {
-    setEditForm(prev => ({
-      ...prev,
-      parameters: prev.parameters.filter((_, idx) => idx !== index)
-    }));
+    setEditForm(prev => {
+      const filtered = prev.parameters.filter((_, idx) => idx !== index);
+      const reSequenced = filtered.map((param, idx) => ({
+        ...param,
+        order: (idx + 1).toString()
+      }));
+      return {
+        ...prev,
+        parameters: reSequenced
+      };
+    });
   };
 
   const handleParamChange = (index, field, value) => {
@@ -939,6 +985,7 @@ export default function DefaultTestsPage() {
                 <Table size="small" stickyHeader sx={{ minWidth: 2000 }}>
                   <TableHead>
                     <TableRow>
+                      <TableCell align="center" sx={{ fontWeight: 700, width: 30, bgcolor: "#f8fafc" }}></TableCell>
                       <TableCell align="center" sx={{ fontWeight: 700, width: 40, bgcolor: "#f8fafc" }}>#</TableCell>
                       <TableCell sx={{ fontWeight: 700, width: 260, bgcolor: "#f8fafc" }}>Parameter Name *</TableCell>
                       <TableCell sx={{ fontWeight: 700, width: 170, bgcolor: "#f8fafc" }}>Unit</TableCell>
@@ -968,13 +1015,34 @@ export default function DefaultTestsPage() {
                   <TableBody>
                     {editForm.parameters.length === 0 ? (
                       <TableRow>
-                        <TableCell colSpan={15} align="center" sx={{ py: 6, color: "text.secondary" }}>
+                        <TableCell colSpan={16} align="center" sx={{ py: 6, color: "text.secondary" }}>
                           No parameters added yet. Click "Add Parameter" to start.
                         </TableCell>
                       </TableRow>
                     ) : (
                       editForm.parameters.map((param, index) => (
-                        <TableRow key={index} hover sx={{ '&:hover': { bgcolor: "rgba(0,0,0,0.01)" } }}>
+                        <TableRow
+                          key={index}
+                          hover
+                          onDragOver={handleDragOver}
+                          onDrop={(e) => handleDrop(e, index)}
+                          sx={{
+                            opacity: draggedIndex === index ? 0.4 : 1,
+                            bgcolor: draggedIndex === index ? "rgba(124, 58, 237, 0.04)" : "inherit",
+                            '&:hover': { bgcolor: "rgba(0,0,0,0.01)" }
+                          }}
+                        >
+                          <TableCell align="center" sx={{ width: 30, p: 0.5 }}>
+                            <IconButton
+                              size="small"
+                              sx={{ cursor: "grab", color: "text.secondary" }}
+                              draggable
+                              onDragStart={(e) => handleDragStart(e, index)}
+                              onDragEnd={handleDragEnd}
+                            >
+                              <DragIndicatorIcon fontSize="small" />
+                            </IconButton>
+                          </TableCell>
                           <TableCell align="center" sx={{ fontWeight: 700 }}>{index + 1}</TableCell>
 
                           {/* Name */}

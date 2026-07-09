@@ -31,21 +31,22 @@ export default function Hero({
     return (
         <Box
             sx={{
-                minHeight: "100vh",
-                pt: { xs: 12, md: 14 },
-                pb: { xs: 6, md: 8 },
+                minHeight: { xs: "auto", md: "calc(100dvh - 64px)" },
+                mt: "64px",
                 display: "flex",
                 alignItems: "center",
                 background: "radial-gradient(circle at 10% 20%, rgba(20, 184, 166, 0.05) 0%, rgba(255, 255, 255, 0) 60%)",
                 position: "relative",
-                overflow: "hidden"
+                overflow: "hidden",
+                pt: { xs: 6, md: 0 },
+                pb: { xs: 0, md: 0 }
             }}
         >
             <Container maxWidth="xl">
-                <Grid container spacing={{ xs: 6, md: 8 }} sx={{ alignItems: "center" }}>
+                <Grid container spacing={{ xs: 6, md: 8 }} alignItems="center">
                     {/* Hero Left Content */}
-                    <Grid size={{ xs: 12, md: 6, lg: 8 }}>
-                        <Box sx={{ pr: { md: 4 }, display: "flex", flexDirection: "column", gap: 3 }}>
+                    <Grid size={{ xs: 12, md: 7, lg: 7 }} sx={{ position: "relative", zIndex: 2 }}>
+                        <Box sx={{ pr: { md: 4 }, display: "flex", flexDirection: "column", gap: 3, pt: 2 }}>
                             {/* Badges/Chips */}
                             <Chip
                                 icon={<OfferIcon sx={{ fontSize: "0.95rem !important", color: "primary.main" }} />}
@@ -238,59 +239,85 @@ export default function Hero({
                         </Box>
                     </Grid>
 
-                    {/* Hero Right Mockup Image */}
-                    <Grid size={{ xs: 12, md: 6, lg: 4 }}>
+                    {/* Hero Right Column containing mockup */}
+                    <Grid
+                        size={{ xs: 12, md: 5, lg: 5 }}
+                        sx={{
+                            position: "relative",
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            width: "100%"
+                        }}
+                    >
                         <Box
                             sx={{
-                                position: "relative",
-                                display: "flex",
-                                justifyContent: "center",
-                                alignItems: "center"
+                                position: { xs: "relative", md: "absolute" },
+                                right: { xs: "auto", md: "-15%", lg: "-20%" },
+                                top: { xs: "auto", md: "50%" },
+                                transform: { xs: "none", md: "translateY(-50%) translateZ(0)" },
+                                width: { xs: "100%", md: "135%", lg: "140%" },
+                                maxWidth: "840px",
+                                zIndex: 1,
+                                opacity: 1,
+                                mt: { xs: 4, md: 0 },
+                                px: 0,
+                                pointerEvents: { xs: "auto", md: "none" }
                             }}
                         >
-                            {/* Decorative glowing gradient blur */}
                             <Box
                                 sx={{
-                                    position: "absolute",
-                                    width: "85%",
-                                    height: "85%",
-                                    bgcolor: "rgba(20, 184, 166, 0.15)",
-                                    filter: "blur(60px)",
-                                    borderRadius: "50%",
-                                    zIndex: 1
-                                }}
-                            />
-
-                            {/* Main Mockup Card */}
-                            <Card
-                                sx={{
-                                    zIndex: 2,
-                                    overflow: "hidden",
-                                    border: "1px solid rgba(15, 118, 110, 0.12)",
-                                    boxShadow: "0 20px 45px -15px rgba(15, 118, 110, 0.2)",
-                                    borderRadius: "20px",
+                                    position: "relative",
+                                    display: "flex",
+                                    justifyContent: "center",
+                                    alignItems: "center",
                                     width: "100%",
-                                    maxWidth: "580px",
-                                    transition: "transform 0.4s ease",
-                                    "&:hover": {
-                                        transform: "scale(1.01)"
-                                    }
+                                    height: "100%"
                                 }}
                             >
+                                {/* Decorative glowing gradient blur */}
                                 <Box
-                                    component="img"
-                                    src="/landing/test report table.png"
-                                    alt="EasyTechnoMed Dashboard Preview"
                                     sx={{
-                                        width: "100%",
-                                        height: "auto",
-                                        display: "block",
-                                        maxHeight: { xs: 300, sm: 450, md: 600 },
-                                        objectFit: "cover",
-                                        objectPosition: "top"
+                                        position: "absolute",
+                                        width: "90%",
+                                        height: "90%",
+                                        bgcolor: "rgba(20, 184, 166, 0.08)",
+                                        filter: "blur(50px)",
+                                        borderRadius: "50%",
+                                        zIndex: 1
                                     }}
                                 />
-                            </Card>
+
+                                {/* Main Mockup Card */}
+                                <Card
+                                    sx={{
+                                        zIndex: 2,
+                                        overflow: "hidden",
+                                        border: { xs: "none", md: "1px solid rgba(15, 118, 110, 0.08)" },
+                                        boxShadow: { xs: "none", md: "0 20px 40px -15px rgba(0,0,0,0.1)" },
+                                        borderRadius: { xs: "0px", md: "16px" },
+                                        width: "100%",
+                                        transform: "translateZ(0)",
+                                        willChange: "transform",
+                                        transition: "transform 0.3s ease, box-shadow 0.3s ease",
+                                        "&:hover": {
+                                            transform: "scale(1.015) translateZ(0)"
+                                        }
+                                    }}
+                                >
+                                    <Box
+                                        component="img"
+                                        src="/landing/test report table.png"
+                                        alt="EasyTechnoMed Dashboard Preview"
+                                        sx={{
+                                            width: "100%",
+                                            height: "auto",
+                                            display: "block",
+                                            objectFit: "cover"
+                                        }}
+                                    />
+                                </Card>
+                            </Box>
                         </Box>
                     </Grid>
                 </Grid>
