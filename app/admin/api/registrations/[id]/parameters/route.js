@@ -73,6 +73,9 @@ export async function GET(req, { params }) {
 
     return NextResponse.json({ success: true, registration: serializeRegistration(registration) });
   } catch (error) {
+    if (error.message === "NEXT_REDIRECT" || (error.digest && error.digest.startsWith("NEXT_REDIRECT"))) {
+      throw error;
+    }
     console.error("Workspace Registration Parameters GET Error:", error);
     return NextResponse.json({ success: false, error: error.message }, { status: 500 });
   }
@@ -147,6 +150,9 @@ export async function POST(req, { params }) {
 
     return NextResponse.json({ success: true, message: "Parameters updated successfully." });
   } catch (error) {
+    if (error.message === "NEXT_REDIRECT" || (error.digest && error.digest.startsWith("NEXT_REDIRECT"))) {
+      throw error;
+    }
     console.error("Workspace Registration Parameters POST Error:", error);
     return NextResponse.json({ success: false, error: error.message }, { status: 500 });
   }
