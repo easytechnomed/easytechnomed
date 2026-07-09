@@ -18,16 +18,16 @@ import {
 import { Shield as ShieldIcon } from "@mui/icons-material";
 // Action import removed - using REST API instead
 
-// Custom dark theme for superadmin
-const darkTheme = createTheme({
+// Custom light theme for superadmin
+const lightTheme = createTheme({
   palette: {
-    mode: "dark",
+    mode: "light",
     primary: {
-      main: "#14b8a6", // Teal 500
+      main: "#7c3aed", // Violet 600
     },
     background: {
-      default: "#0f172a", // Slate 900
-      paper: "#1e293b", // Slate 800
+      default: "#f5f3ff", // Soft light violet background
+      paper: "#ffffff", // Pure white paper card
     },
   },
   typography: {
@@ -68,7 +68,7 @@ export default function SuperAdminLoginPage() {
   };
 
   return (
-    <ThemeProvider theme={darkTheme}>
+    <ThemeProvider theme={lightTheme}>
       <CssBaseline />
       <Box
         sx={{
@@ -80,21 +80,38 @@ export default function SuperAdminLoginPage() {
           p: 2,
         }}
       >
-        <Card sx={{ maxWidth: 420, width: "100%", borderRadius: 4, boxShadow: "0 10px 25px -5px rgba(0, 0, 0, 0.3)" }}>
+        <Card sx={{ maxWidth: 420, width: "100%", borderRadius: 4, boxShadow: "0 10px 25px -5px rgba(0, 0, 0, 0.05)" }}>
           <CardContent sx={{ p: 4, display: "flex", flexDirection: "column", alignItems: "center" }}>
             <Box
+              component="img"
+              src="/logo/logobg.png"
+              alt="PathLab Logo"
               sx={{
-                p: 1.5,
-                borderRadius: 3,
-                bgcolor: "rgba(20, 184, 166, 0.1)",
+                height: 54,
+                width: "auto",
+                mb: 3,
+                borderRadius: "4px"
+              }}
+            />
+
+            <Box
+              sx={{
+                p: 0.8,
+                px: 2,
+                borderRadius: 2,
+                bgcolor: "rgba(124, 58, 237, 0.08)",
                 color: "primary.main",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
+                gap: 1,
                 mb: 2.5,
               }}
             >
-              <ShieldIcon sx={{ fontSize: 36 }} />
+              <ShieldIcon sx={{ fontSize: 18 }} />
+              <Typography variant="caption" sx={{ fontWeight: 800, letterSpacing: 0.5, textTransform: "uppercase" }}>
+                Secure Access
+              </Typography>
             </Box>
 
             <Typography variant="h5" sx={{ fontWeight: 800, mb: 1, textAlign: "center" }}>

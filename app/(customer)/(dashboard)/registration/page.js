@@ -260,14 +260,30 @@ export default function RegistrationPage() {
 
   // Handle discount updates
   const handleDiscountPercentChange = (val) => {
-    const pct = parseFloat(val) || 0;
+    if (val === "") {
+      setDiscountPercent("");
+      setDiscountAmount("");
+      return;
+    }
+    let pct = parseFloat(val);
+    if (isNaN(pct)) return;
+    if (pct > 100) pct = 100;
+    if (pct < 0) pct = 0;
     setDiscountPercent(pct);
     const amt = parseFloat(((totalTestsAmount * pct) / 100).toFixed(2));
     setDiscountAmount(amt);
   };
 
   const handleDiscountAmountChange = (val) => {
-    const amt = parseFloat(val) || 0;
+    if (val === "") {
+      setDiscountAmount("");
+      setDiscountPercent("");
+      return;
+    }
+    let amt = parseFloat(val);
+    if (isNaN(amt)) return;
+    if (amt > totalTestsAmount) amt = totalTestsAmount;
+    if (amt < 0) amt = 0;
     setDiscountAmount(amt);
     const pct = totalTestsAmount > 0 ? parseFloat(((amt / totalTestsAmount) * 100).toFixed(2)) : 0;
     setDiscountPercent(pct);
@@ -1172,7 +1188,7 @@ export default function RegistrationPage() {
                     size="small"
                     type="number"
                     value={collectionCharge}
-                    onChange={(e) => setCollectionCharge(Number(e.target.value) || 0)}
+                    onChange={(e) => setCollectionCharge(e.target.value)}
                   />
                 </Grid>
 
@@ -1203,7 +1219,7 @@ export default function RegistrationPage() {
                     fullWidth
                     size="small"
                     type="number"
-                    value={totalBillAmount - discountAmount}
+                    value={totalBillAmount - (Number(discountAmount) || 0)}
                     disabled
                   />
                 </Grid>
@@ -1215,7 +1231,7 @@ export default function RegistrationPage() {
                     size="small"
                     type="number"
                     value={receivedAmount}
-                    onChange={(e) => setReceivedAmount(Number(e.target.value) || 0)}
+                    onChange={(e) => setReceivedAmount(e.target.value)}
                   />
                 </Grid>
 

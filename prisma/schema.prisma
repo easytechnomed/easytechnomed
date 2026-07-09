@@ -350,3 +350,16 @@ model RegistrationPayment {
   updatedAt      DateTime     @updatedAt
 }
 
+model LeadContact {
+  id           Int       @id @default(autoincrement())
+  name         String
+  emailOrPhone String
+  message      String?   @db.Text
+  isRead       Boolean   @default(false)
+  isDeleted    Boolean   @default(false)
+  deletedAt    DateTime?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+}
+
+

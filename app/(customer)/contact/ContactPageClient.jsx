@@ -31,19 +31,15 @@ export default function ContactPage() {
 
     setLoading(true);
     try {
-      // Submitting using client lead endpoint
-      const res = await fetch("/api/leads", {
+      // Submitting to the new contact API
+      const res = await fetch("/api/contact", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          name: formData.name,
-          contact: formData.emailOrPhone,
-          message: formData.message
-        }),
+        body: JSON.stringify(formData),
       }).then((r) => r.json());
 
       if (res.success) {
-        toast.success("Thank you for contacting us! Our team will get back to you shortly.");
+        toast.success(res.message);
         setFormData({ name: "", emailOrPhone: "", message: "" });
       } else {
         toast.error(res.message || "Failed to submit request.");
@@ -57,11 +53,11 @@ export default function ContactPage() {
   };
 
   return (
-    <Box>
+    <Box sx={{ bgcolor: "background.default", minHeight: "100vh" }}>
       {/* Hero Banner */}
       <Box
         sx={{
-          background: "linear-gradient(180deg, rgba(15, 118, 110, 0.08) 0%, rgba(248, 250, 252, 0) 100%)",
+          background: "radial-gradient(circle at 10% 20%, rgba(20, 184, 166, 0.05) 0%, rgba(255, 255, 255, 0) 60%)",
           color: "text.primary",
           pt: { xs: 18, md: 22 },
           pb: { xs: 10, md: 14 },
@@ -79,8 +75,9 @@ export default function ContactPage() {
       </Box>
 
       {/* Form and info split */}
-      <Container maxWidth="lg" sx={{ py: { xs: 8, md: 12 } }}>
-        <Grid container spacing={6}>
+      <Box sx={{ bgcolor: "#ffffff", py: { xs: 8, md: 12 } }}>
+        <Container maxWidth="lg">
+          <Grid container spacing={6}>
           
           {/* Left Side: Contact Information cards */}
           <Grid size={{ xs: 12, md: 5 }} sx={{ display: "flex", flexDirection: "column", gap: 3.5 }}>
@@ -99,7 +96,7 @@ export default function ContactPage() {
 
             <Card variant="outlined" sx={{ border: "1px solid rgba(0,0,0,0.06)", bgcolor: "background.paper" }}>
               <CardContent sx={{ p: 3, display: "flex", alignItems: "center", gap: 2.5 }}>
-                <Box sx={{ p: 1.5, borderRadius: 2, bgcolor: "rgba(15,118,110,0.06)", color: "primary.main", display: "inline-flex" }}>
+                <Box sx={{ p: 1.5, borderRadius: 2, bgcolor: "rgba(20, 184, 166, 0.06)", color: "primary.main", display: "inline-flex" }}>
                   <EmailIcon />
                 </Box>
                 <Box>
@@ -186,6 +183,7 @@ export default function ContactPage() {
 
         </Grid>
       </Container>
+      </Box>
     </Box>
   );
 }

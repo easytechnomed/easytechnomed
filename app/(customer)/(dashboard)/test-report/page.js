@@ -2363,13 +2363,20 @@ export default function TestReportPage() {
                   <Card variant="outlined" sx={{ borderRadius: 2 }}>
                     <CardContent sx={{ p: 3, display: "flex", flexDirection: "column", gap: 2 }}>
                       <Box sx={{ display: "flex", justifyContent: "space-between" }}>
-                        <Typography variant="body2" sx={{ fontWeight: 600 }}>Total Amount:</Typography>
-                        <Typography variant="body2" sx={{ fontWeight: 700 }}>₹{parseFloat(selectedRegistration.totalAmount).toFixed(2)}</Typography>
+                        <Typography variant="body2" sx={{ color: "text.secondary" }}>Subtotal (Tests):</Typography>
+                        <Typography variant="body2" sx={{ fontWeight: 600 }}>₹{parseFloat(selectedRegistration.totalAmount).toFixed(2)}</Typography>
                       </Box>
+
+                      {parseFloat(selectedRegistration.collectionCharge || 0) > 0 && (
+                        <Box sx={{ display: "flex", justifyContent: "space-between" }}>
+                          <Typography variant="body2" sx={{ color: "text.secondary" }}>Collection Charge:</Typography>
+                          <Typography variant="body2" sx={{ fontWeight: 600 }}>₹{parseFloat(selectedRegistration.collectionCharge).toFixed(2)}</Typography>
+                        </Box>
+                      )}
 
                       <Box sx={{ display: "flex", gap: 2 }}>
                         <TextField
-                          label="Dis%"
+                          label="Discount %"
                           size="small"
                           type="number"
                           value={discountPercentInput}
@@ -2378,7 +2385,7 @@ export default function TestReportPage() {
                           fullWidth
                         />
                         <TextField
-                          label="Discount Amount"
+                          label="Discount ₹"
                           size="small"
                           type="number"
                           value={discountInput}
@@ -2387,9 +2394,16 @@ export default function TestReportPage() {
                         />
                       </Box>
 
+                      <Box sx={{ display: "flex", justifyContent: "space-between", borderTop: "1px dashed", borderColor: "divider", pt: 1.5 }}>
+                        <Typography variant="body2" sx={{ fontWeight: 600 }}>Net Bill Amount:</Typography>
+                        <Typography variant="body2" sx={{ fontWeight: 700, color: "primary.main" }}>
+                          ₹{(parseFloat(selectedRegistration.totalAmount || 0) + parseFloat(selectedRegistration.collectionCharge || 0) - (parseFloat(discountInput) || 0)).toFixed(2)}
+                        </Typography>
+                      </Box>
+
                       <Box sx={{ display: "flex", justifyContent: "space-between" }}>
                         <Typography variant="body2" sx={{ color: "text.secondary" }}>Already Paid:</Typography>
-                        <Typography variant="body2" sx={{ fontWeight: 600 }}>₹{parseFloat(selectedRegistration.receivedAmount).toFixed(2)}</Typography>
+                        <Typography variant="body2" sx={{ fontWeight: 600, color: "success.main" }}>₹{parseFloat(selectedRegistration.receivedAmount).toFixed(2)}</Typography>
                       </Box>
 
                       <TextField
@@ -2404,7 +2418,7 @@ export default function TestReportPage() {
                       <Box sx={{ display: "flex", justifyContent: "space-between", bgcolor: "error.lighter", p: 1, borderRadius: 1 }}>
                         <Typography variant="subtitle2" sx={{ color: "error.main", fontWeight: 700 }}>Due Amount:</Typography>
                         <Typography variant="subtitle2" sx={{ color: "error.main", fontWeight: 800 }}>
-                          ₹{Math.max(0, parseFloat(selectedRegistration.totalAmount) - discountInput - parseFloat(selectedRegistration.receivedAmount) - receivedInput).toFixed(2)}
+                          ₹{Math.max(0, (parseFloat(selectedRegistration.totalAmount || 0) + parseFloat(selectedRegistration.collectionCharge || 0)) - (parseFloat(discountInput) || 0) - parseFloat(selectedRegistration.receivedAmount || 0) - (parseFloat(receivedInput) || 0)).toFixed(2)}
                         </Typography>
                       </Box>
 

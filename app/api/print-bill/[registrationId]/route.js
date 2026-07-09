@@ -122,8 +122,13 @@ export async function GET(req, { params }) {
       ? `${addr.address1 || ""}, ${addr.address2 || ""}, ${addr.city || ""}-${addr.pincode || ""}, ${addr.state || ""}, ${addr.country || ""}`
       : "Address details not configured";
 
-    const receivedAmt = parseFloat(reg.receivedAmount || 0);
-    const receivedWords = numberToWords(receivedAmt);
+    const subtotal = reg.tests?.reduce((sum, t) => sum + parseFloat(t.test?.price || 0), 0) || 0;
+    const collCharge = parseFloat(reg.collectionCharge || 0);
+    const discAmount = parseFloat(reg.discountAmount || 0);
+    const discPercent = parseFloat(reg.discountPercent || 0);
+    const netAmount = subtotal + collCharge - discAmount;
+    const paidAmount = parseFloat(reg.receivedAmount || 0);
+    const dueAmount = parseFloat(reg.dueAmount || 0);
 
     const testRows = reg.tests?.map((t, idx) => `
       <tr>
@@ -144,6 +149,9 @@ export async function GET(req, { params }) {
 
     const qrPaymentData = `${req.nextUrl.origin}/api/print-bill/${reg.id}`;
     const qrPaymentUrl = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(qrPaymentData)}`;
+
+    const receivedAmt = parseFloat(reg.receivedAmount || 0);
+    const receivedWords = numberToWords(receivedAmt);
 
     const htmlContent = `
       <html>
@@ -230,13 +238,37 @@ export async function GET(req, { params }) {
               ${testRows}
               <tr class="total-row">
                 <td colspan="2"></td>
-                <td align="right">Total :</td>
-                <td align="right" style="font-family: monospace;">₹${parseFloat(reg.totalAmount).toFixed(2)}</td>
+                <td align="right" style="white-space: nowrap;">Subtotal:</td>
+                <td align="right" style="font-family: monospace;">₹${subtotal.toFixed(2)}</td>
+              </tr>
+              ${collCharge > 0 ? `
+              <tr class="total-row">
+                <td colspan="2"></td>
+                <td align="right" style="white-space: nowrap;">Collection Charge:</td>
+                <td align="right" style="font-family: monospace;">₹${collCharge.toFixed(2)}</td>
+              </tr>
+              ` : ''}
+              ${discAmount > 0 ? `
+              <tr class="total-row" style="color: #16a34a;">
+                <td colspan="2"></td>
+                <td align="right" style="white-space: nowrap;">Discount ${discPercent > 0 ? `(${discPercent}%)` : ''}:</td>
+                <td align="right" style="font-family: monospace;">-₹${discAmount.toFixed(2)}</td>
+              </tr>
+              ` : ''}
+              <tr class="total-row" style="border-top: 1px double #000; border-bottom: 1px double #000;">
+                <td colspan="2"></td>
+                <td align="right" style="white-space: nowrap;">Net Amount:</td>
+                <td align="right" style="font-family: monospace;">₹${netAmount.toFixed(2)}</td>
               </tr>
               <tr class="total-row">
                 <td colspan="2"></td>
-                <td align="right">Due :</td>
-                <td align="right" style="font-family: monospace;">₹${parseFloat(reg.dueAmount).toFixed(2)}</td>
+                <td align="right" style="white-space: nowrap;">Paid:</td>
+                <td align="right" style="font-family: monospace; color: #047857;">₹${paidAmount.toFixed(2)}</td>
+              </tr>
+              <tr class="total-row" style="color: #b91c1c;">
+                <td colspan="2"></td>
+                <td align="right" style="white-space: nowrap;">Due:</td>
+                <td align="right" style="font-family: monospace;">₹${dueAmount.toFixed(2)}</td>
               </tr>
             </tbody>
           </table>
