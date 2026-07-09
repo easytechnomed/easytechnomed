@@ -77,7 +77,14 @@ export async function PUT(req) {
       message: "Profile updated successfully!",
     });
   } catch (error) {
+    if (error.message === "NEXT_REDIRECT" || (error.digest && error.digest.startsWith("NEXT_REDIRECT"))) {
+      const digest = error.digest || "";
+      if (digest.includes("error=deactivated")) {
+        return NextResponse.json({ success: false, error: "deactivated", message: "Your account is deactivated." }, { status: 401 });
+      }
+      return NextResponse.json({ success: false, error: "Unauthorized", message: "Unauthorized" }, { status: 401 });
+    }
     console.error("Workspace Admin Profile PUT Error:", error);
-    return NextResponse.json({ success: false, error: error.message }, { status: 500 });
+    return NextResponse.json({ success: false, error: error.message, message: error.message }, { status: 500 });
   }
 }

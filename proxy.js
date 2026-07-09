@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { jwtVerify } from "jose";
+import { prisma } from "./lib/db.js";
 
 const JWT_SECRET = new TextEncoder().encode(
   process.env.JWT_SECRET || "d60155b93198cdce275efee6b4a242c75a4dc372e9a2be74cfd34208a546ccf9"
@@ -17,7 +18,37 @@ export async function proxy(request) {
     }
     try {
       await jwtVerify(adminToken, JWT_SECRET);
-      // Admin session is verified
+      
+      // Stateful verification against the database
+      const session = await prisma.adminSession.findUnique({
+        where: { token: adminToken },
+        include: {
+          admin: {
+            include: {
+              workspace: true,
+            },
+          },
+        },
+      });
+
+      if (!session || session.expiresAt < new Date()) {
+        if (session) {
+          await prisma.adminSession.delete({ where: { id: session.id } }).catch(() => {});
+        }
+        const res = NextResponse.redirect(new URL("/auth/login", request.url));
+        res.cookies.delete("admin_session_token");
+        return res;
+      }
+
+      const admin = session.admin;
+      if (!admin.isActive || (admin.workspace && !admin.workspace.isActive)) {
+        if (session) {
+          await prisma.adminSession.delete({ where: { id: session.id } }).catch(() => {});
+        }
+        const res = NextResponse.redirect(new URL("/auth/login?error=deactivated", request.url));
+        res.cookies.delete("admin_session_token");
+        return res;
+      }
     } catch (e) {
       const res = NextResponse.redirect(new URL("/auth/login", request.url));
       res.cookies.delete("admin_session_token");
@@ -32,7 +63,20 @@ export async function proxy(request) {
     }
     try {
       await jwtVerify(superAdminToken, JWT_SECRET);
-      // SuperAdmin session is verified
+      
+      // Stateful verification for SuperAdmin against database
+      const session = await prisma.superAdminSession.findUnique({
+        where: { token: superAdminToken },
+      });
+
+      if (!session || session.expiresAt < new Date()) {
+        if (session) {
+          await prisma.superAdminSession.delete({ where: { id: session.id } }).catch(() => {});
+        }
+        const res = NextResponse.redirect(new URL("/adminstration/login", request.url));
+        res.cookies.delete("super_admin_session_token");
+        return res;
+      }
     } catch (e) {
       const res = NextResponse.redirect(new URL("/adminstration/login", request.url));
       res.cookies.delete("super_admin_session_token");
