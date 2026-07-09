@@ -44,6 +44,9 @@ self.addEventListener("fetch", (event) => {
 
   const url = new URL(event.request.url);
 
+  // Ignore requests with unsupported schemes (like chrome-extension, data, ftp, etc.)
+  if (url.protocol !== "http:" && url.protocol !== "https:") return;
+
   // 1. Navigation requests (HTML page loads)
   if (event.request.mode === "navigate") {
     event.respondWith(
