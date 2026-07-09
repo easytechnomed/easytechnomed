@@ -1578,6 +1578,7 @@ export default function DefaultTestsPage() {
                     <TableRow>
                       <TableCell align="center" sx={{ fontWeight: 700, width: 30, bgcolor: "#f8fafc" }}></TableCell>
                       <TableCell align="center" sx={{ fontWeight: 700, width: 40, bgcolor: "#f8fafc" }}>#</TableCell>
+                      <TableCell align="center" sx={{ fontWeight: 700, width: 50, bgcolor: "#f8fafc" }}>Action</TableCell>
                       <TableCell sx={{ fontWeight: 700, width: 260, bgcolor: "#f8fafc" }}>Parameter Name *</TableCell>
                       <TableCell sx={{ fontWeight: 700, width: 170, bgcolor: "#f8fafc" }}>Unit</TableCell>
                       <TableCell sx={{ fontWeight: 700, width: 100, bgcolor: "#f8fafc" }}>Order</TableCell>
@@ -1599,14 +1600,12 @@ export default function DefaultTestsPage() {
 
                       {/* Default */}
                       <TableCell sx={{ fontWeight: 700, width: 200, bgcolor: "#fafaf9" }}>Default Range Text</TableCell>
-
-                      <TableCell align="center" sx={{ fontWeight: 700, width: 50, bgcolor: "#f8fafc" }}>Action</TableCell>
                     </TableRow>
                   </TableHead>
                   <TableBody>
                     {editForm.parameters.length === 0 ? (
                       <TableRow>
-                        <TableCell colSpan={16} align="center" sx={{ py: 6, color: "text.secondary" }}>
+                        <TableCell colSpan={15} align="center" sx={{ py: 6, color: "text.secondary" }}>
                           No parameters added yet. Click "Add Parameter" to start.
                         </TableCell>
                       </TableRow>
@@ -1635,6 +1634,15 @@ export default function DefaultTestsPage() {
                             </IconButton>
                           </TableCell>
                           <TableCell align="center" sx={{ fontWeight: 700 }}>{index + 1}</TableCell>
+                          <TableCell align="center">
+                             <IconButton
+                               size="small"
+                               color="error"
+                               onClick={() => handleRemoveParamRow(index)}
+                             >
+                               <DeleteIcon fontSize="small" />
+                             </IconButton>
+                           </TableCell>
 
                           {/* Name */}
                           <TableCell>
@@ -1842,17 +1850,6 @@ export default function DefaultTestsPage() {
                               placeholder="Default range"
                               sx={{ '& .MuiOutlinedInput-root': { borderRadius: 1 } }}
                             />
-                          </TableCell>
-
-                          {/* Delete Action */}
-                          <TableCell align="center">
-                            <IconButton
-                              size="small"
-                              color="error"
-                              onClick={() => handleRemoveParamRow(index)}
-                            >
-                              <DeleteIcon fontSize="small" />
-                            </IconButton>
                           </TableCell>
                         </TableRow>
                       ))
