@@ -159,11 +159,11 @@ export default function UserApproveTable({ initialUsers = [], roles = [] }) {
             Manage incoming registration requests and assign dynamic user roles
           </p>
         </div>
-        <div className="flex gap-3">
-          <Button variant="outline" className="border-slate-300 text-slate-700 bg-white hover:bg-slate-50" onClick={() => router.push("/dashboard")}>
+        <div className="flex flex-wrap gap-3 w-full sm:w-auto">
+          <Button variant="outline" className="border-slate-300 text-slate-700 bg-white hover:bg-slate-50 flex-1 sm:flex-initial" onClick={() => router.push("/dashboard")}>
             Admin Dashboard
           </Button>
-          <Button variant="outline" className="border-slate-300 text-slate-700 bg-white hover:bg-slate-50" onClick={handleLogout}>
+          <Button variant="outline" className="border-slate-300 text-slate-700 bg-white hover:bg-slate-50 flex-1 sm:flex-initial" onClick={handleLogout}>
             <LogOut className="mr-2 h-4 w-4" />
             Logout Admin
           </Button>
@@ -197,7 +197,8 @@ export default function UserApproveTable({ initialUsers = [], roles = [] }) {
 
       {/* Table Container */}
       <Card className="glass overflow-hidden shadow-sm">
-        <Table>
+        <div className="overflow-x-auto">
+          <Table>
           <TableHeader>
             <TableRow>
               <TableHead>User Details</TableHead>
@@ -292,6 +293,7 @@ export default function UserApproveTable({ initialUsers = [], roles = [] }) {
             )}
           </TableBody>
         </Table>
+        </div>
       </Card>
     </div>
   );

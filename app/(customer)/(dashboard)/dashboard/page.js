@@ -418,7 +418,7 @@ export default async function AdminDashboardPage({ searchParams }) {
               <Divider sx={{ mb: 2 }} />
 
               <TableContainer component={Paper} variant="outlined" sx={{ flexGrow: 1 }}>
-                <Table size="small">
+                <Table size="small" sx={{ minWidth: 600 }}>
                   <TableHead sx={{ bgcolor: "grey.50" }}>
                     <TableRow>
                       <TableCell sx={{ fontWeight: 700 }}>Reg Date</TableCell>

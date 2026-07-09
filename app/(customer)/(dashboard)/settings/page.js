@@ -741,7 +741,7 @@ function SettingsContent() {
             ) : (
               <>
                 <TableContainer component={Paper} variant="outlined" sx={{ maxHeight: 500 }}>
-                  <Table size="small" stickyHeader>
+                  <Table size="small" stickyHeader sx={{ minWidth: 650 }}>
                     <TableHead>
                       <TableRow>
                         <TableCell sx={{ fontWeight: 700, bgcolor: "grey.50" }}>Test Code</TableCell>

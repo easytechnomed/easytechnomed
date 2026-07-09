@@ -1271,8 +1271,10 @@ export default function TestReportPage() {
         <Box
           sx={{
             display: "flex",
+            flexDirection: { xs: "column", sm: "row" },
             justifyContent: "space-between",
             alignItems: "center",
+            gap: { xs: 2, sm: 0 },
             p: 2,
             borderTop: "1px solid",
             borderColor: "divider",
@@ -1287,7 +1289,7 @@ export default function TestReportPage() {
           </Typography>
 
           {/* Right Side Controls */}
-          <Box sx={{ display: "flex", alignItems: "center", gap: 3 }}>
+          <Box sx={{ display: "flex", flexWrap: "wrap", justifyContent: "center", alignItems: "center", gap: { xs: 2, sm: 3 } }}>
             {/* Rows per page Selector */}
             <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
               <Typography variant="body2" sx={{ color: "text.secondary", fontWeight: 500, fontSize: "0.82rem" }}>
