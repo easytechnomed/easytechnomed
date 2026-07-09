@@ -42,6 +42,10 @@ export async function proxy(request) {
 
   // 3. Prevent logged-in admins from visiting login/register pages
   if ((pathname === "/auth/login" || pathname === "/auth/register") && adminToken) {
+    const errorParam = request.nextUrl.searchParams.get("error");
+    if (errorParam) {
+      return NextResponse.next();
+    }
     try {
       await jwtVerify(adminToken, JWT_SECRET);
       return NextResponse.redirect(new URL("/dashboard", request.url));
