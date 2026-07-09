@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Offline | EasyTechnoMed</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --primary: #0f766e;
+      --primary-hover: #115e59;
+      --bg: #f8fafc;
+      --text: #0f172a;
+      --text-muted: #64748b;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Outfit', sans-serif;
+      background-color: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+      text-align: center;
+      overflow: hidden;
+    }
+
+    .container {
+      max-width: 480px;
+      width: 100%;
+      background: #ffffff;
+      border: 1px solid rgba(15, 118, 110, 0.08);
+      border-radius: 24px;
+      padding: 40px 32px;
+      box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.05), 0 10px 10px -5px rgba(0, 0, 0, 0.02);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      position: relative;
+    }
+
+    /* Soft background glow bubbles */
+    .glow {
+      position: absolute;
+      width: 300px;
+      height: 300px;
+      background: radial-gradient(circle, rgba(15, 118, 110, 0.08) 0%, rgba(15, 118, 110, 0) 70%);
+      top: -150px;
+      z-index: 1;
+      pointer-events: none;
+    }
+
+    .logo-img {
+      height: 56px;
+      margin-bottom: 32px;
+      border-radius: 12px;
+      z-index: 2;
+    }
+
+    .icon-wrapper {
+      position: relative;
+      margin-bottom: 24px;
+      z-index: 2;
+    }
+
+    .icon-bg {
+      width: 96px;
+      height: 96px;
+      background-color: rgba(15, 118, 110, 0.06);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      animation: pulse 2.5s infinite ease-in-out;
+    }
+
+    .icon {
+      width: 48px;
+      height: 48px;
+      color: var(--primary);
+    }
+
+    h1 {
+      font-size: 28px;
+      font-weight: 800;
+      margin-bottom: 12px;
+      color: var(--text);
+      letter-spacing: -0.02em;
+      z-index: 2;
+    }
+
+    p {
+      font-size: 16px;
+      color: var(--text-muted);
+      line-height: 1.6;
+      margin-bottom: 32px;
+      font-weight: 400;
+      z-index: 2;
+    }
+
+    .btn {
+      width: 100%;
+      background-color: var(--primary);
+      color: #ffffff;
+      border: none;
+      border-radius: 12px;
+      padding: 14px 28px;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s ease-in-out;
+      box-shadow: 0 4px 6px -1px rgba(15, 118, 110, 0.15), 0 2px 4px -1px rgba(15, 118, 110, 0.08);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      z-index: 2;
+    }
+
+    .btn:hover {
+      background-color: var(--primary-hover);
+      transform: translateY(-1px);
+      box-shadow: 0 10px 15px -3px rgba(15, 118, 110, 0.2), 0 4px 6px -2px rgba(15, 118, 110, 0.1);
+    }
+
+    .btn:active {
+      transform: translateY(0);
+    }
+
+    .status-text {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text-muted);
+      margin-top: 16px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      z-index: 2;
+    }
+
+    .status-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background-color: #ef4444; /* red for offline */
+    }
+
+    .status-dot.online {
+      background-color: #22c55e; /* green for online */
+      animation: blink 1s infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% {
+        transform: scale(1);
+        box-shadow: 0 0 0 0 rgba(15, 118, 110, 0.2);
+      }
+      50% {
+        transform: scale(1.05);
+        box-shadow: 0 0 20px 8px rgba(15, 118, 110, 0.1);
+      }
+    }
+
+    @keyframes blink {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.4; }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="glow"></div>
+    <img src="/logo/logobg.png" alt="EasyTechnoMed" class="logo-img" onerror="this.style.display='none'">
+    
+    <div class="icon-wrapper">
+      <div class="icon-bg">
+        <!-- Wifi Off Icon -->
+        <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M18.364 5.636a9 9 0 010 12.728m0 0l-2.829-2.829m2.829 2.829L21 21M15.536 8.464a5 5 0 010 7.072m0 0l-2.829-2.829m-4.243 2.829a4.978 4.978 0 01-1.414-3.536 4.978 4.978 0 011.414-3.536M3 3l18 18M9.172 9.172a4 4 0 015.656 0M9 21h.01M12 21h.01M15 21h.01"></path>
+        </svg>
+      </div>
+    </div>
+
+    <h1>No Internet Connection</h1>
+    <p>We are having trouble connecting to the network. Please check your internet settings and try again.</p>
+
+    <button id="retry-btn" class="btn">
+      <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" style="transform: scaleX(-1);">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M4 4v5h.582m15.356 2A8.001 8.001 0 1121.21 8H18"></path>
+      </svg>
+      Retry Connection
+    </button>
+
+    <div class="status-text">
+      <span id="status-dot" class="status-dot"></span>
+      <span id="status-label">Device is offline</span>
+    </div>
+  </div>
+
+  <script>
+    const retryBtn = document.getElementById('retry-btn');
+    const statusDot = document.getElementById('status-dot');
+    const statusLabel = document.getElementById('status-label');
+
+    // Trigger reload on click
+    retryBtn.addEventListener('click', () => {
+      retryBtn.innerHTML = 'Connecting...';
+      retryBtn.disabled = true;
+      setTimeout(() => {
+        window.location.reload();
+      }, 1000);
+    });
+
+    // Check connectivity dynamically
+    function updateOnlineStatus() {
+      if (navigator.onLine) {
+        statusDot.classList.add('online');
+        statusLabel.innerText = 'Connected! Reloading...';
+        setTimeout(() => {
+          window.location.reload();
+        }, 1500);
+      } else {
+        statusDot.classList.remove('online');
+        statusLabel.innerText = 'Device is offline';
+        retryBtn.innerHTML = `
+          <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" style="transform: scaleX(-1);">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M4 4v5h.582m15.356 2A8.001 8.001 0 1121.21 8H18"></path>
+          </svg>
+          Retry Connection
+        `;
+        retryBtn.disabled = false;
+      }
+    }
+
+    window.addEventListener('online', updateOnlineStatus);
+    window.addEventListener('offline', updateOnlineStatus);
+    
+    // Check initially
+    if (navigator.onLine) {
+      updateOnlineStatus();
+    }
+  </script>
+</body>
+</html>

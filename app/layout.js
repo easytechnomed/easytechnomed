@@ -1,5 +1,6 @@
 import { Outfit } from "next/font/google";
 import ToastProvider from "@/components/ToastProvider";
+import PWARegister from "@/components/PWARegister";
 import "./globals.css";
 
 const outfit = Outfit({
@@ -28,13 +29,22 @@ export const metadata = {
       { url: "/apple-touch-icon.png", sizes: "180x180", type: "image/png" },
     ],
   },
-  manifest: "/site.webmanifest",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "default",
+    title: "EasyTechnoMed",
+  },
+};
+
+export const viewport = {
+  themeColor: "#0f766e",
 };
 
 export default function RootLayout({ children }) {
   return (
     <html lang="en" className={`${outfit.variable} h-full antialiased`}>
       <body className="min-h-full flex flex-col bg-slate-50 text-slate-900 font-sans selection:bg-blue-600 selection:text-white">
+        <PWARegister />
         <ToastProvider />
         <div className="flex-1 flex flex-col">{children}</div>
       </body>

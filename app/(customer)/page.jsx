@@ -50,7 +50,6 @@ export const metadata = {
       },
     ],
   },
-  manifest: "/site.webmanifest",
   openGraph: {
     title: "EasyTechnoMed | Cloud-Based Diagnostic Lab & LIMS Management Software",
     description: "All-in-one Laboratory Information Management System (LIMS). Streamline patient registration, report generation, and reference doctor tracking today.",
