@@ -58,7 +58,9 @@ import {
   Add as AddIcon,
   DragIndicator as DragIndicatorIcon,
   TrendingUp as TrendingUpIcon,
-  Email as EmailIcon
+  Email as EmailIcon,
+  ChevronLeft as ChevronLeftIcon,
+  ChevronRight as ChevronRightIcon
 } from "@mui/icons-material";
 import { toast } from "sonner";
 
@@ -154,9 +156,13 @@ export default function DefaultTestsPage() {
 
   // Pagination states
   const [page, setPage] = useState(1);
-  const [limit] = useState(10);
+  const [limit, setLimit] = useState(10);
   const [totalPages, setTotalPages] = useState(1);
   const [totalCount, setTotalCount] = useState(0);
+
+  // Parameter Library Pagination states
+  const [paramPage, setParamPage] = useState(1);
+  const [paramLimit, setParamLimit] = useState(50); // Default 50 rows per page for parameters
 
   // Deletion state
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
@@ -187,6 +193,17 @@ export default function DefaultTestsPage() {
   const [paramUsages, setParamUsages] = useState([]);
   const [mergeTargetParamId, setMergeTargetParamId] = useState("");
   const [loadingUsages, setLoadingUsages] = useState(false);
+
+  // Derive filtered and paginated parameters client-side
+  const allFilteredParams = parameterDictionary.filter(p =>
+    (p.name || "").toLowerCase().includes(paramSearchQuery.toLowerCase())
+  );
+  const paramTotalCount = allFilteredParams.length;
+  const paramTotalPages = Math.ceil(paramTotalCount / paramLimit) || 1;
+  const paginatedParams = allFilteredParams.slice(
+    (paramPage - 1) * paramLimit,
+    (paramPage - 1) * paramLimit + paramLimit
+  );
 
   const handleDragStart = (e, index) => {
     setDraggedIndex(index);
@@ -267,11 +284,16 @@ export default function DefaultTestsPage() {
     }
   };
 
-  // Fetch when page changes
+  // Fetch when page or limit changes
   useEffect(() => {
     fetchTests(page, searchQuery);
     fetchParameterDictionary();
-  }, [page]);
+  }, [page, limit]);
+
+  // Reset parameter page when search query or page limit changes
+  useEffect(() => {
+    setParamPage(1);
+  }, [paramSearchQuery, paramLimit]);
 
   // Handle search text changes
   const handleSearchChange = (e) => {
@@ -995,6 +1017,7 @@ export default function DefaultTestsPage() {
                             <Table stickyHeader size="small">
                               <TableHead>
                                 <TableRow>
+                                  <TableCell sx={{ fontWeight: 700, bgcolor: "#f8fafc", width: 60 }}>S.No</TableCell>
                                   <TableCell sx={{ fontWeight: 700, bgcolor: "#f8fafc" }}>Test Name</TableCell>
                                   <TableCell sx={{ fontWeight: 700, bgcolor: "#f8fafc" }}>Code</TableCell>
                                   <TableCell align="right" sx={{ fontWeight: 700, bgcolor: "#f8fafc" }}>Base Price</TableCell>
@@ -1004,13 +1027,14 @@ export default function DefaultTestsPage() {
                               <TableBody>
                                 {tests.length === 0 ? (
                                   <TableRow>
-                                    <TableCell colSpan={4} align="center" sx={{ py: 6, color: "text.secondary" }}>
+                                    <TableCell colSpan={5} align="center" sx={{ py: 6, color: "text.secondary" }}>
                                       No default tests found matching current filters.
                                     </TableCell>
                                   </TableRow>
                                 ) : (
-                                  tests.map((test) => {
+                                  tests.map((test, idx) => {
                                     const isSelected = selectedTest?.id === test.id;
+                                    const sNo = (page - 1) * limit + idx + 1;
                                     return (
                                       <TableRow
                                         key={test.id}
@@ -1024,6 +1048,7 @@ export default function DefaultTestsPage() {
                                           },
                                         }}
                                       >
+                                        <TableCell sx={{ fontWeight: 700, color: "text.secondary" }}>{sNo}</TableCell>
                                         <TableCell sx={{ fontWeight: 600, color: isSelected ? "primary.main" : "text.primary" }}>
                                           {test.name}
                                         </TableCell>
@@ -1059,16 +1084,108 @@ export default function DefaultTestsPage() {
                             </Table>
                           </TableContainer>
 
-                          {/* Pagination Controls */}
-                          {totalPages > 1 && (
-                            <Box sx={{ display: "flex", justifyContent: "center", mt: 2 }}>
-                              <Pagination
-                                count={totalPages}
-                                page={page}
-                                onChange={(e, val) => setPage(val)}
-                                color="primary"
-                                size="small"
-                              />
+                          {/* Custom Pagination Bar for Tests */}
+                          {totalCount > 0 && (
+                            <Box
+                              sx={{
+                                display: "flex",
+                                flexDirection: { xs: "column", sm: "row" },
+                                justifyContent: "space-between",
+                                alignItems: "center",
+                                gap: { xs: 2, sm: 0 },
+                                pt: 2,
+                                mt: 1,
+                                borderTop: "1px solid",
+                                borderColor: "divider",
+                                bgcolor: "#ffffff",
+                              }}
+                            >
+                              {/* Left Side */}
+                              <Typography variant="body2" sx={{ color: "text.secondary", fontWeight: 500 }}>
+                                {`${(page - 1) * limit + 1}-${Math.min(page * limit, totalCount)} of ${totalCount}`}
+                              </Typography>
+
+                              {/* Right Side Controls */}
+                              <Box sx={{ display: "flex", flexWrap: "wrap", justifyContent: "center", alignItems: "center", gap: { xs: 2, sm: 3 } }}>
+                                {/* Rows per page */}
+                                <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                                  <Typography variant="body2" sx={{ color: "text.secondary", fontWeight: 500, fontSize: "0.82rem" }}>
+                                    Rows per page
+                                  </Typography>
+                                  <select
+                                    value={limit}
+                                    onChange={(e) => {
+                                      setLimit(parseInt(e.target.value, 10));
+                                      setPage(1);
+                                    }}
+                                    style={{
+                                      padding: "4px 8px",
+                                      borderRadius: "6px",
+                                      border: "1px solid rgba(0,0,0,0.15)",
+                                      backgroundColor: "#ffffff",
+                                      fontSize: "0.82rem",
+                                      fontWeight: 600,
+                                      color: "#334155",
+                                      outline: "none",
+                                      cursor: "pointer"
+                                    }}
+                                  >
+                                    {[10, 25, 50, 100].map((size) => (
+                                      <option key={size} value={size}>
+                                        {size}
+                                      </option>
+                                    ))}
+                                  </select>
+                                </Box>
+
+                                {/* Go to Page */}
+                                <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                                  <Typography variant="body2" sx={{ color: "text.secondary", fontWeight: 500, fontSize: "0.82rem" }}>
+                                    Go to Page
+                                  </Typography>
+                                  <select
+                                    value={page}
+                                    onChange={(e) => setPage(parseInt(e.target.value, 10))}
+                                    style={{
+                                      padding: "4px 8px",
+                                      borderRadius: "6px",
+                                      border: "1px solid rgba(0,0,0,0.15)",
+                                      backgroundColor: "#ffffff",
+                                      fontSize: "0.82rem",
+                                      fontWeight: 600,
+                                      color: "#334155",
+                                      outline: "none",
+                                      cursor: "pointer"
+                                    }}
+                                  >
+                                    {Array.from({ length: totalPages }, (_, i) => i + 1).map((pNum) => (
+                                      <option key={pNum} value={pNum}>
+                                        {pNum}
+                                      </option>
+                                    ))}
+                                  </select>
+                                </Box>
+
+                                {/* Prev/Next buttons */}
+                                <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
+                                  <IconButton
+                                    size="small"
+                                    disabled={page === 1}
+                                    onClick={() => setPage((prev) => Math.max(prev - 1, 1))}
+                                    sx={{ border: "1px solid rgba(0,0,0,0.1)", borderRadius: "6px", p: "4px" }}
+                                  >
+                                    <ChevronLeftIcon fontSize="small" />
+                                  </IconButton>
+                                  <IconButton
+                                    size="small"
+                                    disabled={page >= totalPages}
+                                    onClick={() => setPage((prev) => Math.min(prev + 1, totalPages))}
+                                    sx={{ border: "1px solid rgba(0,0,0,0.1)", borderRadius: "6px", p: "4px" }}
+                                  >
+                                    <ChevronRightIcon fontSize="small" />
+                                  </IconButton>
+                                </Box>
+                              </Box>
                             </Box>
                           )}
                         </>
@@ -1100,49 +1217,157 @@ export default function DefaultTestsPage() {
                             <Table stickyHeader size="small">
                               <TableHead>
                                 <TableRow>
+                                  <TableCell sx={{ fontWeight: 700, bgcolor: "#f8fafc", width: 60 }}>S.No</TableCell>
                                   <TableCell sx={{ fontWeight: 700, bgcolor: "#f8fafc" }}>Name</TableCell>
                                   <TableCell sx={{ fontWeight: 700, bgcolor: "#f8fafc" }}>Unit</TableCell>
                                   <TableCell align="center" sx={{ fontWeight: 700, bgcolor: "#f8fafc", width: 90 }}>Action</TableCell>
                                 </TableRow>
                               </TableHead>
                               <TableBody>
-                                {parameterDictionary.filter(p => (p.name || "").toLowerCase().includes(paramSearchQuery.toLowerCase())).length === 0 ? (
+                                {paginatedParams.length === 0 ? (
                                   <TableRow>
-                                    <TableCell colSpan={3} align="center" sx={{ py: 6, color: "text.secondary" }}>
+                                    <TableCell colSpan={4} align="center" sx={{ py: 6, color: "text.secondary" }}>
                                       No parameters found matching current search.
                                     </TableCell>
                                   </TableRow>
                                 ) : (
-                                  parameterDictionary
-                                    .filter(p => (p.name || "").toLowerCase().includes(paramSearchQuery.toLowerCase()))
-                                    .map((param) => (
+                                  paginatedParams.map((param, idx) => {
+                                    const sNo = (paramPage - 1) * paramLimit + idx + 1;
+                                    return (
                                       <TableRow key={param.id} hover>
+                                        <TableCell sx={{ fontWeight: 700, color: "text.secondary" }}>{sNo}</TableCell>
                                         <TableCell sx={{ fontWeight: 600 }}>{param.name}</TableCell>
-                                        <TableCell sx={{ color: "text.secondary" }}>{param.unit || "-"}</TableCell>
-                                        <TableCell align="center">
-                                          <Box sx={{ display: "flex", justifyContent: "center", gap: 0.5 }}>
-                                            <IconButton
-                                              size="small"
-                                              color="primary"
-                                              onClick={(e) => handleEditParamClick(param, e)}
-                                            >
-                                              <EditIcon fontSize="small" />
-                                            </IconButton>
-                                            <IconButton
-                                              size="small"
-                                              color="error"
-                                              onClick={(e) => handleDeleteParamClick(param, e)}
-                                            >
-                                              <DeleteIcon fontSize="small" />
-                                            </IconButton>
-                                          </Box>
-                                        </TableCell>
-                                      </TableRow>
-                                    ))
-                                )}
+                                      <TableCell sx={{ color: "text.secondary" }}>{param.unit || "-"}</TableCell>
+                                      <TableCell align="center">
+                                        <Box sx={{ display: "flex", justifyContent: "center", gap: 0.5 }}>
+                                          <IconButton
+                                            size="small"
+                                            color="primary"
+                                            onClick={(e) => handleEditParamClick(param, e)}
+                                          >
+                                            <EditIcon fontSize="small" />
+                                          </IconButton>
+                                          <IconButton
+                                            size="small"
+                                            color="error"
+                                            onClick={(e) => handleDeleteParamClick(param, e)}
+                                          >
+                                            <DeleteIcon fontSize="small" />
+                                          </IconButton>
+                                        </Box>
+                                      </TableCell>
+                                    </TableRow>
+                                  );
+                                })
+                              )}
                               </TableBody>
                             </Table>
                           </TableContainer>
+
+                          {/* Custom Pagination Bar for Parameters */}
+                          {paramTotalCount > 0 && (
+                            <Box
+                              sx={{
+                                display: "flex",
+                                flexDirection: { xs: "column", sm: "row" },
+                                justifyContent: "space-between",
+                                alignItems: "center",
+                                gap: { xs: 2, sm: 0 },
+                                pt: 2,
+                                mt: 1,
+                                borderTop: "1px solid",
+                                borderColor: "divider",
+                                bgcolor: "#ffffff",
+                              }}
+                            >
+                              {/* Left Side */}
+                              <Typography variant="body2" sx={{ color: "text.secondary", fontWeight: 500 }}>
+                                {`${(paramPage - 1) * paramLimit + 1}-${Math.min(paramPage * paramLimit, paramTotalCount)} of ${paramTotalCount}`}
+                              </Typography>
+
+                              {/* Right Side Controls */}
+                              <Box sx={{ display: "flex", flexWrap: "wrap", justifyContent: "center", alignItems: "center", gap: { xs: 2, sm: 3 } }}>
+                                {/* Rows per page */}
+                                <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                                  <Typography variant="body2" sx={{ color: "text.secondary", fontWeight: 500, fontSize: "0.82rem" }}>
+                                    Rows per page
+                                  </Typography>
+                                  <select
+                                    value={paramLimit}
+                                    onChange={(e) => {
+                                      setParamLimit(parseInt(e.target.value, 10));
+                                      setParamPage(1);
+                                    }}
+                                    style={{
+                                      padding: "4px 8px",
+                                      borderRadius: "6px",
+                                      border: "1px solid rgba(0,0,0,0.15)",
+                                      backgroundColor: "#ffffff",
+                                      fontSize: "0.82rem",
+                                      fontWeight: 600,
+                                      color: "#334155",
+                                      outline: "none",
+                                      cursor: "pointer"
+                                    }}
+                                  >
+                                    {[10, 25, 50, 100].map((size) => (
+                                      <option key={size} value={size}>
+                                        {size}
+                                      </option>
+                                    ))}
+                                  </select>
+                                </Box>
+
+                                {/* Go to Page */}
+                                <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                                  <Typography variant="body2" sx={{ color: "text.secondary", fontWeight: 500, fontSize: "0.82rem" }}>
+                                    Go to Page
+                                  </Typography>
+                                  <select
+                                    value={paramPage}
+                                    onChange={(e) => setParamPage(parseInt(e.target.value, 10))}
+                                    style={{
+                                      padding: "4px 8px",
+                                      borderRadius: "6px",
+                                      border: "1px solid rgba(0,0,0,0.15)",
+                                      backgroundColor: "#ffffff",
+                                      fontSize: "0.82rem",
+                                      fontWeight: 600,
+                                      color: "#334155",
+                                      outline: "none",
+                                      cursor: "pointer"
+                                    }}
+                                  >
+                                    {Array.from({ length: paramTotalPages }, (_, i) => i + 1).map((pNum) => (
+                                      <option key={pNum} value={pNum}>
+                                        {pNum}
+                                      </option>
+                                    ))}
+                                  </select>
+                                </Box>
+
+                                {/* Prev/Next buttons */}
+                                <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
+                                  <IconButton
+                                    size="small"
+                                    disabled={paramPage === 1}
+                                    onClick={() => setParamPage((prev) => Math.max(prev - 1, 1))}
+                                    sx={{ border: "1px solid rgba(0,0,0,0.1)", borderRadius: "6px", p: "4px" }}
+                                  >
+                                    <ChevronLeftIcon fontSize="small" />
+                                  </IconButton>
+                                  <IconButton
+                                    size="small"
+                                    disabled={paramPage >= paramTotalPages}
+                                    onClick={() => setParamPage((prev) => Math.min(prev + 1, paramTotalPages))}
+                                    sx={{ border: "1px solid rgba(0,0,0,0.1)", borderRadius: "6px", p: "4px" }}
+                                  >
+                                    <ChevronRightIcon fontSize="small" />
+                                  </IconButton>
+                                </Box>
+                              </Box>
+                            </Box>
+                          )}
                         </Box>
                       )}
                     </CardContent>
