@@ -3,9 +3,18 @@ import { prisma } from "@/lib/db";
 import { verifySuperAdminAPI } from "@/lib/auth";
 import bcrypt from "bcryptjs";
 
-export async function GET() {
+export async function GET(req) {
   try {
     await verifySuperAdminAPI();
+
+    const searchParams = req.nextUrl.searchParams;
+    const pageParam = searchParams.get("page");
+    const limitParam = searchParams.get("limit");
+
+    const page = pageParam ? parseInt(pageParam) : 1;
+    const limit = limitParam ? parseInt(limitParam) : 10;
+
+    const totalCount = await prisma.admin.count();
 
     const admins = await prisma.admin.findMany({
       include: {
@@ -13,6 +22,8 @@ export async function GET() {
         role: { select: { id: true, name: true } },
       },
       orderBy: { name: "asc" },
+      skip: (page - 1) * limit,
+      take: limit,
     });
 
     const serializedAdmins = admins.map((admin) => ({
@@ -25,7 +36,16 @@ export async function GET() {
       workspace: admin.workspace,
     }));
 
-    return NextResponse.json({ success: true, admins: serializedAdmins });
+    return NextResponse.json({
+      success: true,
+      admins: serializedAdmins,
+      pagination: {
+        page,
+        limit,
+        totalCount,
+        totalPages: Math.ceil(totalCount / limit),
+      }
+    });
   } catch (error) {
     console.error("SuperAdmin Admins GET Error:", error);
     const status = error.message === "Unauthorized" ? 401 : 500;

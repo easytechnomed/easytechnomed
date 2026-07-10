@@ -866,122 +866,8 @@ export default function DefaultTestsPage() {
   );
 
   return (
-    <ThemeProvider theme={lightPurpleTheme}>
-      <CssBaseline />
-      <Box sx={{ display: "flex", height: "100dvh", overflow: "hidden", bgcolor: "background.default" }}>
-
-        {/* Sidebar Navigation */}
-        <Box
-          component="nav"
-          sx={{
-            width: { md: desktopDrawerOpen ? drawerWidth : 70 },
-            flexShrink: { md: 0 },
-            transition: (theme) =>
-              theme.transitions.create("width", {
-                easing: theme.transitions.easing.sharp,
-                duration: theme.transitions.duration.enteringScreen,
-              }),
-          }}
-        >
-          {/* Mobile Drawer */}
-          <Drawer
-            variant="temporary"
-            open={mobileOpen}
-            onClose={() => setMobileOpen(false)}
-            ModalProps={{ keepMounted: true }}
-            sx={{
-              display: { xs: "block", md: "none" },
-              "& .MuiDrawer-paper": { boxSizing: "border-box", width: drawerWidth, borderRight: "1px solid", borderColor: "divider" },
-            }}
-          >
-            {drawerContent}
-          </Drawer>
-
-          {/* Desktop Drawer */}
-          <Drawer
-            variant="permanent"
-            sx={{
-              display: { xs: "none", md: "block" },
-              "& .MuiDrawer-paper": {
-                boxSizing: "border-box",
-                width: desktopDrawerOpen ? drawerWidth : 70,
-                borderRight: "1px solid",
-                borderColor: "divider",
-                transition: (theme) =>
-                  theme.transitions.create("width", {
-                    easing: theme.transitions.easing.sharp,
-                    duration: theme.transitions.duration.enteringScreen,
-                  }),
-                overflowX: "hidden",
-              },
-            }}
-            open
-          >
-            {drawerContent}
-          </Drawer>
-        </Box>
-
-        {/* Right Content Area */}
-        <Box
-          sx={{
-            flexGrow: 1,
-            display: "flex",
-            flexDirection: "column",
-            minWidth: 0,
-            height: "100%",
-            overflow: "hidden",
-            width: `calc(100% - ${desktopDrawerOpen ? drawerWidth : 70}px)`,
-            transition: (theme) =>
-              theme.transitions.create("width", {
-                easing: theme.transitions.easing.sharp,
-                duration: theme.transitions.duration.enteringScreen,
-              }),
-          }}
-        >
-          {/* Header AppBar */}
-          <AppBar
-            position="static"
-            color="inherit"
-            elevation={0}
-            sx={{ borderBottom: "1px solid", borderColor: "divider" }}
-          >
-            <Toolbar sx={{ justifyContent: "space-between", px: { xs: 2, md: 3 } }}>
-              <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                <IconButton
-                  color="inherit"
-                  edge="start"
-                  onClick={() => setMobileOpen(true)}
-                  sx={{ mr: 1, display: { md: "none" } }}
-                >
-                  <MenuIcon />
-                </IconButton>
-                <IconButton
-                  color="inherit"
-                  onClick={() => setDesktopDrawerOpen(!desktopDrawerOpen)}
-                  sx={{ mr: 1, display: { xs: "none", md: "inline-flex" } }}
-                >
-                  <MenuIcon />
-                </IconButton>
-                <Typography variant="h6" noWrap sx={{ fontWeight: 800, color: "text.primary" }}>
-                  Default Tests & Parameters
-                </Typography>
-              </Box>
-
-              <Button
-                variant="outlined"
-                color="secondary"
-                size="small"
-                onClick={handleLogout}
-                startIcon={<LogoutIcon />}
-                sx={{ borderRadius: 2 }}
-              >
-                Logout
-              </Button>
-            </Toolbar>
-          </AppBar>
-
-          {/* Main Workspace Body */}
-          <Box sx={{ flexGrow: 1, p: { xs: 2, md: 3 }, overflow: "hidden", display: "flex", flexDirection: "column" }}>
+    <>
+      <Box sx={{ flexGrow: 1, p: { xs: 2, md: 3 }, overflow: "hidden", display: "flex", flexDirection: "column", height: "100%" }}>
             {loading && tests.length === 0 ? (
               <Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", height: "50vh" }}>
                 <CircularProgress color="primary" />
@@ -1546,8 +1432,6 @@ export default function DefaultTestsPage() {
               </Grid>
             )}
           </Box>
-        </Box>
-      </Box>
 
       {/* Edit Test & Parameters Dialog */}
       <Dialog
@@ -2109,6 +1993,6 @@ export default function DefaultTestsPage() {
           </Button>
         </DialogActions>
       </Dialog>
-    </ThemeProvider>
+    </>
   );
 }

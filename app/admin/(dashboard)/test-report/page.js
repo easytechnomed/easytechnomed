@@ -85,6 +85,7 @@ import {
   DragIndicator as DragIndicatorIcon
 } from "@mui/icons-material";
 // Server Action imports removed - using REST API instead
+import * as XLSX from "xlsx";
 
 const menuButtonStyle = {
   justifyContent: "flex-start",
@@ -492,6 +493,31 @@ const getTestChip = (reg) => {
   }
 };
 
+const exportColumns = [
+  { id: "sno", label: "SNO", getValue: (reg, idx) => idx + 1 },
+  { id: "date", label: "Reg. Date", getValue: (reg) => {
+      if (!reg.date) return "-";
+      const d = new Date(reg.date);
+      return d.toLocaleDateString("en-US", { month: "short", day: "2-digit", year: "numeric" });
+    }
+  },
+  { id: "regNo", label: "Reg. No", getValue: (reg) => reg.regNo },
+  { id: "labId", label: "Pat. ID", getValue: (reg) => reg.labId },
+  { id: "tests", label: "Test Name(s)", getValue: (reg) => reg.tests.map((t) => t.test?.name).join(", ") },
+  { id: "name", label: "Patient Name", getValue: (reg) => `${reg.title} ${reg.name}` },
+  { id: "gender", label: "Gender", getValue: (reg) => reg.gender },
+  { id: "age", label: "Age", getValue: (reg) => `${Math.round(reg.age)}${reg.ageUnit?.charAt(0) || "Y"}` },
+  { id: "mobile", label: "Mobile No", getValue: (reg) => reg.mobileNo },
+  { id: "rptTime", label: "Rpt. Time", getValue: (reg) => {
+      if (!reg.expRptDate) return "-";
+      const d = new Date(reg.expRptDate);
+      return d.toLocaleDateString("en-US", { month: "2-digit", day: "2-digit", year: "2-digit" }) + " " + d.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit", hour12: true });
+    }
+  },
+  { id: "barcode", label: "Barcode", getValue: (reg) => reg.barcode ? reg.barcode.replace(/^,\s*/, "") : "-" },
+  { id: "status", label: "Status", getValue: (reg) => reg.status },
+];
+
 export default function TestReportPage() {
   const router = useRouter();
   const { hasPermission } = useAdminPermissions();
@@ -557,6 +583,13 @@ export default function TestReportPage() {
   const [savingPayment, setSavingPayment] = useState(false);
   const [sendSms, setSendSms] = useState(false);
   const [sendMail, setSendMail] = useState(false);
+
+  // Export states
+  const [exportDialogOpen, setExportDialogOpen] = useState(false);
+  const [exportFormat, setExportFormat] = useState("excel");
+  const [selectedExportCols, setSelectedExportCols] = useState(exportColumns.map((c) => c.id));
+  const [includeReportQr, setIncludeReportQr] = useState(false);
+  const [includePaymentQr, setIncludePaymentQr] = useState(false);
 
   useEffect(() => {
     async function fetchSettings() {
@@ -1159,6 +1192,175 @@ export default function TestReportPage() {
     });
   };
 
+  const openExportDialog = (format) => {
+    setExportFormat(format);
+    setSelectedExportCols(exportColumns.map((c) => c.id));
+    setIncludeReportQr(false);
+    setIncludePaymentQr(false);
+    setExportDialogOpen(true);
+  };
+
+  const handleExportExcel = () => {
+    const data = registrations.map((reg, idx) => {
+      const row = {};
+      selectedExportCols.forEach((colId) => {
+        const col = exportColumns.find((c) => c.id === colId);
+        if (col) {
+          row[col.label] = col.getValue(reg, idx);
+        }
+      });
+
+      if (includeReportQr) {
+        const cleanBarcode = reg.barcode ? reg.barcode.replace(/^,\s*/, "").split(" ")[0] : null;
+        row["Report QR Link"] = `${window.location.origin}/api/print-report/${cleanBarcode || reg.id}?withFrame=true`;
+      }
+      if (includePaymentQr) {
+        row["Payment QR Link"] = `${window.location.origin}/api/print-bill/${reg.id}`;
+      }
+
+      return row;
+    });
+
+    const worksheet = XLSX.utils.json_to_sheet(data);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Patient Reports");
+    XLSX.writeFile(workbook, `patient_reports_${new Date().toISOString().substring(0, 10)}.xlsx`);
+    setExportDialogOpen(false);
+    showToast("Excel exported successfully!", "success");
+  };
+
+  const handlePrintOrPdf = () => {
+    const printWindow = window.open("", "_blank");
+    if (!printWindow) {
+      showToast("Popup blocker prevented opening print window", "error");
+      return;
+    }
+
+    const activeHeaders = selectedExportCols
+      .map((colId) => {
+        const col = exportColumns.find((c) => c.id === colId);
+        return col ? col.label : "";
+      })
+      .filter(Boolean);
+
+    if (includeReportQr) activeHeaders.push("Report QR");
+    if (includePaymentQr) activeHeaders.push("Payment QR");
+
+    const rowsHtml = registrations
+      .map((reg, idx) => {
+        const cells = selectedExportCols.map((colId) => {
+          const col = exportColumns.find((c) => c.id === colId);
+          const val = col ? col.getValue(reg, idx) : "";
+          return `<td>${val}</td>`;
+        });
+
+        if (includeReportQr) {
+          const cleanBarcode = reg.barcode ? reg.barcode.replace(/^,\s*/, "").split(" ")[0] : null;
+          const qrData = `${window.location.origin}/api/print-report/${cleanBarcode || reg.id}?withFrame=true`;
+          const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=100x100&data=${encodeURIComponent(qrData)}`;
+          cells.push(`
+            <td class="qr-container">
+              <img src="${qrUrl}" class="qr-code" alt="Report QR" />
+            </td>
+          `);
+        }
+
+        if (includePaymentQr) {
+          const qrData = `${window.location.origin}/api/print-bill/${reg.id}`;
+          const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=100x100&data=${encodeURIComponent(qrData)}`;
+          cells.push(`
+            <td class="qr-container">
+              <img src="${qrUrl}" class="qr-code" alt="Payment QR" />
+            </td>
+          `);
+        }
+
+        return `<tr>${cells.join("")}</tr>`;
+      })
+      .join("");
+
+    const headerCellsHtml = activeHeaders.map((h) => `<th>${h}</th>`).join("");
+
+    const htmlContent = `
+      <html>
+        <head>
+          <title>Patient Test Reports List - ${new Date().toLocaleDateString()}</title>
+          <style>
+            body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; margin: 30px; font-size: 11px; color: #333; }
+            h2 { text-align: center; color: #111; margin-bottom: 20px; font-size: 18px; }
+            table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+            th, td { border: 1px solid #cbd5e1; padding: 6px 8px; text-align: left; vertical-align: middle; }
+            th { background-color: #f1f5f9; font-weight: bold; color: #1e293b; font-size: 11px; }
+            tr:nth-child(even) { background-color: #f8fafc; }
+            .qr-code { width: 65px; height: 65px; display: block; margin: 0 auto; }
+            .qr-container { text-align: center; width: 80px; padding: 4px; }
+            .no-print-btn {
+              padding: 8px 16px;
+              background-color: #0f766e;
+              color: white;
+              border: none;
+              border-radius: 6px;
+              cursor: pointer;
+              font-weight: 600;
+              font-size: 12px;
+              box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+              transition: background-color 0.2s;
+            }
+            .no-print-btn:hover { background-color: #0d5c56; }
+            @media print {
+              body { margin: 10px; }
+              .no-print { display: none !important; }
+              table { width: 100%; }
+              th, td { padding: 4px 6px; }
+              tr:nth-child(even) { background-color: transparent !important; }
+            }
+          </style>
+        </head>
+        <body>
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;" class="no-print">
+            <button onclick="window.print()" class="no-print-btn">Print / Save as PDF</button>
+            <span style="font-size: 12px; color: #64748b;">Adjust margins / orientation in print dialog if needed.</span>
+          </div>
+          <h2>Patient Test Reports List</h2>
+          <table>
+            <thead>
+              <tr>
+                ${headerCellsHtml}
+              </tr>
+            </thead>
+            <tbody>
+              ${rowsHtml}
+            </tbody>
+          </table>
+          <script>
+            window.onload = function() {
+              setTimeout(function() {
+                window.print();
+              }, 500);
+            }
+          </script>
+        </body>
+      </html>
+    `;
+
+    printWindow.document.open();
+    printWindow.document.write(htmlContent);
+    printWindow.document.close();
+    setExportDialogOpen(false);
+  };
+
+  const handleExecuteExport = () => {
+    if (selectedExportCols.length === 0) {
+      showToast("Please select at least one column to export/print", "warning");
+      return;
+    }
+    if (exportFormat === "excel") {
+      handleExportExcel();
+    } else {
+      handlePrintOrPdf();
+    }
+  };
+
   return (
     <Box sx={{ flexGrow: 1 }}>
       {/* Header section with export utilities */}
@@ -1169,13 +1371,13 @@ export default function TestReportPage() {
 
         <ButtonGroup variant="outlined" size="small">
           <Tooltip title="Print List">
-            <Button startIcon={<PrintIcon />}>Print</Button>
+            <Button startIcon={<PrintIcon />} onClick={() => openExportDialog("print")}>Print</Button>
           </Tooltip>
-          <Tooltip title="Email Export">
-            <Button startIcon={<EmailIcon />}>Email</Button>
+          <Tooltip title="Save as PDF">
+            <Button startIcon={<DownloadIcon />} onClick={() => openExportDialog("pdf")}>PDF</Button>
           </Tooltip>
           <Tooltip title="Download Excel">
-            <Button startIcon={<DownloadIcon />}>Excel</Button>
+            <Button startIcon={<DownloadIcon />} onClick={() => openExportDialog("excel")}>Excel</Button>
           </Tooltip>
         </ButtonGroup>
       </Box>
@@ -2609,6 +2811,95 @@ export default function TestReportPage() {
           {toast.message}
         </Alert>
       </Snackbar>
+
+      {/* --- EXPORT OPTIONS DIALOG --- */}
+      <Dialog
+        open={exportDialogOpen}
+        onClose={() => setExportDialogOpen(false)}
+        maxWidth="sm"
+        fullWidth
+        PaperProps={{ sx: { borderRadius: 3 } }}
+      >
+        <DialogTitle sx={{ bgcolor: "primary.main", color: "primary.contrastText", fontWeight: 800, py: 2 }}>
+          ⚙️ Export & Print Options - {exportFormat.toUpperCase()}
+        </DialogTitle>
+        <DialogContent sx={{ p: 3, mt: 2 }}>
+          <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 1.5 }}>
+            <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>
+              Select Columns to Include:
+            </Typography>
+            <Box>
+              <Button size="small" onClick={() => setSelectedExportCols(exportColumns.map(c => c.id))} sx={{ textTransform: "none", py: 0, minWidth: 0, mr: 1.5, fontWeight: 700 }}>
+                Select All
+              </Button>
+              <Button size="small" onClick={() => setSelectedExportCols([])} sx={{ textTransform: "none", py: 0, minWidth: 0, fontWeight: 700 }} color="secondary">
+                Deselect All
+              </Button>
+            </Box>
+          </Box>
+          <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1, mb: 3 }}>
+            {exportColumns.map((col) => {
+              const isChecked = selectedExportCols.includes(col.id);
+              return (
+                <FormControlLabel
+                  key={col.id}
+                  control={
+                    <Checkbox
+                      checked={isChecked}
+                      onChange={(e) => {
+                        if (e.target.checked) {
+                          setSelectedExportCols([...selectedExportCols, col.id]);
+                        } else {
+                          setSelectedExportCols(selectedExportCols.filter((id) => id !== col.id));
+                        }
+                      }}
+                      color="primary"
+                    />
+                  }
+                  label={col.label}
+                  sx={{ width: "45%", mr: 0 }}
+                />
+              );
+            })}
+          </Box>
+
+          <Divider sx={{ my: 2 }} />
+
+          <Typography variant="subtitle2" sx={{ fontWeight: 700, mb: 1.5 }}>
+            Additional Options (Append to each row):
+          </Typography>
+          <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
+            <FormControlLabel
+              control={
+                <Checkbox
+                  checked={includeReportQr}
+                  onChange={(e) => setIncludeReportQr(e.target.checked)}
+                  color="primary"
+                />
+              }
+              label="Include Report QR"
+            />
+            <FormControlLabel
+              control={
+                <Checkbox
+                  checked={includePaymentQr}
+                  onChange={(e) => setIncludePaymentQr(e.target.checked)}
+                  color="primary"
+                />
+              }
+              label="Include Payment QR"
+            />
+          </Box>
+        </DialogContent>
+        <DialogActions sx={{ p: 2.5, bgcolor: "grey.50" }}>
+          <Button onClick={() => setExportDialogOpen(false)} variant="outlined" color="inherit">
+            Cancel
+          </Button>
+          <Button onClick={handleExecuteExport} variant="contained" color="primary" sx={{ fontWeight: 700 }}>
+            Confirm & {exportFormat === "excel" ? "Export" : exportFormat === "pdf" ? "Save as PDF" : "Print"}
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 }

@@ -664,93 +664,7 @@ function SuperAdminDashboard() {
   );
 
   return (
-    <ThemeProvider theme={lightPurpleTheme}>
-      <CssBaseline />
-      <Box sx={{ display: "flex", minHeight: "100vh", bgcolor: "background.default" }}>
-        
-        {/* Sidebar Navigation */}
-        <Box component="nav" sx={{ width: { md: drawerWidth }, flexShrink: { md: 0 } }}>
-          {/* Mobile Drawer */}
-          <Drawer
-            variant="temporary"
-            open={mobileOpen}
-            onClose={() => setMobileOpen(false)}
-            ModalProps={{ keepMounted: true }}
-            sx={{
-              display: { xs: "block", md: "none" },
-              "& .MuiDrawer-paper": { boxSizing: "border-box", width: drawerWidth, borderRight: "1px solid", borderColor: "divider" },
-            }}
-          >
-            {drawerContent}
-          </Drawer>
-
-          {/* Desktop Drawer */}
-          <Drawer
-            variant="permanent"
-            sx={{
-              display: { xs: "none", md: "block" },
-              "& .MuiDrawer-paper": { boxSizing: "border-box", width: drawerWidth, borderRight: "1px solid", borderColor: "divider" },
-            }}
-            open
-          >
-            {drawerContent}
-          </Drawer>
-        </Box>
-
-        {/* Right Area */}
-        <Box sx={{ flexGrow: 1, display: "flex", flexDirection: "column", minWidth: 0 }}>
-          {/* Header AppBar */}
-          <AppBar
-            position="static"
-            color="inherit"
-            elevation={0}
-            sx={{
-              borderBottom: "1px solid",
-              borderColor: "divider",
-              bgcolor: "background.paper",
-            }}
-          >
-            <Toolbar sx={{ justifyContent: "space-between", px: { xs: 2, md: 4 } }}>
-              <Box sx={{ display: "flex", alignItems: "center" }}>
-                <IconButton
-                  color="inherit"
-                  edge="start"
-                  onClick={() => setMobileOpen(!mobileOpen)}
-                  sx={{ mr: 2, display: { md: "none" } }}
-                >
-                  <MenuIcon />
-                </IconButton>
-                <Typography variant="h6" noWrap sx={{ fontWeight: 800, fontSize: "1.25rem", color: "primary.main" }}>
-                  {menuItems[tabValue]?.text}
-                </Typography>
-              </Box>
-
-              <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
-                {/* Purple text header display showing System Admin */}
-                <Box sx={{ display: { xs: "none", sm: "flex" }, alignItems: "center", gap: 1.5 }}>
-                  <Avatar sx={{ bgcolor: "primary.main", color: "primary.contrastText", width: 32, height: 32, fontSize: "0.875rem", fontWeight: 700 }}>
-                    S
-                  </Avatar>
-                  <Typography variant="subtitle2" sx={{ fontWeight: 700, color: "text.primary" }}>
-                    System Admin
-                  </Typography>
-                </Box>
-                <Divider orientation="vertical" variant="middle" flexItem sx={{ display: { xs: "none", sm: "block" } }} />
-                <Button
-                  variant="outlined"
-                  color="error"
-                  startIcon={<LogoutIcon />}
-                  onClick={handleLogout}
-                  sx={{ fontWeight: 600 }}
-                >
-                  Logout
-                </Button>
-              </Box>
-            </Toolbar>
-          </AppBar>
-
-          {/* Main content body */}
-          <Box sx={{ flexGrow: 1, p: { xs: 2.5, md: 4 }, bgcolor: "background.default" }}>
+    <Box sx={{ flexGrow: 1, p: { xs: 2.5, md: 4 }, bgcolor: "background.default", overflowY: "auto" }}>
             
             {/* Welcome banner */}
             <Box sx={{ mb: 4 }}>
@@ -1543,10 +1457,7 @@ function SuperAdminDashboard() {
               </form>
             </Dialog>
 
-          </Box> {/* End Main content body */}
-        </Box> {/* End Right Area */}
-      </Box> {/* End Root flex Box */}
-    </ThemeProvider>
+          </Box>
   );
 }
 

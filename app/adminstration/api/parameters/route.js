@@ -48,7 +48,10 @@ export async function POST(req) {
 
     // Check if name is already taken
     const duplicate = await prisma.parameter.findFirst({
-      where: { name: { equals: normName } }
+      where: {
+        name: { equals: normName },
+        workspaceId: null
+      }
     });
 
     if (duplicate) {

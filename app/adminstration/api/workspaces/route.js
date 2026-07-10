@@ -99,7 +99,52 @@ export async function POST(req) {
         },
       });
 
-      // 3. Prepare tests data for bulk insertion
+      // 3. Clone unique parameters for the new workspace
+      const uniqueParamsMap = new Map();
+      for (const gt of globalTests) {
+        if (gt.parameters) {
+          for (const tp of gt.parameters) {
+            if (tp.parameter) {
+              const p = tp.parameter;
+              uniqueParamsMap.set(p.name.toLowerCase(), p);
+            }
+          }
+        }
+      }
+      const uniqueParamsList = Array.from(uniqueParamsMap.values());
+
+      if (uniqueParamsList.length > 0) {
+        await tx.parameter.createMany({
+          data: uniqueParamsList.map((p) => ({
+            name: p.name,
+            unit: p.unit,
+            minValMale: p.minValMale,
+            maxValMale: p.maxValMale,
+            normalRangeMale: p.normalRangeMale,
+            minValFemale: p.minValFemale,
+            maxValFemale: p.maxValFemale,
+            normalRangeFemale: p.normalRangeFemale,
+            minValBaby: p.minValBaby,
+            maxValBaby: p.maxValBaby,
+            normalRangeBaby: p.normalRangeBaby,
+            normalRangeDefault: p.normalRangeDefault,
+            workspaceId: ws.id,
+          }))
+        });
+      }
+
+      // 4. Fetch the newly created parameters to match their new IDs
+      const newParams = await tx.parameter.findMany({
+        where: {
+          workspaceId: ws.id,
+        }
+      });
+      const paramNameToIdMap = {};
+      for (const np of newParams) {
+        paramNameToIdMap[np.name.toLowerCase()] = np.id;
+      }
+
+      // 5. Prepare tests data for bulk insertion
       const testsData = globalTests.map((gt) => ({
         name: gt.name,
         code: gt.code,
@@ -108,36 +153,40 @@ export async function POST(req) {
         workspaceId: ws.id,
       }));
 
-      // 4. Bulk insert all tests
+      // 6. Bulk insert all tests
       await tx.test.createMany({
         data: testsData,
       });
 
-      // 5. Query the newly inserted tests to get their IDs
+      // 7. Query the newly inserted tests to get their IDs
       const insertedTests = await tx.test.findMany({
         where: { workspaceId: ws.id },
       });
 
-      // 6. Map parameters to the newly inserted test IDs
+      // 8. Map parameters to the newly inserted test IDs and parameter IDs
       const allClonedParams = [];
       for (const gt of globalTests) {
         const clonedTest = insertedTests.find(
           (t) => t.code === gt.code && t.name === gt.name
         );
         if (clonedTest && gt.parameters && gt.parameters.length > 0) {
-          for (const p of gt.parameters) {
-            if (p.parameterId) {
-              allClonedParams.push({
-                testId: clonedTest.id,
-                parameterId: p.parameterId,
-                order: p.order,
-              });
+          for (const tp of gt.parameters) {
+            if (tp.parameter) {
+              const newParamId = paramNameToIdMap[tp.parameter.name.toLowerCase()];
+              if (newParamId) {
+                allClonedParams.push({
+                  testId: clonedTest.id,
+                  parameterId: newParamId,
+                  order: tp.order,
+                  workspaceId: ws.id,
+                });
+              }
             }
           }
         }
       }
 
-      // 7. Bulk insert all parameters in one operation
+      // 9. Bulk insert all parameters in one operation
       if (allClonedParams.length > 0) {
         await tx.testParameter.createMany({
           data: allClonedParams,

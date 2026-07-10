@@ -371,63 +371,8 @@ export default function ContactAdminPage() {
   );
 
   return (
-    <ThemeProvider theme={lightPurpleTheme}>
-      <CssBaseline />
-      <Box sx={{ display: "flex", minHeight: "100vh", bgcolor: "background.default" }}>
-        
-        {/* Sidebar Navigation */}
-        <Box component="nav" sx={{ width: { md: drawerWidth }, flexShrink: { md: 0 } }}>
-          <Drawer
-            variant="temporary"
-            open={mobileOpen}
-            onClose={() => setMobileOpen(false)}
-            ModalProps={{ keepMounted: true }}
-            sx={{
-              display: { xs: "block", md: "none" },
-              "& .MuiDrawer-paper": { boxSizing: "border-box", width: drawerWidth, borderRight: "1px solid", borderColor: "divider" },
-            }}
-          >
-            {drawerContent}
-          </Drawer>
-          <Drawer
-            variant="permanent"
-            sx={{
-              display: { xs: "none", md: "block" },
-              "& .MuiDrawer-paper": { boxSizing: "border-box", width: drawerWidth, borderRight: "1px solid", borderColor: "divider" },
-            }}
-            open
-          >
-            {drawerContent}
-          </Drawer>
-        </Box>
-
-        {/* Main Content Area */}
-        <Box sx={{ flexGrow: 1, display: "flex", flexDirection: "column", width: { md: `calc(100% - ${drawerWidth}px)` } }}>
-          <AppBar position="sticky" color="inherit" elevation={0} sx={{ borderBottom: "1px solid", borderColor: "divider" }}>
-            <Toolbar sx={{ px: { xs: 2, sm: 3 } }}>
-              <IconButton
-                color="inherit"
-                edge="start"
-                onClick={() => setMobileOpen(true)}
-                sx={{ mr: 2, display: { md: "none" } }}
-              >
-                <MenuIcon />
-              </IconButton>
-              <Typography variant="h6" sx={{ fontWeight: 800, flexGrow: 1, color: "text.primary" }}>
-                Lead Management - Contact Inquiries
-              </Typography>
-              <Button
-                color="primary"
-                onClick={handleLogout}
-                startIcon={<LogoutIcon />}
-                sx={{ fontWeight: 700 }}
-              >
-                Logout
-              </Button>
-            </Toolbar>
-          </AppBar>
-
-          <Box sx={{ p: { xs: 2, sm: 3 }, display: "flex", flexDirection: "column", gap: 3 }}>
+    <>
+      <Box sx={{ p: { xs: 2, sm: 3 }, display: "flex", flexDirection: "column", gap: 3, overflowY: "auto", flexGrow: 1 }}>
             {/* Metric Summary Cards */}
             <Grid container spacing={3}>
               <Grid size={{ xs: 12, sm: 6 }}>
@@ -690,8 +635,6 @@ export default function ContactAdminPage() {
               )}
             </Card>
           </Box>
-        </Box>
-      </Box>
 
       {/* View Message Details Modal */}
       <Dialog open={viewModalOpen} onClose={() => setViewModalOpen(false)} maxWidth="sm" fullWidth>
@@ -764,6 +707,6 @@ export default function ContactAdminPage() {
           </Button>
         </DialogActions>
       </Dialog>
-    </ThemeProvider>
+    </>
   );
 }

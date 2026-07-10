@@ -7,25 +7,30 @@ import { cookies, headers } from "next/headers";
 export async function POST(req) {
   try {
     const body = await req.json().catch(() => ({}));
-    const email = body.email?.trim().toLowerCase();
+    const identifier = (body.identifier || body.email || "").trim().toLowerCase();
     const password = body.password;
 
-    if (!email || !password) {
-      return NextResponse.json({ success: false, message: "Email and password are required." });
+    if (!identifier || !password) {
+      return NextResponse.json({ success: false, message: "Email/mobile and password are required." });
     }
 
-    const admin = await prisma.admin.findUnique({
-      where: { email },
+    const admin = await prisma.admin.findFirst({
+      where: {
+        OR: [
+          { email: identifier },
+          { mobileNumber: identifier },
+        ],
+      },
       include: { workspace: true },
     });
 
     if (!admin) {
-      return NextResponse.json({ success: false, message: "Invalid email or password." });
+      return NextResponse.json({ success: false, message: "Invalid email/mobile or password." });
     }
 
     const isPasswordMatch = await bcrypt.compare(password, admin.password || "");
     if (!isPasswordMatch) {
-      return NextResponse.json({ success: false, message: "Invalid email or password." });
+      return NextResponse.json({ success: false, message: "Invalid email/mobile or password." });
     }
 
     if (!admin.isActive) {

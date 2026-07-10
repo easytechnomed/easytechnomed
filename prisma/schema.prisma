@@ -21,6 +21,8 @@ model Workspace {
   registrations Registration[]
   tests         Test[]
   users         User[]
+  parameters     Parameter[]
+  testParameters TestParameter[]
 }
 
 model SuperAdmin {
@@ -31,6 +33,7 @@ model SuperAdmin {
   createdAt DateTime            @default(now())
   updatedAt DateTime            @updatedAt
   sessions  SuperAdminSession[]
+  trackings SuperAdminTracking[]
 }
 
 model SuperAdminSession {
@@ -130,6 +133,7 @@ model Admin {
   workspace                  Workspace?     @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
   address                    AdminAddress?
   sessions                   AdminSession[]
+  trackings                  AdminTracking[]
 
   @@index([roleId])
   @@index([workspaceId], map: "Admin_workspaceId_fkey")
@@ -277,7 +281,7 @@ model RegistrationTest {
 
 model Parameter {
   id                 Int             @id @default(autoincrement())
-  name               String          @unique
+  name               String
   unit               String?
   minValMale         Float?
   maxValMale         Float?
@@ -291,7 +295,12 @@ model Parameter {
   normalRangeDefault String?
   createdAt          DateTime        @default(now())
   updatedAt          DateTime        @updatedAt
+  workspaceId        Int?
+  workspace          Workspace?      @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
   testMappings       TestParameter[]
+
+  @@unique([workspaceId, name])
+  @@index([workspaceId], map: "Parameter_workspaceId_fkey")
 }
 
 model TestParameter {
@@ -303,12 +312,15 @@ model TestParameter {
   deletedAt   DateTime?
   isDeleted   Boolean         @default(false)
   parameterId Int
+  workspaceId Int?
+  workspace   Workspace?      @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
   results     PatientResult[]
   parameter   Parameter       @relation(fields: [parameterId], references: [id], onDelete: Cascade)
   test        Test            @relation(fields: [testId], references: [id], onDelete: Cascade)
 
   @@index([parameterId], map: "TestParameter_parameterId_fkey")
   @@index([testId], map: "TestParameter_testId_fkey")
+  @@index([workspaceId], map: "TestParameter_workspaceId_fkey")
 }
 
 model PatientResult {
@@ -340,6 +352,8 @@ model AdminAddress {
   state     String?
   pincode   String?
   country   String?
+  latitude  Float?
+  longitude Float?
   adminId   Int      @unique
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -370,4 +384,34 @@ model LeadContact {
   deletedAt    DateTime?
   createdAt    DateTime  @default(now())
   updatedAt    DateTime  @updatedAt
+}
+
+model AdminTracking {
+  id            Int      @id @default(autoincrement())
+  sessionId     String   @unique
+  startUTC      DateTime
+  ENDUTC        DateTime
+  mode          String
+  durationInMin Float
+  adminId       Int?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  admin         Admin?   @relation(fields: [adminId], references: [id], onDelete: Cascade)
+
+  @@index([adminId], map: "AdminTracking_adminId_fkey")
+}
+
+model SuperAdminTracking {
+  id            Int         @id @default(autoincrement())
+  sessionId     String      @unique
+  startUTC      DateTime
+  ENDUTC        DateTime
+  mode          String
+  durationInMin Float
+  superAdminId  Int?
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+  superAdmin    SuperAdmin? @relation(fields: [superAdminId], references: [id], onDelete: Cascade)
+
+  @@index([superAdminId], map: "SuperAdminTracking_superAdminId_fkey")
 }

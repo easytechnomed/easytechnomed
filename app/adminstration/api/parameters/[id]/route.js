@@ -38,6 +38,7 @@ export async function PUT(req, { params }) {
     const duplicate = await prisma.parameter.findFirst({
       where: {
         name: { equals: normName },
+        workspaceId: null,
         id: { not: parameterId }
       }
     });

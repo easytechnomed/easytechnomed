@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { TrackingProvider } from "@/app/context/TrackingContext";
 import {
   Box,
   Drawer,
@@ -354,9 +355,10 @@ export default function AdminLayoutClient({ admin, children }) {
   };
 
   return (
-    <ThemeProvider theme={theme}>
-      <CssBaseline />
-      <Box sx={{ display: "flex", minHeight: "100vh" }}>
+    <TrackingProvider type="admin">
+      <ThemeProvider theme={theme}>
+        <CssBaseline />
+        <Box sx={{ display: "flex", minHeight: "100vh" }}>
         {/* AppBar */}
         <AppBar
           position="fixed"
@@ -578,5 +580,6 @@ export default function AdminLayoutClient({ admin, children }) {
         </Popper>
       </Box>
     </ThemeProvider>
+  </TrackingProvider>
   );
 }
