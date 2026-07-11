@@ -64,7 +64,8 @@ import {
   Menu as MenuIcon,
   Science as ScienceIcon,
   TrendingUp as TrendingUpIcon,
-  Email as EmailIcon
+  Email as EmailIcon,
+  Sync as SyncIcon
 } from "@mui/icons-material";
 import { toast } from "sonner";
 import * as XLSX from "xlsx";
@@ -160,6 +161,7 @@ function SuperAdminDashboard() {
   const [admins, setAdmins] = useState([]);
   const [roles, setRoles] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [syncingWorkspaceId, setSyncingWorkspaceId] = useState(null);
 
   // Modals state
   const [workspaceModalOpen, setWorkspaceModalOpen] = useState(false);
@@ -353,6 +355,27 @@ function SuperAdminDashboard() {
       );
     } else {
       toast.error(res.error || "Failed to change workspace status.");
+    }
+  };
+
+  const handleSyncWorkspaceDefaults = async (id) => {
+    setSyncingWorkspaceId(id);
+    try {
+      const res = await fetch(`/adminstration/api/workspaces/${id}/sync-defaults`, {
+        method: "POST"
+      }).then(r => r.json());
+      
+      if (res.success) {
+        toast.success(res.message || "Workspace synchronized successfully!");
+        fetchData();
+      } else {
+        toast.error(res.error || "Failed to sync workspace.");
+      }
+    } catch (err) {
+      console.error(err);
+      toast.error("An error occurred during synchronization.");
+    } finally {
+      setSyncingWorkspaceId(null);
     }
   };
 
@@ -800,9 +823,23 @@ function SuperAdminDashboard() {
                                   />
                                 </TableCell>
                                 <TableCell align="center">
-                                  <IconButton color="error" onClick={() => handleDeleteWorkspace(ws.id)}>
-                                    <DeleteIcon />
-                                  </IconButton>
+                                  <Box sx={{ display: "flex", gap: 1, justifyContent: "center" }}>
+                                    <IconButton
+                                      color="primary"
+                                      onClick={() => handleSyncWorkspaceDefaults(ws.id)}
+                                      disabled={syncingWorkspaceId !== null}
+                                      size="small"
+                                    >
+                                      {syncingWorkspaceId === ws.id ? (
+                                        <CircularProgress size={20} color="inherit" />
+                                      ) : (
+                                        <SyncIcon fontSize="small" />
+                                      )}
+                                    </IconButton>
+                                    <IconButton color="error" onClick={() => handleDeleteWorkspace(ws.id)} size="small">
+                                      <DeleteIcon fontSize="small" />
+                                    </IconButton>
+                                  </Box>
                                 </TableCell>
                               </TableRow>
                             ))

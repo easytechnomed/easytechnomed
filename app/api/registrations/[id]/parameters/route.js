@@ -102,6 +102,12 @@ export async function POST(req, { params }) {
     const incomingList = Array.isArray(parametersList) ? parametersList : [];
 
     await prisma.$transaction(async (tx) => {
+      // Mark test as customized locally
+      await tx.test.update({
+        where: { id: testId },
+        data: { isCustomized: true }
+      });
+
       // Clear legacy parameter mappings for this test
       await tx.testParameter.deleteMany({ where: { testId } });
 

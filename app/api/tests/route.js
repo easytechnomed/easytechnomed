@@ -284,7 +284,7 @@ export async function PUT(req) {
 
     // Check if it's already a workspace-specific test
     if (test.workspaceId === admin.workspaceId) {
-      const updateData = { price: numericPrice };
+      const updateData = { price: numericPrice, isCustomized: true };
       if (testName) {
         updateData.name = testName;
       }
@@ -310,6 +310,7 @@ export async function PUT(req) {
           price: numericPrice,
           isProcessed: test.isProcessed,
           workspaceId: admin.workspaceId,
+          isCustomized: true,
         },
       });
 

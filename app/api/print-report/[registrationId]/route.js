@@ -115,7 +115,7 @@ export async function GET(req, { params }) {
     const cookieStore = await cookies();
     const isAdminToken = cookieStore.get("admin_session_token")?.value;
     const isSuperAdminToken = cookieStore.get("super_admin_session_token")?.value;
-    
+
     let isStaff = false;
 
     if (isAdminToken) {
@@ -233,7 +233,7 @@ export async function GET(req, { params }) {
 
     const searchParams = req.nextUrl.searchParams;
     const withFrameParam = searchParams.get("withFrame");
-    
+
     // Determine whether to use frame
     let useFrame = configAdmin?.useFrameDefault ?? true;
     if (withFrameParam !== null) {
@@ -472,7 +472,7 @@ export async function GET(req, { params }) {
           const ref = getReferenceRange(param, reg);
 
           const isHeader = param.isHeader || (!param.unit && (!ref || !ref.rangeStr || ref.rangeStr === "" || ref.rangeStr === "-NA-"));
-          
+
           if (isHeader) {
             currentHeader = param.name;
           }
@@ -481,7 +481,7 @@ export async function GET(req, { params }) {
           if (tableActiveY < footerMargin + 35) {
             await addNewPage();
             tableActiveY = drawTableHeader(currentPage, pageHeight - headerMargin - 15);
-            
+
             // Re-draw Test group header on new page for context
             currentPage.drawRectangle({
               x: leftMargin,
@@ -526,7 +526,7 @@ export async function GET(req, { params }) {
             else if (flag === "Critical High") flagAbbr = "CH*";
             else if (flag === "Borderline Low") flagAbbr = "BL";
             else if (flag === "Borderline High") flagAbbr = "BH";
-            
+
             if (flagAbbr) {
               displayVal = `${formattedVal} (${flagAbbr})`;
             }
@@ -576,12 +576,12 @@ export async function GET(req, { params }) {
           borderColor: rgb(0.9, 0.92, 0.94),
           borderWidth: 0.5
         });
-        
+
         drawText(currentPage, "Clinical Interpretation & Comments:", leftMargin + 10, tableActiveY - 11, 8, true, rgb(0.06, 0.46, 0.43));
         drawText(currentPage, regTest.interpretation, leftMargin + 10, tableActiveY - 23, 7.5, false, rgb(0.2, 0.25, 0.3));
         tableActiveY -= 45;
       }
-      
+
       // Bottom spacer after test group
       tableActiveY -= 10;
     }

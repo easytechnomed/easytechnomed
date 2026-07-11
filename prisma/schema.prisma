@@ -200,6 +200,8 @@ model Test {
   updatedAt     DateTime           @updatedAt
   isProcessed   Boolean            @default(false)
   workspaceId   Int?
+  isCustomized  Boolean            @default(false)
+  defaultUpdatedAt DateTime?
   deletedAt     DateTime?
   isDeleted     Boolean            @default(false)
   departmentId  Int?

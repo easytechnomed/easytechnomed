@@ -162,7 +162,7 @@ export async function PUT(req, { params }) {
             });
           }
 
-          if (p.id) {
+          if (p.id && existingIds.includes(p.id)) {
             await tx.testParameter.update({
               where: { id: p.id },
               data: {
