@@ -15,6 +15,7 @@ function serializeRegistration(reg) {
             return {
               ...rest,
               name: parameter.name,
+              code: parameter.code,
               unit: parameter.unit,
               minValMale: parameter.minValMale,
               maxValMale: parameter.maxValMale,
@@ -59,6 +60,11 @@ export async function GET(req, { params }) {
                   orderBy: { order: "asc" },
                   include: { parameter: true }
                 },
+                formulas: {
+                  include: {
+                    outputParameter: true
+                  }
+                }
               },
             },
           },
@@ -141,6 +147,7 @@ export async function POST(req, { params }) {
             testId,
             parameterId: parameter.id,
             order: index + 1,
+            isHeader: param.isHeader || false,
             isDeleted: false,
           }
         });

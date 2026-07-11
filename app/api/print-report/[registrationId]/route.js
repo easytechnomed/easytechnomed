@@ -197,7 +197,7 @@ export async function GET(req, { params }) {
               return {
                 ...rest,
                 name: parameter.name,
-                unit: parameter.unit,
+                unit: tp.unit || parameter.unit,
                 minValMale: parameter.minValMale,
                 maxValMale: parameter.maxValMale,
                 normalRangeMale: parameter.normalRangeMale,
@@ -318,7 +318,13 @@ export async function GET(req, { params }) {
 
     // Helper to draw text
     const drawText = (page, text, x, y, size = 9, isBold = false, color = rgb(0.09, 0.12, 0.18)) => {
-      page.drawText(String(text || ""), {
+      let cleanText = String(text || "")
+        .replace(/[μµ]/g, "u")
+        .replace(/–/g, "-")
+        .replace(/—/g, "-")
+        .replace(/[“”]/g, '"')
+        .replace(/[‘’]/g, "'");
+      page.drawText(cleanText, {
         x,
         y,
         size,
@@ -394,10 +400,14 @@ export async function GET(req, { params }) {
 
     let tableActiveY = drawTableHeader(currentPage, currentY);
 
-    // Map result values for easy access
+    // Map result values and interpretations for easy access
     const resultsMap = {};
+    const flagsMap = {};
+    const interpretationsMap = {};
     reg.results.forEach((r) => {
       resultsMap[r.testParameterId] = r.value;
+      flagsMap[r.testParameterId] = r.flag;
+      interpretationsMap[r.testParameterId] = r.interpretation;
     });
 
     for (const regTest of reg.tests) {
@@ -421,52 +431,155 @@ export async function GET(req, { params }) {
       drawText(currentPage, `${test.name} (${test.code})`, leftMargin + 10, tableActiveY - 13, 9, true, rgb(0.06, 0.46, 0.43));
       tableActiveY -= 20;
 
-      for (const param of params) {
-        const val = resultsMap[param.id] || "";
-        const ref = getReferenceRange(param, reg);
+      // Group parameters by section
+      const sectionsMap = {};
+      const sectionOrder = [];
+      params.forEach(param => {
+        const sec = param.section || "Default";
+        if (!sectionsMap[sec]) {
+          sectionsMap[sec] = [];
+          sectionOrder.push(sec);
+        }
+        sectionsMap[sec].push(param);
+      });
 
-        // Check page wrap
-        if (tableActiveY < footerMargin + 35) {
+      let currentHeader = null;
+      for (const secName of sectionOrder) {
+        const sectionParams = sectionsMap[secName];
+
+        if (secName !== "Default") {
+          // Check page wrap for section header
+          if (tableActiveY < footerMargin + 35) {
+            await addNewPage();
+            tableActiveY = drawTableHeader(currentPage, pageHeight - headerMargin - 15);
+          }
+
+          // Draw Section Header divider line
+          currentPage.drawLine({
+            start: { x: leftMargin, y: tableActiveY },
+            end: { x: pageWidth - leftMargin, y: tableActiveY },
+            thickness: 0.3,
+            color: rgb(0.9, 0.92, 0.94),
+          });
+          drawText(currentPage, secName.toUpperCase(), leftMargin + 10, tableActiveY - 14, 8, true, rgb(0.3, 0.35, 0.4));
+          tableActiveY -= 18;
+        }
+
+        for (const param of sectionParams) {
+          const val = resultsMap[param.id] || "";
+          const flag = flagsMap[param.id];
+          const interpretation = interpretationsMap[param.id];
+          const ref = getReferenceRange(param, reg);
+
+          const isHeader = param.isHeader || (!param.unit && (!ref || !ref.rangeStr || ref.rangeStr === "" || ref.rangeStr === "-NA-"));
+          
+          if (isHeader) {
+            currentHeader = param.name;
+          }
+
+          // Check page wrap
+          if (tableActiveY < footerMargin + 35) {
+            await addNewPage();
+            tableActiveY = drawTableHeader(currentPage, pageHeight - headerMargin - 15);
+            
+            // Re-draw Test group header on new page for context
+            currentPage.drawRectangle({
+              x: leftMargin,
+              y: tableActiveY - 20,
+              width: contentWidth,
+              height: 18,
+              color: rgb(0.96, 0.97, 0.98),
+            });
+            drawText(currentPage, `${test.name} (${test.code}) - Continued`, leftMargin + 10, tableActiveY - 13, 9, true, rgb(0.06, 0.46, 0.43));
+            tableActiveY -= 20;
+          }
+
+          // Draw Row Border line
+          currentPage.drawLine({
+            start: { x: leftMargin, y: tableActiveY },
+            end: { x: pageWidth - leftMargin, y: tableActiveY },
+            thickness: 0.3,
+            color: rgb(0.9, 0.92, 0.94),
+          });
+
+          // Determine formatting: bold red for abnormal values
+          const isAbnormal = flag ? flag !== "Normal" : isOutOfRange(val, ref.min, ref.max);
+          const resultColor = isAbnormal ? rgb(0.85, 0.12, 0.12) : rgb(0.09, 0.12, 0.18);
+
+          // Format value to target decimal precision if numeric
+          let formattedVal = val;
+          if (val !== "") {
+            const num = parseFloat(val);
+            if (!isNaN(num)) {
+              const precision = param.decimalPlace ?? 2;
+              formattedVal = num.toFixed(precision);
+            }
+          }
+
+          // Append flag labels to observed values
+          let displayVal = formattedVal;
+          if (flag && flag !== "Normal" && val !== "") {
+            let flagAbbr = "";
+            if (flag === "Low") flagAbbr = "L";
+            else if (flag === "High") flagAbbr = "H";
+            else if (flag === "Critical Low") flagAbbr = "CL*";
+            else if (flag === "Critical High") flagAbbr = "CH*";
+            else if (flag === "Borderline Low") flagAbbr = "BL";
+            else if (flag === "Borderline High") flagAbbr = "BH";
+            
+            if (flagAbbr) {
+              displayVal = `${formattedVal} (${flagAbbr})`;
+            }
+          }
+
+          if (isHeader) {
+            drawText(currentPage, param.name, leftMargin + 10, tableActiveY - 14, 9, true, rgb(0.06, 0.46, 0.43));
+          } else {
+            const isChild = !!currentHeader;
+            const displayName = isChild ? `  -  ${param.name}` : param.name;
+            const indentX = isChild ? 22 : 10;
+
+            drawText(currentPage, displayName, leftMargin + indentX, tableActiveY - 14, 9, false);
+            drawText(currentPage, displayVal || "-", leftMargin + 200, tableActiveY - 14, 9, isAbnormal, resultColor);
+            drawText(currentPage, param.unit || "-", leftMargin + 310, tableActiveY - 14, 9, false);
+            drawText(currentPage, ref.rangeStr || "-", leftMargin + 380, tableActiveY - 14, 9, false);
+          }
+
+          tableActiveY -= 20;
+
+          // Draw Parameter level comments/interpretations directly below the row
+          if (interpretation) {
+            if (tableActiveY < footerMargin + 25) {
+              await addNewPage();
+              tableActiveY = drawTableHeader(currentPage, pageHeight - headerMargin - 15);
+            }
+            drawText(currentPage, `* Note: ${interpretation}`, leftMargin + 25, tableActiveY - 12, 7.5, false, rgb(0.4, 0.45, 0.5));
+            tableActiveY -= 15;
+          }
+        }
+      }
+
+      // Draw Test level Clinical Interpretation and Comments
+      if (regTest.interpretation) {
+        if (tableActiveY < footerMargin + 55) {
           await addNewPage();
           tableActiveY = drawTableHeader(currentPage, pageHeight - headerMargin - 15);
-          
-          // Re-draw Test group header on new page for context
-          currentPage.drawRectangle({
-            x: leftMargin,
-            y: tableActiveY - 20,
-            width: contentWidth,
-            height: 18,
-            color: rgb(0.96, 0.97, 0.98),
-          });
-          drawText(currentPage, `${test.name} (${test.code}) - Continued`, leftMargin + 10, tableActiveY - 13, 9, true, rgb(0.06, 0.46, 0.43));
-          tableActiveY -= 20;
         }
 
-        // Draw Row Border line
-        currentPage.drawLine({
-          start: { x: leftMargin, y: tableActiveY },
-          end: { x: pageWidth - leftMargin, y: tableActiveY },
-          thickness: 0.3,
-          color: rgb(0.9, 0.92, 0.94),
+        // Draw comment box
+        currentPage.drawRectangle({
+          x: leftMargin,
+          y: tableActiveY - 35,
+          width: contentWidth,
+          height: 30,
+          color: rgb(0.98, 0.98, 0.98),
+          borderColor: rgb(0.9, 0.92, 0.94),
+          borderWidth: 0.5
         });
-
-        // Determine formatting: bold red for abnormal values
-        const isAbnormal = isOutOfRange(val, ref.min, ref.max);
-        const resultColor = isAbnormal ? rgb(0.85, 0.12, 0.12) : rgb(0.09, 0.12, 0.18);
-
-        // If parameter is a section header (e.g. no unit/normal range, only title)
-        const isSectionHeader = !param.unit && !ref.rangeStr && !val;
-
-        if (isSectionHeader) {
-          drawText(currentPage, param.name, leftMargin + 10, tableActiveY - 14, 9, true, rgb(0.3, 0.35, 0.4));
-        } else {
-          drawText(currentPage, param.name, leftMargin + 10, tableActiveY - 14, 9, false);
-          drawText(currentPage, val || "-", leftMargin + 200, tableActiveY - 14, 9, isAbnormal, resultColor);
-          drawText(currentPage, param.unit || "-", leftMargin + 310, tableActiveY - 14, 9, false);
-          drawText(currentPage, ref.rangeStr || "-", leftMargin + 380, tableActiveY - 14, 9, false);
-        }
-
-        tableActiveY -= 20;
+        
+        drawText(currentPage, "Clinical Interpretation & Comments:", leftMargin + 10, tableActiveY - 11, 8, true, rgb(0.06, 0.46, 0.43));
+        drawText(currentPage, regTest.interpretation, leftMargin + 10, tableActiveY - 23, 7.5, false, rgb(0.2, 0.25, 0.3));
+        tableActiveY -= 45;
       }
       
       // Bottom spacer after test group

@@ -164,48 +164,115 @@ async function main() {
   }
   console.log("Default Doctors seeded.");
 
-  // 8. Seed Tests from complete_test_names.json (Global)
-  const fs = require("fs");
-  const path = require("path");
-  try {
-    const filePath = path.join(__dirname, "../public/complete_test_names.json");
-    if (fs.existsSync(filePath)) {
-      const dataStr = fs.readFileSync(filePath, "utf-8");
-      const rawTests = JSON.parse(dataStr);
-      console.log(`Found ${rawTests.length} tests in JSON. Seeding...`);
+  // 7.5. Seed Default Test Departments (Global)
+  console.log("Seeding default global departments...");
+  const defaultDepartments = [
+    "BIOCHEMISTRY",
+    "CLINICAL PATHOLOGY",
+    "CYTOLOGY",
+    "HAEMATOLOGY",
+    "HISTOPATHOLOGY",
+    "IMMUNOLOGY",
+    "MICRO-BIOLOGY",
+    "Molecular Pathology",
+    "ROUTINE",
+    "SEROLOGY"
+  ];
+  
+  const deptMap = {}; // name -> id
+  for (const name of defaultDepartments) {
+    const dept = await prisma.testDepartment.upsert({
+      where: { name },
+      update: {},
+      create: { name },
+    });
+    deptMap[name] = dept.id;
+  }
+  console.log("Default global departments seeded.");
 
-      const seenCodes = new Set();
-      const testData = [];
-
-      for (const t of rawTests) {
-        if (!t.test_name || !t.code) continue;
-        if (seenCodes.has(t.code)) continue;
-        seenCodes.add(t.code);
-
-        // Generate stable price based on code character sum
-        let priceSum = 0;
-        for (let i = 0; i < t.code.length; i++) {
-          priceSum += t.code.charCodeAt(i);
-        }
-        const price = (300 + (priceSum % 17) * 100).toFixed(2);
-
-        testData.push({
-          name: t.test_name.trim().replace(/^-\s+/, ""),
-          code: t.code,
-          price: parseFloat(price),
-        });
-      }
-
-      const created = await prisma.test.createMany({
-        data: testData,
-        skipDuplicates: true,
-      });
-      console.log(`Seeded ${created.count} tests successfully.`);
+  // 7.8. Cleanup Duplicate Global Tests (Keep first and re-link references)
+  console.log("Cleaning up duplicate global tests...");
+  const allGlobalTests = await prisma.test.findMany({
+    where: { workspaceId: null, isDeleted: false },
+    orderBy: { id: "asc" }
+  });
+  
+  const codesMap = {}; // code -> firstId
+  const duplicateIds = [];
+  for (const test of allGlobalTests) {
+    if (!test.code) continue;
+    if (!codesMap[test.code]) {
+      codesMap[test.code] = test.id;
     } else {
-      console.log("complete_test_names.json file not found at " + filePath);
+      duplicateIds.push(test.id);
     }
+  }
+  
+  if (duplicateIds.length > 0) {
+    console.log(`Re-linking and deleting ${duplicateIds.length} duplicate global tests...`);
+    for (const dupId of duplicateIds) {
+      const testObj = allGlobalTests.find(t => t.id === dupId);
+      const firstId = codesMap[testObj.code];
+      
+      // Re-link registrations referencing duplicate
+      await prisma.registrationTest.updateMany({
+        where: { testId: dupId },
+        data: { testId: firstId }
+      });
+      
+      // Re-link test parameters referencing duplicate
+      await prisma.testParameter.updateMany({
+        where: { testId: dupId },
+        data: { testId: firstId }
+      });
+    }
+    
+    // Delete duplicate tests safely
+    await prisma.test.deleteMany({
+      where: { id: { in: duplicateIds } }
+    });
+    console.log(`Duplicate cleanup complete. Deleted ${duplicateIds.length} tests.`);
+  }
+
+  try {
+    // 8.5. Backfill existing tests that don't have departmentId
+    console.log("Backfilling existing tests with departmentId...");
+    const existingTestsWithNoDept = await prisma.test.findMany({
+      where: { departmentId: null }
+    });
+    console.log(`Found ${existingTestsWithNoDept.length} tests with no department assigned. Classification in progress...`);
+    
+    // Group test IDs by departmentId
+    const updates = {}; // deptId -> array of testIds
+    for (const test of existingTestsWithNoDept) {
+      const deptName = getDepartmentName(test.name);
+      const departmentId = deptMap[deptName];
+      if (departmentId) {
+        if (!updates[departmentId]) {
+          updates[departmentId] = [];
+        }
+        updates[departmentId].push(test.id);
+      }
+    }
+    
+    // Perform bulk updates
+    let backfilledCount = 0;
+    for (const [departmentId, testIds] of Object.entries(updates)) {
+      const parsedDeptId = parseInt(departmentId);
+      const res = await prisma.test.updateMany({
+        where: { id: { in: testIds } },
+        data: { departmentId: parsedDeptId }
+      });
+      backfilledCount += res.count;
+      console.log(`Updated ${res.count} tests to department ID ${parsedDeptId}`);
+    }
+    console.log(`Backfilled ${backfilledCount} tests successfully.`);
+
     // 9. Post-process and seed parameters for all tests
     await processTestParameters();
+
+    // 10. Seed LIMS Formulas, Sections, Borderline Ranges, and Interpretation Rules
+    await seedLimsFormulasAndConfigurations();
   } catch (error) {
     console.error("Error seeding tests:", error);
   }
@@ -308,13 +375,18 @@ async function processTestParameters() {
       });
     }
 
-    await prisma.testParameter.create({
-      data: {
-        testId: p.testId,
-        parameterId: parameter.id,
-        order: p.order,
-      }
-    });
+    try {
+      await prisma.testParameter.create({
+        data: {
+          testId: p.testId,
+          parameterId: parameter.id,
+          order: p.order,
+        }
+      });
+    } catch (err) {
+      console.error(`[ERROR] Failed to insert TestParameter: testId=${p.testId}, parameterId=${parameter.id} (${parameter.name}), order=${p.order}. details:`, err);
+      throw err;
+    }
   }
   
   await prisma.test.updateMany({
@@ -336,3 +408,420 @@ main()
   .finally(async () => {
     await prisma.$disconnect();
   });
+
+function getDepartmentName(testName) {
+  const name = testName.toLowerCase();
+  
+  // HAEMATOLOGY
+  if (
+    name.includes("hgb") || name.includes("hemoglobin") || name.includes("haemoglobin") ||
+    name.includes("rbc") || name.includes("wbc") || name.includes("platelet") ||
+    name.includes("cbc") || name.includes("esr") || name.includes("pcv") ||
+    name.includes("diff") || name.includes("dlc") || name.includes("blood") ||
+    name.includes("leukocyte") || name.includes("eosinophil") || name.includes("neutrophil") ||
+    name.includes("lymphocyte") || name.includes("monocyte") || name.includes("basophil") ||
+    name.includes("cell count") || name.includes("smear") || name.includes("coagulation") ||
+    name.includes("pt-") || name.includes("aptt") || name.includes("bleeding") ||
+    name.includes("clotting") || name.includes("retic") || name.includes("malaria") ||
+    name.includes("mp ") || name.includes("blood group") || name.includes("rh type") ||
+    name.includes("coombs") || name.includes("erythrocyte") || name.includes("anemia") ||
+    name.includes("pack cell") || name.includes("iron profile") || name.includes("ferritin") ||
+    name.includes("transferrin")
+  ) {
+    return "HAEMATOLOGY";
+  }
+  
+  // CYTOLOGY
+  if (
+    name.includes("fnac") || name.includes("pap smear") || name.includes("cytology") ||
+    name.includes("fluid cytology") || name.includes(" pleural ") || name.includes(" ascites ") ||
+    name.includes("csf cytology") || name.includes("bronte") || name.includes("aspirate")
+  ) {
+    return "CYTOLOGY";
+  }
+  
+  // HISTOPATHOLOGY
+  if (
+    name.includes("biopsy") || name.includes("histopathology") || name.includes("appendix") ||
+    name.includes("tissue") || name.includes("specimen") || name.includes("section") ||
+    name.includes("tumor") || name.includes("cyst") || name.includes("gall bladder") ||
+    name.includes("radical") || name.includes("resection") || name.includes("excision")
+  ) {
+    return "HISTOPATHOLOGY";
+  }
+  
+  // MICRO-BIOLOGY
+  if (
+    name.includes("culture") || name.includes("sensitivity") || name.includes("micro-biology") ||
+    name.includes("microbiology") || name.includes("fungal") || name.includes("fungus") ||
+    name.includes("gram stain") || name.includes("afb stain") || name.includes("smear for afb") ||
+    name.includes("sputum for afb") || name.includes("tb pcr") || name.includes("parasite") ||
+    name.includes("microscopic") || name.includes("bacterial") || name.includes("pathogen")
+  ) {
+    return "MICRO-BIOLOGY";
+  }
+  
+  // Molecular Pathology
+  if (
+    name.includes("molecular") || name.includes("pcr") || name.includes("dna") ||
+    name.includes("rna") || name.includes("genotype") || name.includes("hla ") ||
+    name.includes("mutational") || name.includes("sequencing") || name.includes("karyotyp") ||
+    name.includes("gene") || name.includes("chromosom") || name.includes("fish ")
+  ) {
+    return "Molecular Pathology";
+  }
+  
+  // IMMUNOLOGY
+  if (
+    name.includes("immunology") || name.includes("ana ") || name.includes("dsdna") ||
+    name.includes("autoantibody") || name.includes("rheumatoid") || name.includes("ra factor") ||
+    name.includes("immunoglobulin") || name.includes("igg") || name.includes("iga") ||
+    name.includes("igm") || name.includes("ige") || name.includes("complements") ||
+    name.includes("c3 ") || name.includes("c4 ") || name.includes("allergen") ||
+    name.includes("allergy") || name.includes("anti-")
+  ) {
+    return "IMMUNOLOGY";
+  }
+  
+  // SEROLOGY
+  if (
+    name.includes("serology") || name.includes("hiv") || name.includes("hbsag") ||
+    name.includes("hcv") || name.includes("vdrl") || name.includes("rpr") ||
+    name.includes("widal") || name.includes("typhoid") || name.includes("dengue") ||
+    name.includes("chikungunya") || name.includes("crp") || name.includes("c-reactive") ||
+    name.includes("aso") || name.includes("syphilis") || name.includes("elisa") ||
+    name.includes("antibody") || name.includes("antigen") || name.includes("serum") &&
+    (name.includes("t3") || name.includes("t4") || name.includes("tsh"))
+  ) {
+    return "SEROLOGY";
+  }
+
+  // CLINICAL PATHOLOGY
+  if (
+    name.includes("urine") || name.includes("stool") || name.includes("semen") ||
+    name.includes("physical examination") || name.includes("chemical examination") ||
+    name.includes("occult blood") || name.includes("fluid analysis") ||
+    name.includes("csf analysis") || name.includes("pregnancy test") || name.includes("upt") ||
+    name.includes("clinical pathology")
+  ) {
+    return "CLINICAL PATHOLOGY";
+  }
+  
+  // BIOCHEMISTRY
+  if (
+    name.includes("biochemistry") || name.includes("glucose") || name.includes("sugar") ||
+    name.includes("cholesterol") || name.includes("lipid") || name.includes("triglyceride") ||
+    name.includes("urea") || name.includes("creatinine") || name.includes("uric acid") ||
+    name.includes("bilirubin") || name.includes("lft") || name.includes("kft") ||
+    name.includes("rft") || name.includes("sgot") || name.includes("sgpt") ||
+    name.includes("alkaline phosphatase") || name.includes("protein") || name.includes("albumin") ||
+    name.includes("globulin") || name.includes("calcium") || name.includes("phosphorus") ||
+    name.includes("sodium") || name.includes("potassium") || name.includes("chloride") ||
+    name.includes("electrolyte") || name.includes("amylase") || name.includes("lipase") ||
+    name.includes("enzyme") || name.includes("vitamin") || name.includes("hormone") ||
+    name.includes("thyroid") || name.includes("t3") || name.includes("t4") ||
+    name.includes("tsh") || name.includes("ldh") || name.includes("hb1ac") ||
+    name.includes("hba1c") || name.includes("glycated") || name.includes("insulin") ||
+    name.includes("cardiac markers") || name.includes("troponin") || name.includes("ck-mb")
+  ) {
+    return "BIOCHEMISTRY";
+  }
+  
+  return "ROUTINE";
+}
+
+async function seedLimsFormulasAndConfigurations() {
+  console.log("Seeding advanced LIMS formulas, sections, borderline ranges, and interpretation rules...");
+
+  // 1. Define parameter configurations (mapping name matches to shortcodes and borderline ranges)
+  const paramConfigs = [
+    // CBC
+    { match: "Total W.B.C. Count", code: "WBC", borderlineMin: 3.8, borderlineMax: 11.5 },
+    { match: "RBC Count (Red Blood Cells)", code: "RBC", borderlineMin: 4.2, borderlineMax: 6.6 },
+    { match: "Haemoglobin", code: "HB", borderlineMin: 13.0, borderlineMax: 18.0 },
+    { match: "Hemoglobin", code: "HB", borderlineMin: 13.0, borderlineMax: 18.0 },
+    { match: "PCV (Haematocrit)", code: "PCV", borderlineMin: 39.0, borderlineMax: 55.0 },
+    { match: "Polymorphs (Neutrophils)", code: "NEUT", borderlineMin: 40, borderlineMax: 70 },
+    { match: "Lymphocytes", code: "LYMPH", borderlineMin: 18, borderlineMax: 40 },
+    { match: "Eosinophils", code: "EOS", borderlineMin: 0.5, borderlineMax: 7 },
+    { match: "Monocytes", code: "MONO", borderlineMin: 1, borderlineMax: 11 },
+    { match: "Basophils", code: "BASO", borderlineMin: 0.2, borderlineMax: 2 },
+    { match: "MCV", code: "MCV", borderlineMin: 80, borderlineMax: 100 },
+    { match: "MCH", code: "MCH", borderlineMin: 27, borderlineMax: 33 },
+    { match: "MCHC", code: "MCHC", borderlineMin: 31, borderlineMax: 37 },
+    { match: "Absolute Neutrophil Count", code: "ANC", borderlineMin: 1.4, borderlineMax: 8.2 },
+    { match: "Absolute Lymphocytes Count", code: "ALC", borderlineMin: 0.8, borderlineMax: 4.2 },
+    { match: "Absolute Eosinophil Count", code: "AEC", borderlineMin: 0.04, borderlineMax: 0.55 },
+    { match: "Absolute Monocytes Count", code: "AMC", borderlineMin: 0.08, borderlineMax: 0.85 },
+    
+    // Lipid
+    { match: "Total Cholesterol", code: "TC", borderlineMin: 120, borderlineMax: 220 },
+    { match: "Triglycerides", code: "TG", borderlineMin: 50, borderlineMax: 170 },
+    { match: "HDL Cholesterol", code: "HDL", borderlineMin: 30, borderlineMax: 70 },
+    { match: "LDL Cholesterol", code: "LDL", borderlineMin: 60, borderlineMax: 140 },
+    { match: "VLDL Cholesterol", code: "VLDL", borderlineMin: 10, borderlineMax: 35 },
+    
+    // LFT
+    { match: "Total Bilirubin", code: "TB", borderlineMin: 0.1, borderlineMax: 1.4 },
+    { match: "Direct Bilirubin", code: "DB", borderlineMin: 0, borderlineMax: 0.4 },
+    { match: "Indirect Bilirubin", code: "IB", borderlineMin: 0.1, borderlineMax: 0.9 },
+    { match: "SGOT (AST)", code: "AST", borderlineMin: 5, borderlineMax: 45 },
+    { match: "SGPT (ALT)", code: "ALT", borderlineMin: 5, borderlineMax: 55 },
+    { match: "Alkaline Phosphatase", code: "ALP", borderlineMin: 30, borderlineMax: 130 },
+    { match: "Total Protein", code: "TP", borderlineMin: 6.0, borderlineMax: 8.5 },
+    { match: "Albumin", code: "ALB", borderlineMin: 3.2, borderlineMax: 5.5 },
+    { match: "Globulin", code: "GLOB", borderlineMin: 1.8, borderlineMax: 3.7 },
+    { match: "Albumin/Globulin Ratio", code: "AGR", borderlineMin: 0.8, borderlineMax: 2.2 },
+    
+    // Renal
+    { match: "Blood Urea", code: "UREA", borderlineMin: 10, borderlineMax: 45 },
+    { match: "Serum Creatinine", code: "CREAT", borderlineMin: 0.5, borderlineMax: 1.4 },
+    { match: "Blood Urea Nitrogen (BUN)", code: "BUN", borderlineMin: 5, borderlineMax: 22 },
+    { match: "BUN/Creatinine Ratio", code: "BCR", borderlineMin: 8, borderlineMax: 22 },
+    { match: "Urea/Creatinine Ratio", code: "UCR", borderlineMin: 15, borderlineMax: 35 },
+    { match: "Serum Sodium (Na+)", code: "NA", borderlineMin: 132, borderlineMax: 147 },
+    { match: "Serum Potassium (K+)", code: "K", borderlineMin: 3.3, borderlineMax: 5.3 },
+    { match: "Serum Chloride (Cl-)", code: "CL", borderlineMin: 95, borderlineMax: 109 },
+    { match: "Serum Bicarbonate (HCO3-)", code: "HCO3", borderlineMin: 20, borderlineMax: 31 },
+
+    // HbA1c
+    { match: "HbA1c", code: "HBA1C", borderlineMin: 5.5, borderlineMax: 6.5 },
+    { match: "Estimated Average Glucose (eAG)", code: "EAG", borderlineMin: 100, borderlineMax: 130 },
+
+    // Urine PCR
+    { match: "Urine Protein/Creatinine Ratio", code: "UPCR", borderlineMin: 0.1, borderlineMax: 0.2 },
+    { match: "Urine Protein", code: "U_PROT", borderlineMin: 10, borderlineMax: 150 },
+    { match: "Urine Creatinine", code: "U_CREAT", borderlineMin: 300, borderlineMax: 2000 },
+    { match: "Urine Protein/Creatinine Ratio (24h)", code: "UPCR_24", borderlineMin: 0.1, borderlineMax: 0.2 },
+    { match: "24-Hour Urine Protein", code: "U_PROT_24", borderlineMin: 10, borderlineMax: 150 },
+    { match: "24-Hour Urine Creatinine", code: "U_CREAT_24", borderlineMin: 300, borderlineMax: 2000 }
+  ];
+
+  // Update Parameter codes and borderline ranges in the DB
+  for (const cfg of paramConfigs) {
+    const params = await prisma.parameter.findMany({
+      where: { name: { equals: cfg.match } }
+    });
+    
+    for (const param of params) {
+      await prisma.parameter.update({
+        where: { id: param.id },
+        data: {
+          code: cfg.code,
+          borderlineMinValMale: cfg.borderlineMin,
+          borderlineMaxValMale: cfg.borderlineMax,
+          borderlineMinValFemale: cfg.borderlineMin,
+          borderlineMaxValFemale: cfg.borderlineMax,
+          borderlineMinValDefault: cfg.borderlineMin,
+          borderlineMaxValDefault: cfg.borderlineMax
+        }
+      });
+    }
+  }
+  console.log("Parameter codes and borderline ranges backfilled in database.");
+
+  // 2. Define Test configurations (Sections, isCalculated properties)
+  const testConfigs = [
+    {
+      testId: 228, // CBC
+      params: [
+        { name: "Complete Blood Count (CBC)", section: "CBC" },
+        { name: "Total W.B.C. Count", section: "CBC" },
+        { name: "RBC Count (Red Blood Cells)", section: "CBC" },
+        { name: "Platelets Count", section: "CBC" },
+        { name: "Haemoglobin", section: "CBC" },
+        { name: "Hemoglobin", section: "CBC" },
+        { name: "PCV (Haematocrit)", section: "CBC" },
+        { name: "Differential Count of WBC", section: "Differential Count" },
+        { name: "Polymorphs (Neutrophils)", section: "Differential Count" },
+        { name: "Lymphocytes", section: "Differential Count" },
+        { name: "Eosinophils", section: "Differential Count" },
+        { name: "Monocytes", section: "Differential Count" },
+        { name: "Basophils", section: "Differential Count" },
+        { name: "MCV", section: "Calculated Parameters", isCalculated: true, dec: 1 },
+        { name: "MCH", section: "Calculated Parameters", isCalculated: true, dec: 1 },
+        { name: "MCHC", section: "Calculated Parameters", isCalculated: true, dec: 1 },
+        { name: "Absolute Neutrophil Count", section: "Calculated Parameters", isCalculated: true, dec: 2 },
+        { name: "Absolute Lymphocytes Count", section: "Calculated Parameters", isCalculated: true, dec: 2 },
+        { name: "Absolute Eosinophil Count", section: "Calculated Parameters", isCalculated: true, dec: 2 },
+        { name: "Absolute Monocytes Count", section: "Calculated Parameters", isCalculated: true, dec: 2 }
+      ]
+    },
+    {
+      testId: 512, // LFT
+      params: [
+        { name: "Total Bilirubin", section: "Bilirubin" },
+        { name: "Direct Bilirubin", section: "Bilirubin" },
+        { name: "Indirect Bilirubin", section: "Bilirubin", isCalculated: true, dec: 2 },
+        { name: "SGOT (AST)", section: "Enzymes" },
+        { name: "SGPT (ALT)", section: "Enzymes" },
+        { name: "Alkaline Phosphatase", section: "Enzymes" },
+        { name: "Gamma Glutamyl Transferase (GGT)", section: "Enzymes" },
+        { name: "Total Protein", section: "Proteins" },
+        { name: "Albumin", section: "Proteins" },
+        { name: "Globulin", section: "Proteins", isCalculated: true, dec: 2 },
+        { name: "Albumin/Globulin Ratio", section: "Proteins", isCalculated: true, dec: 2 }
+      ]
+    },
+    {
+      testId: 509, // Lipid
+      params: [
+        { name: "Total Cholesterol", section: "Primary Lipids" },
+        { name: "Triglycerides", section: "Primary Lipids" },
+        { name: "HDL Cholesterol", section: "Primary Lipids" },
+        { name: "LDL Cholesterol", section: "Calculated Fractions", isCalculated: true, dec: 2 },
+        { name: "VLDL Cholesterol", section: "Calculated Fractions", isCalculated: true, dec: 2 }
+      ]
+    },
+    {
+      testId: 695, // Renal
+      params: [
+        { name: "Blood Urea", section: "Nitrogenous Waste" },
+        { name: "Blood Urea Nitrogen (BUN)", section: "Nitrogenous Waste", isCalculated: true, dec: 2 },
+        { name: "Serum Creatinine", section: "Creatinine Profile" },
+        { name: "BUN/Creatinine Ratio", section: "Creatinine Profile", isCalculated: true, dec: 2 },
+        { name: "Urea/Creatinine Ratio", section: "Creatinine Profile", isCalculated: true, dec: 2 },
+        { name: "Serum Uric Acid", section: "Uric Acid Profile" },
+        { name: "Serum Sodium (Na+)", section: "Electrolytes" },
+        { name: "Serum Potassium (K+)", section: "Electrolytes" },
+        { name: "Serum Chloride (Cl-)", section: "Electrolytes" }
+      ]
+    },
+    {
+      testId: 377, // HbA1c
+      params: [
+        { name: "HbA1c", section: "Glycated Hemoglobin" },
+        { name: "Estimated Average Glucose (eAG)", section: "Calculated Glucose", isCalculated: true, dec: 1 }
+      ]
+    },
+    {
+      testId: 662, // Urine PCR
+      params: [
+        { name: "Urine Protein", section: "Observed" },
+        { name: "Urine Creatinine", section: "Observed" },
+        { name: "Urine Protein/Creatinine Ratio", section: "Calculated Ratio", isCalculated: true, dec: 2 }
+      ]
+    }
+  ];
+
+  // Seed sections, decimal place precision, and isCalculated in TestParameter
+  for (const tCfg of testConfigs) {
+    const test = await prisma.test.findFirst({ where: { id: tCfg.testId } });
+    if (!test) continue;
+
+    for (const pCfg of tCfg.params) {
+      const parameter = await prisma.parameter.findFirst({ where: { name: pCfg.name } });
+      if (!parameter) continue;
+
+      await prisma.testParameter.updateMany({
+        where: { testId: test.id, parameterId: parameter.id },
+        data: {
+          section: pCfg.section,
+          isCalculated: !!pCfg.isCalculated,
+          editable: !pCfg.isCalculated,
+          decimalPlace: pCfg.dec !== undefined ? pCfg.dec : 2,
+          roundingMethod: "HALF_UP"
+        }
+      });
+    }
+  }
+  console.log("TestParameter sections and calculations configured.");
+
+  // 3. Define math formulas (mapping output parameter ID to formula string)
+  const formulaConfigs = [
+    // CBC formulas for Test ID 228
+    { testId: 228, outName: "MCV", formula: "ROUND((PCV * 10) / RBC, 1)" },
+    { testId: 228, outName: "MCH", formula: "ROUND((HB * 10) / RBC, 1)" },
+    { testId: 228, outName: "MCHC", formula: "ROUND((HB * 100) / PCV, 1)" },
+    { testId: 228, outName: "Absolute Neutrophil Count", formula: "ROUND((WBC * NEUT) / 100, 2)" },
+    { testId: 228, outName: "Absolute Lymphocytes Count", formula: "ROUND((WBC * LYMPH) / 100, 2)" },
+    { testId: 228, outName: "Absolute Eosinophil Count", formula: "ROUND((WBC * EOS) / 100, 2)" },
+    { testId: 228, outName: "Absolute Monocytes Count", formula: "ROUND((WBC * MONO) / 100, 2)" },
+    
+    // Lipid formulas for Test ID 509
+    { testId: 509, outName: "LDL Cholesterol", formula: "ROUND(TC - HDL - (TG / 5), 2)" },
+    
+    // LFT formulas for Test ID 512
+    { testId: 512, outName: "Indirect Bilirubin", formula: "ROUND(TB - DB, 2)" },
+    { testId: 512, outName: "Globulin", formula: "ROUND(TP - ALB, 2)" },
+    { testId: 512, outName: "Albumin/Globulin Ratio", formula: "ROUND(ALB / (TP - ALB), 2)" },
+
+    // Renal formulas for Test ID 695
+    { testId: 695, outName: "Blood Urea Nitrogen (BUN)", formula: "ROUND(UREA * 0.467, 2)" },
+    { testId: 695, outName: "BUN/Creatinine Ratio", formula: "ROUND((UREA * 0.467) / CREAT, 2)" },
+    { testId: 695, outName: "Urea/Creatinine Ratio", formula: "ROUND(UREA / CREAT, 2)" },
+
+    // HbA1c formula for Test ID 377
+    { testId: 377, outName: "Estimated Average Glucose (eAG)", formula: "ROUND((28.7 * HBA1C) - 46.7, 1)" },
+
+    // Urine PCR formula for Test ID 662
+    { testId: 662, outName: "Urine Protein/Creatinine Ratio", formula: "ROUND(U_PROT / U_CREAT, 2)" }
+  ];
+
+  // Insert formulas
+  for (const fCfg of formulaConfigs) {
+    const outParam = await prisma.parameter.findFirst({ where: { name: fCfg.outName } });
+    if (!outParam) continue;
+
+    const existingFormula = await prisma.testFormula.findFirst({
+      where: {
+        workspaceId: null,
+        testId: fCfg.testId,
+        outputParameterId: outParam.id
+      }
+    });
+
+    if (existingFormula) {
+      await prisma.testFormula.update({
+        where: { id: existingFormula.id },
+        data: { formula: fCfg.formula, version: 1, isActive: true }
+      });
+    } else {
+      await prisma.testFormula.create({
+        data: {
+          workspaceId: null,
+          testId: fCfg.testId,
+          outputParameterId: outParam.id,
+          formula: fCfg.formula,
+          version: 1,
+          isActive: true
+        }
+      });
+    }
+  }
+  console.log("Advanced LIMS mathematical formulas seeded successfully.");
+
+  // 4. Seeding Interpretation Rules
+  const interpretationRules = [
+    { testId: 228, paramName: "Hemoglobin", cond: "value < 10.0", text: "Suggestive of moderate anemia. Clinical correlation advised." },
+    { testId: 377, paramName: "HbA1c", cond: "value >= 6.5", text: "Meets American Diabetes Association (ADA) criteria for Diabetes Mellitus." },
+    { testId: 509, paramName: "LDL Cholesterol", cond: "value > 190.0", text: "Very High Cardiovascular Risk. Diet modifications and lipid-lowering therapy advised." },
+    { testId: 662, paramName: "Urine Protein/Creatinine Ratio", cond: "value > 0.15", text: "Suggestive of significant Proteinuria. Monitor renal function." }
+  ];
+
+  for (const rule of interpretationRules) {
+    const param = await prisma.parameter.findFirst({ where: { name: rule.paramName } });
+    if (!param) continue;
+
+    const existingRule = await prisma.interpretationRule.findFirst({
+      where: { testId: rule.testId, parameterId: param.id }
+    });
+
+    if (!existingRule) {
+      await prisma.interpretationRule.create({
+        data: {
+          testId: rule.testId,
+          parameterId: param.id,
+          condition: rule.cond,
+          interpretation: rule.text
+        }
+      });
+    } else {
+      await prisma.interpretationRule.update({
+        where: { id: existingRule.id },
+        data: { condition: rule.cond, interpretation: rule.text }
+      });
+    }
+  }
+  console.log("Pathological interpretation rules seeded successfully.");
+}

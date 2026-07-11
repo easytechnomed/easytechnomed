@@ -80,6 +80,7 @@ export async function GET(req) {
         ]
       },
       include: {
+        department: true,
         parameters: {
           where: { isDeleted: false },
           orderBy: { order: "asc" },
@@ -318,6 +319,7 @@ export async function PUT(req) {
           testId: clonedTest.id,
           parameterId: p.parameterId, // Keep it pointed to the same master parameter
           order: p.order,
+          isHeader: p.isHeader || false,
         }));
 
         await tx.testParameter.createMany({

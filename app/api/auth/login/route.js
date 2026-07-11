@@ -75,7 +75,7 @@ export async function POST(req) {
       path: "/",
     });
 
-    return NextResponse.json({ success: true, message: "Login successful!", redirect: "/admin/dashboard" });
+    return NextResponse.json({ success: true, message: "Login successful!", redirect: "/dashboard" });
   } catch (error) {
     console.error("Admin Login API Error:", error);
     return NextResponse.json({ success: false, error: error.message }, { status: 500 });

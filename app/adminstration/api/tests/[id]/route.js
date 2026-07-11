@@ -168,6 +168,7 @@ export async function PUT(req, { params }) {
               data: {
                 parameterId: parameter.id,
                 order: parseInt(p.order) || 1,
+                isHeader: p.isHeader || false,
                 isDeleted: false,
                 deletedAt: null
               }
@@ -178,6 +179,7 @@ export async function PUT(req, { params }) {
                 testId,
                 parameterId: parameter.id,
                 order: parseInt(p.order) || 1,
+                isHeader: p.isHeader || false,
                 isDeleted: false
               }
             });

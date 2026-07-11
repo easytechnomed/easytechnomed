@@ -16,6 +16,7 @@ export async function PUT(req, { params }) {
     const body = await req.json().catch(() => ({}));
     const {
       name,
+      code,
       unit,
       minValMale,
       maxValMale,
@@ -34,6 +35,8 @@ export async function PUT(req, { params }) {
       return NextResponse.json({ success: false, error: "Parameter name is required." }, { status: 400 });
     }
 
+    const normCode = code ? code.trim().toUpperCase().replace(/[^A-Z0-9_]/g, "") : null;
+
     // Check if name is already taken by another parameter
     const duplicate = await prisma.parameter.findFirst({
       where: {
@@ -51,6 +54,7 @@ export async function PUT(req, { params }) {
       where: { id: parameterId },
       data: {
         name: normName,
+        code: normCode || null,
         unit: unit || null,
         minValMale: minValMale !== "" && minValMale !== null && minValMale !== undefined ? parseFloat(minValMale) : null,
         maxValMale: maxValMale !== "" && maxValMale !== null && maxValMale !== undefined ? parseFloat(maxValMale) : null,

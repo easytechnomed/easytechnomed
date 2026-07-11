@@ -23,6 +23,8 @@ model Workspace {
   users         User[]
   parameters     Parameter[]
   testParameters TestParameter[]
+  testFormulas   TestFormula[]
+  interpretationRules InterpretationRule[]
 }
 
 model SuperAdmin {
@@ -200,11 +202,16 @@ model Test {
   workspaceId   Int?
   deletedAt     DateTime?
   isDeleted     Boolean            @default(false)
+  departmentId  Int?
+  department    TestDepartment?    @relation(fields: [departmentId], references: [id], onDelete: SetNull)
   registrations RegistrationTest[]
   workspace     Workspace?         @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
   parameters    TestParameter[]
+  formulas      TestFormula[]
+  interpretationRules InterpretationRule[]
 
   @@unique([workspaceId, code])
+  @@index([departmentId])
 }
 
 model Registration {
@@ -272,6 +279,7 @@ model RegistrationTest {
   sampleRemark   String?
   sampleStatus   String       @default("Pending")
   sendTo         String       @default("-NA-")
+  interpretation String?      @db.Text
   registration   Registration @relation(fields: [registrationId], references: [id], onDelete: Cascade)
   test           Test         @relation(fields: [testId], references: [id], onDelete: Cascade)
 
@@ -282,6 +290,7 @@ model RegistrationTest {
 model Parameter {
   id                 Int             @id @default(autoincrement())
   name               String
+  code               String?
   unit               String?
   minValMale         Float?
   maxValMale         Float?
@@ -293,30 +302,55 @@ model Parameter {
   maxValBaby         Float?
   normalRangeBaby    String?
   normalRangeDefault String?
+  criticalMinValMale     Float?
+  criticalMaxValMale     Float?
+  criticalMinValFemale   Float?
+  criticalMaxValFemale   Float?
+  criticalMinValBaby     Float?
+  criticalMaxValBaby     Float?
+  criticalMinValDefault  Float?
+  criticalMaxValDefault  Float?
+  borderlineMinValMale     Float?
+  borderlineMaxValMale     Float?
+  borderlineMinValFemale   Float?
+  borderlineMaxValFemale   Float?
+  borderlineMinValBaby     Float?
+  borderlineMaxValBaby     Float?
+  borderlineMinValDefault  Float?
+  borderlineMaxValDefault  Float?
   createdAt          DateTime        @default(now())
   updatedAt          DateTime        @updatedAt
   workspaceId        Int?
   workspace          Workspace?      @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
   testMappings       TestParameter[]
+  testFormulas       TestFormula[]
+  interpretationRules InterpretationRule[]
 
   @@unique([workspaceId, name])
   @@index([workspaceId], map: "Parameter_workspaceId_fkey")
 }
 
 model TestParameter {
-  id          Int             @id @default(autoincrement())
-  testId      Int
-  order       Int             @default(1)
-  createdAt   DateTime        @default(now())
-  updatedAt   DateTime        @updatedAt
-  deletedAt   DateTime?
-  isDeleted   Boolean         @default(false)
-  parameterId Int
-  workspaceId Int?
-  workspace   Workspace?      @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
-  results     PatientResult[]
-  parameter   Parameter       @relation(fields: [parameterId], references: [id], onDelete: Cascade)
-  test        Test            @relation(fields: [testId], references: [id], onDelete: Cascade)
+  id           Int             @id @default(autoincrement())
+  testId       Int
+  order        Int             @default(1)
+  createdAt    DateTime        @default(now())
+  updatedAt    DateTime        @updatedAt
+  deletedAt    DateTime?
+  isDeleted    Boolean         @default(false)
+  parameterId  Int
+  workspaceId  Int?
+  editable     Boolean         @default(true)
+  isCalculated Boolean         @default(false)
+  decimalPlace Int             @default(2)
+  roundingMethod String          @default("HALF_UP")
+  section      String?
+  unit         String?
+  isHeader     Boolean         @default(false)
+  workspace    Workspace?      @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  results      PatientResult[]
+  parameter    Parameter       @relation(fields: [parameterId], references: [id], onDelete: Cascade)
+  test         Test            @relation(fields: [testId], references: [id], onDelete: Cascade)
 
   @@index([parameterId], map: "TestParameter_parameterId_fkey")
   @@index([testId], map: "TestParameter_testId_fkey")
@@ -328,6 +362,8 @@ model PatientResult {
   registrationId  Int
   testParameterId Int
   value           String
+  flag            String?
+  interpretation  String?       @db.Text
   createdAt       DateTime      @default(now())
   updatedAt       DateTime      @updatedAt
   registration    Registration  @relation(fields: [registrationId], references: [id], onDelete: Cascade)
@@ -414,4 +450,52 @@ model SuperAdminTracking {
   superAdmin    SuperAdmin? @relation(fields: [superAdminId], references: [id], onDelete: Cascade)
 
   @@index([superAdminId], map: "SuperAdminTracking_superAdminId_fkey")
+}
+
+model TestDepartment {
+  id        Int      @id @default(autoincrement())
+  name      String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  tests     Test[]
+}
+
+model TestFormula {
+  id                Int             @id @default(autoincrement())
+  workspaceId       Int?
+  testId            Int
+  outputParameterId Int
+  formula           String          @db.Text
+  description       String?
+  name              String?
+  version           Int             @default(1)
+  isActive          Boolean         @default(true)
+  createdAt         DateTime        @default(now())
+  updatedAt         DateTime        @updatedAt
+  workspace         Workspace?      @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  test              Test            @relation(fields: [testId], references: [id], onDelete: Cascade)
+  outputParameter   Parameter       @relation(fields: [outputParameterId], references: [id], onDelete: Cascade)
+
+  @@unique([workspaceId, testId, outputParameterId])
+  @@index([testId])
+  @@index([outputParameterId])
+  @@index([workspaceId])
+}
+
+model InterpretationRule {
+  id             Int          @id @default(autoincrement())
+  workspaceId    Int?
+  testId         Int
+  parameterId    Int
+  condition      String       @db.Text
+  interpretation String       @db.Text
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  workspace      Workspace?   @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  test           Test         @relation(fields: [testId], references: [id], onDelete: Cascade)
+  parameter      Parameter    @relation(fields: [parameterId], references: [id], onDelete: Cascade)
+
+  @@index([testId])
+  @@index([parameterId])
+  @@index([workspaceId])
 }

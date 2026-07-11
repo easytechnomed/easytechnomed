@@ -175,6 +175,7 @@ async function seedParametersForTest(tx, testId, name) {
         testId: p.testId,
         parameterId: parameter.id,
         order: p.order,
+        isHeader: p.isHeader || false,
       }
     });
   }

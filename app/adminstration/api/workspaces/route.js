@@ -178,6 +178,7 @@ export async function POST(req) {
                   testId: clonedTest.id,
                   parameterId: newParamId,
                   order: tp.order,
+                  isHeader: tp.isHeader || false,
                   workspaceId: ws.id,
                 });
               }

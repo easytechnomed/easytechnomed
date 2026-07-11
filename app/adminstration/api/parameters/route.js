@@ -6,8 +6,19 @@ export async function GET(req) {
   try {
     await verifySuperAdminAPI();
     
-    // Fetch all parameters from the master Parameter table
+    // Fetch parameters from the master Parameter table that belong to tests with workspaceId = null and isDeleted = false
     const parameters = await prisma.parameter.findMany({
+      where: {
+        testMappings: {
+          some: {
+            isDeleted: false,
+            test: {
+              workspaceId: null,
+              isDeleted: false
+            }
+          }
+        }
+      },
       orderBy: { name: "asc" }
     });
 
@@ -28,6 +39,7 @@ export async function POST(req) {
     const body = await req.json().catch(() => ({}));
     const {
       name,
+      code,
       unit,
       minValMale,
       maxValMale,
@@ -46,6 +58,8 @@ export async function POST(req) {
       return NextResponse.json({ success: false, error: "Parameter name is required." }, { status: 400 });
     }
 
+    const normCode = code ? code.trim().toUpperCase().replace(/[^A-Z0-9_]/g, "") : null;
+
     // Check if name is already taken
     const duplicate = await prisma.parameter.findFirst({
       where: {
@@ -61,6 +75,7 @@ export async function POST(req) {
     const created = await prisma.parameter.create({
       data: {
         name: normName,
+        code: normCode || null,
         unit: unit || null,
         minValMale: minValMale !== "" && minValMale !== null && minValMale !== undefined ? parseFloat(minValMale) : null,
         maxValMale: maxValMale !== "" && maxValMale !== null && maxValMale !== undefined ? parseFloat(maxValMale) : null,

@@ -218,6 +218,7 @@ export async function POST(req) {
             testId: testRecord.id,
             parameterId: parameter.id,
             order: parseInt(p.order) || 1,
+            isHeader: p.isHeader || false,
             isDeleted: false,
           }
         });

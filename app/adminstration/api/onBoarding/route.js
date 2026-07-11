@@ -149,6 +149,7 @@ export async function POST(req) {
         await tx.parameter.createMany({
           data: uniqueParamsList.map((p) => ({
             name: p.name,
+            code: p.code,
             unit: p.unit,
             minValMale: p.minValMale,
             maxValMale: p.maxValMale,
@@ -217,6 +218,7 @@ export async function POST(req) {
                   testId: newTestId,
                   parameterId: newParamId,
                   order: tp.order,
+                  isHeader: tp.isHeader || false,
                   isDeleted: false,
                   workspaceId: workspace.id
                 });
@@ -230,6 +232,48 @@ export async function POST(req) {
       if (testParametersToCreate.length > 0) {
         await tx.testParameter.createMany({
           data: testParametersToCreate
+        });
+      }
+
+      // 12. Fetch default test formulas (where workspaceId is null and isActive is true)
+      const defaultFormulas = await tx.testFormula.findMany({
+        where: {
+          workspaceId: null,
+          isActive: true
+        },
+        include: {
+          test: true,
+          outputParameter: true
+        }
+      });
+
+      // 13. Map and prepare formulas for bulk insert
+      const formulasToCreate = [];
+      for (const df of defaultFormulas) {
+        if (df.test && df.outputParameter) {
+          const testKey = `${df.test.name.toLowerCase()}_${(df.test.code || "").toLowerCase()}`;
+          const newTestId = testKeyToIdMap[testKey];
+          const newOutputParamId = paramNameToIdMap[df.outputParameter.name.toLowerCase()];
+
+          if (newTestId && newOutputParamId) {
+            formulasToCreate.push({
+              workspaceId: workspace.id,
+              testId: newTestId,
+              outputParameterId: newOutputParamId,
+              formula: df.formula,
+              description: df.description,
+              name: df.name,
+              version: df.version,
+              isActive: df.isActive
+            });
+          }
+        }
+      }
+
+      // 14. Bulk insert formulas
+      if (formulasToCreate.length > 0) {
+        await tx.testFormula.createMany({
+          data: formulasToCreate
         });
       }
 
