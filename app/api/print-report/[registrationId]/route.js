@@ -466,12 +466,18 @@ export async function GET(req, { params }) {
         }
 
         for (const param of sectionParams) {
-          const val = resultsMap[param.id] || "";
+          const rawVal = resultsMap[param.id];
+          const val = rawVal ?? "";
           const flag = flagsMap[param.id];
           const interpretation = interpretationsMap[param.id];
           const ref = getReferenceRange(param, reg);
 
           const isHeader = param.isHeader || (!param.unit && (!ref || !ref.rangeStr || ref.rangeStr === "" || ref.rangeStr === "-NA-"));
+
+          // Skip non-header rows where no result value has been entered (null, undefined, empty, or "-")
+          if (!isHeader && (rawVal === null || rawVal === undefined || val === "" || val === "-")) {
+            continue;
+          }
 
           if (isHeader) {
             currentHeader = param.name;

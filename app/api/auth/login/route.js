@@ -11,7 +11,7 @@ export async function POST(req) {
     const password = body.password;
 
     if (!identifier || !password) {
-      return NextResponse.json({ success: false, message: "Email/mobile and password are required." });
+      return NextResponse.  json({ success: false, message: "Email/mobile and password are required." });
     }
 
     const admin = await prisma.admin.findFirst({
