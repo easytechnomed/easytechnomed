@@ -160,31 +160,68 @@ export default function ShowResult({ open, onClose, selectedReg }) {
                       </TableHead>
                       <TableBody>
                         {(() => {
-                          let currentHeader = null;
-                          return test.parameters?.map((param, pIdx) => {
+                          const sectionParams = test.parameters || [];
+                          const renderGroups = [];
+                          const hasParentIdData = sectionParams.some(p => p.parentId != null);
+
+                          if (hasParentIdData) {
+                            const childrenByParentId = {};
+                            sectionParams.forEach(p => {
+                              if (p.parentId != null) {
+                                if (!childrenByParentId[p.parentId]) childrenByParentId[p.parentId] = [];
+                                childrenByParentId[p.parentId].push(p);
+                              }
+                            });
+                            const childParamIds = new Set(
+                              sectionParams.filter(p => p.parentId != null).map(p => p.id)
+                            );
+
+                            for (const p of sectionParams) {
+                              if (childParamIds.has(p.id)) continue;
+                              const ref = getReferenceRange(p, previewData);
+                              const pIsHeader = p.isHeader || (!p.unit && (!ref || !ref.rangeStr || ref.rangeStr === "" || ref.rangeStr === "-NA-"));
+                              if (pIsHeader) {
+                                renderGroups.push({ type: "group", header: p, children: childrenByParentId[p.id] || [] });
+                              } else {
+                                renderGroups.push({ type: "standalone", param: p });
+                              }
+                            }
+                          } else {
+                            let gi = 0;
+                            while (gi < sectionParams.length) {
+                              const p = sectionParams[gi];
+                              const ref = getReferenceRange(p, previewData);
+                              const pIsHeader = p.isHeader || (!p.unit && (!ref || !ref.rangeStr || ref.rangeStr === "" || ref.rangeStr === "-NA-"));
+                              if (pIsHeader) {
+                                const children = [];
+                                let ci = gi + 1;
+                                while (ci < sectionParams.length) {
+                                  const cp = sectionParams[ci];
+                                  const cpRef = getReferenceRange(cp, previewData);
+                                  const cpIsHeader = cp.isHeader || (!cp.unit && (!cpRef || !cpRef.rangeStr || cpRef.rangeStr === "" || cpRef.rangeStr === "-NA-"));
+                                  if (cpIsHeader) break;
+                                  children.push(cp);
+                                  ci++;
+                                }
+                                renderGroups.push({ type: "group", header: p, children });
+                                gi = ci;
+                              } else {
+                                renderGroups.push({ type: "standalone", param: p });
+                                gi++;
+                              }
+                            }
+                          }
+
+                          const renderParamRow = (param, indented, keyIndex) => {
                             const result = previewData.results?.find(r => r.testParameterId === param.id);
                             const val = result ? result.value : "";
                             const ref = getReferenceRange(param, previewData);
-                            const isHeader = param.isHeader || (!param.unit && (!ref || !ref.rangeStr || ref.rangeStr === "" || ref.rangeStr === "-NA-"));
-
-                            if (isHeader) {
-                              currentHeader = param.name;
-                              return (
-                                <TableRow key={pIdx} sx={{ bgcolor: "grey.50" }}>
-                                  <TableCell colSpan={4} sx={{ fontWeight: 800, color: "text.secondary" }}>
-                                    {param.name}
-                                  </TableCell>
-                                </TableRow>
-                              );
-                            }
-
                             const isAbnormal = isOutOfRange(val, ref.min, ref.max);
-                            const isChild = !!currentHeader;
 
                             return (
-                              <TableRow key={pIdx} hover>
-                                <TableCell sx={{ fontWeight: 500, pl: isChild ? 4 : 2, color: "text.primary" }}>
-                                  {isChild ? `▪ ${param.name}` : param.name}
+                              <TableRow key={keyIndex} hover>
+                                <TableCell sx={{ fontWeight: 500, pl: indented ? 4 : 2, color: "text.primary" }}>
+                                  {indented ? `▪ ${param.name}` : param.name}
                                 </TableCell>
                                 <TableCell sx={{
                                   fontWeight: isAbnormal ? 700 : 500,
@@ -196,7 +233,30 @@ export default function ShowResult({ open, onClose, selectedReg }) {
                                 <TableCell>{ref.rangeStr || "-"}</TableCell>
                               </TableRow>
                             );
-                          });
+                          };
+
+                          let k = 0;
+                          const elements = [];
+                          for (const group of renderGroups) {
+                            if (group.type === "standalone") {
+                              elements.push(renderParamRow(group.param, false, `p-${k++}`));
+                            } else {
+                              const { header, children } = group;
+                              // Draw header row
+                              elements.push(
+                                <TableRow key={`h-${k++}`} sx={{ bgcolor: "grey.50" }}>
+                                  <TableCell colSpan={4} sx={{ fontWeight: 800, color: "text.secondary" }}>
+                                    {header.name}
+                                  </TableCell>
+                                </TableRow>
+                              );
+                              // Draw children
+                              children.forEach(child => {
+                                elements.push(renderParamRow(child, true, `p-${k++}`));
+                              });
+                            }
+                          }
+                          return elements;
                         })()}
                       </TableBody>
                     </Table>

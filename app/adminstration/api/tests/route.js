@@ -168,61 +168,72 @@ export async function POST(req) {
         }
       });
 
-      for (const p of paramList) {
+      // Helper: resolve or upsert a parameter record in the master dictionary
+      const resolveParameter = async (p) => {
         const normName = p.name.trim();
-
-        // Resolve or create parameter
-        let parameter = await tx.parameter.findFirst({
-          where: { name: { equals: normName } }
-        });
-
+        let parameter = await tx.parameter.findFirst({ where: { name: { equals: normName } } });
+        const pData = {
+          unit: p.unit && p.unit.trim() !== "" ? p.unit.trim() : (parameter?.unit ?? null),
+          minValMale: p.minValMale !== "" && p.minValMale !== undefined && !isNaN(parseFloat(p.minValMale)) ? parseFloat(p.minValMale) : (parameter?.minValMale ?? null),
+          maxValMale: p.maxValMale !== "" && p.maxValMale !== undefined && !isNaN(parseFloat(p.maxValMale)) ? parseFloat(p.maxValMale) : (parameter?.maxValMale ?? null),
+          normalRangeMale: p.normalRangeMale && p.normalRangeMale.trim() !== "" ? p.normalRangeMale.trim() : (parameter?.normalRangeMale ?? null),
+          minValFemale: p.minValFemale !== "" && p.minValFemale !== undefined && !isNaN(parseFloat(p.minValFemale)) ? parseFloat(p.minValFemale) : (parameter?.minValFemale ?? null),
+          maxValFemale: p.maxValFemale !== "" && p.maxValFemale !== undefined && !isNaN(parseFloat(p.maxValFemale)) ? parseFloat(p.maxValFemale) : (parameter?.maxValFemale ?? null),
+          normalRangeFemale: p.normalRangeFemale && p.normalRangeFemale.trim() !== "" ? p.normalRangeFemale.trim() : (parameter?.normalRangeFemale ?? null),
+          minValBaby: p.minValBaby !== "" && p.minValBaby !== undefined && !isNaN(parseFloat(p.minValBaby)) ? parseFloat(p.minValBaby) : (parameter?.minValBaby ?? null),
+          maxValBaby: p.maxValBaby !== "" && p.maxValBaby !== undefined && !isNaN(parseFloat(p.maxValBaby)) ? parseFloat(p.maxValBaby) : (parameter?.maxValBaby ?? null),
+          normalRangeBaby: p.normalRangeBaby && p.normalRangeBaby.trim() !== "" ? p.normalRangeBaby.trim() : (parameter?.normalRangeBaby ?? null),
+          normalRangeDefault: p.normalRangeDefault && p.normalRangeDefault.trim() !== "" ? p.normalRangeDefault.trim() : (parameter?.normalRangeDefault ?? null),
+        };
         if (!parameter) {
-          parameter = await tx.parameter.create({
-            data: {
-              name: normName,
-              unit: p.unit && p.unit.trim() !== "" ? p.unit.trim() : null,
-              minValMale: p.minValMale !== "" && p.minValMale !== undefined && !isNaN(parseFloat(p.minValMale)) ? parseFloat(p.minValMale) : null,
-              maxValMale: p.maxValMale !== "" && p.maxValMale !== undefined && !isNaN(parseFloat(p.maxValMale)) ? parseFloat(p.maxValMale) : null,
-              normalRangeMale: p.normalRangeMale && p.normalRangeMale.trim() !== "" ? p.normalRangeMale.trim() : null,
-              minValFemale: p.minValFemale !== "" && p.minValFemale !== undefined && !isNaN(parseFloat(p.minValFemale)) ? parseFloat(p.minValFemale) : null,
-              maxValFemale: p.maxValFemale !== "" && p.maxValFemale !== undefined && !isNaN(parseFloat(p.maxValFemale)) ? parseFloat(p.maxValFemale) : null,
-              normalRangeFemale: p.normalRangeFemale && p.normalRangeFemale.trim() !== "" ? p.normalRangeFemale.trim() : null,
-              minValBaby: p.minValBaby !== "" && p.minValBaby !== undefined && !isNaN(parseFloat(p.minValBaby)) ? parseFloat(p.minValBaby) : null,
-              maxValBaby: p.maxValBaby !== "" && p.maxValBaby !== undefined && !isNaN(parseFloat(p.maxValBaby)) ? parseFloat(p.maxValBaby) : null,
-              normalRangeBaby: p.normalRangeBaby && p.normalRangeBaby.trim() !== "" ? p.normalRangeBaby.trim() : null,
-              normalRangeDefault: p.normalRangeDefault && p.normalRangeDefault.trim() !== "" ? p.normalRangeDefault.trim() : null,
-            }
-          });
+          parameter = await tx.parameter.create({ data: { name: normName, ...pData } });
         } else {
-          // Keep shared dictionary updated with any recent range inputs
-          parameter = await tx.parameter.update({
-            where: { id: parameter.id },
-            data: {
-              unit: p.unit && p.unit.trim() !== "" ? p.unit.trim() : parameter.unit,
-              minValMale: p.minValMale !== "" && p.minValMale !== undefined && !isNaN(parseFloat(p.minValMale)) ? parseFloat(p.minValMale) : parameter.minValMale,
-              maxValMale: p.maxValMale !== "" && p.maxValMale !== undefined && !isNaN(parseFloat(p.maxValMale)) ? parseFloat(p.maxValMale) : parameter.maxValMale,
-              normalRangeMale: p.normalRangeMale && p.normalRangeMale.trim() !== "" ? p.normalRangeMale.trim() : parameter.normalRangeMale,
-              minValFemale: p.minValFemale !== "" && p.minValFemale !== undefined && !isNaN(parseFloat(p.minValFemale)) ? parseFloat(p.minValFemale) : parameter.minValFemale,
-              maxValFemale: p.maxValFemale !== "" && p.maxValFemale !== undefined && !isNaN(parseFloat(p.maxValFemale)) ? parseFloat(p.maxValFemale) : parameter.maxValFemale,
-              normalRangeFemale: p.normalRangeFemale && p.normalRangeFemale.trim() !== "" ? p.normalRangeFemale.trim() : parameter.normalRangeFemale,
-              minValBaby: p.minValBaby !== "" && p.minValBaby !== undefined && !isNaN(parseFloat(p.minValBaby)) ? parseFloat(p.minValBaby) : parameter.minValBaby,
-              maxValBaby: p.maxValBaby !== "" && p.maxValBaby !== undefined && !isNaN(parseFloat(p.maxValBaby)) ? parseFloat(p.maxValBaby) : parameter.maxValBaby,
-              normalRangeBaby: p.normalRangeBaby && p.normalRangeBaby.trim() !== "" ? p.normalRangeBaby.trim() : parameter.normalRangeBaby,
-              normalRangeDefault: p.normalRangeDefault && p.normalRangeDefault.trim() !== "" ? p.normalRangeDefault.trim() : parameter.normalRangeDefault,
-            }
-          });
+          parameter = await tx.parameter.update({ where: { id: parameter.id }, data: pData });
         }
+        return parameter;
+      };
 
+      // ── Two-pass save: headers first so children can reference their DB ids ──
+      // Pass 1: save all isHeader rows, build clientKey → saved TestParameter id map
+      const keyToTpId = {};
+      for (const p of paramList) {
+        if (!p.isHeader) continue;
+        const normName = (p.name || "").trim();
+        if (!normName) continue;
+        const parameter = await resolveParameter(p);
+        const tp = await tx.testParameter.create({
+          data: {
+            testId: testRecord.id,
+            parameterId: parameter.id,
+            order: parseInt(p.order) || 1,
+            isHeader: true,
+            parentId: null,
+            isDeleted: false,
+          }
+        });
+        if (p.key) keyToTpId[p.key] = tp.id;
+      }
+
+      // Pass 2: save all non-header rows, resolving parentKey → parentId
+      for (const p of paramList) {
+        if (p.isHeader) continue;
+        const normName = (p.name || "").trim();
+        if (!normName) continue;
+        const parameter = await resolveParameter(p);
+        // parentKey is the client-side key of the header row (set during bulk-insert)
+        const resolvedParentId = p.parentKey ? (keyToTpId[p.parentKey] ?? null) : (p.parentId ?? null);
         await tx.testParameter.create({
           data: {
             testId: testRecord.id,
             parameterId: parameter.id,
             order: parseInt(p.order) || 1,
-            isHeader: p.isHeader || false,
+            isHeader: false,
+            parentId: resolvedParentId,
             isDeleted: false,
           }
         });
       }
+
 
       return await tx.test.findUnique({
         where: { id: testRecord.id },

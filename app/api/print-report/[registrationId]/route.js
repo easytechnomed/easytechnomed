@@ -443,7 +443,6 @@ export async function GET(req, { params }) {
         sectionsMap[sec].push(param);
       });
 
-      let currentHeader = null;
       for (const secName of sectionOrder) {
         const sectionParams = sectionsMap[secName];
 
@@ -465,102 +464,163 @@ export async function GET(req, { params }) {
           tableActiveY -= 18;
         }
 
-        for (const param of sectionParams) {
+        // ── Build render groups: prefer explicit parentId, fallback to positional ─
+        // New data (saved after this update): params have parentId set → use it.
+        //   - Headers (isHeader=true, parentId=null) start groups
+        //   - Children (isHeader=false, parentId=headerId) belong to that exact header
+        //   - Standalone (isHeader=false, parentId=null) never treated as children
+        // Old data (saved before this update): all parentId=null → positional grouping
+        //   (all non-header params between two isHeader params = children of first)
+        const renderGroups = [];
+        const hasParentIdData = sectionParams.some(p => p.parentId != null);
+
+        if (hasParentIdData) {
+          // ── Explicit parentId grouping ──────────────────────────────────────
+          const childrenByParentId = {};
+          sectionParams.forEach(p => {
+            if (p.parentId != null) {
+              if (!childrenByParentId[p.parentId]) childrenByParentId[p.parentId] = [];
+              childrenByParentId[p.parentId].push(p);
+            }
+          });
+          const childParamIds = new Set(
+            sectionParams.filter(p => p.parentId != null).map(p => p.id)
+          );
+
+          // Walk sectionParams in order; skip child params (they're in their parent's group)
+          for (const p of sectionParams) {
+            if (childParamIds.has(p.id)) continue;
+            const pRef = getReferenceRange(p, reg);
+            const pIsHeader = p.isHeader || (!p.unit && (!pRef?.rangeStr || pRef.rangeStr === "" || pRef.rangeStr === "-NA-"));
+            if (pIsHeader) {
+              renderGroups.push({ type: "group", header: p, children: childrenByParentId[p.id] || [] });
+            } else {
+              // parentId is null AND not a child → true standalone
+              renderGroups.push({ type: "standalone", param: p });
+            }
+          }
+        } else {
+          // ── Positional grouping (backward compat for old data) ───────────────
+          let gi = 0;
+          while (gi < sectionParams.length) {
+            const p = sectionParams[gi];
+            const pRef = getReferenceRange(p, reg);
+            const pIsHeader = p.isHeader || (!p.unit && (!pRef || !pRef.rangeStr || pRef.rangeStr === "" || pRef.rangeStr === "-NA-"));
+            if (pIsHeader) {
+              const children = [];
+              let ci = gi + 1;
+              while (ci < sectionParams.length) {
+                const cp = sectionParams[ci];
+                const cpRef = getReferenceRange(cp, reg);
+                const cpIsHeader = cp.isHeader || (!cp.unit && (!cpRef || !cpRef.rangeStr || cpRef.rangeStr === "" || cpRef.rangeStr === "-NA-"));
+                if (cpIsHeader) break;
+                children.push(cp);
+                ci++;
+              }
+              renderGroups.push({ type: "group", header: p, children });
+              gi = ci;
+            } else {
+              renderGroups.push({ type: "standalone", param: p });
+              gi++;
+            }
+          }
+        }
+        // ───────────────────────────────────────────────────────────────────────
+
+
+        // Helper to draw a single data row (value + unit + range)
+        const drawParamRow = async (param, indented) => {
           const rawVal = resultsMap[param.id];
           const val = rawVal ?? "";
           const flag = flagsMap[param.id];
           const interpretation = interpretationsMap[param.id];
           const ref = getReferenceRange(param, reg);
 
-          const isHeader = param.isHeader || (!param.unit && (!ref || !ref.rangeStr || ref.rangeStr === "" || ref.rangeStr === "-NA-"));
+          // Skip rows with no result
+          if (rawVal === null || rawVal === undefined || val === "" || val === "-") return;
 
-          // Skip non-header rows where no result value has been entered (null, undefined, empty, or "-")
-          if (!isHeader && (rawVal === null || rawVal === undefined || val === "" || val === "-")) {
-            continue;
-          }
-
-          if (isHeader) {
-            currentHeader = param.name;
-          }
-
-          // Check page wrap
+          // Page-wrap check
           if (tableActiveY < footerMargin + 35) {
             await addNewPage();
             tableActiveY = drawTableHeader(currentPage, pageHeight - headerMargin - 15);
-
-            // Re-draw Test group header on new page for context
-            currentPage.drawRectangle({
-              x: leftMargin,
-              y: tableActiveY - 20,
-              width: contentWidth,
-              height: 18,
-              color: rgb(0.96, 0.97, 0.98),
-            });
+            currentPage.drawRectangle({ x: leftMargin, y: tableActiveY - 20, width: contentWidth, height: 18, color: rgb(0.96, 0.97, 0.98) });
             drawText(currentPage, `${test.name} (${test.code}) - Continued`, leftMargin + 10, tableActiveY - 13, 9, true, rgb(0.06, 0.46, 0.43));
             tableActiveY -= 20;
           }
 
-          // Draw Row Border line
-          currentPage.drawLine({
-            start: { x: leftMargin, y: tableActiveY },
-            end: { x: pageWidth - leftMargin, y: tableActiveY },
-            thickness: 0.3,
-            color: rgb(0.9, 0.92, 0.94),
-          });
+          currentPage.drawLine({ start: { x: leftMargin, y: tableActiveY }, end: { x: pageWidth - leftMargin, y: tableActiveY }, thickness: 0.3, color: rgb(0.9, 0.92, 0.94) });
 
-          // Determine formatting: bold red for abnormal values
           const isAbnormal = flag ? flag !== "Normal" : isOutOfRange(val, ref.min, ref.max);
           const resultColor = isAbnormal ? rgb(0.85, 0.12, 0.12) : rgb(0.09, 0.12, 0.18);
 
-          // Format value to target decimal precision if numeric
           let formattedVal = val;
           if (val !== "") {
             const num = parseFloat(val);
-            if (!isNaN(num)) {
-              const precision = param.decimalPlace ?? 2;
-              formattedVal = num.toFixed(precision);
-            }
+            if (!isNaN(num)) formattedVal = num.toFixed(param.decimalPlace ?? 2);
           }
 
-          // Append flag labels to observed values
           let displayVal = formattedVal;
           if (flag && flag !== "Normal" && val !== "") {
-            let flagAbbr = "";
-            if (flag === "Low") flagAbbr = "L";
-            else if (flag === "High") flagAbbr = "H";
-            else if (flag === "Critical Low") flagAbbr = "CL*";
-            else if (flag === "Critical High") flagAbbr = "CH*";
-            else if (flag === "Borderline Low") flagAbbr = "BL";
-            else if (flag === "Borderline High") flagAbbr = "BH";
-
-            if (flagAbbr) {
-              displayVal = `${formattedVal} (${flagAbbr})`;
-            }
+            const abbrs = { "Low": "L", "High": "H", "Critical Low": "CL*", "Critical High": "CH*", "Borderline Low": "BL", "Borderline High": "BH" };
+            if (abbrs[flag]) displayVal = `${formattedVal} (${abbrs[flag]})`;
           }
 
-          if (isHeader) {
-            drawText(currentPage, param.name, leftMargin + 10, tableActiveY - 14, 9, true, rgb(0.06, 0.46, 0.43));
-          } else {
-            const isChild = !!currentHeader;
-            const displayName = isChild ? `  -  ${param.name}` : param.name;
-            const indentX = isChild ? 22 : 10;
-
-            drawText(currentPage, displayName, leftMargin + indentX, tableActiveY - 14, 9, false);
-            drawText(currentPage, displayVal || "-", leftMargin + 200, tableActiveY - 14, 9, isAbnormal, resultColor);
-            drawText(currentPage, param.unit || "-", leftMargin + 310, tableActiveY - 14, 9, false);
-            drawText(currentPage, ref.rangeStr || "-", leftMargin + 380, tableActiveY - 14, 9, false);
-          }
-
+          const displayName = indented ? `  -  ${param.name}` : param.name;
+          const indentX = indented ? 22 : 10;
+          drawText(currentPage, displayName, leftMargin + indentX, tableActiveY - 14, 9, false);
+          drawText(currentPage, displayVal || "-", leftMargin + 200, tableActiveY - 14, 9, isAbnormal, resultColor);
+          drawText(currentPage, param.unit || "-", leftMargin + 310, tableActiveY - 14, 9, false);
+          drawText(currentPage, ref.rangeStr || "-", leftMargin + 380, tableActiveY - 14, 9, false);
           tableActiveY -= 20;
 
-          // Draw Parameter level comments/interpretations directly below the row
           if (interpretation) {
-            if (tableActiveY < footerMargin + 25) {
+            if (tableActiveY < footerMargin + 25) { await addNewPage(); tableActiveY = drawTableHeader(currentPage, pageHeight - headerMargin - 15); }
+            drawText(currentPage, `* Note: ${interpretation}`, leftMargin + (indented ? 35 : 25), tableActiveY - 12, 7.5, false, rgb(0.4, 0.45, 0.5));
+            tableActiveY -= 15;
+          }
+        };
+
+        for (const group of renderGroups) {
+          if (group.type === "standalone") {
+            // Top-level param — no indent, no parent
+            await drawParamRow(group.param, false);
+
+          } else {
+            // Header group — only draw if at least one child has a result
+            const { header, children } = group;
+            const hasAnyChildResult = children.some(c => {
+              const v = resultsMap[c.id];
+              return v !== null && v !== undefined && v !== "" && v !== "-";
+            });
+            if (!hasAnyChildResult) continue;
+
+            // Draw header row
+            if (tableActiveY < footerMargin + 35) {
               await addNewPage();
               tableActiveY = drawTableHeader(currentPage, pageHeight - headerMargin - 15);
+              currentPage.drawRectangle({ x: leftMargin, y: tableActiveY - 20, width: contentWidth, height: 18, color: rgb(0.96, 0.97, 0.98) });
+              drawText(currentPage, `${test.name} (${test.code}) - Continued`, leftMargin + 10, tableActiveY - 13, 9, true, rgb(0.06, 0.46, 0.43));
+              tableActiveY -= 20;
             }
-            drawText(currentPage, `* Note: ${interpretation}`, leftMargin + 25, tableActiveY - 12, 7.5, false, rgb(0.4, 0.45, 0.5));
-            tableActiveY -= 15;
+            currentPage.drawLine({ start: { x: leftMargin, y: tableActiveY }, end: { x: pageWidth - leftMargin, y: tableActiveY }, thickness: 0.3, color: rgb(0.9, 0.92, 0.94) });
+            drawText(currentPage, header.name, leftMargin + 10, tableActiveY - 14, 9, true, rgb(0.06, 0.46, 0.43));
+            tableActiveY -= 20;
+
+            // Draw children (indented), skipping those without results
+            for (const child of children) {
+              // If we're about to page-break inside a group, re-draw the parent header for context
+              if (tableActiveY < footerMargin + 35) {
+                await addNewPage();
+                tableActiveY = drawTableHeader(currentPage, pageHeight - headerMargin - 15);
+                currentPage.drawRectangle({ x: leftMargin, y: tableActiveY - 20, width: contentWidth, height: 18, color: rgb(0.96, 0.97, 0.98) });
+                drawText(currentPage, `${test.name} (${test.code}) - Continued`, leftMargin + 10, tableActiveY - 13, 9, true, rgb(0.06, 0.46, 0.43));
+                tableActiveY -= 20;
+                currentPage.drawLine({ start: { x: leftMargin, y: tableActiveY }, end: { x: pageWidth - leftMargin, y: tableActiveY }, thickness: 0.3, color: rgb(0.9, 0.92, 0.94) });
+                drawText(currentPage, `${header.name} (cont.)`, leftMargin + 10, tableActiveY - 14, 9, true, rgb(0.06, 0.46, 0.43));
+                tableActiveY -= 20;
+              }
+              await drawParamRow(child, true);
+            }
           }
         }
       }

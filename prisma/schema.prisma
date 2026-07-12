@@ -349,6 +349,7 @@ model TestParameter {
   section      String?
   unit         String?
   isHeader     Boolean         @default(false)
+  parentId     Int?            // DB id of the parent isHeader TestParameter; null = standalone or is a header
   workspace    Workspace?      @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
   results      PatientResult[]
   parameter    Parameter       @relation(fields: [parameterId], references: [id], onDelete: Cascade)

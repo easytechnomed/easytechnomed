@@ -125,42 +125,75 @@ export async function PUT(req, { params }) {
           });
         }
 
-        // 4. Update or Create incoming parameters
-        for (const p of incomingParams) {
+        // ── Two-pass save: headers first so children can reference their DB ids ──
+        // Build a map: clientKey → resolved DB TestParameter id
+        // For existing rows: key = row.id (set in EditTestDialog state init), so map directly
+        // For new rows: key = client-side string like "bulk-header-...", resolved after create
+        const keyToTpId = {};
+
+        // Helper: resolve or upsert parameter record
+        const resolveParam = async (p) => {
           const normName = (p.name || "").trim();
-          if (!normName) continue;
-
-          // Resolve or create parameter in the master table
-          let parameter = await tx.parameter.findFirst({
-            where: { name: { equals: normName } }
-          });
-
+          let parameter = await tx.parameter.findFirst({ where: { name: { equals: normName } } });
           const pData = {
             name: normName,
-            minValMale: p.minValMale !== undefined && p.minValMale !== null && p.minValMale !== "" ? parseFloat(p.minValMale) : null,
-            maxValMale: p.maxValMale !== undefined && p.maxValMale !== null && p.maxValMale !== "" ? parseFloat(p.maxValMale) : null,
-            normalRangeMale: p.normalRangeMale || null,
-            minValFemale: p.minValFemale !== undefined && p.minValFemale !== null && p.minValFemale !== "" ? parseFloat(p.minValFemale) : null,
-            maxValFemale: p.maxValFemale !== undefined && p.maxValFemale !== null && p.maxValFemale !== "" ? parseFloat(p.maxValFemale) : null,
-            normalRangeFemale: p.normalRangeFemale || null,
-            minValBaby: p.minValBaby !== undefined && p.minValBaby !== null && p.minValBaby !== "" ? parseFloat(p.minValBaby) : null,
-            maxValBaby: p.maxValBaby !== undefined && p.maxValBaby !== null && p.maxValBaby !== "" ? parseFloat(p.maxValBaby) : null,
-            normalRangeBaby: p.normalRangeBaby || null,
-            normalRangeDefault: p.normalRangeDefault || null,
-            unit: p.unit || null,
+            minValMale: p.minValMale !== undefined && p.minValMale !== null && p.minValMale !== "" ? parseFloat(p.minValMale) : (parameter?.minValMale ?? null),
+            maxValMale: p.maxValMale !== undefined && p.maxValMale !== null && p.maxValMale !== "" ? parseFloat(p.maxValMale) : (parameter?.maxValMale ?? null),
+            normalRangeMale: p.normalRangeMale || (parameter?.normalRangeMale ?? null),
+            minValFemale: p.minValFemale !== undefined && p.minValFemale !== null && p.minValFemale !== "" ? parseFloat(p.minValFemale) : (parameter?.minValFemale ?? null),
+            maxValFemale: p.maxValFemale !== undefined && p.maxValFemale !== null && p.maxValFemale !== "" ? parseFloat(p.maxValFemale) : (parameter?.maxValFemale ?? null),
+            normalRangeFemale: p.normalRangeFemale || (parameter?.normalRangeFemale ?? null),
+            minValBaby: p.minValBaby !== undefined && p.minValBaby !== null && p.minValBaby !== "" ? parseFloat(p.minValBaby) : (parameter?.minValBaby ?? null),
+            maxValBaby: p.maxValBaby !== undefined && p.maxValBaby !== null && p.maxValBaby !== "" ? parseFloat(p.maxValBaby) : (parameter?.maxValBaby ?? null),
+            normalRangeBaby: p.normalRangeBaby || (parameter?.normalRangeBaby ?? null),
+            normalRangeDefault: p.normalRangeDefault || (parameter?.normalRangeDefault ?? null),
+            unit: p.unit || (parameter?.unit ?? null),
           };
-
           if (!parameter) {
-            parameter = await tx.parameter.create({
-              data: pData
-            });
+            parameter = await tx.parameter.create({ data: pData });
           } else {
-            // Update the shared parameters dictionary globally
-            parameter = await tx.parameter.update({
-              where: { id: parameter.id },
-              data: pData
-            });
+            parameter = await tx.parameter.update({ where: { id: parameter.id }, data: pData });
           }
+          return parameter;
+        };
+
+        // Pass 1: handle all isHeader rows
+        for (const p of incomingParams) {
+          if (!p.isHeader) continue;
+          const normName = (p.name || "").trim();
+          if (!normName) continue;
+          const parameter = await resolveParam(p);
+
+          if (p.id && existingIds.includes(p.id)) {
+            // Existing header: update, record key→id
+            await tx.testParameter.update({
+              where: { id: p.id },
+              data: { parameterId: parameter.id, order: parseInt(p.order) || 1, isHeader: true, parentId: null, isDeleted: false, deletedAt: null }
+            });
+            // For existing rows, EditTestDialog sets key = p.id
+            if (p.key) keyToTpId[p.key] = p.id;
+            keyToTpId[String(p.id)] = p.id; // also index by string id
+          } else {
+            // New header: create, record key→newId
+            const tp = await tx.testParameter.create({
+              data: { testId, parameterId: parameter.id, order: parseInt(p.order) || 1, isHeader: true, parentId: null, isDeleted: false }
+            });
+            if (p.key) keyToTpId[p.key] = tp.id;
+          }
+        }
+
+        // Pass 2: handle all non-header rows
+        for (const p of incomingParams) {
+          if (p.isHeader) continue;
+          const normName = (p.name || "").trim();
+          if (!normName) continue;
+          const parameter = await resolveParam(p);
+
+          // parentKey = client-side key of the header row (set during bulk-insert)
+          // parentId = already-resolved DB id (from previously saved rows)
+          const resolvedParentId = p.parentKey
+            ? (keyToTpId[p.parentKey] ?? null)
+            : (p.parentId ?? null);
 
           if (p.id && existingIds.includes(p.id)) {
             await tx.testParameter.update({
@@ -168,7 +201,8 @@ export async function PUT(req, { params }) {
               data: {
                 parameterId: parameter.id,
                 order: parseInt(p.order) || 1,
-                isHeader: p.isHeader || false,
+                isHeader: false,
+                parentId: resolvedParentId,
                 isDeleted: false,
                 deletedAt: null
               }
@@ -179,12 +213,14 @@ export async function PUT(req, { params }) {
                 testId,
                 parameterId: parameter.id,
                 order: parseInt(p.order) || 1,
-                isHeader: p.isHeader || false,
+                isHeader: false,
+                parentId: resolvedParentId,
                 isDeleted: false
               }
             });
           }
         }
+
       },
       { maxWait: 20000, timeout: 45000 }
     );

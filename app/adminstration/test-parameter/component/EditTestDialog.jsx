@@ -151,6 +151,8 @@ export default function EditTestDialog({ open, onClose, test, parameterDictionar
             key: p.id || `param-${Date.now()}-${index}-${Math.random()}`,
             id: p.id,
             parameterId: p.parameterId,
+            parentId: p.parentId ?? null,     // DB id of parent isHeader row (null = standalone)
+            parentKey: null,                   // client-side only; set during bulk-insert
             name: p.name || "",
             isHeader: p.isHeader || false,
             unit: p.unit || "",
@@ -192,12 +194,31 @@ export default function EditTestDialog({ open, onClose, test, parameterDictionar
   const [saving, setSaving] = useState(false);
   const [draggedKey, setDraggedKey] = useState(null);
 
+  // Test catalog for bulk-insert autocomplete
+  const [testCatalog, setTestCatalog] = useState([]);
+
   // Formulas state
   const [formulas, setFormulas] = useState([]);
   const [loadingFormulas, setLoadingFormulas] = useState(false);
   const [formulaBuilderOpen, setFormulaBuilderOpen] = useState(false);
   const [formulaToEdit, setFormulaToEdit] = useState(null);
   const [formulaTesterOpen, setFormulaTesterOpen] = useState(false);
+
+  // Fetch test catalog for bulk-insert autocomplete on dialog open
+  useEffect(() => {
+    fetch("/adminstration/api/tests/all")
+      .then((r) => r.json())
+      .then((res) => {
+        if (res.success) setTestCatalog(res.tests || []);
+      })
+      .catch(() => {});
+  }, []);
+
+  // Combined autocomplete options: tests first (type="test"), then individual params (type="parameter")
+  const autocompleteOptions = useMemo(() => [
+    ...testCatalog.map((t) => ({ type: "test", id: t.id, name: t.name, parameters: t.parameters || [] })),
+    ...parameterDictionary.map((p) => ({ type: "parameter", ...p }))
+  ], [testCatalog, parameterDictionary]);
 
   // Prevent text selection across the page while dragging parameter rows
   useEffect(() => {
@@ -303,6 +324,8 @@ export default function EditTestDialog({ open, onClose, test, parameterDictionar
           unit: defaultUnit,
           order: (prev.parameters.length + 1).toString(),
           parameterId: null,
+          parentId: null,
+          parentKey: null,
           isHeader: false,
           editable: true,
           isCalculated: false,
@@ -393,6 +416,82 @@ export default function EditTestDialog({ open, onClose, test, parameterDictionar
     } else {
       handleParamChange(index, "name", name);
     }
+  };
+
+  /**
+   * Bulk-insert all child parameters of a selected test at the given row index.
+   * - First row  → test name, isHeader: true  (acts as the group header)
+   * - Rest rows  → child parameters, isHeader: false, parentKey → header row's key
+   * The placeholder row at `index` is removed and replaced by this block.
+   * Existing rows above and below are preserved.
+   */
+  const handleTestBulkInsert = (index, testOption) => {
+    if (!testOption || !Array.isArray(testOption.parameters)) return;
+
+    const ts = Date.now();
+    const headerKey = `bulk-header-${testOption.id}-${ts}`;
+
+    // Header row — the test name itself, marked as isHeader
+    const headerRow = {
+      key: headerKey,
+      id: undefined,
+      parameterId: null,
+      parentId: null,      // headers have no parent
+      parentKey: null,
+      name: testOption.name,
+      isHeader: true,
+      unit: "",
+      order: "1",
+      editable: true,
+      isCalculated: false,
+      minValMale: "",
+      maxValMale: "",
+      normalRangeMale: "",
+      minValFemale: "",
+      maxValFemale: "",
+      normalRangeFemale: "",
+      minValBaby: "",
+      maxValBaby: "",
+      normalRangeBaby: "",
+      normalRangeDefault: ""
+    };
+
+    // Child rows — all isHeader: false, linked to header via parentKey
+    const childRows = testOption.parameters.map((child, i) => ({
+      key: `bulk-child-${testOption.id}-${i}-${ts}-${Math.random()}`,
+      id: undefined,
+      parameterId: child.parameterId || null,
+      parentId: null,               // will be set to header's DB id by the API after save
+      parentKey: headerKey,          // ← client-side link to the header row
+      name: child.name || "",
+      isHeader: false,
+      unit: child.unit || "",
+      order: "1",
+      editable: child.editable !== undefined ? child.editable : true,
+      isCalculated: child.isCalculated !== undefined ? child.isCalculated : false,
+      minValMale: child.minValMale !== null && child.minValMale !== undefined ? child.minValMale.toString() : "",
+      maxValMale: child.maxValMale !== null && child.maxValMale !== undefined ? child.maxValMale.toString() : "",
+      normalRangeMale: child.normalRangeMale || "",
+      minValFemale: child.minValFemale !== null && child.minValFemale !== undefined ? child.minValFemale.toString() : "",
+      maxValFemale: child.maxValFemale !== null && child.maxValFemale !== undefined ? child.maxValFemale.toString() : "",
+      normalRangeFemale: child.normalRangeFemale || "",
+      minValBaby: child.minValBaby !== null && child.minValBaby !== undefined ? child.minValBaby.toString() : "",
+      maxValBaby: child.maxValBaby !== null && child.maxValBaby !== undefined ? child.maxValBaby.toString() : "",
+      normalRangeBaby: child.normalRangeBaby || "",
+      normalRangeDefault: child.normalRangeDefault || ""
+    }));
+
+    const newRows = [headerRow, ...childRows];
+
+    setEditForm((prev) => {
+      const before = prev.parameters.slice(0, index);
+      const after = prev.parameters.slice(index + 1);
+      const merged = [...before, ...newRows, ...after];
+      const reSequenced = merged.map((p, idx) => ({ ...p, order: (idx + 1).toString() }));
+      return { ...prev, parameters: reSequenced };
+    });
+
+    toast.success(`"${testOption.name}" added as header + ${childRows.length} child parameter(s)`);
   };
 
   const handleSaveEdit = async (e) => {
@@ -554,7 +653,7 @@ export default function EditTestDialog({ open, onClose, test, parameterDictionar
                         <TableCell align="center" sx={{ fontWeight: 700, width: 30, bgcolor: "#f8fafc" }}></TableCell>
                         <TableCell align="center" sx={{ fontWeight: 700, width: 40, bgcolor: "#f8fafc" }}>#</TableCell>
                         <TableCell align="center" sx={{ fontWeight: 700, width: 50, bgcolor: "#f8fafc" }}>Action</TableCell>
-                        <TableCell sx={{ fontWeight: 700, width: 260, bgcolor: "#f8fafc" }}>Parameter Name *</TableCell>
+                        <TableCell sx={{ fontWeight: 700, width: 450, bgcolor: "#f8fafc" }}>Parameter Name *</TableCell>
                         <TableCell sx={{ fontWeight: 700, width: 170, bgcolor: "#f8fafc" }}>Unit</TableCell>
                         <TableCell sx={{ fontWeight: 700, width: 100, bgcolor: "#f8fafc" }}>Order</TableCell>
 
@@ -576,6 +675,7 @@ export default function EditTestDialog({ open, onClose, test, parameterDictionar
                         {/* Default */}
                         <TableCell sx={{ fontWeight: 700, width: 200, bgcolor: "#fafaf9" }}>Default Range Text</TableCell>
                         <TableCell align="center" sx={{ fontWeight: 700, width: 90, bgcolor: "#f8fafc" }}>Is Header?</TableCell>
+                        <TableCell sx={{ fontWeight: 700, width: 200, bgcolor: "#fff7ed" }}>Parent Header</TableCell>
                       </TableRow>
                     </TableHead>
                     <TableBody>
@@ -620,23 +720,64 @@ export default function EditTestDialog({ open, onClose, test, parameterDictionar
                               </IconButton>
                             </TableCell>
 
-                            {/* Name */}
+                            {/* Name — combined Test + Parameter autocomplete */}
                             <TableCell>
                               <Autocomplete
                                 freeSolo
                                 size="small"
-                                options={parameterDictionary.map((option) => option.name)}
-                                value={param.name}
+                                options={autocompleteOptions}
+                                groupBy={(option) => typeof option === "string" ? "" : (option.type === "test" ? "📋 Tests (bulk-add all children)" : "🔬 Individual Parameters")}
+                                getOptionLabel={(option) => typeof option === "string" ? option : (option.name || "")}
+                                isOptionEqualToValue={(option, value) => {
+                                  const optionName = typeof option === "string" ? option : option.name;
+                                  const valueName = typeof value === "string" ? value : value?.name;
+                                  return optionName === valueName;
+                                }}
+                                value={param.name || ""}
                                 onChange={(event, newValue) => {
-                                  handleParamNameSelect(index, newValue);
+                                  if (!newValue) return;
+                                  if (typeof newValue === "string") {
+                                    handleParamChange(index, "name", newValue);
+                                  } else if (newValue.type === "test") {
+                                    handleTestBulkInsert(index, newValue);
+                                  } else {
+                                    handleParamNameSelect(index, newValue.name);
+                                  }
                                 }}
                                 onInputChange={(event, newInputValue) => {
                                   handleParamChange(index, "name", newInputValue);
                                 }}
+                                renderOption={(props, option) => {
+                                  const { key, ...restProps } = props;
+                                  const isTest = option.type === "test";
+                                  return (
+                                    <Box
+                                      component="li"
+                                      key={key}
+                                      {...restProps}
+                                      sx={{ display: "flex", alignItems: "center", gap: 1, py: "6px !important" }}
+                                    >
+                                      <Box 
+                                        sx={{ 
+                                          fontSize: "0.82rem", 
+                                          color: isTest ? "#ef4444" : "#2563eb", 
+                                          fontWeight: 600 
+                                        }}
+                                      >
+                                        {option.name}
+                                      </Box>
+                                      {isTest && (
+                                        <Box sx={{ fontSize: "0.7rem", color: "#ef4444", opacity: 0.8, ml: "auto", flexShrink: 0, fontStyle: "italic" }}>
+                                          ({option.parameters?.length || 0} children)
+                                        </Box>
+                                      )}
+                                    </Box>
+                                  );
+                                }}
                                 renderInput={(params) => (
                                   <TextField
                                     {...params}
-                                    placeholder="Parameter Name *"
+                                    placeholder="Parameter or Test Name *"
                                     sx={{ "& .MuiOutlinedInput-root": { borderRadius: 1 } }}
                                   />
                                 )}
@@ -846,6 +987,65 @@ export default function EditTestDialog({ open, onClose, test, parameterDictionar
                                 onChange={(e) => handleParamChange(index, "isHeader", e.target.checked)}
                                 color="primary"
                               />
+                            </TableCell>
+
+                            {/* Parent Header — link this row to a header group */}
+                            <TableCell sx={{ bgcolor: "#fff7ed" }}>
+                              {param.isHeader ? (
+                                // Headers cannot have a parent
+                                <Box sx={{ fontSize: "0.8rem", color: "text.disabled", pl: 1 }}>—</Box>
+                              ) : (
+                                <Select
+                                  size="small"
+                                  fullWidth
+                                  displayEmpty
+                                  value={param.parentKey || (param.parentId ? String(param.parentId) : "")}
+                                  onChange={(e) => {
+                                    const selected = e.target.value;
+                                    if (!selected) {
+                                      // (None) → remove parent link
+                                      setEditForm((prev) => {
+                                        const p = [...prev.parameters];
+                                        p[index] = { ...p[index], parentKey: null, parentId: null };
+                                        return { ...prev, parameters: p };
+                                      });
+                                    } else {
+                                      // Find the chosen header row by its key (or string-id for existing rows)
+                                      const chosenHeader = editForm.parameters.find(
+                                        (h) => h.isHeader && (h.key === selected || String(h.id) === selected)
+                                      );
+                                      setEditForm((prev) => {
+                                        const p = [...prev.parameters];
+                                        p[index] = {
+                                          ...p[index],
+                                          parentKey: chosenHeader?.key || null,
+                                          parentId: chosenHeader?.id ? chosenHeader.id : null,
+                                        };
+                                        return { ...prev, parameters: p };
+                                      });
+                                    }
+                                  }}
+                                  sx={{ fontSize: "0.8rem" }}
+                                >
+                                  <MenuItem value="">
+                                    <Box component="span" sx={{ color: "text.secondary", fontStyle: "italic", fontSize: "0.78rem" }}>
+                                      (None – standalone)
+                                    </Box>
+                                  </MenuItem>
+                                  {editForm.parameters
+                                    .filter((h) => h.isHeader && h.name)
+                                    .map((h) => (
+                                      <MenuItem
+                                        key={h.key}
+                                        value={h.key || String(h.id)}
+                                        sx={{ fontSize: "0.82rem" }}
+                                      >
+                                        {h.name}
+                                      </MenuItem>
+                                    ))
+                                  }
+                                </Select>
+                              )}
                             </TableCell>
                           </TableRow>
                         ))
