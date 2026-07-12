@@ -111,16 +111,14 @@ export async function POST(req, { params }) {
       // Clear legacy parameter mappings for this test
       await tx.testParameter.deleteMany({ where: { testId } });
 
-      let index = 0;
-      for (const param of incomingList) {
-        const normName = (param.name || "").trim();
-        if (!normName) continue;
+      // ── Two-pass save: headers first so children can reference their DB IDs ──
+      const keyToTpId = {};
 
-        // Resolve or create parameter in the master dictionary
+      const resolveParameter = async (param) => {
+        const normName = (param.name || "").trim();
         let parameter = await tx.parameter.findFirst({
           where: { name: { equals: normName } }
         });
-
         const pData = {
           name: normName,
           minValMale: param.minValMale !== undefined && param.minValMale !== null && param.minValMale !== "" ? parseFloat(param.minValMale) : null,
@@ -135,33 +133,63 @@ export async function POST(req, { params }) {
           normalRangeDefault: param.normalRangeDefault || null,
           unit: param.unit || "-NA-",
         };
-
         if (!parameter) {
-          parameter = await tx.parameter.create({
-            data: pData
-          });
+          parameter = await tx.parameter.create({ data: pData });
         } else {
-          // Keep shared ranges in sync
-          parameter = await tx.parameter.update({
-            where: { id: parameter.id },
-            data: pData
-          });
+          parameter = await tx.parameter.update({ where: { id: parameter.id }, data: pData });
         }
+        return parameter;
+      };
+
+      // Pass 1: Create all headers
+      let index = 0;
+      for (const param of incomingList) {
+        if (!param.isHeader) {
+          index++;
+          continue;
+        }
+        const parameter = await resolveParameter(param);
+        const tp = await tx.testParameter.create({
+          data: {
+            testId,
+            parameterId: parameter.id,
+            order: index + 1,
+            isHeader: true,
+            parentId: null,
+            isDeleted: false,
+          }
+        });
+        if (param.key) keyToTpId[param.key] = tp.id;
+        index++;
+      }
+
+      // Pass 2: Create all non-headers
+      index = 0;
+      for (const param of incomingList) {
+        if (param.isHeader) {
+          index++;
+          continue;
+        }
+        const parameter = await resolveParameter(param);
+        const resolvedParentId = param.parentKey
+          ? (keyToTpId[param.parentKey] ?? null)
+          : (param.parentId ?? null);
 
         await tx.testParameter.create({
           data: {
             testId,
             parameterId: parameter.id,
             order: index + 1,
-            isHeader: param.isHeader || false,
+            isHeader: false,
+            parentId: resolvedParentId,
             isDeleted: false,
           }
         });
         index++;
       }
     }, {
-      maxWait: 15000,
-      timeout: 30000
+      maxWait: 20000,
+      timeout: 45000
     });
 
     return NextResponse.json({ success: true, message: "Parameters updated successfully." });

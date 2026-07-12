@@ -28,7 +28,10 @@ import {
   DialogActions,
   InputAdornment,
   Pagination,
-  Autocomplete
+  Autocomplete,
+  Checkbox,
+  Select,
+  MenuItem
 } from "@mui/material";
 import {
   Save as SaveIcon,
@@ -104,7 +107,34 @@ export default function TestsClient() {
   const [savingParams, setSavingParams] = useState(false);
   const [draggedKey, setDraggedKey] = useState(null);
 
+  // Autocomplete options
+  const [testCatalog, setTestCatalog] = useState([]);
+  const [parameterDictionary, setParameterDictionary] = useState([]);
+
   const [toast, setToast] = useState({ open: false, message: "", severity: "success" });
+
+  useEffect(() => {
+    // Fetch parameter dictionary
+    fetch("/adminstration/api/parameters")
+      .then((r) => r.json())
+      .then((res) => {
+        if (res.success) setParameterDictionary(res.parameters || []);
+      })
+      .catch(() => {});
+
+    // Fetch tests catalog
+    fetch("/api/tests?limit=1000")
+      .then((r) => r.json())
+      .then((res) => {
+        if (res.success) setTestCatalog(res.tests || []);
+      })
+      .catch(() => {});
+  }, []);
+
+  const autocompleteOptions = React.useMemo(() => [
+    ...testCatalog.map((t) => ({ type: "test", id: t.id, name: t.name, parameters: t.parameters || [] })),
+    ...parameterDictionary.map((p) => ({ type: "parameter", ...p }))
+  ], [testCatalog, parameterDictionary]);
 
   const showToast = (message, severity = "success") => {
     setToast({ open: true, message, severity });
@@ -265,7 +295,12 @@ export default function TestsClient() {
     setParameterizingTest(test);
     const formattedParams = (test.parameters || []).map((p, index) => ({
       key: p.id || `param-${Date.now()}-${index}-${Math.random()}`,
+      id: p.id,
+      parameterId: p.parameterId,
+      parentId: p.parentId ?? null,
+      parentKey: null,
       name: p.name,
+      isHeader: p.isHeader || false,
       unit: p.unit || "",
       normalRangeDefault: p.normalRangeDefault || "",
       minValMale: p.minValMale !== null && p.minValMale !== undefined ? String(p.minValMale) : "",
@@ -288,7 +323,12 @@ export default function TestsClient() {
       ...prev,
       {
         key: `new-${Date.now()}-${Math.random()}`,
+        id: undefined,
+        parameterId: null,
+        parentId: null,
+        parentKey: null,
         name: "",
+        isHeader: false,
         unit: "",
         normalRangeDefault: "",
         minValMale: "",
@@ -316,10 +356,24 @@ export default function TestsClient() {
   const handleParamRowChange = (index, field, value) => {
     setParametersList((prev) => {
       const updated = [...prev];
-      const targetParam = {
+      let targetParam = {
         ...updated[index],
         [field]: value,
       };
+
+      if (field === "isHeader" && value === true) {
+        targetParam.unit = "";
+        targetParam.minValMale = "";
+        targetParam.maxValMale = "";
+        targetParam.normalRangeMale = "";
+        targetParam.minValFemale = "";
+        targetParam.maxValFemale = "";
+        targetParam.normalRangeFemale = "";
+        targetParam.minValBaby = "";
+        targetParam.maxValBaby = "";
+        targetParam.normalRangeBaby = "";
+        targetParam.normalRangeDefault = "";
+      }
 
       // Auto-fill Male range description
       if (field === "minValMale" || field === "maxValMale") {
@@ -351,6 +405,98 @@ export default function TestsClient() {
       updated[index] = targetParam;
       return updated;
     });
+  };
+
+  const handleParamNameSelect = (index, name) => {
+    if (!name) return;
+    const template = parameterDictionary.find(
+      (p) => p.name.toLowerCase().trim() === name.toLowerCase().trim()
+    );
+
+    if (template) {
+      setParametersList((prev) => {
+        const newParams = [...prev];
+        newParams[index] = {
+          ...newParams[index],
+          name: template.name,
+          unit: template.unit || "",
+          parameterId: template.id,
+          isHeader: false,
+          minValMale: template.minValMale !== null && template.minValMale !== undefined ? template.minValMale.toString() : "",
+          maxValMale: template.maxValMale !== null && template.maxValMale !== undefined ? template.maxValMale.toString() : "",
+          normalRangeMale: template.normalRangeMale || "",
+          minValFemale: template.minValFemale !== null && template.minValFemale !== undefined ? template.minValFemale.toString() : "",
+          maxValFemale: template.maxValFemale !== null && template.maxValFemale !== undefined ? template.maxValFemale.toString() : "",
+          normalRangeFemale: template.normalRangeFemale || "",
+          minValBaby: template.minValBaby !== null && template.minValBaby !== undefined ? template.minValBaby.toString() : "",
+          maxValBaby: template.maxValBaby !== null && template.maxValBaby !== undefined ? template.maxValBaby.toString() : "",
+          normalRangeBaby: template.normalRangeBaby || "",
+          normalRangeDefault: template.normalRangeDefault || ""
+        };
+        return newParams;
+      });
+    } else {
+      handleParamRowChange(index, "name", name);
+    }
+  };
+
+  const handleTestBulkInsert = (index, testOption) => {
+    if (!testOption || !Array.isArray(testOption.parameters)) return;
+
+    const ts = Date.now();
+    const headerKey = `bulk-header-${testOption.id}-${ts}`;
+
+    const headerRow = {
+      key: headerKey,
+      id: undefined,
+      parameterId: null,
+      parentId: null,
+      parentKey: null,
+      name: testOption.name,
+      isHeader: true,
+      unit: "",
+      minValMale: "",
+      maxValMale: "",
+      normalRangeMale: "",
+      minValFemale: "",
+      maxValFemale: "",
+      normalRangeFemale: "",
+      minValBaby: "",
+      maxValBaby: "",
+      normalRangeBaby: "",
+      normalRangeDefault: ""
+    };
+
+    const childRows = testOption.parameters.map((child, i) => ({
+      key: `bulk-child-${testOption.id}-${i}-${ts}-${Math.random()}`,
+      id: undefined,
+      parameterId: child.parameterId || null,
+      parentId: null,
+      parentKey: headerKey,
+      name: child.name || "",
+      isHeader: false,
+      unit: child.unit || "",
+      minValMale: child.minValMale !== null && child.minValMale !== undefined ? child.minValMale.toString() : "",
+      maxValMale: child.maxValMale !== null && child.maxValMale !== undefined ? child.maxValMale.toString() : "",
+      normalRangeMale: child.normalRangeMale || "",
+      minValFemale: child.minValFemale !== null && child.minValFemale !== undefined ? child.minValFemale.toString() : "",
+      maxValFemale: child.maxValFemale !== null && child.maxValFemale !== undefined ? child.maxValFemale.toString() : "",
+      normalRangeFemale: child.normalRangeFemale || "",
+      minValBaby: child.minValBaby !== null && child.minValBaby !== undefined ? child.minValBaby.toString() : "",
+      maxValBaby: child.maxValBaby !== null && child.maxValBaby !== undefined ? child.maxValBaby.toString() : "",
+      normalRangeBaby: child.normalRangeBaby || "",
+      normalRangeDefault: child.normalRangeDefault || ""
+    }));
+
+    const newRows = [headerRow, ...childRows];
+
+    setParametersList((prev) => {
+      const before = prev.slice(0, index);
+      const after = prev.slice(index + 1);
+      return [...before, ...newRows, ...after];
+    });
+
+    showToast(`"${testOption.name}" added as header + ${childRows.length} child parameter(s)`);
   };
 
   const handleDragStart = (e, key) => {
@@ -421,7 +567,13 @@ export default function TestsClient() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           parametersList: parametersList.map((p) => ({
+            key: p.key,
+            id: p.id,
+            parameterId: p.parameterId,
+            parentId: p.parentId,
+            parentKey: p.parentKey,
             name: p.name.trim(),
+            isHeader: p.isHeader || false,
             unit: p.unit || "",
             normalRangeDefault: p.normalRangeDefault || "",
             minValMale: p.minValMale !== "" ? parseFloat(p.minValMale) : null,
@@ -724,12 +876,12 @@ export default function TestsClient() {
             </Typography>
 
             <TableContainer component={Paper} variant="outlined" sx={{ overflowX: "auto", maxHeight: "50vh", userSelect: "none" }}>
-              <Table size="small" stickyHeader sx={{ minWidth: 1800 }}>
+              <Table size="small" stickyHeader sx={{ minWidth: 2000 }}>
                 <TableHead>
                   <TableRow>
                     <TableCell align="center" sx={{ fontWeight: 700, width: 80, bgcolor: "#f8fafc" }}>#</TableCell>
-                    <TableCell sx={{ fontWeight: 700, width: 250, bgcolor: "#f8fafc" }}>Parameter Name *</TableCell>
-                    <TableCell sx={{ fontWeight: 700, width: 150, bgcolor: "#f8fafc" }}>Unit</TableCell>
+                    <TableCell sx={{ fontWeight: 700, width: 500, bgcolor: "#f8fafc" }}>Parameter Name *</TableCell>
+                    <TableCell sx={{ fontWeight: 700, width: 180, bgcolor: "#f8fafc" }}>Unit</TableCell>
 
                     {/* Male */}
                     <TableCell sx={{ fontWeight: 700, width: 120, bgcolor: "#eff6ff" }}>Male Min</TableCell>
@@ -748,7 +900,8 @@ export default function TestsClient() {
 
                     {/* Default */}
                     <TableCell sx={{ fontWeight: 700, width: 220, bgcolor: "#fafaf9" }}>Default Range Text</TableCell>
-
+                    <TableCell align="center" sx={{ fontWeight: 700, width: 90, bgcolor: "#f8fafc" }}>Is Header?</TableCell>
+                    <TableCell sx={{ fontWeight: 700, width: 250, bgcolor: "#fff7ed" }}>Parent Header</TableCell>
                     <TableCell align="center" sx={{ fontWeight: 700, width: 50, bgcolor: "#f8fafc" }}>Action</TableCell>
                   </TableRow>
                 </TableHead>
@@ -789,14 +942,65 @@ export default function TestsClient() {
 
                         {/* Name */}
                         <TableCell>
-                          <TextField
-                            fullWidth
+                          <Autocomplete
+                            freeSolo
                             size="small"
-                            placeholder="Parameter Name"
-                            value={param.name}
-                            onChange={(e) => handleParamRowChange(idx, "name", e.target.value)}
-                            required
-                            sx={{ '& .MuiOutlinedInput-root': { borderRadius: 1.5 } }}
+                            options={autocompleteOptions}
+                            groupBy={(option) => typeof option === "string" ? "" : (option.type === "test" ? "📋 Tests (bulk-add all children)" : "🔬 Individual Parameters")}
+                            getOptionLabel={(option) => typeof option === "string" ? option : (option.name || "")}
+                            isOptionEqualToValue={(option, value) => {
+                              const optionName = typeof option === "string" ? option : option.name;
+                              const valueName = typeof value === "string" ? value : value?.name;
+                              return optionName === valueName;
+                            }}
+                            value={param.name || ""}
+                            onChange={(event, newValue) => {
+                              if (!newValue) return;
+                              if (typeof newValue === "string") {
+                                handleParamRowChange(idx, "name", newValue);
+                              } else if (newValue.type === "test") {
+                                handleTestBulkInsert(idx, newValue);
+                              } else {
+                                handleParamNameSelect(idx, newValue.name);
+                              }
+                            }}
+                            onInputChange={(event, newInputValue) => {
+                              handleParamRowChange(idx, "name", newInputValue);
+                            }}
+                            renderOption={(props, option) => {
+                              const { key, ...restProps } = props;
+                              const isTest = option.type === "test";
+                              return (
+                                <Box
+                                  component="li"
+                                  key={key}
+                                  {...restProps}
+                                  sx={{ display: "flex", alignItems: "center", gap: 1, py: "6px !important" }}
+                                >
+                                  <Box 
+                                    sx={{ 
+                                      fontSize: "0.82rem", 
+                                      color: isTest ? "#ef4444" : "#2563eb", 
+                                      fontWeight: 600 
+                                    }}
+                                  >
+                                    {option.name}
+                                  </Box>
+                                  {isTest && (
+                                    <Box sx={{ fontSize: "0.7rem", color: "#ef4444", opacity: 0.8, ml: "auto", flexShrink: 0, fontStyle: "italic" }}>
+                                      ({option.parameters?.length || 0} children)
+                                    </Box>
+                                  )}
+                                </Box>
+                              );
+                            }}
+                            renderInput={(params) => (
+                              <TextField
+                                {...params}
+                                placeholder="Parameter or Test Name *"
+                                sx={{ "& .MuiOutlinedInput-root": { borderRadius: 1.5 } }}
+                              />
+                            )}
                           />
                         </TableCell>
 
@@ -950,12 +1154,78 @@ export default function TestsClient() {
                         <TableCell>
                           <TextField
                             fullWidth
+                            disabled={!!param.isHeader}
                             size="small"
                             value={param.normalRangeDefault}
                             onChange={(e) => handleParamRowChange(idx, "normalRangeDefault", e.target.value)}
                             placeholder="Default range"
                             sx={{ '& .MuiOutlinedInput-root': { borderRadius: 1.5 } }}
                           />
+                        </TableCell>
+
+                        {/* Is Header */}
+                        <TableCell align="center" sx={{ bgcolor: "#f8fafc" }}>
+                          <Checkbox
+                            checked={!!param.isHeader}
+                            onChange={(e) => handleParamRowChange(idx, "isHeader", e.target.checked)}
+                            color="primary"
+                          />
+                        </TableCell>
+
+                        {/* Parent Header — link this row to a header group */}
+                        <TableCell sx={{ bgcolor: "#fff7ed" }}>
+                          {param.isHeader ? (
+                            <Box sx={{ fontSize: "0.8rem", color: "text.disabled", pl: 1 }}>—</Box>
+                          ) : (
+                            <Select
+                              size="small"
+                              fullWidth
+                              displayEmpty
+                              value={param.parentKey || (param.parentId ? String(param.parentId) : "")}
+                              onChange={(e) => {
+                                const selected = e.target.value;
+                                if (!selected) {
+                                  setParametersList((prev) => {
+                                    const p = [...prev];
+                                    p[idx] = { ...p[idx], parentKey: null, parentId: null };
+                                    return p;
+                                  });
+                                } else {
+                                  const chosenHeader = parametersList.find(
+                                    (h) => h.isHeader && (h.key === selected || String(h.id) === selected)
+                                  );
+                                  setParametersList((prev) => {
+                                    const p = [...prev];
+                                    p[idx] = {
+                                      ...p[idx],
+                                      parentKey: chosenHeader?.key || null,
+                                      parentId: chosenHeader?.id ? chosenHeader.id : null,
+                                    };
+                                    return p;
+                                  });
+                                }
+                              }}
+                              sx={{ fontSize: "0.8rem" }}
+                            >
+                              <MenuItem value="">
+                                <Box component="span" sx={{ color: "text.secondary", fontStyle: "italic", fontSize: "0.78rem" }}>
+                                  (None – standalone)
+                                </Box>
+                              </MenuItem>
+                              {parametersList
+                                .filter((h) => h.isHeader && h.name)
+                                .map((h) => (
+                                  <MenuItem
+                                    key={h.key}
+                                    value={h.key || String(h.id)}
+                                    sx={{ fontSize: "0.82rem" }}
+                                  >
+                                    {h.name}
+                                  </MenuItem>
+                                ))
+                              }
+                            </Select>
+                          )}
                         </TableCell>
 
                         {/* Delete Action */}
