@@ -1340,6 +1340,7 @@ export default function TestReportPage() {
         selectedReg={selectedReg}
         onSaveSuccess={loadData}
         canWrite={canWrite}
+        handlePrintReport={handlePrintReport}
       />
 
       {/* --- PRINT OPTION DIALOG --- */}

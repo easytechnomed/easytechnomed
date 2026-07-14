@@ -36,7 +36,8 @@ import {
   Add as AddIcon,
   Delete as DeleteIcon,
   Warning as WarningIcon,
-  Calculate as CalculateIcon
+  Calculate as CalculateIcon,
+  Print as PrintIcon
 } from "@mui/icons-material";
 
 // Helper functions for parameter keys and expression evaluation
@@ -457,7 +458,7 @@ const getReferenceRange = (param, reg) => {
   };
 };
 
-export default function ResultEntry({ open, onClose, selectedReg, onSaveSuccess, canWrite }) {
+export default function ResultEntry({ open, onClose, selectedReg, onSaveSuccess, canWrite, handlePrintReport }) {
   const [loading, setLoading] = useState(true);
   const [resultRegDetails, setResultRegDetails] = useState(null);
   const [resultTests, setResultTests] = useState([]);
@@ -465,6 +466,7 @@ export default function ResultEntry({ open, onClose, selectedReg, onSaveSuccess,
   const [manualOverrides, setManualOverrides] = useState(new Set());
   const [reportNotes, setReportNotes] = useState("");
   const [resultSaving, setResultSaving] = useState(false);
+  const [isSaved, setIsSaved] = useState(false);
 
   // Configurator States
   const [configDialogOpen, setConfigDialogOpen] = useState(false);
@@ -511,6 +513,7 @@ export default function ResultEntry({ open, onClose, selectedReg, onSaveSuccess,
 
   useEffect(() => {
     if (open && selectedReg) {
+      setIsSaved(false);
       // eslint-disable-next-line react-hooks/set-state-in-effect
       loadParameters();
     }
@@ -574,10 +577,8 @@ export default function ResultEntry({ open, onClose, selectedReg, onSaveSuccess,
 
       if (res.success) {
         showToast(res.message || "Results saved successfully", "success");
-        setTimeout(() => {
-          onClose();
-          if (onSaveSuccess) onSaveSuccess();
-        }, 1000);
+        setIsSaved(true);
+        if (onSaveSuccess) onSaveSuccess();
       } else {
         showToast(res.message, "error");
       }
@@ -913,6 +914,23 @@ export default function ResultEntry({ open, onClose, selectedReg, onSaveSuccess,
           )}
         </DialogContent>
         <DialogActions sx={{ px: 3, pb: 2 }}>
+          {isSaved && (
+            <Button
+              onClick={() => {
+                onClose();
+                if (handlePrintReport) {
+                  handlePrintReport();
+                }
+              }}
+              variant="contained"
+              color="success"
+              size="small"
+              startIcon={<PrintIcon />}
+            >
+              Print Report
+            </Button>
+          )}
+          <Box sx={{ flexGrow: 1 }} />
           <Button onClick={onClose} variant="outlined" size="small">Cancel</Button>
           <Tooltip title={!canWrite ? "You do not have permission to enter results" : ""}>
             <span>
