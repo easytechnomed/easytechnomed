@@ -52,7 +52,7 @@ const evaluateExpression = (formulaStr, valuesMap) => {
 
   // Identify variable tokens (excluding function keywords and null/boolean literals)
   const tokenRegex = /\b(?!ROUND|ABS|SQRT|MIN|MAX|IF|null|NULL\b)[a-zA-Z_][a-zA-Z0-9_]*\b/g;
-  
+
   const substituted = prepared.replace(tokenRegex, (match) => {
     if (valuesMap[match] !== undefined && valuesMap[match] !== null) {
       return valuesMap[match];
@@ -87,10 +87,10 @@ const evaluateExpression = (formulaStr, valuesMap) => {
 
     const keys = Object.keys(context);
     const values = Object.values(context);
-    
+
     const fn = new Function(...keys, `return (${sanitized});`);
     const result = fn(...values);
-    
+
     if (typeof result === "number" && !isNaN(result) && isFinite(result)) {
       return result;
     }
@@ -102,10 +102,10 @@ const evaluateExpression = (formulaStr, valuesMap) => {
 
 const checkFormulaDependencies = (formulaStr, valuesMap) => {
   if (!formulaStr) return false;
-  
+
   const tokenRegex = /\b(?!ROUND|ABS|SQRT|MIN|MAX|IF|null|NULL\b)[a-zA-Z_][a-zA-Z0-9_]*\b/g;
   const matches = formulaStr.match(tokenRegex) || [];
-  
+
   for (const match of matches) {
     if (valuesMap[match] === undefined || valuesMap[match] === null || valuesMap[match] === "") {
       return false;
@@ -149,28 +149,28 @@ export default function EditTestDialog({ open, onClose, test, parameterDictionar
     if (test) {
       const paramsCopy = test.parameters
         ? test.parameters.map((p, index) => ({
-            key: p.id || `param-${Date.now()}-${index}-${Math.random()}`,
-            id: p.id,
-            parameterId: p.parameterId,
-            parentId: p.parentId ?? null,     // DB id of parent isHeader row (null = standalone)
-            parentKey: null,                   // client-side only; set during bulk-insert
-            name: p.name || "",
-            isHeader: p.isHeader || false,
-            unit: p.unit || "",
-            order: p.order?.toString() || "1",
-            editable: p.editable !== undefined ? p.editable : true,
-            isCalculated: p.isCalculated !== undefined ? p.isCalculated : false,
-            minValMale: p.minValMale !== null && p.minValMale !== undefined ? p.minValMale.toString() : "",
-            maxValMale: p.maxValMale !== null && p.maxValMale !== undefined ? p.maxValMale.toString() : "",
-            normalRangeMale: p.normalRangeMale || "",
-            minValFemale: p.minValFemale !== null && p.minValFemale !== undefined ? p.minValFemale.toString() : "",
-            maxValFemale: p.maxValFemale !== null && p.maxValFemale !== undefined ? p.maxValFemale.toString() : "",
-            normalRangeFemale: p.normalRangeFemale || "",
-            minValBaby: p.minValBaby !== null && p.minValBaby !== undefined ? p.minValBaby.toString() : "",
-            maxValBaby: p.maxValBaby !== null && p.maxValBaby !== undefined ? p.maxValBaby.toString() : "",
-            normalRangeBaby: p.normalRangeBaby || "",
-            normalRangeDefault: p.normalRangeDefault || ""
-          }))
+          key: p.id || `param-${Date.now()}-${index}-${Math.random()}`,
+          id: p.id,
+          parameterId: p.parameterId,
+          parentId: p.parentId ?? null,     // DB id of parent isHeader row (null = standalone)
+          parentKey: null,                   // client-side only; set during bulk-insert
+          name: p.name || "",
+          isHeader: p.isHeader || false,
+          unit: p.unit || "",
+          order: p.order?.toString() || "1",
+          editable: p.editable !== undefined ? p.editable : true,
+          isCalculated: p.isCalculated !== undefined ? p.isCalculated : false,
+          minValMale: p.minValMale !== null && p.minValMale !== undefined ? p.minValMale.toString() : "",
+          maxValMale: p.maxValMale !== null && p.maxValMale !== undefined ? p.maxValMale.toString() : "",
+          normalRangeMale: p.normalRangeMale || "",
+          minValFemale: p.minValFemale !== null && p.minValFemale !== undefined ? p.minValFemale.toString() : "",
+          maxValFemale: p.maxValFemale !== null && p.maxValFemale !== undefined ? p.maxValFemale.toString() : "",
+          normalRangeFemale: p.normalRangeFemale || "",
+          minValBaby: p.minValBaby !== null && p.minValBaby !== undefined ? p.minValBaby.toString() : "",
+          maxValBaby: p.maxValBaby !== null && p.maxValBaby !== undefined ? p.maxValBaby.toString() : "",
+          normalRangeBaby: p.normalRangeBaby || "",
+          normalRangeDefault: p.normalRangeDefault || ""
+        }))
         : [];
 
       return {
@@ -204,7 +204,7 @@ export default function EditTestDialog({ open, onClose, test, parameterDictionar
   const [formulaBuilderOpen, setFormulaBuilderOpen] = useState(false);
   const [formulaToEdit, setFormulaToEdit] = useState(null);
   const [formulaTesterOpen, setFormulaTesterOpen] = useState(false);
-  
+
   // Custom interactive simulation states
   const [editedFormulas, setEditedFormulas] = useState({});
   const [simValues, setSimValues] = useState({});
@@ -216,7 +216,7 @@ export default function EditTestDialog({ open, onClose, test, parameterDictionar
       .then((res) => {
         if (res.success) setTestCatalog(res.tests || []);
       })
-      .catch(() => {});
+      .catch(() => { });
   }, []);
 
   // Combined autocomplete options: tests first (type="test"), then individual params (type="parameter")
@@ -245,7 +245,7 @@ export default function EditTestDialog({ open, onClose, test, parameterDictionar
       if (res.success) {
         const fetched = res.formulas || [];
         setFormulas(fetched);
-        
+
         const initialFormulas = {};
         fetched.forEach((f) => {
           initialFormulas[f.outputParameterId] = {
@@ -715,7 +715,7 @@ export default function EditTestDialog({ open, onClose, test, parameterDictionar
     >
       <form onSubmit={handleSaveEdit} style={{ display: "flex", flexDirection: "column", height: "100%", overflow: "hidden" }}>
         <DialogContent sx={{ display: "flex", flexDirection: "column", gap: 3, flexGrow: 1, overflowY: "auto" }}>
-          
+
           <Box sx={{ borderBottom: 1, borderColor: "divider", mb: 2, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
             <Tabs
               value={activeTab}
@@ -888,11 +888,11 @@ export default function EditTestDialog({ open, onClose, test, parameterDictionar
                                       {...restProps}
                                       sx={{ display: "flex", alignItems: "center", gap: 1, py: "6px !important" }}
                                     >
-                                      <Box 
-                                        sx={{ 
-                                          fontSize: "0.82rem", 
-                                          color: isTest ? "#ef4444" : "#2563eb", 
-                                          fontWeight: 600 
+                                      <Box
+                                        sx={{
+                                          fontSize: "0.82rem",
+                                          color: isTest ? "#ef4444" : "#2563eb",
+                                          fontWeight: 600
                                         }}
                                       >
                                         {option.name}
@@ -1248,7 +1248,23 @@ export default function EditTestDialog({ open, onClose, test, parameterDictionar
                               }}
                               title={"Drag to insert \"" + getParamCode(param.name) + "\" into formula"}
                             >
-                              {param.name}
+                              <Box>
+                                {param.name}
+                                <Typography
+                                  component="span"
+                                  sx={{
+                                    display: "block",
+                                    fontFamily: "monospace",
+                                    fontSize: "0.72rem",
+                                    fontWeight: 700,
+                                    color: "primary.main",
+                                    opacity: 0.75,
+                                    mt: 0.2
+                                  }}
+                                >
+                                  [{getParamCode(param.name)}]
+                                </Typography>
+                              </Box>
                             </TableCell>
 
                             {/* Formula */}
@@ -1378,7 +1394,7 @@ export default function EditTestDialog({ open, onClose, test, parameterDictionar
           )}
 
         </DialogContent>
-        
+
         <DialogActions sx={{ px: 3, py: 2, display: "flex", justifyContent: "space-between", alignItems: "center", borderTop: "1px solid", borderColor: "divider", bgcolor: "background.paper" }}>
           {activeTab === 0 ? (
             <Button
@@ -1515,13 +1531,13 @@ function FormulaTesterDialog({ open, onClose, testName, testParameters, paramete
     };
 
     const valuesMap = {};
-    
+
     // 1. Build valuesMap of current manual inputs
     testParameters.forEach((tp) => {
       const match = parameterDictionary.find(
         (p) => p.name.toLowerCase().trim() === tp.name.toLowerCase().trim()
       );
-      
+
       const rawVal = currentValues[tp.key];
       if (rawVal !== undefined && rawVal !== null && rawVal !== "") {
         const numVal = parseFloat(rawVal);
@@ -1529,7 +1545,7 @@ function FormulaTesterDialog({ open, onClose, testName, testParameters, paramete
           valuesMap[tp.name.trim()] = numVal;
           const normName = tp.name.toLowerCase().replace(/[^a-z0-9]/g, "");
           valuesMap[normName] = numVal;
-          
+
           const code = (tp.code || match?.code || STANDARD_CODE_FALLBACKS[normName])?.toUpperCase().trim();
           if (code) {
             valuesMap[code] = numVal;
