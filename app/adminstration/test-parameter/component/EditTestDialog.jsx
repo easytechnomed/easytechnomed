@@ -39,7 +39,8 @@ import {
   DragIndicator as DragIndicatorIcon,
   Science as ScienceIcon,
   Info as InfoIcon,
-  Calculate as CalculateIcon
+  Calculate as CalculateIcon,
+  Save as SaveIcon
 } from "@mui/icons-material";
 import { toast } from "sonner";
 
@@ -203,6 +204,10 @@ export default function EditTestDialog({ open, onClose, test, parameterDictionar
   const [formulaBuilderOpen, setFormulaBuilderOpen] = useState(false);
   const [formulaToEdit, setFormulaToEdit] = useState(null);
   const [formulaTesterOpen, setFormulaTesterOpen] = useState(false);
+  
+  // Custom interactive simulation states
+  const [editedFormulas, setEditedFormulas] = useState({});
+  const [simValues, setSimValues] = useState({});
 
   // Fetch test catalog for bulk-insert autocomplete on dialog open
   useEffect(() => {
@@ -238,7 +243,18 @@ export default function EditTestDialog({ open, onClose, test, parameterDictionar
     try {
       const res = await fetch(`/adminstration/api/tests/${editForm.id}/formulas`).then((r) => r.json());
       if (res.success) {
-        setFormulas(res.formulas || []);
+        const fetched = res.formulas || [];
+        setFormulas(fetched);
+        
+        const initialFormulas = {};
+        fetched.forEach((f) => {
+          initialFormulas[f.outputParameterId] = {
+            formulaStr: f.formula || "",
+            id: f.id,
+            description: f.description || ""
+          };
+        });
+        setEditedFormulas(initialFormulas);
       } else {
         toast.error("Failed to load test formulas.");
       }
@@ -249,6 +265,121 @@ export default function EditTestDialog({ open, onClose, test, parameterDictionar
       setLoadingFormulas(false);
     }
   };
+
+  // ── Inline Formula Tab helpers ───────────────────────────────────────────
+  const getParamCode = (paramName) => {
+    const match = parameterDictionary.find(
+      (p) => p.name.toLowerCase().trim() === paramName.toLowerCase().trim()
+    );
+    if (match && match.code) return match.code;
+    return paramName.replace(/[^a-zA-Z0-9_]/g, "");
+  };
+
+  const evaluateSimFormula = (formulaExpr) => {
+    if (!formulaExpr) return "";
+    let expr = formulaExpr;
+    Object.keys(simValues).forEach((key) => {
+      const val = parseFloat(simValues[key]);
+      if (!isNaN(val)) {
+        expr = expr.split(key).join(String(val));
+      }
+    });
+    try {
+      // eslint-disable-next-line no-new-func
+      const result = new Function("return (" + expr + ")")();
+      if (typeof result === "number" && isFinite(result)) {
+        return parseFloat(result.toFixed(4));
+      }
+      return "";
+    } catch {
+      return "";
+    }
+  };
+
+  const handleInlineFormulaChange = (outputParamId, value) => {
+    setEditedFormulas((prev) => ({
+      ...prev,
+      [outputParamId]: { ...(prev[outputParamId] || {}), formulaStr: value }
+    }));
+  };
+
+  const handleSaveInlineFormula = async (param) => {
+    const entry = editedFormulas[param.parameterId] || {};
+    const formulaExpr = (entry.formulaStr || "").trim();
+    if (!formulaExpr) {
+      toast.error("Formula cannot be empty.");
+      return;
+    }
+    const existing = formulas.find((f) => f.outputParameterId === param.parameterId);
+    try {
+      const res = await fetch("/adminstration/api/tests/" + editForm.id + "/formulas", {
+        method: existing ? "PUT" : "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          id: existing ? existing.id : undefined,
+          outputParameterId: param.parameterId,
+          formula: formulaExpr,
+          description: entry.description || ""
+        })
+      }).then((r) => r.json());
+      if (res.success) {
+        toast.success("Formula saved!");
+        fetchFormulas();
+      } else {
+        toast.error(res.error || "Failed to save formula.");
+      }
+    } catch (err) {
+      toast.error("Error saving formula.");
+    }
+  };
+
+  const handleDeleteInlineFormula = async (param) => {
+    const existing = formulas.find((f) => f.outputParameterId === param.parameterId);
+    if (!existing) {
+      setEditedFormulas((prev) => {
+        const next = { ...prev };
+        delete next[param.parameterId];
+        return next;
+      });
+      return;
+    }
+    if (!confirm("Delete this formula?")) return;
+    try {
+      const res = await fetch(
+        "/adminstration/api/tests/" + editForm.id + "/formulas?formulaId=" + existing.id,
+        { method: "DELETE" }
+      ).then((r) => r.json());
+      if (res.success) {
+        toast.success("Formula deleted.");
+        setEditedFormulas((prev) => {
+          const next = { ...prev };
+          delete next[param.parameterId];
+          return next;
+        });
+        fetchFormulas();
+      } else {
+        toast.error(res.error || "Failed to delete formula.");
+      }
+    } catch {
+      toast.error("Error deleting formula.");
+    }
+  };
+
+  const formulaVisibleParams = editForm && editForm.parameters
+    ? editForm.parameters.filter((p) => !p.isHeader && p.name && p.name.trim() !== "")
+    : [];
+
+  const formulaSimInputParams = formulaVisibleParams.filter((p) => {
+    const code = getParamCode(p.name);
+    return Object.values(editedFormulas).some(
+      (e) => e.formulaStr && e.formulaStr.includes(code)
+    );
+  });
+
+  const hasAnyFormula = formulaVisibleParams.some(
+    (p) => editedFormulas[p.parameterId] && editedFormulas[p.parameterId].formulaStr && editedFormulas[p.parameterId].formulaStr.trim()
+  );
+  // ─────────────────────────────────────────────────────────────────────────
 
   const handleTabChange = (e, newVal) => {
     setActiveTab(newVal);
@@ -1057,79 +1188,188 @@ export default function EditTestDialog({ open, onClose, test, parameterDictionar
             </>
           ) : (
             <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
+              {/* Top bar */}
               <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                 <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>
-                  Active Formulations & Calculations ({formulas.length})
+                  Calculations &amp; Formulas
                 </Typography>
-                <Box sx={{ display: "flex", gap: 1 }}>
-                  <Button
-                    variant="outlined"
-                    color="secondary"
-                    size="small"
-                    startIcon={<ScienceIcon />}
-                    onClick={() => setFormulaTesterOpen(true)}
-                    disabled={formulas.length === 0}
-                    sx={{ borderRadius: 2 }}
-                  >
-                    Test Formulas
-                  </Button>
-                  <Button
-                    variant="contained"
-                    color="primary"
-                    size="small"
-                    startIcon={<AddIcon />}
-                    onClick={handleAddFormulaClick}
-                    sx={{ borderRadius: 2 }}
-                  >
-                    Add Formula
-                  </Button>
-                </Box>
+                <Button
+                  variant="outlined"
+                  color="secondary"
+                  size="small"
+                  startIcon={<ScienceIcon />}
+                  onClick={() => setFormulaTesterOpen(true)}
+                  disabled={formulas.length === 0}
+                  sx={{ borderRadius: 2 }}
+                >
+                  Test Formulas
+                </Button>
               </Box>
 
+
               {loadingFormulas ? (
-                <Box sx={{ display: "flex", justifyContent: "center", py: 6 }}>
-                  <CircularProgress size={30} />
-                </Box>
-              ) : formulas.length === 0 ? (
-                <Box sx={{ py: 6, textAlign: "center", display: "flex", flexDirection: "column", alignItems: "center", gap: 1.5 }}>
-                  <CalculateIcon sx={{ fontSize: 48, color: "text.secondary", opacity: 0.4 }} />
-                  <Typography variant="body2" color="text.secondary">
-                    No formulas configured for this test yet. Click &quot;Add Formula&quot; to set one up.
-                  </Typography>
+                <Box sx={{ display: "flex", justifyContent: "center", py: 4 }}>
+                  <CircularProgress size={28} />
                 </Box>
               ) : (
                 <TableContainer component={Paper} variant="outlined">
                   <Table size="small">
                     <TableHead>
                       <TableRow sx={{ bgcolor: "#f8fafc" }}>
-                        <TableCell sx={{ fontWeight: 700, width: 200 }}>Output Parameter</TableCell>
-                        <TableCell sx={{ fontWeight: 700 }}>Formula Expression</TableCell>
-                        <TableCell sx={{ fontWeight: 700, width: 250 }}>Description</TableCell>
-                        <TableCell align="center" sx={{ fontWeight: 700, width: 120 }}>Actions</TableCell>
+                        <TableCell sx={{ fontWeight: 700, width: 160 }}>Output (O)</TableCell>
+                        <TableCell sx={{ fontWeight: 700 }}>Formula (F)</TableCell>
+                        <TableCell sx={{ fontWeight: 700, width: 110 }}>Simulate (S)</TableCell>
+                        <TableCell sx={{ fontWeight: 700, width: 130 }}>Input</TableCell>
+                        <TableCell align="center" sx={{ fontWeight: 700, width: 80 }}>Save</TableCell>
                       </TableRow>
                     </TableHead>
                     <TableBody>
-                      {formulas.map((form) => (
-                        <TableRow key={form.id} hover>
-                          <TableCell sx={{ fontWeight: 600 }}>{form.outputParameter?.name || "Unknown"}</TableCell>
-                          <TableCell sx={{ fontFamily: "monospace", fontWeight: 700, color: "primary.main", bgcolor: "rgba(124,58,237,0.02)" }}>
-                            {form.formula}
-                          </TableCell>
-                          <TableCell sx={{ color: "text.secondary", fontSize: "0.85rem" }}>
-                            {form.description || "-"}
-                          </TableCell>
-                          <TableCell align="center">
-                            <Box sx={{ display: "flex", justifyContent: "center", gap: 0.5 }}>
-                              <IconButton size="small" color="primary" onClick={() => handleEditFormulaClick(form)}>
-                                <EditIcon fontSize="small" />
-                              </IconButton>
-                              <IconButton size="small" color="error" onClick={() => handleDeleteFormula(form.id)}>
-                                <DeleteIcon fontSize="small" />
-                              </IconButton>
-                            </Box>
+                      {formulaVisibleParams.map((param) => {
+                        const entry = editedFormulas[param.parameterId] || {};
+                        const formulaExpr = entry.formulaStr !== undefined ? entry.formulaStr : "";
+                        const simResult = evaluateSimFormula(formulaExpr);
+                        const hasFormula = formulaExpr.trim().length > 0;
+                        const isCalcParam = formulas.some((f) => f.outputParameterId === param.parameterId);
+
+                        return (
+                          <TableRow key={param.key} hover>
+                            {/* Output — draggable into Formula cell */}
+                            <TableCell
+                              draggable
+                              onDragStart={(e) => {
+                                e.dataTransfer.setData("text/plain", getParamCode(param.name));
+                              }}
+                              sx={{
+                                fontWeight: 600,
+                                fontSize: "0.82rem",
+                                cursor: "grab",
+                                userSelect: "none",
+                                "&:hover": { bgcolor: "rgba(15,118,110,0.06)" }
+                              }}
+                              title={"Drag to insert \"" + getParamCode(param.name) + "\" into formula"}
+                            >
+                              {param.name}
+                            </TableCell>
+
+                            {/* Formula */}
+                            <TableCell
+                              onDragOver={(e) => e.preventDefault()}
+                              onDrop={(e) => {
+                                e.preventDefault();
+                                const token = e.dataTransfer.getData("text/plain");
+                                if (!token || !param.parameterId) return;
+                                const input = document.getElementById("formula-inline-" + param.key);
+                                if (input) {
+                                  const start = input.selectionStart !== null ? input.selectionStart : formulaExpr.length;
+                                  const end = input.selectionEnd !== null ? input.selectionEnd : formulaExpr.length;
+                                  const newFormula = formulaExpr.substring(0, start) + token + formulaExpr.substring(end);
+                                  handleInlineFormulaChange(param.parameterId, newFormula);
+                                  setTimeout(() => {
+                                    input.focus();
+                                    input.setSelectionRange(start + token.length, start + token.length);
+                                  }, 0);
+                                } else {
+                                  handleInlineFormulaChange(param.parameterId, formulaExpr ? formulaExpr + " " + token : token);
+                                }
+                              }}
+                              sx={{ minWidth: 200 }}
+                            >
+                              <TextField
+                                id={"formula-inline-" + param.key}
+                                size="small"
+                                fullWidth
+                                placeholder="e.g. 100 - a"
+                                value={formulaExpr}
+                                onChange={(e) => handleInlineFormulaChange(param.parameterId, e.target.value)}
+                                disabled={!param.parameterId}
+                                sx={{
+                                  "& .MuiInputBase-input": {
+                                    fontFamily: "monospace",
+                                    fontSize: "0.85rem",
+                                    fontWeight: 600,
+                                    py: 0.5
+                                  }
+                                }}
+                              />
+                            </TableCell>
+
+                            {/* Simulate result */}
+                            <TableCell>
+                              {hasFormula && simResult !== "" ? (
+                                <Box
+                                  sx={{
+                                    px: 1, py: 0.4,
+                                    bgcolor: "rgba(15,118,110,0.1)",
+                                    borderRadius: 1,
+                                    fontFamily: "monospace",
+                                    fontWeight: 700,
+                                    fontSize: "0.88rem",
+                                    color: "success.dark",
+                                    textAlign: "center"
+                                  }}
+                                >
+                                  {simResult}
+                                </Box>
+                              ) : (
+                                <Typography variant="caption" sx={{ color: "text.disabled", fontSize: "0.75rem" }}>
+                                  {hasFormula ? "—" : ""}
+                                </Typography>
+                              )}
+                            </TableCell>
+
+                            {/* Input — user can always enter a value */}
+                            <TableCell>
+                              <TextField
+                                size="small"
+                                type="number"
+                                value={simValues[getParamCode(param.name)] || ""}
+                                onChange={(e) => {
+                                  const code = getParamCode(param.name);
+                                  setSimValues((prev) => ({ ...prev, [code]: e.target.value }));
+                                }}
+                                sx={{
+                                  width: "100%",
+                                  "& .MuiInputBase-input": { py: 0.5, fontSize: "0.85rem", textAlign: "right" }
+                                }}
+                              />
+                            </TableCell>
+
+                            {/* Save / Delete */}
+                            <TableCell align="center">
+                              <Box sx={{ display: "flex", gap: 0.5, justifyContent: "center" }}>
+                                <IconButton
+                                  size="small"
+                                  color="primary"
+                                  disabled={!param.parameterId}
+                                  title="Save Formula"
+                                  onClick={() => handleSaveInlineFormula(param)}
+                                >
+                                  <SaveIcon fontSize="small" />
+                                </IconButton>
+                                {(hasFormula || isCalcParam) && (
+                                  <IconButton
+                                    size="small"
+                                    color="error"
+                                    title="Delete Formula"
+                                    onClick={() => handleDeleteInlineFormula(param)}
+                                  >
+                                    <DeleteIcon fontSize="small" />
+                                  </IconButton>
+                                )}
+                              </Box>
+                            </TableCell>
+                          </TableRow>
+                        );
+                      })}
+
+
+                      {formulaVisibleParams.length === 0 && (
+                        <TableRow>
+                          <TableCell colSpan={4} align="center" sx={{ py: 5, color: "text.secondary" }}>
+                            No parameters configured. Add parameters in the Parameters Catalog tab first.
                           </TableCell>
                         </TableRow>
-                      ))}
+                      )}
                     </TableBody>
                   </Table>
                 </TableContainer>

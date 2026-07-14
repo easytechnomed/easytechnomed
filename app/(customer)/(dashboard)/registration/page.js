@@ -195,7 +195,7 @@ export default function RegistrationPage() {
           const mappedTests = reg.tests.map((rt) => {
             let match = tests.find((t) => t.id === rt.testId);
             if (!match && rt.test) {
-              match = tests.find((t) => 
+              match = tests.find((t) =>
                 (rt.test.code && t.code === rt.test.code) ||
                 (t.name.toLowerCase() === rt.test.name.toLowerCase())
               );
