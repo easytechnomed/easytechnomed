@@ -956,6 +956,7 @@ export default function RegistrationPage() {
               </Typography>
               <Autocomplete
                 options={tests}
+                value={null}
                 getOptionLabel={(option) => {
                   if (typeof option === "string") {
                     return option;
