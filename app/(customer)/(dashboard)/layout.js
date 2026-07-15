@@ -1,6 +1,7 @@
 import React from "react";
 import { requireAdmin } from "@/lib/auth";
 import AdminLayoutClient from "@/components/AdminLayoutClient";
+import NextTopLoader from "nextjs-toploader";
 
 export const dynamic = "force-dynamic";
 
@@ -18,8 +19,11 @@ export default async function AdminDashboardLayout({ children }) {
   };
 
   return (
-    <AdminLayoutClient admin={safeAdmin}>
-      {children}
-    </AdminLayoutClient>
+    <>
+      <NextTopLoader color="#0f766e" showSpinner={false} height={3} />
+      <AdminLayoutClient admin={safeAdmin}>
+        {children}
+      </AdminLayoutClient>
+    </>
   );
 }

@@ -35,6 +35,7 @@ import {
   Email as EmailIcon
 } from "@mui/icons-material";
 import { toast } from "sonner";
+import NextTopLoader from "nextjs-toploader";
 
 const drawerWidth = 260;
 
@@ -288,6 +289,7 @@ export default function SuperAdminLayout({ children }) {
     return (
       <ThemeProvider theme={lightPurpleTheme}>
         <CssBaseline />
+        <NextTopLoader color="#7c3aed" showSpinner={false} height={3} />
         {children}
       </ThemeProvider>
     );
@@ -297,6 +299,7 @@ export default function SuperAdminLayout({ children }) {
     <TrackingProvider type="superAdmin">
       <ThemeProvider theme={lightPurpleTheme}>
         <CssBaseline />
+        <NextTopLoader color="#7c3aed" showSpinner={false} height={3} />
         <Box sx={{ display: "flex", minHeight: "100vh", bgcolor: "background.default" }}>
         
         {/* Sidebar Navigation */}
