@@ -244,9 +244,12 @@ const calculateAllDependents = (values, tests, changedId, overrides = new Set())
   const formulasToRun = [];
   tests.forEach((test) => {
     (test.formulas || []).forEach((form) => {
-      const testParamId = paramIdToTestParamId[form.outputParameterId];
-      const testParamConfig = testParamIdToParam[testParamId];
-      if (testParamId) {
+      // Find the corresponding testParameter within the CURRENT test
+      const tp = (test.parameters || []).find(p => p.parameterId === form.outputParameterId);
+      if (tp) {
+        const testParamId = tp.id;
+        const testParamConfig = tp;
+
         // Skip formula calculation if parameter is editable and has manual input override
         if (testParamConfig.editable && overrides.has(testParamId)) {
           return;
@@ -275,7 +278,6 @@ const calculateAllDependents = (values, tests, changedId, overrides = new Set())
   while (changed && pass < 5) {
     changed = false;
     pass++;
-
     for (const form of formulasToRun) {
       if (evaluatedFormulas.has(form.id)) continue;
 
@@ -299,6 +301,7 @@ const calculateAllDependents = (values, tests, changedId, overrides = new Set())
           res[form.outputTestParameterId] = String(roundedResult);
           evaluatedFormulas.add(form.id);
           changed = true;
+          console.log(`[calculateAllDependents] -> Updated calculated value in res for Parameter "${form.outputParameter.name}" (ID: ${form.outputTestParameterId}) = "${roundedResult}"`);
         }
       }
     }
@@ -489,13 +492,28 @@ export default function ResultEntry({ open, onClose, selectedReg, onSaveSuccess,
         const tests = res.registration.tests.map((rt) => rt.test);
         setResultTests(tests);
 
+        // Collect all testParameterIds that are calculated by formulas
+        const calculatedParamIds = new Set();
+        tests.forEach((test) => {
+          (test.formulas || []).forEach((form) => {
+            const tp = (test.parameters || []).find(p => p.parameterId === form.outputParameterId);
+            if (tp) {
+              calculatedParamIds.add(tp.id);
+              calculatedParamIds.add(String(tp.id));
+            }
+          });
+        });
+
         const values = {};
         const overrides = new Set();
         res.registration.results.forEach((r) => {
           values[r.testParameterId] = r.value;
           if (r.value !== undefined && r.value !== null && r.value !== "") {
-            overrides.add(r.testParameterId);
-            overrides.add(String(r.testParameterId));
+            // Only lock as manual override if this is NOT a formula-calculated parameter
+            if (!calculatedParamIds.has(r.testParameterId)) {
+              overrides.add(r.testParameterId);
+              overrides.add(String(r.testParameterId));
+            }
           }
         });
         setResultValues(values);
@@ -520,7 +538,7 @@ export default function ResultEntry({ open, onClose, selectedReg, onSaveSuccess,
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, selectedReg]);
 
-  const handleResultValueChange = (paramId, val) => {
+  const handleResultValueChange = (paramId, val, triggerCalc = false) => {
     const newOverrides = new Set(manualOverrides);
     if (val !== undefined && val !== null && val !== "") {
       newOverrides.add(paramId);
@@ -535,7 +553,17 @@ export default function ResultEntry({ open, onClose, selectedReg, onSaveSuccess,
       ...resultValues,
       [paramId]: val
     };
-    const finalValues = calculateAllDependents(updatedValues, resultTests, paramId, newOverrides);
+
+    if (triggerCalc) {
+      const finalValues = calculateAllDependents(updatedValues, resultTests, paramId, newOverrides);
+      setResultValues(finalValues);
+    } else {
+      setResultValues(updatedValues);
+    }
+  };
+
+  const handleResultValueBlur = (paramId) => {
+    const finalValues = calculateAllDependents(resultValues, resultTests, paramId, manualOverrides);
     setResultValues(finalValues);
   };
 
@@ -834,7 +862,8 @@ export default function ResultEntry({ open, onClose, selectedReg, onSaveSuccess,
                                         fullWidth
                                         disabled={!param.editable}
                                         value={val}
-                                        onChange={(e) => handleResultValueChange(param.id, e.target.value)}
+                                        onChange={(e) => handleResultValueChange(param.id, e.target.value, showDropdown)}
+                                        onBlur={() => handleResultValueBlur(param.id)}
                                         onKeyDown={handleKeyDown}
                                         error={isAbnormal}
                                         sx={{

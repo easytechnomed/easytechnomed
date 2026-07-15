@@ -100,6 +100,7 @@ export async function POST(req) {
     const admin = await requireAdmin("REGISTRATION_WRITE");
     const body = await req.json().catch(() => ({}));
     const validatedData = registrationSchema.parse(body);
+    console.log("validatedData", validatedData);
 
     const barcodeNumber = Math.floor(100000000 + Math.random() * 900000000);
     const barcode = `,EDT${barcodeNumber} ${barcodeNumber}`;
@@ -171,6 +172,7 @@ export async function POST(req) {
             testId: testId,
           }));
 
+          console.log(`Adding ${registrationTests.length} tests to registration ID ${registration.id}`);
           await tx.registrationTest.createMany({ data: registrationTests });
           return registration;
         });
