@@ -46,6 +46,19 @@ import { useAdminPermissions } from "@/lib/clientAuth";
 
 const filter = createFilterOptions();
 
+// Helpers for timezone-aware date conversions
+const getLocalIsoString = (date) => {
+  if (!date) return "";
+  const tzOffset = date.getTimezoneOffset() * 60000;
+  return new Date(date.getTime() - tzOffset).toISOString().slice(0, 16);
+};
+
+const toUtcString = (dateStr) => {
+  if (!dateStr) return null;
+  const d = new Date(dateStr);
+  return isNaN(d.getTime()) ? null : d.toISOString();
+};
+
 export default function RegistrationPage() {
   const { hasPermission } = useAdminPermissions();
   const canWrite = hasPermission("REGISTRATION_WRITE");
@@ -61,7 +74,7 @@ export default function RegistrationPage() {
   // Form states
   const [billOn, setBillOn] = useState("Patient Rate");
   const [mobileNo, setMobileNo] = useState("");
-  const [regDate, setRegDate] = useState(new Date().toISOString().substring(0, 10));
+  const [regDate, setRegDate] = useState(() => getLocalIsoString(new Date()).substring(0, 10));
   const [title, setTitle] = useState("Mr.");
   const [name, setName] = useState("");
   const [city, setCity] = useState("-NA-");
@@ -104,13 +117,13 @@ export default function RegistrationPage() {
   const [isLookingUpMobile, setIsLookingUpMobile] = useState(false);
 
   // Payment states
-  const [colType, setColType] = useState("Camp");
+  const [colType, setColType] = useState("Lab");
   const [expRptDate, setExpRptDate] = useState(() => {
     const d = new Date();
     d.setDate(d.getDate() + 1); // default tomorrow
-    return d.toISOString().substring(0, 16);
+    return getLocalIsoString(d);
   });
-  const [sampleDate, setSampleDate] = useState(new Date().toISOString().substring(0, 16));
+  const [sampleDate, setSampleDate] = useState(() => getLocalIsoString(new Date()));
   const [sampleNo, setSampleNo] = useState("");
   const [sampleBy, setSampleBy] = useState("-NA-");
   const [paymentMode, setPaymentMode] = useState("Cash");
@@ -162,7 +175,7 @@ export default function RegistrationPage() {
           const reg = res.registration;
           setBillOn(reg.billOn);
           setMobileNo(reg.mobileNo);
-          setRegDate(new Date(reg.date).toISOString().substring(0, 10));
+          setRegDate(getLocalIsoString(new Date(reg.date)).substring(0, 10));
           setTitle(reg.title);
           setName(reg.name);
           setCity(reg.city);
@@ -171,8 +184,8 @@ export default function RegistrationPage() {
           setGender(reg.gender);
           setRemark(reg.remark || "");
           setColType(reg.colType);
-          if (reg.expRptDate) setExpRptDate(new Date(reg.expRptDate).toISOString().substring(0, 16));
-          if (reg.sampleDate) setSampleDate(new Date(reg.sampleDate).toISOString().substring(0, 16));
+          if (reg.expRptDate) setExpRptDate(getLocalIsoString(new Date(reg.expRptDate)));
+          if (reg.sampleDate) setSampleDate(getLocalIsoString(new Date(reg.sampleDate)));
           setSampleNo(reg.sampleNo || "");
           setSampleBy(reg.sampleBy);
           setPaymentMode(reg.paymentMode);
@@ -304,6 +317,7 @@ export default function RegistrationPage() {
     setReceivedAmount(0);
     setSampleNo("");
     setPaymentRefNo("");
+    setColType("Lab");
   };
 
   // Add selected test
@@ -499,8 +513,8 @@ export default function RegistrationPage() {
         secondRefById: secondRef ? secondRef.id : null,
         remark,
         colType,
-        expRptDate,
-        sampleDate,
+        expRptDate: toUtcString(expRptDate),
+        sampleDate: toUtcString(sampleDate),
         sampleNo: sampleNo || null,
         sampleBy,
         paymentMode,
