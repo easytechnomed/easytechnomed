@@ -155,7 +155,7 @@ export default function Navbar({
                                     onClick={() => setMobileMenuOpen(false)}
                                     sx={{ py: 1.5, borderRadius: 2 }}
                                 >
-                                    <ListItemText primary={link.text} primaryTypographyProps={{ fontWeight: 600, color: "text.primary" }} />
+                                    <ListItemText primary={link.text} slotProps={{ primary: { fontWeight: 600, color: "text.primary" } }} />
                                 </ListItemButton>
                             </ListItem>
                         ))}

@@ -276,9 +276,11 @@ export default function AdminLayoutClient({ admin, children }) {
                               duration: theme.transitions.duration.shorter,
                             }),
                         }}
-                        primaryTypographyProps={{
-                          fontWeight: isActive ? 700 : 500,
-                          fontSize: "0.9rem",
+                        slotProps={{
+                          primary: {
+                            fontWeight: isActive ? 700 : 500,
+                            fontSize: "0.9rem",
+                          }
                         }}
                       />
                     </ListItemButton>
@@ -314,9 +316,11 @@ export default function AdminLayoutClient({ admin, children }) {
                             >
                               <ListItemText
                                 primary={sub.text}
-                                primaryTypographyProps={{
-                                  fontWeight: isSubActive ? 700 : 500,
-                                  fontSize: "0.825rem",
+                                slotProps={{
+                                  primary: {
+                                    fontWeight: isSubActive ? 700 : 500,
+                                    fontSize: "0.825rem",
+                                  }
                                 }}
                               />
                             </ListItemButton>

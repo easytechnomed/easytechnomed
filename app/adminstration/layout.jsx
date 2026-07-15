@@ -177,9 +177,11 @@ export default function SuperAdminLayout({ children }) {
                     {desktopDrawerOpen && (
                       <ListItemText
                         primary={item.text}
-                        primaryTypographyProps={{
-                          fontWeight: isActive ? 700 : 500,
-                          fontSize: "0.9rem",
+                        slotProps={{
+                          primary: {
+                            fontWeight: isActive ? 700 : 500,
+                            fontSize: "0.9rem",
+                          }
                         }}
                       />
                     )}
@@ -225,7 +227,12 @@ export default function SuperAdminLayout({ children }) {
                 {desktopDrawerOpen && (
                   <ListItemText
                     primary="Leads"
-                    primaryTypographyProps={{ fontWeight: pathname === "/adminstration/leads" ? 700 : 500, fontSize: "0.9rem" }}
+                    slotProps={{
+                      primary: {
+                        fontWeight: pathname === "/adminstration/leads" ? 700 : 500,
+                        fontSize: "0.9rem",
+                      }
+                    }}
                   />
                 )}
               </ListItemButton>
@@ -258,7 +265,12 @@ export default function SuperAdminLayout({ children }) {
                 {desktopDrawerOpen && (
                   <ListItemText
                     primary="Contact Inquiries"
-                    primaryTypographyProps={{ fontWeight: pathname === "/adminstration/contact" ? 700 : 500, fontSize: "0.9rem" }}
+                    slotProps={{
+                      primary: {
+                        fontWeight: pathname === "/adminstration/contact" ? 700 : 500,
+                        fontSize: "0.9rem",
+                      }
+                    }}
                   />
                 )}
               </ListItemButton>

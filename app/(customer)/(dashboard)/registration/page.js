@@ -703,10 +703,12 @@ export default function RegistrationPage() {
                     value={mobileNo}
                     onChange={handleMobileNoChange}
                     placeholder="Enter 10 digit number"
-                    InputProps={{
-                      endAdornment: isLookingUpMobile ? (
-                        <CircularProgress size={20} color="inherit" />
-                      ) : null
+                    slotProps={{
+                      input: {
+                        endAdornment: isLookingUpMobile ? (
+                          <CircularProgress size={20} color="inherit" />
+                        ) : null
+                      }
                     }}
                   />
                 </Grid>
@@ -817,7 +819,7 @@ export default function RegistrationPage() {
                     size="small"
                     value={regDate}
                     onChange={(e) => setRegDate(e.target.value)}
-                    InputLabelProps={{ shrink: true }}
+                    slotProps={{ inputLabel: { shrink: true } }}
                   />
                 </Grid>
 
@@ -1103,7 +1105,7 @@ export default function RegistrationPage() {
                     size="small"
                     value={expRptDate}
                     onChange={(e) => setExpRptDate(e.target.value)}
-                    InputLabelProps={{ shrink: true }}
+                    slotProps={{ inputLabel: { shrink: true } }}
                   />
                 </Grid>
                 <Grid size={{ xs: 12 }}>
@@ -1114,7 +1116,7 @@ export default function RegistrationPage() {
                     size="small"
                     value={sampleDate}
                     onChange={(e) => setSampleDate(e.target.value)}
-                    InputLabelProps={{ shrink: true }}
+                    slotProps={{ inputLabel: { shrink: true } }}
                   />
                 </Grid>
                 <Grid size={{ xs: 12 }}>
@@ -1244,10 +1246,12 @@ export default function RegistrationPage() {
                     type="number"
                     value={calculatedDue}
                     disabled
-                    InputProps={{
-                      style: {
-                        color: calculatedDue > 0 ? "#dc2626" : "#16a34a",
-                        fontWeight: 700
+                    slotProps={{
+                      input: {
+                        style: {
+                          color: calculatedDue > 0 ? "#dc2626" : "#16a34a",
+                          fontWeight: 700
+                        }
                       }
                     }}
                   />
@@ -1419,7 +1423,7 @@ export default function RegistrationPage() {
               value={newTestPrice}
               onChange={(e) => setNewTestPrice(e.target.value)}
               required
-              InputProps={{ inputProps: { min: 0, step: "0.01" } }}
+              slotProps={{ htmlInput: { min: 0, step: "0.01" } }}
             />
           </Box>
         </DialogContent>
@@ -1463,7 +1467,7 @@ export default function RegistrationPage() {
               value={editingTestPrice}
               onChange={(e) => setEditingTestPrice(e.target.value)}
               required
-              InputProps={{ inputProps: { min: 0, step: "0.01" } }}
+              slotProps={{ htmlInput: { min: 0, step: "0.01" } }}
             />
           </Box>
         </DialogContent>

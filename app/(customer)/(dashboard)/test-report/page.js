@@ -761,7 +761,7 @@ export default function TestReportPage() {
                   size="small"
                   value={startDate}
                   onChange={(e) => setStartDate(e.target.value)}
-                  InputLabelProps={{ shrink: true }}
+                  slotProps={{ inputLabel: { shrink: true } }}
                 />
               </Grid>
               <Grid size={{ xs: 12, sm: 3 }}>
@@ -772,7 +772,7 @@ export default function TestReportPage() {
                   size="small"
                   value={endDate}
                   onChange={(e) => setEndDate(e.target.value)}
-                  InputLabelProps={{ shrink: true }}
+                  slotProps={{ inputLabel: { shrink: true } }}
                 />
               </Grid>
               <Grid size={{ xs: 12, sm: 4 }}>
@@ -783,12 +783,14 @@ export default function TestReportPage() {
                   size="small"
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
-                  InputProps={{
-                    endAdornment: (
-                      <IconButton size="small" type="submit">
-                        <SearchIcon />
-                      </IconButton>
-                    ),
+                  slotProps={{
+                    input: {
+                      endAdornment: (
+                        <IconButton size="small" type="submit">
+                          <SearchIcon />
+                        </IconButton>
+                      ),
+                    },
                   }}
                 />
               </Grid>

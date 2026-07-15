@@ -130,7 +130,7 @@ export default function DoctorSummaryPage() {
                 size="small"
                 value={startDate}
                 onChange={(e) => setStartDate(e.target.value)}
-                InputLabelProps={{ shrink: true }}
+                slotProps={{ inputLabel: { shrink: true } }}
               />
             </Grid>
             <Grid size={{ xs: 12, sm: 4 }}>
@@ -141,7 +141,7 @@ export default function DoctorSummaryPage() {
                 size="small"
                 value={endDate}
                 onChange={(e) => setEndDate(e.target.value)}
-                InputLabelProps={{ shrink: true }}
+                slotProps={{ inputLabel: { shrink: true } }}
               />
             </Grid>
             <Grid size={{ xs: 12, sm: 4 }} sx={{ display: "flex", gap: 1 }}>

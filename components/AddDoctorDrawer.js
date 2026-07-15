@@ -171,12 +171,14 @@ export default function AddDoctorDrawer({ open, onClose, onSuccess, initialName 
               onChange={(e) => setCode(e.target.value)}
               placeholder="Auto-generated"
               sx={{ "& .MuiOutlinedInput-root": { borderRadius: 2 } }}
-              InputProps={{
-                startAdornment: (
-                  <InputAdornment position="start">
-                    <BadgeIcon fontSize="small" color="action" />
-                  </InputAdornment>
-                ),
+              slotProps={{
+                input: {
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <BadgeIcon fontSize="small" color="action" />
+                    </InputAdornment>
+                  ),
+                },
               }}
             />
           </Grid>
@@ -192,12 +194,14 @@ export default function AddDoctorDrawer({ open, onClose, onSuccess, initialName 
               onChange={(e) => setDegree(e.target.value)}
               placeholder="e.g. MBBS, MD (Medicine)\nFellowship in Cardiology"
               sx={{ "& .MuiOutlinedInput-root": { borderRadius: 2 } }}
-              InputProps={{
-                startAdornment: (
-                  <InputAdornment position="start" sx={{ alignSelf: "flex-start", mt: 1 }}>
-                    <SchoolIcon fontSize="small" color="action" />
-                  </InputAdornment>
-                ),
+              slotProps={{
+                input: {
+                  startAdornment: (
+                    <InputAdornment position="start" sx={{ alignSelf: "flex-start", mt: 1 }}>
+                      <SchoolIcon fontSize="small" color="action" />
+                    </InputAdornment>
+                  ),
+                },
               }}
             />
           </Grid>
@@ -212,12 +216,14 @@ export default function AddDoctorDrawer({ open, onClose, onSuccess, initialName 
               onChange={(e) => setClinicName(e.target.value)}
               placeholder="e.g. Metro Diagnostics"
               sx={{ "& .MuiOutlinedInput-root": { borderRadius: 2 } }}
-              InputProps={{
-                startAdornment: (
-                  <InputAdornment position="start">
-                    <ClinicIcon fontSize="small" color="action" />
-                  </InputAdornment>
-                ),
+              slotProps={{
+                input: {
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <ClinicIcon fontSize="small" color="action" />
+                    </InputAdornment>
+                  ),
+                },
               }}
             />
           </Grid>
@@ -231,12 +237,14 @@ export default function AddDoctorDrawer({ open, onClose, onSuccess, initialName 
               onChange={(e) => setIncentive(e.target.value)}
               placeholder="e.g. 10"
               sx={{ "& .MuiOutlinedInput-root": { borderRadius: 2 } }}
-              InputProps={{
-                endAdornment: (
-                  <InputAdornment position="end">
-                    <PercentIcon fontSize="small" color="action" />
-                  </InputAdornment>
-                ),
+              slotProps={{
+                input: {
+                  endAdornment: (
+                    <InputAdornment position="end">
+                      <PercentIcon fontSize="small" color="action" />
+                    </InputAdornment>
+                  ),
+                },
               }}
             />
           </Grid>
@@ -252,12 +260,14 @@ export default function AddDoctorDrawer({ open, onClose, onSuccess, initialName 
               onChange={(e) => setAddress(e.target.value)}
               placeholder="e.g. Phase 1, Noida"
               sx={{ "& .MuiOutlinedInput-root": { borderRadius: 2 } }}
-              InputProps={{
-                startAdornment: (
-                  <InputAdornment position="start" sx={{ alignSelf: "flex-start", mt: 1 }}>
-                    <RoomIcon fontSize="small" color="action" />
-                  </InputAdornment>
-                ),
+              slotProps={{
+                input: {
+                  startAdornment: (
+                    <InputAdornment position="start" sx={{ alignSelf: "flex-start", mt: 1 }}>
+                      <RoomIcon fontSize="small" color="action" />
+                    </InputAdornment>
+                  ),
+                },
               }}
             />
           </Grid>

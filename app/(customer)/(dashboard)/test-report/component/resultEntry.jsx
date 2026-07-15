@@ -876,26 +876,28 @@ export default function ResultEntry({ open, onClose, selectedReg, onSaveSuccess,
                                             fontWeight: isAbnormal ? 700 : (hasFormula && !isOverridden ? 700 : 500)
                                           }
                                         }}
-                                        InputProps={{
-                                          endAdornment: (isAbnormal || hasFormula) && (
-                                            <InputAdornment position="end">
-                                              {hasFormula && (
-                                                <Tooltip title={isOverridden ? "Formula overridden (manual entry)" : `Calculated by formula: ${paramFormula.formula}`}>
-                                                  <IconButton size="small" tabIndex={-1} sx={{ p: 0.25, mr: isAbnormal ? 0.5 : 0 }}>
-                                                    <CalculateIcon
-                                                      color={isOverridden ? "action" : "primary"}
-                                                      sx={{ fontSize: "1.1rem", opacity: isOverridden ? 0.5 : 0.8 }}
-                                                    />
-                                                  </IconButton>
-                                                </Tooltip>
-                                              )}
-                                              {isAbnormal && (
-                                                <Tooltip title="Out of normal range!">
-                                                  <WarningIcon color="error" fontSize="small" sx={{ mr: 0.5 }} />
-                                                </Tooltip>
-                                              )}
-                                            </InputAdornment>
-                                          )
+                                        slotProps={{
+                                          input: {
+                                            endAdornment: (isAbnormal || hasFormula) && (
+                                              <InputAdornment position="end">
+                                                {hasFormula && (
+                                                  <Tooltip title={isOverridden ? "Formula overridden (manual entry)" : `Calculated by formula: ${paramFormula.formula}`}>
+                                                    <IconButton size="small" tabIndex={-1} sx={{ p: 0.25, mr: isAbnormal ? 0.5 : 0 }}>
+                                                      <CalculateIcon
+                                                        color={isOverridden ? "action" : "primary"}
+                                                        sx={{ fontSize: "1.1rem", opacity: isOverridden ? 0.5 : 0.8 }}
+                                                      />
+                                                    </IconButton>
+                                                  </Tooltip>
+                                                )}
+                                                {isAbnormal && (
+                                                  <Tooltip title="Out of normal range!">
+                                                    <WarningIcon color="error" fontSize="small" sx={{ mr: 0.5 }} />
+                                                  </Tooltip>
+                                                )}
+                                              </InputAdornment>
+                                            )
+                                          }
                                         }}
                                       >
                                         {showDropdown ? (
