@@ -93,12 +93,14 @@ export default function AddDoctorDrawer({ open, onClose, onSuccess, initialName 
       onClose={onClose}
       PaperProps={{
         sx: {
-          width: { xs: "100%", sm: "100%", md: 500 },
+          width: { xs: "100%", sm: 500 },
           display: "flex",
           flexDirection: "column",
           borderLeft: "1px solid",
           borderColor: "divider",
-          boxShadow: "-10px 0 30px rgba(0,0,0,0.08)"
+          boxShadow: "-10px 0 30px rgba(0,0,0,0.08)",
+          borderTopLeftRadius: 16,
+          borderBottomLeftRadius: 16
         }
       }}
     >
@@ -108,23 +110,24 @@ export default function AddDoctorDrawer({ open, onClose, onSuccess, initialName 
           display: "flex",
           justifyContent: "space-between",
           alignItems: "center",
-          p: 3,
-          pb: 2
+          bgcolor: "primary.main",
+          color: "primary.contrastText",
+          px: 3,
+          py: 2
         }}
       >
         <Box>
-          <Typography variant="h6" sx={{ fontWeight: 800, color: "primary.main" }}>
+          <Typography variant="h6" sx={{ fontWeight: 800 }}>
             Add New Doctor
           </Typography>
-          <Typography variant="caption" sx={{ color: "text.secondary" }}>
+          <Typography variant="caption" sx={{ color: "rgba(255, 255, 255, 0.7)" }}>
             Register referral clinical partner
           </Typography>
         </Box>
-        <IconButton onClick={onClose} size="small" sx={{ border: "1px solid", borderColor: "divider" }}>
+        <IconButton onClick={onClose} size="small" sx={{ color: "primary.contrastText" }}>
           <CloseIcon fontSize="small" />
         </IconButton>
       </Box>
-      <Divider />
 
       {/* Content Form */}
       <Box
