@@ -801,6 +801,11 @@ export default function RegistrationPage() {
                   <Autocomplete
                     options={indianCities}
                     freeSolo
+                    openOnFocus
+                    filterOptions={(options, state) => {
+                      const filtered = filter(options, state);
+                      return filtered.slice(0, 100);
+                    }}
                     value={city}
                     onChange={(event, newValue) => {
                       setCity(newValue || "");
