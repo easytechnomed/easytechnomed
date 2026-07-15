@@ -23,11 +23,13 @@ import {
 import {
   Print as PrintIcon,
   Search as SearchIcon,
-  RestartAlt as ResetIcon
+  RestartAlt as ResetIcon,
+  Add as AddIcon
 } from "@mui/icons-material";
-// Action import removed
+import AddDoctorDrawer from "@/components/AddDoctorDrawer";
 
 export default function DoctorSummaryPage() {
+  const [openAddDocDrawer, setOpenAddDocDrawer] = useState(false);
   const [summaryData, setSummaryData] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -106,9 +108,14 @@ export default function DoctorSummaryPage() {
           Doctor Referral Summary (Ref Summary)
         </Typography>
 
-        <Button variant="outlined" size="small" startIcon={<PrintIcon />} onClick={() => window.print()}>
-          Print Summary
-        </Button>
+        <Box sx={{ display: "flex", gap: 1.5 }}>
+          <Button variant="outlined" size="small" startIcon={<PrintIcon />} onClick={() => window.print()}>
+            Print Summary
+          </Button>
+          <Button variant="contained" size="small" startIcon={<AddIcon />} onClick={() => setOpenAddDocDrawer(true)}>
+            Add Doctor
+          </Button>
+        </Box>
       </Box>
 
       {/* Date Filter Toolbar Card */}
@@ -230,6 +237,13 @@ export default function DoctorSummaryPage() {
           </Table>
         )}
       </TableContainer>
+
+      {/* Right Side Drawer for adding a new doctor */}
+      <AddDoctorDrawer
+        open={openAddDocDrawer}
+        onClose={() => setOpenAddDocDrawer(false)}
+        onSuccess={() => loadData()}
+      />
     </Box>
   );
 }

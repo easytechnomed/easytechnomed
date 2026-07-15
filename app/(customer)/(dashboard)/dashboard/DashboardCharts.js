@@ -9,15 +9,26 @@ import {
   YAxis,
   Tooltip,
   CartesianGrid,
+  AreaChart,
+  Area,
+  PieChart,
+  Pie,
+  Cell,
+  Legend
 } from "recharts";
 import { Paper, Typography, Box } from "@mui/material";
 
-const CustomTooltip = ({ active, payload, label, isCurrency }) => {
+const CustomTooltip = ({ active, payload, label, isCurrency, customUnit }) => {
   if (active && payload && payload.length) {
     const value = payload[0].value;
-    const formattedValue = isCurrency 
-      ? `₹${Number(value).toLocaleString("en-IN", { maximumFractionDigits: 2 })}`
-      : `${value} Registration${value !== 1 ? 's' : ''}`;
+    let formattedValue = value;
+    if (isCurrency) {
+      formattedValue = `₹${Number(value).toLocaleString("en-IN", { maximumFractionDigits: 2 })}`;
+    } else if (customUnit) {
+      formattedValue = `${value} ${customUnit}`;
+    } else {
+      formattedValue = `${value} Registration${value !== 1 ? 's' : ''}`;
+    }
 
     return (
       <Paper
@@ -35,7 +46,7 @@ const CustomTooltip = ({ active, payload, label, isCurrency }) => {
         <Typography variant="caption" sx={{ fontWeight: 600, display: "block", color: "text.secondary", mb: 0.5 }}>
           {label}
         </Typography>
-        <Typography variant="body2" sx={{ fontWeight: 800, color: payload[0].fill || payload[0].color }}>
+        <Typography variant="body2" sx={{ fontWeight: 800, color: payload[0].fill || payload[0].color || "#0f766e" }}>
           {formattedValue}
         </Typography>
       </Paper>
@@ -46,16 +57,16 @@ const CustomTooltip = ({ active, payload, label, isCurrency }) => {
 
 export function RegistrationChart({ data }) {
   return (
-    <Box sx={{ width: "100%", height: 200, mt: 2, minWidth: 0 }}>
+    <Box sx={{ width: "100%", height: 220, mt: 2, minWidth: 0 }}>
       <ResponsiveContainer width="99%" height="100%">
-        <BarChart
+        <AreaChart
           data={data}
           margin={{ top: 10, right: 5, left: -25, bottom: 0 }}
         >
           <defs>
             <linearGradient id="regGrad" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor="#0f766e" stopOpacity={1} />
-              <stop offset="100%" stopColor="#2dd4bf" stopOpacity={0.6} />
+              <stop offset="5%" stopColor="#0f766e" stopOpacity={0.4} />
+              <stop offset="95%" stopColor="#0f766e" stopOpacity={0.0} />
             </linearGradient>
           </defs>
           <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
@@ -74,16 +85,17 @@ export function RegistrationChart({ data }) {
           />
           <Tooltip
             content={<CustomTooltip isCurrency={false} />}
-            cursor={{ fill: "rgba(15, 118, 110, 0.04)", radius: 4 }}
           />
-          <Bar
+          <Area
+            type="monotone"
             dataKey="count"
+            stroke="#0f766e"
+            strokeWidth={2}
+            fillOpacity={1}
             fill="url(#regGrad)"
-            radius={[4, 4, 0, 0]}
-            barSize={16}
             animationDuration={800}
           />
-        </BarChart>
+        </AreaChart>
       </ResponsiveContainer>
     </Box>
   );
@@ -97,16 +109,16 @@ export function RevenueChart({ data }) {
   };
 
   return (
-    <Box sx={{ width: "100%", height: 200, mt: 2, minWidth: 0 }}>
+    <Box sx={{ width: "100%", height: 220, mt: 2, minWidth: 0 }}>
       <ResponsiveContainer width="99%" height="100%">
-        <BarChart
+        <AreaChart
           data={data}
           margin={{ top: 10, right: 5, left: -20, bottom: 0 }}
         >
           <defs>
             <linearGradient id="revGrad" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor="#16a34a" stopOpacity={1} />
-              <stop offset="100%" stopColor="#4ade80" stopOpacity={0.6} />
+              <stop offset="5%" stopColor="#16a34a" stopOpacity={0.4} />
+              <stop offset="95%" stopColor="#16a34a" stopOpacity={0.0} />
             </linearGradient>
           </defs>
           <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
@@ -125,13 +137,100 @@ export function RevenueChart({ data }) {
           />
           <Tooltip
             content={<CustomTooltip isCurrency={true} />}
-            cursor={{ fill: "rgba(22, 163, 74, 0.04)", radius: 4 }}
           />
-          <Bar
+          <Area
+            type="monotone"
             dataKey="revenue"
+            stroke="#16a34a"
+            strokeWidth={2}
+            fillOpacity={1}
             fill="url(#revGrad)"
-            radius={[4, 4, 0, 0]}
-            barSize={16}
+            animationDuration={800}
+          />
+        </AreaChart>
+      </ResponsiveContainer>
+    </Box>
+  );
+}
+
+export function DepartmentDistributionChart({ data }) {
+  const COLORS = ["#0f766e", "#16a34a", "#2563eb", "#4f46e5", "#d97706", "#db2777", "#7c3aed"];
+
+  if (!data || data.length === 0) {
+    return (
+      <Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", height: 220 }}>
+        <Typography variant="body2" color="text.secondary">No department data available</Typography>
+      </Box>
+    );
+  }
+
+  return (
+    <Box sx={{ width: "100%", height: 220, mt: 2, display: "flex", flexDirection: "column", justifyContent: "center" }}>
+      <ResponsiveContainer width="99%" height="80%">
+        <PieChart>
+          <Pie
+            data={data}
+            cx="50%"
+            cy="50%"
+            innerRadius={60}
+            outerRadius={80}
+            paddingAngle={5}
+            dataKey="value"
+          >
+            {data.map((entry, index) => (
+              <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+            ))}
+          </Pie>
+          <Tooltip content={<CustomTooltip isCurrency={false} customUnit="tests" />} />
+        </PieChart>
+      </ResponsiveContainer>
+      <Box sx={{ display: "flex", justifyContent: "center", flexWrap: "wrap", gap: 1, mt: 1 }}>
+        {data.map((entry, index) => (
+          <Box key={entry.name} sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
+            <Box sx={{ width: 8, height: 8, borderRadius: "50%", bgcolor: COLORS[index % COLORS.length] }} />
+            <Typography variant="caption" sx={{ fontSize: 9, color: "text.secondary", fontWeight: 600 }}>
+              {entry.name} ({entry.value})
+            </Typography>
+          </Box>
+        ))}
+      </Box>
+    </Box>
+  );
+}
+
+export function ReferralChart({ data }) {
+  if (!data || data.length === 0) {
+    return (
+      <Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", height: 220 }}>
+        <Typography variant="body2" color="text.secondary">No referral data available</Typography>
+      </Box>
+    );
+  }
+
+  return (
+    <Box sx={{ width: "100%", height: 220, mt: 2, minWidth: 0 }}>
+      <ResponsiveContainer width="99%" height="100%">
+        <BarChart
+          data={data}
+          layout="vertical"
+          margin={{ top: 10, right: 10, left: 10, bottom: 5 }}
+        >
+          <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#f1f5f9" />
+          <XAxis type="number" tickLine={false} axisLine={false} tick={{ fontSize: 9, fill: "#64748b" }} />
+          <YAxis
+            dataKey="name"
+            type="category"
+            tickLine={false}
+            axisLine={false}
+            tick={{ fontSize: 9, fill: "#64748b", fontWeight: 600 }}
+            width={75}
+          />
+          <Tooltip content={<CustomTooltip isCurrency={false} customUnit="patients" />} />
+          <Bar
+            dataKey="value"
+            fill="#4f46e5"
+            radius={[0, 4, 4, 0]}
+            barSize={12}
             animationDuration={800}
           />
         </BarChart>

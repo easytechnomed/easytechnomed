@@ -9,11 +9,11 @@ export default function DashboardRangeSelector({ initialRange }) {
 
   const handleChange = (e) => {
     const val = e.target.value;
-    router.push(`/dashboard?range=${val}`);
+    router.push(`?range=${val}`);
   };
 
   return (
-    <FormControl size="small" sx={{ minWidth: 160 }}>
+    <FormControl size="small" sx={{ minWidth: 160, mt: 1 }}>
       <InputLabel id="range-select-label">Date Period</InputLabel>
       <Select
         labelId="range-select-label"

@@ -4,7 +4,7 @@ import { redirect } from "next/navigation";
 import { requireAdmin } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import DashboardRangeSelector from "./RangeSelector";
-import { RegistrationChart, RevenueChart } from "./DashboardCharts";
+import { RegistrationChart, RevenueChart, DepartmentDistributionChart, ReferralChart } from "./DashboardCharts";
 import {
   Grid,
   Card,
@@ -31,7 +31,8 @@ import {
   CheckCircle as CheckedIcon,
   PendingActions as PendingIcon,
   TrendingUp as TrendingUpIcon,
-  ArrowForward as ArrowForwardIcon
+  ArrowForward as ArrowForwardIcon,
+  AccessTime as TimeIcon
 } from "@mui/icons-material";
 
 export const dynamic = "force-dynamic";
@@ -86,22 +87,68 @@ export default async function AdminDashboardPage({ searchParams }) {
   const totalRegistrations = await prisma.registration.count({ where: { workspaceId: admin.workspaceId, isDeleted: false, date: dateFilter } });
   const pendingRegistrations = await prisma.registration.count({ where: { status: "Pending", workspaceId: admin.workspaceId, isDeleted: false, date: dateFilter } });
   const completedRegistrations = await prisma.registration.count({ where: { status: "Completed", workspaceId: admin.workspaceId, isDeleted: false, date: dateFilter } });
-  const totalDoctors = await prisma.doctor.count({ where: { workspaceId: admin.workspaceId } });
+  
+  // Calculate Average Turnaround Time (TAT) in hours for Completed registrations
+  const completedRegs = await prisma.registration.findMany({
+    where: { workspaceId: admin.workspaceId, isDeleted: false, status: "Completed", date: dateFilter },
+    select: { createdAt: true, updatedAt: true },
+  });
+  let avgTAT = "0.0";
+  if (completedRegs.length > 0) {
+    const totalDiffMs = completedRegs.reduce((acc, reg) => {
+      return acc + (new Date(reg.updatedAt) - new Date(reg.createdAt));
+    }, 0);
+    const avgDiffHours = (totalDiffMs / completedRegs.length) / (1000 * 60 * 60);
+    avgTAT = avgDiffHours.toFixed(1);
+  }
 
-  // Fetch recent registrations in this period
-  const recentRegistrations = await prisma.registration.findMany({
-    where: { workspaceId: admin.workspaceId, isDeleted: false, date: dateFilter },
-    orderBy: { date: "desc" },
-    take: 5,
+  // Fetch test department distribution
+  const regTests = await prisma.registrationTest.findMany({
+    where: {
+      registration: {
+        workspaceId: admin.workspaceId,
+        isDeleted: false,
+        date: dateFilter,
+      },
+    },
     include: {
-      refBy: true,
-      tests: {
+      test: {
         include: {
-          test: true,
+          department: true,
         },
       },
     },
   });
+  const deptAggregation = {};
+  regTests.forEach((rt) => {
+    const deptName = rt.test?.department?.name || "General";
+    deptAggregation[deptName] = (deptAggregation[deptName] || 0) + 1;
+  });
+  const departmentData = Object.entries(deptAggregation).map(([name, value]) => ({
+    name,
+    value,
+  }));
+
+  // Doctor Referral Distribution
+  const doctorRefs = await prisma.registration.findMany({
+    where: {
+      workspaceId: admin.workspaceId,
+      isDeleted: false,
+      date: dateFilter,
+    },
+    include: {
+      refBy: true,
+    },
+  });
+  const refAggregation = {};
+  doctorRefs.forEach((reg) => {
+    const docName = reg.refBy?.name || "Self / Walk-in";
+    refAggregation[docName] = (refAggregation[docName] || 0) + 1;
+  });
+  const referralData = Object.entries(refAggregation)
+    .map(([name, value]) => ({ name, value }))
+    .sort((a, b) => b.value - a.value)
+    .slice(0, 5);
 
   // Calculate total billing amount (sum of totalAmount + collectionCharge) in this period
   const billingSummary = await prisma.registration.aggregate({
@@ -235,15 +282,15 @@ export default async function AdminDashboardPage({ searchParams }) {
       bgColor: "#dcfce7",
     },
     {
-      title: "Active Doctors",
-      value: totalDoctors,
-      icon: <DoctorIcon sx={{ fontSize: 32, color: "#2563eb" }} />,
-      bgColor: "#dbeafe",
+      title: "Avg Turnaround Time",
+      value: `${avgTAT}h`,
+      icon: <TimeIcon sx={{ fontSize: 32, color: "#4f46e5" }} />,
+      bgColor: "#e0e7ff",
     },
   ];
 
   return (
-    <Box sx={{ flexGrow: 1, overflowX: "hidden" }}>
+    <Box sx={{ flexGrow: 1, overflowX: "hidden", pt: 2 }}>
       {/* Header Overview */}
       <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 2, mb: 4 }}>
         <Box>
@@ -352,118 +399,38 @@ export default async function AdminDashboardPage({ searchParams }) {
               </Box>
             </CardContent>
           </Card>
-
-          {/* Quick Operations */}
-          <Card variant="outlined">
-            <CardContent>
-              <Typography variant="subtitle1" sx={{ fontWeight: 700, mb: 2 }}>
-                Quick Operations
-              </Typography>
-              <Divider sx={{ mb: 2 }} />
-              <Box sx={{ display: "flex", flexDirection: "column", gap: 1.5 }}>
-                <Link href="/registration" style={{ textDecoration: "none" }}>
-                  <Button
-                    variant="outlined"
-                    fullWidth
-                    sx={{ justifyContent: "space-between", py: 1 }}
-                    endIcon={<ArrowForwardIcon />}
-                  >
-                    New Patient Registration
-                  </Button>
-                </Link>
-                <Link href="/test-report" style={{ textDecoration: "none" }}>
-                  <Button
-                    variant="outlined"
-                    fullWidth
-                    sx={{ justifyContent: "space-between", py: 1 }}
-                    endIcon={<ArrowForwardIcon />}
-                  >
-                    Manage Test Reports
-                  </Button>
-                </Link>
-                <Link href="/doctor-summary" style={{ textDecoration: "none" }}>
-                  <Button
-                    variant="outlined"
-                    fullWidth
-                    sx={{ justifyContent: "space-between", py: 1 }}
-                    endIcon={<ArrowForwardIcon />}
-                  >
-                    Dr. Referral Summaries
-                  </Button>
-                </Link>
-              </Box>
-            </CardContent>
-          </Card>
         </Grid>
 
-        {/* Right column: Recent registrations */}
+        {/* Right column: Analytical Charts */}
         <Grid size={{ xs: 12, md: 8 }}>
-          <Card variant="outlined" sx={{ height: "100%" }}>
-            <CardContent sx={{ display: "flex", flexDirection: "column", height: "100%" }}>
-              <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 2 }}>
-                <Box>
+          <Grid container spacing={3}>
+            <Grid size={{ xs: 12, sm: 6 }}>
+              <Card variant="outlined" sx={{ height: "100%" }}>
+                <CardContent>
                   <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>
-                    Recent Patient Registrations
+                    Test Department Split
                   </Typography>
                   <Typography variant="caption" color="text.secondary">
-                    Latest registrations generated in the system
+                    Distribution of ordered tests by laboratory section
                   </Typography>
-                </Box>
-                <Link href="/test-report" style={{ textDecoration: "none" }}>
-                  <Button variant="text" size="small">
-                    View All
-                  </Button>
-                </Link>
-              </Box>
-              <Divider sx={{ mb: 2 }} />
-
-              <TableContainer component={Paper} variant="outlined" sx={{ flexGrow: 1 }}>
-                <Table size="small" sx={{ minWidth: 600 }}>
-                  <TableHead sx={{ bgcolor: "grey.50" }}>
-                    <TableRow>
-                      <TableCell sx={{ fontWeight: 700 }}>Reg Date</TableCell>
-                      <TableCell sx={{ fontWeight: 700 }}>Reg No</TableCell>
-                      <TableCell sx={{ fontWeight: 700 }}>Name</TableCell>
-                      <TableCell sx={{ fontWeight: 700 }}>Ref. By</TableCell>
-                      <TableCell sx={{ fontWeight: 700 }}>Status</TableCell>
-                    </TableRow>
-                  </TableHead>
-                  <TableBody>
-                    {recentRegistrations.length === 0 ? (
-                      <TableRow>
-                        <TableCell colSpan={5} align="center" sx={{ py: 4, color: "text.secondary" }}>
-                          No recent registrations. Use 'New Patient Registration' to add one.
-                        </TableCell>
-                      </TableRow>
-                    ) : (
-                      recentRegistrations.map((reg) => (
-                        <TableRow key={reg.id} hover>
-                          <TableCell>{formatDate(reg.date)}</TableCell>
-                          <TableCell sx={{ fontWeight: 700, color: "primary.main" }}>{reg.regNo}</TableCell>
-                          <TableCell sx={{ fontWeight: 600 }}>{reg.title} {reg.name}</TableCell>
-                          <TableCell>{reg.refBy ? reg.refBy.name : "-NA-"}</TableCell>
-                          <TableCell>
-                            <Badge
-                              badgeContent={reg.status}
-                              color={reg.status === "Completed" ? "success" : "warning"}
-                              sx={{
-                                "& .MuiBadge-badge": {
-                                  fontSize: "0.65rem",
-                                  fontWeight: 700,
-                                  height: 16,
-                                  minWidth: 55
-                                }
-                              }}
-                            />
-                          </TableCell>
-                        </TableRow>
-                      ))
-                    )}
-                  </TableBody>
-                </Table>
-              </TableContainer>
-            </CardContent>
-          </Card>
+                  <DepartmentDistributionChart data={departmentData} />
+                </CardContent>
+              </Card>
+            </Grid>
+            <Grid size={{ xs: 12, sm: 6 }}>
+              <Card variant="outlined" sx={{ height: "100%" }}>
+                <CardContent>
+                  <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>
+                    Top Referrals
+                  </Typography>
+                  <Typography variant="caption" color="text.secondary">
+                    Top 5 referring doctors / clinical partners
+                  </Typography>
+                  <ReferralChart data={referralData} />
+                </CardContent>
+              </Card>
+            </Grid>
+          </Grid>
         </Grid>
       </Grid>
     </Box>
