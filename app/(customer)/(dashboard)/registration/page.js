@@ -43,6 +43,7 @@ import {
 } from "@mui/icons-material";
 import { useSearchParams, useRouter } from "next/navigation";
 import { useAdminPermissions } from "@/lib/clientAuth";
+import { City, State } from "country-state-city";
 
 const filter = createFilterOptions();
 
@@ -58,6 +59,31 @@ const toUtcString = (dateStr) => {
   const d = new Date(dateStr);
   return isNaN(d.getTime()) ? null : d.toISOString();
 };
+
+// Build a lookup map of Indian state codes to state names
+const indianStatesMap = {};
+try {
+  State.getStatesOfCountry("IN").forEach((s) => {
+    indianStatesMap[s.isoCode] = s.name;
+  });
+} catch (err) {
+  console.error("Failed to load Indian states", err);
+}
+
+// India-focused cities list with their states (e.g. "Noida, Uttar Pradesh")
+let indianCities = [];
+try {
+  indianCities = Array.from(
+    new Set(
+      City.getCitiesOfCountry("IN").map((c) => {
+        const stateName = indianStatesMap[c.stateCode] || c.stateCode;
+        return `${c.name}, ${stateName}`;
+      })
+    )
+  ).sort();
+} catch (err) {
+  console.error("Failed to load Indian cities", err);
+}
 
 export default function RegistrationPage() {
   const { hasPermission } = useAdminPermissions();
@@ -77,7 +103,7 @@ export default function RegistrationPage() {
   const [regDate, setRegDate] = useState(() => getLocalIsoString(new Date()).substring(0, 10));
   const [title, setTitle] = useState("Mr.");
   const [name, setName] = useState("");
-  const [city, setCity] = useState("-NA-");
+  const [city, setCity] = useState("");
   const [age, setAge] = useState("");
   const [ageUnit, setAgeUnit] = useState("Year");
   const [gender, setGender] = useState("Male");
@@ -178,7 +204,7 @@ export default function RegistrationPage() {
           setRegDate(getLocalIsoString(new Date(reg.date)).substring(0, 10));
           setTitle(reg.title);
           setName(reg.name);
-          setCity(reg.city);
+          setCity(reg.city === "-NA-" ? "" : reg.city || "");
           setAge(reg.age);
           setAgeUnit(reg.ageUnit);
           setGender(reg.gender);
@@ -318,6 +344,7 @@ export default function RegistrationPage() {
     setSampleNo("");
     setPaymentRefNo("");
     setColType("Lab");
+    setCity("");
   };
 
   // Add selected test
@@ -505,7 +532,7 @@ export default function RegistrationPage() {
         mobileNo,
         title,
         name,
-        city,
+        city: city.trim() || "-NA-",
         age: parseFloat(age),
         ageUnit,
         gender,
@@ -618,7 +645,7 @@ export default function RegistrationPage() {
     setGender("Male");
     setAge("");
     setAgeUnit("Year");
-    setCity("-NA-");
+    setCity("");
   };
 
   const handlePrefillPatient = (p) => {
@@ -627,7 +654,7 @@ export default function RegistrationPage() {
     setGender(p.gender || "Male");
     setAge(p.age || "");
     setAgeUnit(p.ageUnit || "Year");
-    if (p.city) setCity(p.city);
+    if (p.city) setCity(p.city === "-NA-" ? "" : p.city);
     showNotification(`Prefilled patient details for ${p.name}.`, "success");
   };
 
@@ -771,20 +798,44 @@ export default function RegistrationPage() {
                   />
                 </Grid>
                 <Grid size={{ xs: 12, sm: 4 }}>
-                  <TextField
-                    select
-                    label="City"
-                    fullWidth
-                    size="small"
+                  <Autocomplete
+                    options={indianCities}
+                    freeSolo
                     value={city}
-                    onChange={(e) => setCity(e.target.value)}
-                  >
-                    <MenuItem value="-NA-">-NA-</MenuItem>
-                    <MenuItem value="Delhi">Delhi</MenuItem>
-                    <MenuItem value="Noida">Noida</MenuItem>
-                    <MenuItem value="Gurgaon">Gurgaon</MenuItem>
-                    <MenuItem value="Ghaziabad">Ghaziabad</MenuItem>
-                  </TextField>
+                    onChange={(event, newValue) => {
+                      setCity(newValue || "");
+                    }}
+                    onInputChange={(event, newInputValue) => {
+                      setCity(newInputValue);
+                    }}
+                    renderOption={(props, option) => {
+                      const { key, ...optionProps } = props;
+                      const parts = option.split(", ");
+                      const cityName = parts[0];
+                      const stateName = parts[1] || "";
+                      return (
+                        <li key={key} {...optionProps} style={{ display: "block" }}>
+                          <Typography variant="body2" sx={{ fontWeight: 500 }}>
+                            {cityName}
+                          </Typography>
+                          {stateName && (
+                            <Typography variant="caption" sx={{ color: "text.secondary", display: "block", fontSize: "0.75rem" }}>
+                              {stateName}
+                            </Typography>
+                          )}
+                        </li>
+                      );
+                    }}
+                    renderInput={(params) => (
+                      <TextField
+                        {...params}
+                        label="City"
+                        size="small"
+                        fullWidth
+                        placeholder="Search or enter city..."
+                      />
+                    )}
+                  />
                 </Grid>
 
                 <Grid size={{ xs: 12, sm: 4 }}>
