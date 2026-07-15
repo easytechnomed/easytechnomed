@@ -69,10 +69,10 @@ export default function Pricing() {
             period: "/ year",
             features: [
                 "Full access",
-                "Save ~₹800 (15%+ off)",
+                "Save ~₹1,000 (16%+ off)",
                 "Unlimited registrations",
                 "All PDF templates & custom configs",
-                "Priority 24/7 Phone & Whatsapp support",
+                "Priority 24/7 Phone support",
                 "Daily database backups"
             ],
             buttonText: "Subscribe Yearly",

@@ -87,7 +87,7 @@ export default async function AdminDashboardPage({ searchParams }) {
   const totalRegistrations = await prisma.registration.count({ where: { workspaceId: admin.workspaceId, isDeleted: false, date: dateFilter } });
   const pendingRegistrations = await prisma.registration.count({ where: { status: "Pending", workspaceId: admin.workspaceId, isDeleted: false, date: dateFilter } });
   const completedRegistrations = await prisma.registration.count({ where: { status: "Completed", workspaceId: admin.workspaceId, isDeleted: false, date: dateFilter } });
-  
+
   // Calculate Average Turnaround Time (TAT) in hours for Completed registrations
   const completedRegs = await prisma.registration.findMany({
     where: { workspaceId: admin.workspaceId, isDeleted: false, status: "Completed", date: dateFilter },
@@ -264,7 +264,7 @@ export default async function AdminDashboardPage({ searchParams }) {
 
   const statCards = [
     {
-      title: "Total Registrations",
+      title: "Registrations",
       value: totalRegistrations,
       icon: <RegisterIcon sx={{ fontSize: 32, color: "#0f766e" }} />,
       bgColor: "#ccfbf1",

@@ -2,7 +2,7 @@ import PrivacyPageClient from "./PrivacyPageClient";
 
 export const metadata = {
   title: "Privacy Policy | EasyTechnoMed",
-  description: "Read our privacy policy outlining how we store, secure, and handle diagnostic data under HIPAA compliance.",
+  description: "Modern, secure, and professional diagnostic laboratory software for managing patient reports, referral metrics, and data summaries efficiently.",
   alternates: {
     canonical: "/privacy",
   },

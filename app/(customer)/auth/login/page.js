@@ -1,7 +1,7 @@
 import LoginPageClient from "./LoginPageClient";
 
 export const metadata = {
-  title: "Sign In | EasyTechnoMed",
+  title: "Login | EasyTechnoMed",
   description: "Access your EasyTechnoMed laboratory information management system workspace.",
   alternates: {
     canonical: "/auth/login",

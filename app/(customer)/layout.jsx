@@ -68,6 +68,7 @@ const navLinks = [
   { text: "Features", href: "/#features" },
   { text: "Benefits", href: "/#benefits" },
   { text: "Pricing", href: "/#pricing" },
+  { text: "FAQ", href: "/#faq" },
   { text: "About Us", href: "/about" },
   { text: "Contact Us", href: "/contact" },
 ];
@@ -98,18 +99,56 @@ export default function CustomerLayout({ children }) {
                       pathname.startsWith("/settings") ||
                       pathname.startsWith("/userApprove");
 
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://easytechnomed.com";
+  const siteNavigationSchema = {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "WebSite",
+        "@id": `${siteUrl}/#website`,
+        "url": `${siteUrl}/`,
+        "name": "EasyTechnoMed",
+        "description": "Cloud-Based Diagnostic Lab & LIMS Management Software"
+      },
+      {
+        "@type": "SiteNavigationElement",
+        "@id": `${siteUrl}/#navigation`,
+        "name": [
+          "Register",
+          "Login",
+          "About Us",
+          "Contact Us",
+          "Privacy Policy"
+        ],
+        "url": [
+          `${siteUrl}/auth/register`,
+          `${siteUrl}/auth/login`,
+          `${siteUrl}/about`,
+          `${siteUrl}/contact`,
+          `${siteUrl}/privacy`
+        ]
+      }
+    ]
+  };
+
   return (
     <ThemeProvider theme={theme}>
       <CssBaseline />
       <Box sx={{ minHeight: "100vh", display: "flex", flexDirection: "column", bgcolor: "background.default" }}>
         {!isDashboard && (
-          <Navbar
-            scrolled={scrolled}
-            mobileMenuOpen={mobileMenuOpen}
-            setMobileMenuOpen={setMobileMenuOpen}
-            navLinks={navLinks}
-            router={router}
-          />
+          <>
+            <script
+              type="application/ld+json"
+              dangerouslySetInnerHTML={{ __html: JSON.stringify(siteNavigationSchema) }}
+            />
+            <Navbar
+              scrolled={scrolled}
+              mobileMenuOpen={mobileMenuOpen}
+              setMobileMenuOpen={setMobileMenuOpen}
+              navLinks={navLinks}
+              router={router}
+            />
+          </>
         )}
         <Box component="main" sx={{ flexGrow: 1, display: "flex", flexDirection: "column" }}>
           {children}

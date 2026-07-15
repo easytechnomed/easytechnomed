@@ -10,6 +10,7 @@ import Hero from "./home/Hero";
 import Benefits from "./home/Benefits";
 import Features from "./home/Features";
 import Pricing from "./home/Pricing";
+import FAQ from "./home/FAQ";
 import Contact from "./home/Contact";
 
 export default function LandingPage() {
@@ -79,6 +80,9 @@ export default function LandingPage() {
 
             {/* Pricing Section */}
             <Pricing />
+
+            {/* FAQ Section */}
+            <FAQ />
 
             {/* Contact Us & Support Section */}
             <Contact

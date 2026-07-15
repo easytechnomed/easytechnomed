@@ -2,7 +2,7 @@ import AboutPageClient from "./AboutPageClient";
 
 export const metadata = {
   title: "About Us | EasyTechnoMed",
-  description: "Learn more about EasyTechnoMed and our mission to modernize pathology laboratories.",
+  description: "Modern, secure, and professional diagnostic laboratory software for managing patient reports, referral metrics, and data summaries efficiently.",
   alternates: {
     canonical: "/about",
   },
