@@ -70,3 +70,52 @@ export async function POST(req) {
     return NextResponse.json({ success: false, error: error.message }, { status: 500 });
   }
 }
+
+export async function PATCH(req) {
+  try {
+    const admin = await requireAdmin("MEMBER_WRITE");
+    const body = await req.json().catch(() => ({}));
+
+    const memberId = parseInt(body.memberId);
+    const isActive = body.isActive === true;
+
+    if (isNaN(memberId)) {
+      return NextResponse.json({ success: false, error: "Invalid or missing Member ID." });
+    }
+
+    // make sure admin itself can't activate/deactivate themselves
+    if (memberId === admin.id) {
+      return NextResponse.json({ success: false, error: "You cannot change your own active status." });
+    }
+
+    // find the member to make sure they belong to the same workspace
+    const member = await prisma.admin.findFirst({
+      where: { id: memberId, workspaceId: admin.workspaceId }
+    });
+
+    if (!member) {
+      return NextResponse.json({ success: false, error: "Member not found in your workspace." });
+    }
+
+    // update active status
+    await prisma.admin.update({
+      where: { id: memberId },
+      data: { isActive }
+    });
+
+    // If changing active to inactive, instantly expire/delete all sessions for this user
+    if (!isActive) {
+      await prisma.adminSession.deleteMany({
+        where: { adminId: memberId }
+      }).catch(() => {});
+    }
+
+    return NextResponse.json({
+      success: true,
+      message: `Member status updated to ${isActive ? "Active" : "Disabled"}.`
+    });
+  } catch (error) {
+    console.error("Workspace Members PATCH Error:", error);
+    return NextResponse.json({ success: false, error: error.message }, { status: 500 });
+  }
+}

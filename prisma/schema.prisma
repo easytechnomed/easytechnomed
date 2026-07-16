@@ -16,6 +16,7 @@ model Workspace {
   updatedAt     DateTime       @updatedAt
   deletedAt     DateTime?
   isDeleted     Boolean        @default(false)
+  nextSequence  Int            @default(1)
   admins        Admin[]
   doctors       Doctor[]
   registrations Registration[]
@@ -136,6 +137,7 @@ model Admin {
   address                    AdminAddress?
   sessions                   AdminSession[]
   trackings                  AdminTracking[]
+  registrations              Registration[] @relation("AdminRegistrations")
 
   @@index([roleId])
   @@index([workspaceId], map: "Admin_workspaceId_fkey")
@@ -224,7 +226,7 @@ model Registration {
   billOn           String                @default("Patient Rate")
   mobileNo         String
   labId            String
-  regNo            String
+  regNo            String                @unique
   date             DateTime              @default(now())
   title            String
   name             String
@@ -256,22 +258,24 @@ model Registration {
   createdAt        DateTime              @default(now())
   updatedAt        DateTime              @updatedAt
   workspaceId      Int?
+  adminId          Int?
   deletedAt        DateTime?
   isDeleted        Boolean               @default(false)
   results          PatientResult[]
   refBy            Doctor?               @relation("RefBy", fields: [refById], references: [id])
   secondRef        Doctor?               @relation("SecondRef", fields: [secondRefId], references: [id])
   workspace        Workspace?            @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  admin            Admin?                @relation("AdminRegistrations", fields: [adminId], references: [id])
   payments         RegistrationPayment[]
   tests            RegistrationTest[]
 
   @@unique([workspaceId, labId])
-  @@unique([workspaceId, regNo])
   @@index([date])
   @@index([mobileNo])
   @@index([refById], map: "Registration_refById_fkey")
   @@index([secondRefId], map: "Registration_secondRefId_fkey")
   @@index([workspaceId])
+  @@index([adminId])
 }
 
 model RegistrationTest {

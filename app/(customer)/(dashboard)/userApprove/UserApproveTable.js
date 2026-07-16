@@ -241,7 +241,12 @@ export default function UserApproveTable({ initialUsers = [], roles = [] }) {
                     </select>
                   </TableCell>
                   <TableCell className="text-slate-500 text-xs">
-                    {new Date(user.createdAt).toLocaleDateString()}
+                    {user.createdAt ? (() => {
+                      const d = new Date(user.createdAt);
+                      const day = String(d.getDate()).padStart(2, "0");
+                      const month = String(d.getMonth() + 1).padStart(2, "0");
+                      return `${day}/${month}`;
+                    })() : "-"}
                   </TableCell>
                   <TableCell>
                     {user.isEmailVerified ? (

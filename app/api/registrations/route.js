@@ -8,6 +8,15 @@ function serializeData(data) {
   return JSON.parse(JSON.stringify(data));
 }
 
+const generateRandomSuffix = (length = 4) => {
+  const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+  let result = "";
+  for (let i = 0; i < length; i++) {
+    result += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+  return result;
+};
+
 // Zod Schema for Registration
 const registrationSchema = z.object({
   billOn: z.string().default("Patient Rate"),
@@ -108,120 +117,111 @@ export async function POST(req) {
     const expRptDate = validatedData.expRptDate ? new Date(validatedData.expRptDate) : null;
     const sampleDate = validatedData.sampleDate ? new Date(validatedData.sampleDate) : null;
 
-    let result;
-    let attempts = 0;
-    const maxAttempts = 10;
-
-    while (attempts < maxAttempts) {
-      try {
-        result = await prisma.$transaction(async (tx) => {
-          const count = await tx.registration.count();
-          const nextVal = count + 1;
-          const labId = String(nextVal).padStart(3, '0');
-          const regNo = `ETM-${String(nextVal).padStart(8, '0')}`;
-
-          let refByIncentive = 0.00;
-          let secondRefIncentive = 0.00;
-
-          if (validatedData.refById) {
-            const doc = await tx.doctor.findFirst({
-              where: { id: validatedData.refById },
-              select: { incentivePercent: true }
-            });
-            if (doc) refByIncentive = Number(doc.incentivePercent);
-          }
-
-          if (validatedData.secondRefById) {
-            const doc = await tx.doctor.findFirst({
-              where: { id: validatedData.secondRefById },
-              select: { incentivePercent: true }
-            });
-            if (doc) secondRefIncentive = Number(doc.incentivePercent);
-          }
-
-          const registration = await tx.registration.create({
-            data: {
-              billOn: validatedData.billOn,
-              mobileNo: validatedData.mobileNo,
-              labId,
-              regNo,
-              title: validatedData.title,
-              name: validatedData.name,
-              city: validatedData.city,
-              age: validatedData.age,
-              ageUnit: validatedData.ageUnit,
-              gender: validatedData.gender,
-              refById: validatedData.refById,
-              secondRefId: validatedData.secondRefById,
-              refByIncentivePercent: refByIncentive,
-              secondRefIncentivePercent: secondRefIncentive,
-              remark: validatedData.remark,
-              colType: validatedData.colType,
-              expRptDate,
-              sampleDate,
-              sampleNo: validatedData.sampleNo,
-              sampleBy: validatedData.sampleBy,
-              paymentMode: validatedData.paymentMode,
-              paymentRefNo: validatedData.paymentRefNo,
-              totalAmount: validatedData.totalAmount,
-              collectionCharge: validatedData.collectionCharge,
-              discountPercent: validatedData.discountPercent,
-              discountAmount: validatedData.discountAmount,
-              receivedAmount: validatedData.receivedAmount,
-              dueAmount: validatedData.dueAmount,
-              stickerCount: validatedData.stickerCount,
-              barcode,
-              status: validatedData.dueAmount > 0 ? "Pending" : "Completed",
-              workspaceId: admin.workspaceId,
-            },
-          });
-
-          if (validatedData.receivedAmount > 0) {
-            await tx.registrationPayment.create({
-              data: {
-                registrationId: registration.id,
-                amount: validatedData.receivedAmount,
-                paymentMode: validatedData.paymentMode,
-                paymentRefNo: validatedData.paymentRefNo,
-                remark: "Initial Payment",
-              },
-            });
-          }
-
-          const selectedTests = await tx.test.findMany({
-            where: { id: { in: validatedData.testIds } },
-            select: { id: true, price: true }
-          });
-          const priceMap = {};
-          selectedTests.forEach((t) => {
-            priceMap[t.id] = t.price;
-          });
-
-          const registrationTests = validatedData.testIds.map((testId) => ({
-            registrationId: registration.id,
-            testId: testId,
-            price: priceMap[testId] || 0.00,
-          }));
-
-          console.log(`Adding ${registrationTests.length} tests to registration ID ${registration.id}`);
-          await tx.registrationTest.createMany({ data: registrationTests });
-          return registration;
-        });
-
-        break; // Success! Break out of the loop.
-      } catch (error) {
-        if (error.code === "P2002") {
-          attempts++;
-          if (attempts >= maxAttempts) {
-            throw new Error("Failed to generate a unique registration number after multiple attempts. Please try again.");
-          }
-          // Brief random delay to minimize collision chance
-          await new Promise((resolve) => setTimeout(resolve, Math.random() * 150));
-          continue;
+    const result = await prisma.$transaction(async (tx) => {
+      // Atomic increment of workspace counter
+      const workspace = await tx.workspace.update({
+        where: { id: admin.workspaceId },
+        data: {
+          nextSequence: { increment: 1 }
+        },
+        select: {
+          nextSequence: true
         }
-        throw error; // Propagate other errors
+      });
+
+      const currentSeq = workspace.nextSequence - 1;
+      const labId = String(currentSeq).padStart(3, '0');
+      const randomPart = generateRandomSuffix(4);
+      const regNo = `ETM-${randomPart}-${String(currentSeq).padStart(5, '0')}`;
+
+      let refByIncentive = 0.00;
+      let secondRefIncentive = 0.00;
+
+      if (validatedData.refById) {
+        const doc = await tx.doctor.findFirst({
+          where: { id: validatedData.refById },
+          select: { incentivePercent: true }
+        });
+        if (doc) refByIncentive = Number(doc.incentivePercent);
       }
-    }
+
+      if (validatedData.secondRefById) {
+        const doc = await tx.doctor.findFirst({
+          where: { id: validatedData.secondRefById },
+          select: { incentivePercent: true }
+        });
+        if (doc) secondRefIncentive = Number(doc.incentivePercent);
+      }
+
+      const registration = await tx.registration.create({
+        data: {
+          billOn: validatedData.billOn,
+          mobileNo: validatedData.mobileNo,
+          labId,
+          regNo,
+          title: validatedData.title,
+          name: validatedData.name,
+          city: validatedData.city,
+          age: validatedData.age,
+          ageUnit: validatedData.ageUnit,
+          gender: validatedData.gender,
+          refById: validatedData.refById,
+          secondRefId: validatedData.secondRefById,
+          refByIncentivePercent: refByIncentive,
+          secondRefIncentivePercent: secondRefIncentive,
+          remark: validatedData.remark,
+          colType: validatedData.colType,
+          expRptDate,
+          sampleDate,
+          sampleNo: validatedData.sampleNo,
+          sampleBy: validatedData.sampleBy,
+          paymentMode: validatedData.paymentMode,
+          paymentRefNo: validatedData.paymentRefNo,
+          totalAmount: validatedData.totalAmount,
+          collectionCharge: validatedData.collectionCharge,
+          discountPercent: validatedData.discountPercent,
+          discountAmount: validatedData.discountAmount,
+          receivedAmount: validatedData.receivedAmount,
+          dueAmount: validatedData.dueAmount,
+          stickerCount: validatedData.stickerCount,
+          barcode,
+          status: validatedData.dueAmount > 0 ? "Pending" : "Completed",
+          workspaceId: admin.workspaceId,
+          adminId: admin.id,
+        },
+      });
+
+      if (validatedData.receivedAmount > 0) {
+        await tx.registrationPayment.create({
+          data: {
+            registrationId: registration.id,
+            amount: validatedData.receivedAmount,
+            paymentMode: validatedData.paymentMode,
+            paymentRefNo: validatedData.paymentRefNo,
+            remark: "Initial Payment",
+          },
+        });
+      }
+
+      const selectedTests = await tx.test.findMany({
+        where: { id: { in: validatedData.testIds } },
+        select: { id: true, price: true }
+      });
+      const priceMap = {};
+      selectedTests.forEach((t) => {
+        priceMap[t.id] = t.price;
+      });
+
+      const registrationTests = validatedData.testIds.map((testId) => ({
+        registrationId: registration.id,
+        testId: testId,
+        price: priceMap[testId] || 0.00,
+      }));
+
+      console.log(`Adding ${registrationTests.length} tests to registration ID ${registration.id}`);
+      await tx.registrationTest.createMany({ data: registrationTests });
+      return registration;
+    });
 
     return NextResponse.json({ success: true, message: "Registration created successfully!", registration: serializeData(result) });
   } catch (error) {

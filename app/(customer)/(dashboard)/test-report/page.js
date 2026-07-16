@@ -865,7 +865,14 @@ export default function TestReportPage() {
                           <ActionsIcon fontSize="small" />
                         </IconButton>
                       </TableCell>
-                      <TableCell sx={{ whiteSpace: "nowrap" }}>{formatDate(reg.date).split(" ")[0]}</TableCell>
+                      <TableCell sx={{ whiteSpace: "nowrap" }}>
+                        {reg.date ? (() => {
+                          const d = new Date(reg.date);
+                          const day = String(d.getDate()).padStart(2, "0");
+                          const month = String(d.getMonth() + 1).padStart(2, "0");
+                          return `${day}/${month}`;
+                        })() : "-"}
+                      </TableCell>
                       <TableCell sx={{ fontWeight: 700, color: "primary.main" }}>{reg.regNo}</TableCell>
                       <TableCell>{reg.labId}</TableCell>
                       <TableCell>

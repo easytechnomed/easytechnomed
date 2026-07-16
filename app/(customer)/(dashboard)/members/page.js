@@ -40,6 +40,7 @@ export default function WorkspaceMembersPage() {
   const [loading, setLoading] = useState(true);
   const [open, setOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [currentAdmin, setCurrentAdmin] = useState(null);
 
   // Form State
   const [formData, setFormData] = useState({
@@ -52,9 +53,10 @@ export default function WorkspaceMembersPage() {
   const fetchData = async () => {
     setLoading(true);
     try {
-      const [mRes, rRes] = await Promise.all([
+      const [mRes, rRes, pRes] = await Promise.all([
         fetch("/api/members").then((r) => r.json()),
-        fetch("/api/roles").then((r) => r.json())
+        fetch("/api/roles").then((r) => r.json()),
+        fetch("/api/profile").then((r) => r.json()).catch(() => ({}))
       ]);
 
       if (mRes.success) {
@@ -67,6 +69,10 @@ export default function WorkspaceMembersPage() {
         setRoles(rRes.roles);
       } else {
         toast.error(rRes.error || "Failed to load roles list.");
+      }
+
+      if (pRes.success && pRes.admin) {
+        setCurrentAdmin(pRes.admin);
       }
     } catch (err) {
       console.error(err);
@@ -125,6 +131,31 @@ export default function WorkspaceMembersPage() {
       month: "short",
       year: "numeric",
     });
+  };
+
+  const handleStatusChange = async (memberId, newStatus) => {
+    if (!newStatus) {
+      const confirmDeactivate = window.confirm("Are you sure you want to deactivate this member? They will be instantly logged out and lose access.");
+      if (!confirmDeactivate) return;
+    }
+
+    try {
+      const res = await fetch("/api/members", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ memberId, isActive: newStatus }),
+      }).then((r) => r.json());
+
+      if (res.success) {
+        toast.success(res.message || "Member status updated successfully.");
+        fetchData();
+      } else {
+        toast.error(res.error || "Failed to update member status.");
+      }
+    } catch (err) {
+      console.error(err);
+      toast.error("Failed to update status.");
+    }
   };
 
   return (
@@ -187,7 +218,7 @@ export default function WorkspaceMembersPage() {
                   ) : (
                     members.map((member) => (
                       <TableRow key={member.id} hover>
-                        <TableCell sx={{ display: "flex", alignItems: "center", gap: 1.5, borderBottom: "none" }}>
+                        <TableCell sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
                           <Avatar sx={{ bgcolor: "primary.main", width: 32, height: 32, fontSize: "0.85rem" }}>
                             {member.name?.charAt(0).toUpperCase()}
                           </Avatar>
@@ -215,12 +246,29 @@ export default function WorkspaceMembersPage() {
                           />
                         </TableCell>
                         <TableCell>
-                          <Chip
-                            label={member.isActive ? "Active" : "Disabled"}
-                            color={member.isActive ? "primary" : "default"}
-                            size="small"
-                            sx={{ fontWeight: 600, borderRadius: 1.5 }}
-                          />
+                          <Tooltip title={currentAdmin && currentAdmin.id === member.id ? "You cannot activate/deactivate yourself" : ""}>
+                            <span>
+                              <Select
+                                value={member.isActive ? "active" : "disabled"}
+                                onChange={(e) => handleStatusChange(member.id, e.target.value === "active")}
+                                size="small"
+                                disabled={!canWrite || (currentAdmin && currentAdmin.id === member.id)}
+                                sx={{
+                                  fontSize: "0.75rem",
+                                  fontWeight: 700,
+                                  height: 24,
+                                  borderRadius: 1.5,
+                                  bgcolor: member.isActive ? "#dcfce7" : "#fee2e2",
+                                  color: member.isActive ? "#166534" : "#991b1b",
+                                  "& .MuiOutlinedInput-notchedOutline": { border: "none" },
+                                  "& .MuiSelect-select": { py: "2px", pl: 1, pr: 3 }
+                                }}
+                              >
+                                <MenuItem value="active" sx={{ fontSize: "0.8rem" }}>Active</MenuItem>
+                                <MenuItem value="disabled" sx={{ fontSize: "0.8rem" }}>Disabled</MenuItem>
+                              </Select>
+                            </span>
+                          </Tooltip>
                         </TableCell>
                       </TableRow>
                     ))
@@ -272,15 +320,15 @@ export default function WorkspaceMembersPage() {
               inputProps={{ minLength: 8 }}
             />
             <FormControl fullWidth size="small" required>
-              <InputLabel shrink>Role Access Level</InputLabel>
+              <InputLabel id="role-select-label">Role Access Level</InputLabel>
               <Select
+                labelId="role-select-label"
+                id="role-select"
                 name="roleId"
                 value={formData.roleId}
+                label="Role Access Level"
                 onChange={handleChange}
-                displayEmpty
-                notched
               >
-                <MenuItem value="" disabled>Select access level...</MenuItem>
                 {roles.map((role) => (
                   <MenuItem key={role.id} value={role.id}>
                     {role.name}
