@@ -39,7 +39,32 @@ export const dynamic = "force-dynamic";
 
 export default async function AdminDashboardPage({ searchParams }) {
   // Ensure user is admin
-  const admin = await requireAdmin("REGISTRATION_READ");
+  const admin = await requireAdmin();
+  
+  const roleNameUpper = admin.role?.name?.toUpperCase() || "";
+  const isSuperRole = roleNameUpper === "ADMIN" || roleNameUpper === "OWNER";
+  const hasAllPermission = admin.role?.permissions?.some(p => p.permission?.toUpperCase() === "ALL") || false;
+  const userPerms = admin.role?.permissions?.map(p => p.permission) || [];
+  
+  const hasDashboardView = isSuperRole || hasAllPermission || userPerms.includes("DASHBOARD_VIEW");
+  
+  if (!hasDashboardView) {
+    if (userPerms.includes("REGISTRATION_READ") || userPerms.includes("REGISTRATION_WRITE")) {
+      redirect("/registration");
+    } else if (userPerms.includes("DOCTOR_READ") || userPerms.includes("DOCTOR_WRITE")) {
+      redirect("/doctor-summary");
+    } else if (userPerms.includes("MEMBER_READ") || userPerms.includes("MEMBER_WRITE")) {
+      redirect("/members");
+    } else if (
+      userPerms.includes("SETTINGS_READ") || userPerms.includes("SETTINGS_WRITE") ||
+      userPerms.includes("TEST_READ") || userPerms.includes("TEST_WRITE")
+    ) {
+      redirect("/settings");
+    } else {
+      redirect("/auth/login?error=unauthorized");
+    }
+  }
+
   const params = await searchParams;
   const range = params?.range || "7days";
 

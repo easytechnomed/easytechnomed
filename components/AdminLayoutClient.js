@@ -140,8 +140,59 @@ export default function AdminLayoutClient({ admin, children }) {
     setMounted(true);
     if (admin) {
       sessionStorage.setItem("admin_profile", JSON.stringify(admin));
+
+      const isAdmin = pathname.startsWith("/admin");
+      const cleanPath = isAdmin ? pathname.slice(6) || "/" : pathname;
+      
+      const roleUpper = (admin.role?.name || admin.role || "").toUpperCase();
+      const userPerms = admin.permissions || [];
+      const hasAll = roleUpper === "ADMIN" || roleUpper === "OWNER" || userPerms.includes("ALL");
+
+      if (!hasAll) {
+        let hasAccess = true;
+        
+        if (cleanPath === "/" || cleanPath === "/dashboard") {
+          hasAccess = userPerms.includes("DASHBOARD_VIEW");
+        } else if (cleanPath.startsWith("/registration")) {
+          hasAccess = userPerms.includes("REGISTRATION_READ") || userPerms.includes("REGISTRATION_WRITE");
+        } else if (cleanPath.startsWith("/test-report")) {
+          hasAccess = userPerms.includes("REGISTRATION_READ") || userPerms.includes("REGISTRATION_WRITE");
+        } else if (cleanPath.startsWith("/doctor-summary")) {
+          hasAccess = userPerms.includes("DOCTOR_READ") || userPerms.includes("DOCTOR_WRITE");
+        } else if (cleanPath.startsWith("/members")) {
+          hasAccess = userPerms.includes("MEMBER_READ") || userPerms.includes("MEMBER_WRITE");
+        } else if (cleanPath.startsWith("/settings")) {
+          hasAccess = userPerms.includes("SETTINGS_READ") || userPerms.includes("SETTINGS_WRITE") ||
+                      userPerms.includes("TEST_READ") || userPerms.includes("TEST_WRITE");
+        }
+
+        if (!hasAccess) {
+          // Find first permitted route
+          let targetPath = null;
+          if (userPerms.includes("DASHBOARD_VIEW")) {
+            targetPath = "/dashboard";
+          } else if (userPerms.includes("REGISTRATION_READ") || userPerms.includes("REGISTRATION_WRITE")) {
+            targetPath = "/registration";
+          } else if (userPerms.includes("DOCTOR_READ") || userPerms.includes("DOCTOR_WRITE")) {
+            targetPath = "/doctor-summary";
+          } else if (userPerms.includes("MEMBER_READ") || userPerms.includes("MEMBER_WRITE")) {
+            targetPath = "/members";
+          } else if (
+            userPerms.includes("SETTINGS_READ") || userPerms.includes("SETTINGS_WRITE") ||
+            userPerms.includes("TEST_READ") || userPerms.includes("TEST_WRITE")
+          ) {
+            targetPath = "/settings";
+          }
+
+          if (targetPath) {
+            router.replace(isAdmin ? `/admin${targetPath}` : targetPath);
+          } else {
+            router.replace("/auth/login?error=unauthorized");
+          }
+        }
+      }
     }
-  }, [admin]);
+  }, [admin, pathname, router, mounted]);
 
   const isMdUp = useMediaQuery(theme.breakpoints.up("md"));
 
@@ -185,25 +236,74 @@ export default function AdminLayoutClient({ admin, children }) {
     }
   };
 
+  const hasPermission = (requiredPermissions) => {
+    if (!admin) return false;
+    const roleUpper = (admin.role?.name || admin.role || "").toUpperCase();
+    const userPerms = admin.permissions || [];
+    
+    if (roleUpper === "ADMIN" || roleUpper === "OWNER" || userPerms.includes("ALL")) {
+      return true;
+    }
+    
+    return requiredPermissions.some(perm => userPerms.includes(perm));
+  };
+
   const menuItems = [
-    { text: "Dashboard", path: "/dashboard", icon: <DashboardIcon /> },
-    { text: "Patient Registration", path: "/registration", icon: <RegisterIcon /> },
-    { text: "Test Reports", path: "/test-report", icon: <ReportIcon /> },
-    { text: "Dr. Referral Summary", path: "/doctor-summary", icon: <DoctorIcon /> },
-    // { text: "Manage Approvals", path: "/userApprove", icon: <ApprovalsIcon /> },
-    { text: "Manage Members", path: "/members", icon: <PeopleIcon /> },
+    { 
+      text: "Dashboard", 
+      path: "/dashboard", 
+      icon: <DashboardIcon />,
+      required: ["DASHBOARD_VIEW"]
+    },
+    { 
+      text: "Patient Registration", 
+      path: "/registration", 
+      icon: <RegisterIcon />,
+      required: ["REGISTRATION_READ", "REGISTRATION_WRITE"]
+    },
+    { 
+      text: "Test Reports", 
+      path: "/test-report", 
+      icon: <ReportIcon />,
+      required: ["REGISTRATION_READ", "REGISTRATION_WRITE"]
+    },
+    { 
+      text: "Dr. Referral Summary", 
+      path: "/doctor-summary", 
+      icon: <DoctorIcon />,
+      required: ["DOCTOR_READ", "DOCTOR_WRITE"]
+    },
+    { 
+      text: "Manage Members", 
+      path: "/members", 
+      icon: <PeopleIcon />,
+      required: ["MEMBER_READ", "MEMBER_WRITE"]
+    },
     {
       text: "System Settings",
       path: "/settings",
       icon: <SettingsIcon />,
+      required: ["SETTINGS_READ", "SETTINGS_WRITE", "TEST_READ", "TEST_WRITE"],
       subItems: [
-        { text: "Profile Setting", path: "/settings?tab=profile" },
-        { text: "Address Setting", path: "/settings/address" },
-        { text: "Test & Parameter", path: "/settings?tab=tests" },
-        { text: "PDF Frame Setting", path: "/settings?tab=pdf" },
+        { text: "Profile Setting", path: "/settings?tab=profile", required: ["SETTINGS_READ", "SETTINGS_WRITE"] },
+        { text: "Address Setting", path: "/settings/address", required: ["SETTINGS_READ", "SETTINGS_WRITE"] },
+        { text: "Test & Parameter", path: "/settings?tab=tests", required: ["TEST_READ", "TEST_WRITE"] },
+        { text: "PDF Frame Setting", path: "/settings?tab=pdf", required: ["SETTINGS_READ", "SETTINGS_WRITE"] },
       ]
     },
   ];
+
+  const filteredMenuItems = menuItems
+    .filter(item => !item.required || hasPermission(item.required))
+    .map(item => {
+      if (item.subItems) {
+        return {
+          ...item,
+          subItems: item.subItems.filter(sub => !sub.required || hasPermission(sub.required))
+        };
+      }
+      return item;
+    });
 
   const drawerContent = (
     <Box sx={{ height: "100%", display: "flex", flexDirection: "column", overflowX: "hidden" }}>
@@ -223,7 +323,7 @@ export default function AdminLayoutClient({ admin, children }) {
       <Divider />
       <Box sx={{ overflowY: "auto", overflowX: "hidden", flexGrow: 1, py: 2 }}>
         <List sx={{ px: isDrawerExpanded ? 2 : 1 }}>
-          {menuItems.map((item) => {
+          {filteredMenuItems.map((item) => {
             const isAdmin = pathname.startsWith("/admin");
             const cleanPath = isAdmin ? pathname.slice(6) || "/" : pathname;
             const isActive = cleanPath === item.path || cleanPath.startsWith(item.path + "/");

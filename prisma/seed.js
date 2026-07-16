@@ -97,7 +97,8 @@ async function main() {
     "customer:view", 
     "admin:create", 
     "admin:write", 
-    "admin:delete"
+    "admin:delete",
+    "DASHBOARD_VIEW"
   ];
   for (const perm of adminPermissions) {
     await prisma.adminRolePermission.upsert({
