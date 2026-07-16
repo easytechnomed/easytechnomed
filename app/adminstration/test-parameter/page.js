@@ -61,13 +61,15 @@ import {
   TrendingUp as TrendingUpIcon,
   Email as EmailIcon,
   ChevronLeft as ChevronLeftIcon,
-  ChevronRight as ChevronRightIcon
+  ChevronRight as ChevronRightIcon,
+  ContentCopy as CopyIcon
 } from "@mui/icons-material";
 import { toast } from "sonner";
 import EditTestDialog from "./component/EditTestDialog";
 import DeleteTestDialog from "./component/DeleteTestDialog";
 import EditParamDialog from "./component/EditParamDialog";
 import DeleteParamDialog from "./component/DeleteParamDialog";
+import DuplicateTestDialog from "./component/DuplicateTestDialog";
 
 const drawerWidth = 260;
 
@@ -177,6 +179,8 @@ export default function DefaultTestsPage() {
   // Edit state
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [testToEdit, setTestToEdit] = useState(null);
+  const [duplicateConfirmOpen, setDuplicateConfirmOpen] = useState(false);
+  const [testToDuplicate, setTestToDuplicate] = useState(null);
   const [parameterDictionary, setParameterDictionary] = useState([]);
 
   // New parameter catalog & merge-delete states
@@ -628,6 +632,17 @@ export default function DefaultTestsPage() {
                                         </TableCell>
                                         <TableCell align="center" onClick={(e) => e.stopPropagation()}>
                                           <Box sx={{ display: "flex", justifyContent: "center", gap: 0.5 }}>
+                                            <IconButton
+                                              size="small"
+                                              color="primary"
+                                              title="Duplicate Test"
+                                              onClick={() => {
+                                                setTestToDuplicate(test);
+                                                setDuplicateConfirmOpen(true);
+                                              }}
+                                            >
+                                              <CopyIcon fontSize="small" />
+                                            </IconButton>
                                             <IconButton
                                               size="small"
                                               color="primary"
