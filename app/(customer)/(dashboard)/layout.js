@@ -2,19 +2,12 @@ import React from "react";
 import { requireAdmin } from "@/lib/auth";
 import AdminLayoutClient from "@/components/AdminLayoutClient";
 import NextTopLoader from "nextjs-toploader";
-import { redirect } from "next/navigation";
 
 export const dynamic = "force-dynamic";
 
 export default async function AdminDashboardLayout({ children }) {
   // Ensure user is admin
   const admin = await requireAdmin();
-
-  // Show only admin role, no one else
-  const roleName = admin.role?.name || "Admin";
-  if (roleName.toUpperCase() !== "ADMIN") {
-    redirect("/auth/login?error=unauthorized");
-  }
 
   // Format admin profile safely
   const safeAdmin = {
