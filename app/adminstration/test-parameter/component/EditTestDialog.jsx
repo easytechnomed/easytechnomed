@@ -18,6 +18,7 @@ import {
   DialogTitle,
   DialogContent,
   DialogActions,
+  Drawer,
   TextField,
   Divider,
   CircularProgress,
@@ -700,21 +701,49 @@ export default function EditTestDialog({ open, onClose, test, parameterDictionar
   };
 
   return (
-    <Dialog
+    <Drawer
+      anchor="right"
       open={open}
       onClose={() => !saving && onClose()}
-      maxWidth="lg"
-      fullWidth
       PaperProps={{
         sx: {
-          maxHeight: "90vh",
+          width: "100vw",
+          minWidth: 0,
+          maxWidth: "100vw",
+          height: "100dvh",
           display: "flex",
-          flexDirection: "column"
+          flexDirection: "column",
+          overflow: "hidden"
         }
       }}
     >
-      <form onSubmit={handleSaveEdit} style={{ display: "flex", flexDirection: "column", height: "100%", overflow: "hidden" }}>
-        <DialogContent sx={{ display: "flex", flexDirection: "column", gap: 3, flexGrow: 1, overflowY: "auto" }}>
+      <form
+        onSubmit={handleSaveEdit}
+        style={{
+          display: "flex",
+          flexDirection: "column",
+          height: "100%",
+          width: "100%",
+          maxWidth: "100%",
+          minWidth: 0,
+          overflow: "hidden",
+          boxSizing: "border-box"
+        }}
+      >
+        <DialogContent
+          sx={{
+            display: "flex",
+            flexDirection: "column",
+            gap: 3,
+            flexGrow: 1,
+            overflowY: "auto",
+            overflowX: "hidden",
+            width: "100%",
+            maxWidth: "100%",
+            minWidth: 0,
+            boxSizing: "border-box"
+          }}
+        >
 
           <Box sx={{ borderBottom: 1, borderColor: "divider", mb: 2, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
             <Tabs
@@ -735,7 +764,7 @@ export default function EditTestDialog({ open, onClose, test, parameterDictionar
 
           {activeTab === 0 ? (
             <>
-              <Box>
+              <Box sx={{ width: "100%", minWidth: 0 }}>
                 <Typography variant="subtitle2" sx={{ fontWeight: 700, mb: 1.5 }}>
                   Test Metadata
                 </Typography>
@@ -776,9 +805,9 @@ export default function EditTestDialog({ open, onClose, test, parameterDictionar
 
               <Divider />
 
-              <Box>
-                <TableContainer component={Paper} variant="outlined" sx={{ overflowX: "auto", maxHeight: "330px" }}>
-                  <Table size="small" stickyHeader sx={{ minWidth: 2000 }}>
+              <Box sx={{ width: "100%", overflowX: "hidden", minWidth: 0 }}>
+                <TableContainer component={Paper} variant="outlined" sx={{ overflowX: "auto", maxHeight: "380px", width: "calc(100vw - 48px)", maxWidth: "calc(100vw - 48px)", minWidth: 0 }}>
+                  <Table size="small" stickyHeader sx={{ minWidth: 2200 }}>
                     <TableHead>
                       <TableRow>
                         <TableCell align="center" sx={{ fontWeight: 700, width: 30, bgcolor: "#f8fafc" }}></TableCell>
@@ -789,18 +818,18 @@ export default function EditTestDialog({ open, onClose, test, parameterDictionar
                         <TableCell sx={{ fontWeight: 700, width: 100, bgcolor: "#f8fafc" }}>Order</TableCell>
 
                         {/* Male */}
-                        <TableCell sx={{ fontWeight: 700, width: 110, bgcolor: "#eff6ff" }}>Male Min</TableCell>
-                        <TableCell sx={{ fontWeight: 700, width: 110, bgcolor: "#eff6ff" }}>Male Max</TableCell>
+                        <TableCell sx={{ fontWeight: 700, width: 140, bgcolor: "#eff6ff" }}>Male Min</TableCell>
+                        <TableCell sx={{ fontWeight: 700, width: 140, bgcolor: "#eff6ff" }}>Male Max</TableCell>
                         <TableCell sx={{ fontWeight: 700, width: 160, bgcolor: "#eff6ff" }}>Male Range Text</TableCell>
 
                         {/* Female */}
-                        <TableCell sx={{ fontWeight: 700, width: 110, bgcolor: "#fdf2f8" }}>Female Min</TableCell>
-                        <TableCell sx={{ fontWeight: 700, width: 110, bgcolor: "#fdf2f8" }}>Female Max</TableCell>
+                        <TableCell sx={{ fontWeight: 700, width: 140, bgcolor: "#fdf2f8" }}>Female Min</TableCell>
+                        <TableCell sx={{ fontWeight: 700, width: 140, bgcolor: "#fdf2f8" }}>Female Max</TableCell>
                         <TableCell sx={{ fontWeight: 700, width: 160, bgcolor: "#fdf2f8" }}>Female Range Text</TableCell>
 
                         {/* Baby */}
-                        <TableCell sx={{ fontWeight: 700, width: 110, bgcolor: "#f0fdf4" }}>Baby Min</TableCell>
-                        <TableCell sx={{ fontWeight: 700, width: 110, bgcolor: "#f0fdf4" }}>Baby Max</TableCell>
+                        <TableCell sx={{ fontWeight: 700, width: 140, bgcolor: "#f0fdf4" }}>Baby Min</TableCell>
+                        <TableCell sx={{ fontWeight: 700, width: 140, bgcolor: "#f0fdf4" }}>Baby Max</TableCell>
                         <TableCell sx={{ fontWeight: 700, width: 180, bgcolor: "#f0fdf4" }}>Baby Range Text</TableCell>
 
                         {/* Default */}
@@ -1187,7 +1216,7 @@ export default function EditTestDialog({ open, onClose, test, parameterDictionar
               </Box>
             </>
           ) : (
-            <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
+            <Box sx={{ display: "flex", flexDirection: "column", gap: 2, width: "100%", maxWidth: "100%", minWidth: 0 }}>
               {/* Top bar */}
               <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                 <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>
@@ -1212,8 +1241,8 @@ export default function EditTestDialog({ open, onClose, test, parameterDictionar
                   <CircularProgress size={28} />
                 </Box>
               ) : (
-                <TableContainer component={Paper} variant="outlined">
-                  <Table size="small">
+                <TableContainer component={Paper} variant="outlined" sx={{ overflowX: "auto", width: "calc(100vw - 48px)", maxWidth: "calc(100vw - 48px)", minWidth: 0 }}>
+                  <Table size="small" sx={{ tableLayout: "fixed", width: "100%" }}>
                     <TableHead>
                       <TableRow sx={{ bgcolor: "#f8fafc" }}>
                         <TableCell sx={{ fontWeight: 700, width: 160 }}>Output (O)</TableCell>
@@ -1458,7 +1487,7 @@ export default function EditTestDialog({ open, onClose, test, parameterDictionar
           formulas={formulas}
         />
       )}
-    </Dialog>
+    </Drawer>
   );
 }
 

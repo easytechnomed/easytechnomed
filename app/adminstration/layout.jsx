@@ -412,7 +412,7 @@ export default function SuperAdminLayout({ children }) {
           </AppBar>
 
           {/* Main content body */}
-          <Box sx={{ flexGrow: 1, display: "flex", flexDirection: "column", overflow: "hidden" }}>
+          <Box sx={{ flexGrow: 1, display: "flex", flexDirection: "column", overflow: "hidden", minWidth: 0, width: "100%", maxWidth: "100%" }}>
             {children}
           </Box>
         </Box>

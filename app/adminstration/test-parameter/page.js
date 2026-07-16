@@ -495,7 +495,7 @@ export default function DefaultTestsPage() {
 
   return (
     <>
-      <Box sx={{ flexGrow: 1, p: { xs: 2, md: 3 }, overflow: "hidden", display: "flex", flexDirection: "column", height: "100%" }}>
+      <Box sx={{ flexGrow: 1, p: { xs: 2, md: 3 }, overflow: "hidden", display: "flex", flexDirection: "column", height: "100%", width: "100%", maxWidth: "100%", minWidth: 0 }}>
             {loading && tests.length === 0 ? (
               <Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", height: "50vh" }}>
                 <CircularProgress color="primary" />
@@ -581,7 +581,7 @@ export default function DefaultTestsPage() {
                           </Box>
 
                           {/* Test Catalog Table */}
-                          <TableContainer component={Paper} elevation={0} sx={{ border: "1px solid", borderColor: "divider", flexGrow: 1, overflowY: "auto" }}>
+                          <TableContainer component={Paper} elevation={0} sx={{ border: "1px solid", borderColor: "divider", flexGrow: 1, overflowY: "auto", overflowX: "auto", width: "100%", maxWidth: "100%", minWidth: 0 }}>
                             <Table stickyHeader size="small">
                               <TableHead>
                                 <TableRow>
@@ -796,7 +796,7 @@ export default function DefaultTestsPage() {
                           </Box>
 
                           {/* Parameters Table */}
-                          <TableContainer component={Paper} elevation={0} sx={{ border: "1px solid", borderColor: "divider", flexGrow: 1, overflowY: "auto" }}>
+                          <TableContainer component={Paper} elevation={0} sx={{ border: "1px solid", borderColor: "divider", flexGrow: 1, overflowY: "auto", overflowX: "auto", width: "100%", maxWidth: "100%", minWidth: 0 }}>
                             <Table stickyHeader size="small">
                               <TableHead>
                                 <TableRow>
@@ -999,7 +999,7 @@ export default function DefaultTestsPage() {
                                 Clinical Parameters ({selectedTest.parameters.length})
                               </Typography>
 
-                              <TableContainer component={Paper} elevation={0} sx={{ border: "1px solid", borderColor: "divider", flexGrow: 1, overflowY: "auto" }}>
+                              <TableContainer component={Paper} elevation={0} sx={{ border: "1px solid", borderColor: "divider", flexGrow: 1, overflowY: "auto", overflowX: "auto", width: "100%", maxWidth: "100%", minWidth: 0 }}>
                                 <Table stickyHeader size="small">
                                   <TableHead>
                                     <TableRow>
