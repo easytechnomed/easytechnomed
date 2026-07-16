@@ -1108,6 +1108,20 @@ export default function DefaultTestsPage() {
         />
       )}
 
+      {duplicateConfirmOpen && (
+        <DuplicateTestDialog
+          open={duplicateConfirmOpen}
+          onClose={() => setDuplicateConfirmOpen(false)}
+          test={testToDuplicate}
+          onDuplicateSuccess={async (newTest) => {
+            await fetchTests();
+            if (newTest) {
+              setSelectedTest(newTest);
+            }
+          }}
+        />
+      )}
+
       {editParamModalOpen && (
         <EditParamDialog
           open={editParamModalOpen}
