@@ -11,6 +11,21 @@ export default function PWARegister() {
       process.env.NODE_ENV === "production"
     ) {
       const showUpdateToast = () => {
+        // Prevent showing PWA update toast on customer-facing attraction pages
+        const currentPath = window.location.pathname;
+        const isAdminSide = 
+          currentPath.startsWith("/admin") || 
+          currentPath.startsWith("/adminstration") ||
+          currentPath.startsWith("/dashboard") ||
+          currentPath.startsWith("/registration") ||
+          currentPath.startsWith("/test-report") ||
+          currentPath.startsWith("/doctor-summary") ||
+          currentPath.startsWith("/members") ||
+          currentPath.startsWith("/settings") ||
+          currentPath.startsWith("/userApprove");
+
+        if (!isAdminSide) return;
+
         toast.info("A new version of the app is available!", {
           description: "Click below to reload and apply the update.",
           action: {
