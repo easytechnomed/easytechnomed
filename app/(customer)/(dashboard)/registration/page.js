@@ -239,7 +239,13 @@ export default function RegistrationPage() {
                 (t.name.toLowerCase() === rt.test.name.toLowerCase())
               );
             }
-            return match;
+            if (match) {
+              return {
+                ...match,
+                price: rt.price !== undefined ? Number(rt.price) : Number(match.price),
+              };
+            }
+            return null;
           }).filter(Boolean);
           setSelectedTests(mappedTests);
         } else {

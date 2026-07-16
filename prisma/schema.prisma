@@ -173,20 +173,23 @@ model AdminRolePermission {
 }
 
 model Doctor {
-  id                  Int            @id @default(autoincrement())
+  id                  Int               @id @default(autoincrement())
   name                String
   code                String?
   lastPaid            DateTime?
-  createdAt           DateTime       @default(now())
-  updatedAt           DateTime       @updatedAt
+  createdAt           DateTime          @default(now())
+  updatedAt           DateTime          @updatedAt
   workspaceId         Int?
-  incentivePercent    Decimal        @default(0.00) @db.Decimal(5, 2)
+  incentivePercent    Decimal           @default(0.00) @db.Decimal(5, 2)
+  isDeleted           Boolean           @default(false)
+  deletedAt           DateTime?
   address             String?
   clinicName          String?
   degree              String?
-  workspace           Workspace?     @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
-  registrations       Registration[] @relation("RefBy")
-  secondRegistrations Registration[] @relation("SecondRef")
+  workspace           Workspace?        @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  registrations       Registration[]    @relation("RefBy")
+  secondRegistrations Registration[]    @relation("SecondRef")
+  incentiveHistory    DoctorIncentive[]
 
   @@unique([workspaceId, code])
 }
@@ -245,6 +248,8 @@ model Registration {
   discountAmount   Decimal               @default(0.00) @db.Decimal(10, 2)
   receivedAmount   Decimal               @default(0.00) @db.Decimal(10, 2)
   dueAmount        Decimal               @default(0.00) @db.Decimal(10, 2)
+  refByIncentivePercent     Decimal       @default(0.00) @db.Decimal(5, 2)
+  secondRefIncentivePercent Decimal       @default(0.00) @db.Decimal(5, 2)
   stickerCount     Int                   @default(1)
   barcode          String?
   status           String                @default("Pending")
@@ -272,6 +277,7 @@ model Registration {
 model RegistrationTest {
   registrationId Int
   testId         Int
+  price          Decimal      @default(0.00) @db.Decimal(10, 2)
   assessNo       String?
   collectedBy    String       @default("-NA-")
   expense        Decimal      @default(0.00) @db.Decimal(10, 2)
@@ -501,4 +507,14 @@ model InterpretationRule {
   @@index([testId])
   @@index([parameterId])
   @@index([workspaceId])
+}
+
+model DoctorIncentive {
+  id               Int      @id @default(autoincrement())
+  doctorId         Int
+  incentivePercent Decimal  @db.Decimal(5, 2)
+  createdAt        DateTime @default(now())
+  doctor           Doctor   @relation(fields: [doctorId], references: [id], onDelete: Cascade)
+
+  @@index([doctorId])
 }

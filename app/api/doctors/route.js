@@ -11,7 +11,7 @@ export async function GET() {
   try {
     const admin = await requireAdmin("DOCTOR_READ");
     const doctors = await prisma.doctor.findMany({
-      where: { workspaceId: admin.workspaceId },
+      where: { workspaceId: admin.workspaceId, isDeleted: false },
       orderBy: { name: "asc" },
     });
     return NextResponse.json({ success: true, doctors: serializeData(doctors) });
@@ -77,16 +77,27 @@ export async function POST(req) {
       doctorCode = generatedCode;
     }
 
-    const newDoctor = await prisma.doctor.create({
-      data: {
-        name: name.trim(),
-        code: doctorCode,
-        degree: degree ? degree.trim() : null,
-        address: address ? address.trim() : null,
-        clinicName: clinicName ? clinicName.trim() : null,
-        incentivePercent: incentivePercent !== undefined ? parseFloat(incentivePercent) || 0 : 0.00,
-        workspaceId: admin.workspaceId,
-      },
+    const newDoctor = await prisma.$transaction(async (tx) => {
+      const doc = await tx.doctor.create({
+        data: {
+          name: name.trim(),
+          code: doctorCode,
+          degree: degree ? degree.trim() : null,
+          address: address ? address.trim() : null,
+          clinicName: clinicName ? clinicName.trim() : null,
+          incentivePercent: incentivePercent !== undefined ? parseFloat(incentivePercent) || 0 : 0.00,
+          workspaceId: admin.workspaceId,
+        },
+      });
+
+      await tx.doctorIncentive.create({
+        data: {
+          doctorId: doc.id,
+          incentivePercent: doc.incentivePercent,
+        },
+      });
+
+      return doc;
     });
 
     return NextResponse.json({
@@ -96,6 +107,98 @@ export async function POST(req) {
     });
   } catch (error) {
     console.error("Workspace Doctors POST Error:", error);
+    return NextResponse.json({ success: false, error: error.message }, { status: 500 });
+  }
+}
+
+export async function PUT(req) {
+  try {
+    const admin = await requireAdmin("DOCTOR_WRITE");
+    const body = await req.json().catch(() => ({}));
+    const { doctorId, name, code, incentivePercent, degree, address, clinicName } = body;
+
+    if (!doctorId || isNaN(parseInt(doctorId))) {
+      return NextResponse.json({ success: false, message: "Doctor ID is required." }, { status: 400 });
+    }
+
+    const existing = await prisma.doctor.findFirst({
+      where: { id: parseInt(doctorId), workspaceId: admin.workspaceId, isDeleted: false }
+    });
+
+    if (!existing) {
+      return NextResponse.json({ success: false, message: "Doctor not found." }, { status: 404 });
+    }
+
+    const updatedDoctor = await prisma.$transaction(async (tx) => {
+      const updateData = {};
+      if (name !== undefined) updateData.name = name.trim();
+      if (code !== undefined) updateData.code = code ? code.trim() : null;
+      if (degree !== undefined) updateData.degree = degree ? degree.trim() : null;
+      if (address !== undefined) updateData.address = address ? address.trim() : null;
+      if (clinicName !== undefined) updateData.clinicName = clinicName ? clinicName.trim() : null;
+      if (incentivePercent !== undefined) updateData.incentivePercent = parseFloat(incentivePercent) || 0.00;
+
+      const updated = await tx.doctor.update({
+        where: { id: parseInt(doctorId) },
+        data: updateData
+      });
+
+      // Log to history if incentive rate changed
+      if (incentivePercent !== undefined && Number(updated.incentivePercent) !== Number(existing.incentivePercent)) {
+        await tx.doctorIncentive.create({
+          data: {
+            doctorId: updated.id,
+            incentivePercent: updated.incentivePercent,
+          }
+        });
+      }
+
+      return updated;
+    });
+
+    return NextResponse.json({
+      success: true,
+      message: "Doctor updated successfully!",
+      doctor: serializeData(updatedDoctor)
+    });
+  } catch (error) {
+    console.error("Workspace Doctors PUT Error:", error);
+    return NextResponse.json({ success: false, error: error.message }, { status: 500 });
+  }
+}
+
+export async function DELETE(req) {
+  try {
+    const admin = await requireAdmin("DOCTOR_WRITE");
+    const { searchParams } = new URL(req.url);
+    const doctorId = searchParams.get("doctorId");
+
+    if (!doctorId || isNaN(parseInt(doctorId))) {
+      return NextResponse.json({ success: false, message: "Doctor ID is required." }, { status: 400 });
+    }
+
+    const existing = await prisma.doctor.findFirst({
+      where: { id: parseInt(doctorId), workspaceId: admin.workspaceId, isDeleted: false }
+    });
+
+    if (!existing) {
+      return NextResponse.json({ success: false, message: "Doctor not found." }, { status: 404 });
+    }
+
+    await prisma.doctor.update({
+      where: { id: parseInt(doctorId) },
+      data: {
+        isDeleted: true,
+        deletedAt: new Date()
+      }
+    });
+
+    return NextResponse.json({
+      success: true,
+      message: "Doctor deleted successfully!"
+    });
+  } catch (error) {
+    console.error("Workspace Doctors DELETE Error:", error);
     return NextResponse.json({ success: false, error: error.message }, { status: 500 });
   }
 }

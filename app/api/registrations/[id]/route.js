@@ -99,6 +99,33 @@ export async function PUT(req, { params }) {
     const sampleDate = validatedData.sampleDate ? new Date(validatedData.sampleDate) : null;
 
     const result = await prisma.$transaction(async (tx) => {
+      let refByIncentive = Number(existing.refByIncentivePercent || 0);
+      let secondRefIncentive = Number(existing.secondRefIncentivePercent || 0);
+
+      if (validatedData.refById !== existing.refById) {
+        if (validatedData.refById) {
+          const doc = await tx.doctor.findFirst({
+            where: { id: validatedData.refById },
+            select: { incentivePercent: true }
+          });
+          refByIncentive = doc ? Number(doc.incentivePercent) : 0.00;
+        } else {
+          refByIncentive = 0.00;
+        }
+      }
+
+      if (validatedData.secondRefById !== existing.secondRefId) {
+        if (validatedData.secondRefById) {
+          const doc = await tx.doctor.findFirst({
+            where: { id: validatedData.secondRefById },
+            select: { incentivePercent: true }
+          });
+          secondRefIncentive = doc ? Number(doc.incentivePercent) : 0.00;
+        } else {
+          secondRefIncentive = 0.00;
+        }
+      }
+
       const registration = await tx.registration.update({
         where: { id: regId },
         data: {
@@ -112,6 +139,8 @@ export async function PUT(req, { params }) {
           gender: validatedData.gender,
           refById: validatedData.refById,
           secondRefId: validatedData.secondRefById,
+          refByIncentivePercent: refByIncentive,
+          secondRefIncentivePercent: secondRefIncentive,
           remark: validatedData.remark,
           colType: validatedData.colType,
           expRptDate,
@@ -131,11 +160,34 @@ export async function PUT(req, { params }) {
         },
       });
 
+      const existingTests = await tx.registrationTest.findMany({
+        where: { registrationId: regId }
+      });
+      const existingPriceMap = {};
+      existingTests.forEach((et) => {
+        existingPriceMap[et.testId] = Number(et.price);
+      });
+
+      const currentTests = await tx.test.findMany({
+        where: { id: { in: validatedData.testIds } },
+        select: { id: true, price: true }
+      });
+      const currentPriceMap = {};
+      currentTests.forEach((t) => {
+        currentPriceMap[t.id] = Number(t.price);
+      });
+
       await tx.registrationTest.deleteMany({ where: { registrationId: regId } });
-      const registrationTests = validatedData.testIds.map((testId) => ({
-        registrationId: regId,
-        testId: testId,
-      }));
+      const registrationTests = validatedData.testIds.map((testId) => {
+        const price = existingPriceMap[testId] !== undefined 
+          ? existingPriceMap[testId] 
+          : (currentPriceMap[testId] || 0.00);
+        return {
+          registrationId: regId,
+          testId: testId,
+          price: price,
+        };
+      });
       await tx.registrationTest.createMany({ data: registrationTests });
       return registration;
     });

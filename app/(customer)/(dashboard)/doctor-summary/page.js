@@ -18,13 +18,22 @@ import {
   Paper,
   IconButton,
   Divider,
-  CircularProgress
+  CircularProgress,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogContentText,
+  DialogActions,
+  Snackbar,
+  Alert
 } from "@mui/material";
 import {
   Print as PrintIcon,
   Search as SearchIcon,
   RestartAlt as ResetIcon,
-  Add as AddIcon
+  Add as AddIcon,
+  Edit as EditIcon,
+  Delete as DeleteIcon
 } from "@mui/icons-material";
 import AddDoctorDrawer from "@/components/AddDoctorDrawer";
 
@@ -32,6 +41,90 @@ export default function DoctorSummaryPage() {
   const [openAddDocDrawer, setOpenAddDocDrawer] = useState(false);
   const [summaryData, setSummaryData] = useState([]);
   const [loading, setLoading] = useState(true);
+
+  // Edit & Delete States
+  const [openEditDialog, setOpenEditDialog] = useState(false);
+  const [editingDoc, setEditingDoc] = useState(null);
+  const [editIncentiveInput, setEditIncentiveInput] = useState("");
+  const [savingEdit, setSavingEdit] = useState(false);
+
+  const [openDeleteDialog, setOpenDeleteDialog] = useState(false);
+  const [deletingDoc, setDeletingDoc] = useState(null);
+  const [deleting, setDeleting] = useState(false);
+
+  const [toast, setToast] = useState({ open: false, message: "", severity: "success" });
+
+  const showToast = (message, severity = "success") => {
+    setToast({ open: true, message, severity });
+  };
+
+  const handleOpenEdit = (item) => {
+    setEditingDoc(item);
+    setEditIncentiveInput(String(item.incentivePercent));
+    setOpenEditDialog(true);
+  };
+
+  const handleSaveEdit = async () => {
+    if (!editingDoc) return;
+    if (editIncentiveInput === "" || isNaN(parseFloat(editIncentiveInput))) {
+      showToast("Please enter a valid incentive percentage.", "error");
+      return;
+    }
+    setSavingEdit(true);
+    try {
+      const res = await fetch("/api/doctors", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          doctorId: editingDoc.id,
+          incentivePercent: parseFloat(editIncentiveInput)
+        })
+      }).then((r) => r.json());
+
+      if (res.success) {
+        showToast("Doctor incentive updated successfully!", "success");
+        setOpenEditDialog(false);
+        setEditingDoc(null);
+        loadData();
+      } else {
+        showToast(res.message || "Failed to update incentive.", "error");
+      }
+    } catch (err) {
+      console.error(err);
+      showToast("An unexpected error occurred.", "error");
+    } finally {
+      setSavingEdit(false);
+    }
+  };
+
+  const handleOpenDelete = (item) => {
+    setDeletingDoc(item);
+    setOpenDeleteDialog(true);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!deletingDoc) return;
+    setDeleting(true);
+    try {
+      const res = await fetch(`/api/doctors?doctorId=${deletingDoc.id}`, {
+        method: "DELETE"
+      }).then((r) => r.json());
+
+      if (res.success) {
+        showToast("Doctor deleted successfully!", "success");
+        setOpenDeleteDialog(false);
+        setDeletingDoc(null);
+        loadData();
+      } else {
+        showToast(res.message || "Failed to delete doctor.", "error");
+      }
+    } catch (err) {
+      console.error(err);
+      showToast("An unexpected error occurred.", "error");
+    } finally {
+      setDeleting(false);
+    }
+  };
 
   // Filters
   const [startDate, setStartDate] = useState(() => {
@@ -177,6 +270,7 @@ export default function DoctorSummaryPage() {
             <TableHead sx={{ bgcolor: "#e2e8f0" }}>
               <TableRow>
                 <TableCell sx={{ fontWeight: 700 }}>SNO</TableCell>
+                <TableCell sx={{ fontWeight: 700 }} align="center">Actions</TableCell>
                 <TableCell sx={{ fontWeight: 700 }}>Ref. By (Doctor)</TableCell>
                 <TableCell sx={{ fontWeight: 700 }}>Code</TableCell>
                 <TableCell sx={{ fontWeight: 700 }}>Last Paid</TableCell>
@@ -192,7 +286,7 @@ export default function DoctorSummaryPage() {
             <TableBody>
               {summaryData.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={11} align="center" sx={{ py: 6, color: "text.secondary" }}>
+                  <TableCell colSpan={12} align="center" sx={{ py: 6, color: "text.secondary" }}>
                     No referral activities found in this date range.
                   </TableCell>
                 </TableRow>
@@ -206,6 +300,14 @@ export default function DoctorSummaryPage() {
                       }}
                     >
                       <TableCell>{idx + 1}</TableCell>
+                      <TableCell align="center" sx={{ whiteSpace: "nowrap" }}>
+                        <IconButton onClick={() => handleOpenEdit(item)} color="primary" size="small">
+                          <EditIcon fontSize="small" />
+                        </IconButton>
+                        <IconButton onClick={() => handleOpenDelete(item)} color="error" size="small">
+                          <DeleteIcon fontSize="small" />
+                        </IconButton>
+                      </TableCell>
                       <TableCell sx={{ fontWeight: 600, color: "primary.main" }}>{item.name}</TableCell>
                       <TableCell>{item.code}</TableCell>
                       <TableCell>{item.lastPaid ? formatDate(item.lastPaid) : "-"}</TableCell>
@@ -222,7 +324,7 @@ export default function DoctorSummaryPage() {
                   ))}
                   {/* Totals Row */}
                   <TableRow sx={{ bgcolor: "#f1f5f9", "& td": { fontWeight: 800 } }}>
-                    <TableCell colSpan={4}>Total</TableCell>
+                    <TableCell colSpan={5}>Total</TableCell>
                     <TableCell align="right">-</TableCell>
                     <TableCell align="right">{totalCount}</TableCell>
                     <TableCell align="right">₹{totalAmount.toFixed(2)}</TableCell>
@@ -244,6 +346,79 @@ export default function DoctorSummaryPage() {
         onClose={() => setOpenAddDocDrawer(false)}
         onSuccess={() => loadData()}
       />
+
+      {/* Edit Incentive Dialog */}
+      <Dialog open={openEditDialog} onClose={() => setOpenEditDialog(false)} maxWidth="xs" fullWidth>
+        <DialogTitle sx={{ fontWeight: 800 }}>Update Doctor Incentive</DialogTitle>
+        <DialogContent>
+          <DialogContentText sx={{ mb: 2 }}>
+            Update the incentive percentage rate for <strong>{editingDoc?.name}</strong>. Existing registration records will not be affected.
+          </DialogContentText>
+          <TextField
+            autoFocus
+            label="Incentive Percentage (%)"
+            type="number"
+            fullWidth
+            size="small"
+            value={editIncentiveInput}
+            onChange={(e) => setEditIncentiveInput(e.target.value)}
+            slotProps={{ htmlInput: { min: 0, max: 100, step: 0.1 } }}
+          />
+        </DialogContent>
+        <DialogActions sx={{ p: 2, pt: 0 }}>
+          <Button onClick={() => setOpenEditDialog(false)} variant="outlined" size="small">
+            Cancel
+          </Button>
+          <Button
+            onClick={handleSaveEdit}
+            variant="contained"
+            size="small"
+            disabled={savingEdit}
+            startIcon={savingEdit ? <CircularProgress size={16} color="inherit" /> : null}
+          >
+            {savingEdit ? "Saving..." : "Save Changes"}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog open={openDeleteDialog} onClose={() => setOpenDeleteDialog(false)} maxWidth="xs" fullWidth>
+        <DialogTitle sx={{ fontWeight: 800, color: "error.main" }}>Delete Doctor</DialogTitle>
+        <DialogContent>
+          <DialogContentText>
+            Are you sure you want to delete <strong>{deletingDoc?.name}</strong>?
+            <br />
+            They will no longer appear in the referral dropdowns on the registration page, but historical reports and billing calculations for this doctor will be preserved.
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions sx={{ p: 2, pt: 0 }}>
+          <Button onClick={() => setOpenDeleteDialog(false)} variant="outlined" size="small">
+            Cancel
+          </Button>
+          <Button
+            onClick={handleConfirmDelete}
+            color="error"
+            variant="contained"
+            size="small"
+            disabled={deleting}
+            startIcon={deleting ? <CircularProgress size={16} color="inherit" /> : null}
+          >
+            {deleting ? "Deleting..." : "Confirm Delete"}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Toast Notification */}
+      <Snackbar
+        open={toast.open}
+        autoHideDuration={4000}
+        onClose={() => setToast({ ...toast, open: false })}
+        anchorOrigin={{ vertical: "top", horizontal: "right" }}
+      >
+        <Alert severity={toast.severity} onClose={() => setToast({ ...toast, open: false })} sx={{ width: "100%" }}>
+          {toast.message}
+        </Alert>
+      </Snackbar>
     </Box>
   );
 }

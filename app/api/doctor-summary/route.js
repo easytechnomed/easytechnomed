@@ -38,15 +38,23 @@ export async function GET(req) {
       const netAmount = totalAmount - totalDiscount;
       const collection = regs.reduce((sum, r) => sum + Number(r.receivedAmount), 0);
 
+      let totalIncentiveAmount = 0;
+      for (const r of regs) {
+        const netAmt = Number(r.totalAmount) - Number(r.discountAmount);
+        const pct = r.refByIncentivePercent !== null && r.refByIncentivePercent !== undefined
+          ? Number(r.refByIncentivePercent)
+          : Number(doc.incentivePercent) || 0;
+        totalIncentiveAmount += (netAmt * pct) / 100;
+      }
+
       const incentivePercent = Number(doc.incentivePercent) || 0;
-      const incentiveAmount = (netAmount * incentivePercent) / 100;
 
       summary.push({
         id: doc.id,
         name: doc.name,
         code: doc.code || String(doc.id),
         incentivePercent,
-        incentiveAmount,
+        incentiveAmount: totalIncentiveAmount,
         lastPaid: doc.lastPaid ? doc.lastPaid.toISOString() : null,
         count,
         amount: totalAmount,

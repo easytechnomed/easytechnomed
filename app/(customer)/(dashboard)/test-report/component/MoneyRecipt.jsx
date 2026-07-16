@@ -266,7 +266,7 @@ export default function MoneyRecipt({ open, onClose, selectedReg, onSaveSuccess,
                         {selectedRegistration.tests?.map((t) => (
                           <TableRow key={t.testId}>
                             <TableCell>{t.test?.name}</TableCell>
-                            <TableCell align="right">₹{parseFloat(t.test?.price || 0).toFixed(2)}</TableCell>
+                            <TableCell align="right">₹{parseFloat(t.price !== undefined ? t.price : t.test?.price || 0).toFixed(2)}</TableCell>
                           </TableRow>
                         ))}
                       </TableBody>

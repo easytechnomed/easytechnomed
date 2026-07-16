@@ -120,6 +120,25 @@ export async function POST(req) {
           const labId = String(nextVal).padStart(3, '0');
           const regNo = `ETM-${String(nextVal).padStart(8, '0')}`;
 
+          let refByIncentive = 0.00;
+          let secondRefIncentive = 0.00;
+
+          if (validatedData.refById) {
+            const doc = await tx.doctor.findFirst({
+              where: { id: validatedData.refById },
+              select: { incentivePercent: true }
+            });
+            if (doc) refByIncentive = Number(doc.incentivePercent);
+          }
+
+          if (validatedData.secondRefById) {
+            const doc = await tx.doctor.findFirst({
+              where: { id: validatedData.secondRefById },
+              select: { incentivePercent: true }
+            });
+            if (doc) secondRefIncentive = Number(doc.incentivePercent);
+          }
+
           const registration = await tx.registration.create({
             data: {
               billOn: validatedData.billOn,
@@ -134,6 +153,8 @@ export async function POST(req) {
               gender: validatedData.gender,
               refById: validatedData.refById,
               secondRefId: validatedData.secondRefById,
+              refByIncentivePercent: refByIncentive,
+              secondRefIncentivePercent: secondRefIncentive,
               remark: validatedData.remark,
               colType: validatedData.colType,
               expRptDate,
@@ -167,9 +188,19 @@ export async function POST(req) {
             });
           }
 
+          const selectedTests = await tx.test.findMany({
+            where: { id: { in: validatedData.testIds } },
+            select: { id: true, price: true }
+          });
+          const priceMap = {};
+          selectedTests.forEach((t) => {
+            priceMap[t.id] = t.price;
+          });
+
           const registrationTests = validatedData.testIds.map((testId) => ({
             registrationId: registration.id,
             testId: testId,
+            price: priceMap[testId] || 0.00,
           }));
 
           console.log(`Adding ${registrationTests.length} tests to registration ID ${registration.id}`);

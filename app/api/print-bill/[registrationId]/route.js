@@ -122,7 +122,7 @@ export async function GET(req, { params }) {
       ? `${addr.address1 || ""}, ${addr.address2 || ""}, ${addr.city || ""}-${addr.pincode || ""}, ${addr.state || ""}, ${addr.country || ""}`
       : "Address details not configured";
 
-    const subtotal = reg.tests?.reduce((sum, t) => sum + parseFloat(t.test?.price || 0), 0) || 0;
+    const subtotal = reg.tests?.reduce((sum, t) => sum + parseFloat(t.price !== undefined ? t.price : t.test?.price || 0), 0) || 0;
     const collCharge = parseFloat(reg.collectionCharge || 0);
     const discAmount = parseFloat(reg.discountAmount || 0);
     const discPercent = parseFloat(reg.discountPercent || 0);
@@ -135,7 +135,7 @@ export async function GET(req, { params }) {
         <td style="padding: 8px 0; font-family: monospace;">${idx + 1}</td>
         <td style="padding: 8px 0;">${t.test?.name || "Test"}</td>
         <td style="padding: 8px 0; color: #555;">-</td>
-        <td align="right" style="padding: 8px 0; font-family: monospace;">${parseFloat(t.test?.price || 0).toFixed(2)}</td>
+        <td align="right" style="padding: 8px 0; font-family: monospace;">${parseFloat(t.price !== undefined ? t.price : t.test?.price || 0).toFixed(2)}</td>
       </tr>
     `).join("") || "";
 
