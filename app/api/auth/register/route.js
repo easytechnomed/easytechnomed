@@ -29,42 +29,33 @@ export async function POST(req) {
             return NextResponse.json({ success: false, message: "Invalid email address" });
         }
 
-        const existingUser = await prisma.user.findUnique({ where: { email } });
-        if (existingUser) {
-            return NextResponse.json({ success: false, message: "Email is already registered" });
+        const existingAdmin = await prisma.admin.findUnique({ where: { email } });
+        if (existingAdmin) {
+            return NextResponse.json({ success: false, message: "Email is already registered as an admin" });
         }
 
         const hashedPassword = await bcrypt.hash(password, 10);
-        const token = crypto.randomBytes(32).toString("hex");
-        const expires = new Date(Date.now() + 24 * 60 * 60 * 1000);
+        const now = new Date();
+        const trialEnd = new Date(now.getTime() + 5 * 24 * 60 * 60 * 1000); // 5 days trial
 
-        await prisma.user.create({
+        await prisma.admin.create({
             data: {
                 name,
                 email,
                 password: hashedPassword,
                 provider: "credentials",
-                roleId: 2,
-                isEmailVerified: false,
-                isApproved: false,
-                verificationToken: token,
-                verificationTokenExpires: expires,
+                roleId: 1,
+                isEmailVerified: true,
+                isApproved: true,
+                isActive: true,
+                startAt: now,
+                expireAt: trialEnd,
             },
         });
 
-        try {
-            await sendVerificationEmail(email, token);
-        } catch (mailError) {
-            console.error("Failed to send verification email:", mailError);
-            return NextResponse.json({
-                success: true,
-                message: "Registration successful! (Warning: Verification email could not be sent. Please check SMTP config).",
-            });
-        }
-
         return NextResponse.json({
             success: true,
-            message: "Registration successful! A verification link has been sent to your email.",
+            message: "Registration successful! You can now log in.",
         });
     } catch (error) {
         console.error("Customer Register API Error:", error);

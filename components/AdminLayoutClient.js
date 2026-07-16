@@ -92,6 +92,40 @@ const theme = createTheme({
   },
 });
 
+const getExpiryMessage = (expireAt) => {
+  if (!expireAt) return null;
+  const expiry = new Date(expireAt);
+  const now = new Date();
+  const diffMs = expiry.getTime() - now.getTime();
+  
+  if (diffMs <= 0) {
+    return { text: "Expired", color: "error.main", severity: "error" };
+  }
+  
+  // Calculate remaining days based on local calendar dates (timezone-aware system time)
+  const expiryDateOnly = new Date(expiry.getFullYear(), expiry.getMonth(), expiry.getDate());
+  const nowDateOnly = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const oneDayMs = 24 * 60 * 60 * 1000;
+  const diffDays = Math.round((expiryDateOnly - nowDateOnly) / oneDayMs);
+
+  if (diffDays === 0) {
+    const diffHours = diffMs / (1000 * 60 * 60);
+    const hours = Math.floor(diffHours);
+    const minutes = Math.floor((diffHours - hours) * 60);
+    return { 
+      text: `${hours}h ${minutes}m left`, 
+      color: "error.main", 
+      severity: "warning" 
+    };
+  }
+  
+  return { 
+    text: `${diffDays} ${diffDays === 1 ? "day" : "days"} left`, 
+    color: diffDays <= 7 ? "warning.main" : "text.secondary",
+    severity: diffDays <= 7 ? "warning" : "info" 
+  };
+};
+
 export default function AdminLayoutClient({ admin, children }) {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [desktopOpen, setDesktopOpen] = useState(true);
@@ -437,18 +471,118 @@ export default function AdminLayoutClient({ admin, children }) {
       </Box>
       <Divider />
       {/* Bottom Profile Info */}
-      <Box sx={{ p: 2, backgroundColor: "grey.50", display: "flex", alignItems: "center", gap: 1.5 }}>
-        <Avatar sx={{ bgcolor: "primary.main", width: 40, height: 40 }}>
-          {admin?.name?.charAt(0).toUpperCase() || "A"}
-        </Avatar>
-        <Box sx={{ minWidth: 0, flexGrow: 1 }}>
-          <Typography variant="subtitle2" noWrap sx={{ fontWeight: 700, color: "text.primary" }}>
-            {admin?.name || "System Admin"}
-          </Typography>
-          <Typography variant="caption" noWrap sx={{ display: "block", color: "text.secondary" }}>
-            {admin?.email || "admin@pathlab.com"}
-          </Typography>
+      <Box sx={{ p: 2, backgroundColor: "grey.50", display: "flex", flexDirection: "column", gap: 1 }}>
+        <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, justifyContent: isDrawerExpanded ? "initial" : "center" }}>
+          <Avatar sx={{ bgcolor: "primary.main", width: 40, height: 40 }}>
+            {admin?.name?.charAt(0).toUpperCase() || "A"}
+          </Avatar>
+          {isDrawerExpanded && (
+            <Box sx={{ minWidth: 0, flexGrow: 1 }}>
+              <Typography variant="subtitle2" noWrap sx={{ fontWeight: 700, color: "text.primary" }}>
+                {admin?.name || "System Admin"}
+              </Typography>
+              <Typography variant="caption" noWrap sx={{ display: "block", color: "text.secondary" }}>
+                {admin?.email || "admin@pathlab.com"}
+              </Typography>
+            </Box>
+          )}
         </Box>
+        {isDrawerExpanded ? (
+          <Box sx={{ mt: 0.5, display: "flex", gap: 1, alignItems: "stretch" }}>
+            {admin?.expireAt && (() => {
+              const expiryInfo = getExpiryMessage(admin.expireAt);
+              if (!expiryInfo) return null;
+              return (
+                <Box 
+                  sx={{ 
+                    flex: 1.1,
+                    px: 1, 
+                    py: 0.5, 
+                    borderRadius: 1.5, 
+                    bgcolor: expiryInfo.severity === "error" 
+                      ? "#fee2e2" 
+                      : expiryInfo.severity === "warning" 
+                        ? "#fffbeb" 
+                        : "#f1f5f9",
+                    border: "1px solid",
+                    borderColor: expiryInfo.severity === "error" 
+                      ? "#fca5a5" 
+                      : expiryInfo.severity === "warning" 
+                        ? "#fcd34d" 
+                        : "#cbd5e1",
+                    display: "flex", 
+                    flexDirection: "column",
+                    justifyContent: "center",
+                    alignItems: "center",
+                    textAlign: "center"
+                  }}
+                >
+                  <Typography variant="caption" sx={{ fontWeight: 700, color: "text.primary", fontSize: "0.62rem", lineHeight: 1.1 }}>
+                    Ends in:
+                  </Typography>
+                  <Typography 
+                    variant="caption" 
+                    sx={{ 
+                      fontWeight: 800, 
+                      color: expiryInfo.severity === "error" 
+                        ? "#991b1b" 
+                        : expiryInfo.severity === "warning" 
+                          ? "#92400e" 
+                          : "#334155",
+                      fontSize: "0.65rem",
+                      lineHeight: 1.1
+                    }}
+                  >
+                    {expiryInfo.text}
+                  </Typography>
+                </Box>
+              );
+            })()}
+            <Button 
+              variant="outlined" 
+              color="error" 
+              size="small" 
+              startIcon={<LogoutIcon />}
+              onClick={handleLogout}
+              sx={{ 
+                flex: 1,
+                py: 0.5,
+                borderRadius: 1.5,
+                fontWeight: 700,
+                fontSize: "0.8rem",
+                justifyContent: "center",
+                borderColor: "rgba(239, 68, 68, 0.4)",
+                "& .MuiButton-startIcon": {
+                  marginRight: "4px"
+                }
+              }}
+            >
+              Logout
+            </Button>
+          </Box>
+        ) : (
+          <Button 
+            variant="outlined" 
+            color="error" 
+            size="small" 
+            startIcon={<LogoutIcon />}
+            onClick={handleLogout}
+            sx={{ 
+              mt: 1, 
+              py: 0.6,
+              minWidth: 0,
+              px: 1,
+              borderRadius: 1.5,
+              fontWeight: 700,
+              fontSize: "0.8rem",
+              justifyContent: "center",
+              borderColor: "rgba(239, 68, 68, 0.4)",
+              "& .MuiButton-startIcon": {
+                margin: 0
+              }
+            }}
+          />
+        )}
       </Box>
     </Box>
   );

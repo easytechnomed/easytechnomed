@@ -51,6 +51,7 @@ export default function Pricing() {
             features: [
                 "Full access",
                 "Unlimited registrations",
+                "Permanently scanable QR reports (even if plan expires)",
                 "All PDF templates",
                 "Doctor Referral summaries",
                 "Email support",
@@ -71,6 +72,7 @@ export default function Pricing() {
                 "Full access",
                 "Save ~₹1,000 (16%+ off)",
                 "Unlimited registrations",
+                "Permanently scanable QR reports (even if plan expires)",
                 "All PDF templates & custom configs",
                 "Priority 24/7 Phone support",
                 "Daily database backups"
@@ -279,6 +281,31 @@ export default function Pricing() {
                             </Card>
                         </Box>
                     ))}
+                </Box>
+
+                {/* Lifetime Scanability Guarantee */}
+                <Box
+                    sx={{
+                        mt: 6,
+                        mx: "auto",
+                        maxWidth: 750,
+                        p: 3,
+                        borderRadius: "16px",
+                        bgcolor: "rgba(15, 118, 110, 0.04)",
+                        border: "1px dashed",
+                        borderColor: "primary.main",
+                        textAlign: "center",
+                        display: "flex",
+                        flexDirection: "column",
+                        gap: 1
+                    }}
+                >
+                    <Typography variant="subtitle1" sx={{ fontWeight: 800, color: "primary.main" }}>
+                        🔒 Lifetime Scanability Guarantee
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary" sx={{ lineHeight: 1.6 }}>
+                        When you use EasyTechnoMed to register your diagnostic reports, <strong>the patient report QR codes will remain permanently scanable and accessible</strong> even if your subscription plan expires in the future. We never lock patient data!
+                    </Typography>
                 </Box>
             </Container>
         </Box>

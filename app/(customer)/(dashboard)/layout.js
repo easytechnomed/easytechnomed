@@ -15,7 +15,8 @@ export default async function AdminDashboardLayout({ children }) {
     name: admin.name,
     email: admin.email,
     role: admin.role ? { name: admin.role.name } : { name: "Admin" },
-    permissions: admin.role?.permissions?.map(p => p.permission) || []
+    permissions: admin.role?.permissions?.map(p => p.permission) || [],
+    expireAt: admin.expireAt
   };
 
   return (

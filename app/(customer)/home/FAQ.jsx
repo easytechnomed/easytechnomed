@@ -49,6 +49,11 @@ export default function FAQ() {
       ),
       answerText: "Yes, we provide a free trial so you can test all features with zero risk. If you have any doubts or questions, you can contact us using our contact page. We typically reply to all support requests within 1 to 2 hours!",
     },
+    {
+      id: "panel5",
+      question: "If my subscription plan expires, will my patients still be able to scan and view their reports?",
+      answer: "Yes, absolutely! Even if your subscription plan expires, all patient test reports registered during your active subscription period remain permanently scanable and accessible via their QR codes. We guarantee that your historical patient reports will never be locked or disabled.",
+    },
   ];
 
   // FAQ Schema for SEO structure
