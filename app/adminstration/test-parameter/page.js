@@ -591,6 +591,7 @@ export default function DefaultTestsPage() {
                                 <TableRow>
                                   <TableCell sx={{ fontWeight: 700, bgcolor: "#f8fafc", width: 60 }}>S.No</TableCell>
                                   <TableCell sx={{ fontWeight: 700, bgcolor: "#f8fafc" }}>Test Name</TableCell>
+                                  <TableCell sx={{ fontWeight: 700, bgcolor: "#f8fafc" }}>Params</TableCell>
                                   <TableCell sx={{ fontWeight: 700, bgcolor: "#f8fafc" }}>Code</TableCell>
                                   <TableCell align="right" sx={{ fontWeight: 700, bgcolor: "#f8fafc" }}>Base Price</TableCell>
                                   <TableCell align="center" sx={{ fontWeight: 700, bgcolor: "#f8fafc", width: 80 }}>Action</TableCell>
@@ -599,7 +600,7 @@ export default function DefaultTestsPage() {
                               <TableBody>
                                 {tests.length === 0 ? (
                                   <TableRow>
-                                    <TableCell colSpan={5} align="center" sx={{ py: 6, color: "text.secondary" }}>
+                                    <TableCell colSpan={6} align="center" sx={{ py: 6, color: "text.secondary" }}>
                                       No default tests found matching current filters.
                                     </TableCell>
                                   </TableRow>
@@ -623,6 +624,9 @@ export default function DefaultTestsPage() {
                                         <TableCell sx={{ fontWeight: 700, color: "text.secondary" }}>{sNo}</TableCell>
                                         <TableCell sx={{ fontWeight: 600, color: isSelected ? "primary.main" : "text.primary" }}>
                                           {test.name}
+                                        </TableCell>
+                                        <TableCell sx={{ color: "text.secondary" }}>
+                                          {test.parameters?.length || 0}
                                         </TableCell>
                                         <TableCell sx={{ color: "text.secondary", fontFamily: "monospace" }}>
                                           {test.code || "-"}
