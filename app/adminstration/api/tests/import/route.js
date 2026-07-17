@@ -8,7 +8,7 @@ async function generateUniqueCode(tx, name, workspaceId) {
   let cleaned = name.toUpperCase().replace(/[^A-Z0-9\s]/g, "");
   let words = cleaned.split(/\s+/).filter(Boolean);
   let prefix = "";
-  
+
   if (words.length >= 3) {
     prefix = words.slice(0, 3).map(w => w[0]).join("");
   } else if (words.length === 2) {
@@ -16,10 +16,10 @@ async function generateUniqueCode(tx, name, workspaceId) {
   } else if (words.length === 1) {
     prefix = words[0].slice(0, 3);
   }
-  
+
   // Fallback if prefix is empty
   prefix = (prefix || "TST").slice(0, 3).padEnd(3, "X");
-  
+
   // Ensure prefix only contains letters A-Z (no digits in prefix, digits will be suffix)
   prefix = prefix.replace(/[^A-Z]/g, "X");
 
@@ -135,7 +135,7 @@ async function seedParametersForTest(tx, testId, name) {
       minValBaby: null,
       maxValBaby: null,
       normalRangeBaby: null,
-      normalRangeDefault: "Normal / Negative",
+      normalRangeDefault: null,
       unit: "-NA-",
       order: 1
     });
@@ -194,103 +194,294 @@ export async function POST(req) {
       return NextResponse.json({ success: false, error: "Invalid payload: tests array is required." }, { status: 400 });
     }
 
+    // 1. Group raw rows by orgName (trimmed and case-insensitive)
+    const groups = {};
+    for (const rawTest of tests) {
+      const orgName = rawTest.orgName?.trim();
+      const name = rawTest.name?.trim();
+
+      // Skip completely empty rows
+      if (!orgName && !name) continue;
+
+      const groupKey = (orgName || name).toLowerCase();
+      if (!groups[groupKey]) {
+        groups[groupKey] = {
+          orgName: orgName || name,
+          rows: [],
+        };
+      }
+      groups[groupKey].rows.push(rawTest);
+    }
+
     let createdCount = 0;
     let updatedCount = 0;
     const errors = [];
+    const totalGroups = Object.keys(groups).length;
 
-    // Process each test sequentially to guarantee code generation and upsert constraints
-    for (const rawTest of tests) {
+    console.log(`[Import] Starting import for ${totalGroups} test groups containing ${tests.length} parameters...`);
+
+    let currentIdx = 0;
+    // Process each test group sequentially in transactions
+    for (const groupKey of Object.keys(groups)) {
+      currentIdx++;
+      const group = groups[groupKey];
+      const orgName = group.orgName;
+      const rows = group.rows;
+
+      if (currentIdx === 1 || currentIdx === totalGroups || currentIdx % 10 === 0) {
+        console.log(`[Import Progress] Processing group ${currentIdx}/${totalGroups}: "${orgName}" (${rows.length} parameters)...`);
+      }
+
       try {
-        const name = rawTest.name?.trim();
-        let code = rawTest.code?.trim().toUpperCase();
-        const price = parseFloat(rawTest.price);
-
-        if (!name) {
-          errors.push(`Row with invalid/missing name: ${JSON.stringify(rawTest)}`);
-          continue;
-        }
-
-        if (isNaN(price)) {
-          errors.push(`Invalid price for test "${name}": ${rawTest.price}`);
-          continue;
-        }
-
         await prisma.$transaction(async (tx) => {
-          let existingTest = null;
+          // A. Determine department for the test
+          let departmentName = null;
+          for (const row of rows) {
+            if (row.department?.trim()) {
+              departmentName = row.department.trim();
+              break;
+            }
+          }
 
-          // Check if test code exists (if mapped)
-          if (code && code !== "") {
-            // Truncate code to max 6 chars if needed
-            code = code.slice(0, 6);
-            existingTest = await tx.test.findFirst({
-              where: {
-                workspaceId,
-                code,
-              }
+          let deptId = null;
+          if (departmentName) {
+            const dept = await tx.testDepartment.upsert({
+              where: { name: departmentName },
+              update: {},
+              create: { name: departmentName },
             });
-          } else {
-            // If code is not provided, try to find a test with the same name in this workspace
-            existingTest = await tx.test.findFirst({
-              where: {
-                workspaceId,
-                name,
-              }
+            deptId = dept.id;
+          }
+
+          // B. Determine target pricing and code
+          // Find the row that represents the parent test (usually has same name as orgName)
+          let pricingRow = rows.find(r => r.name?.trim().toLowerCase() === orgName.toLowerCase());
+          if (!pricingRow) {
+            // Fallback to first row with any rate values
+            pricingRow = rows.find(r => parseFloat(r.curRate) > 0 || parseFloat(r.rate) > 0 || parseFloat(r.baseRate) > 0);
+          }
+          if (!pricingRow) {
+            pricingRow = rows[0];
+          }
+
+          const baseRate = pricingRow.baseRate !== undefined && pricingRow.baseRate !== "" ? parseFloat(pricingRow.baseRate) : null;
+          const curRate = pricingRow.curRate !== undefined && pricingRow.curRate !== "" ? parseFloat(pricingRow.curRate) : null;
+          const rate = pricingRow.rate !== undefined && pricingRow.rate !== "" ? parseFloat(pricingRow.rate) : null;
+          const collectionCenterRate = pricingRow.collectionCenterRate !== undefined && pricingRow.collectionCenterRate !== "" ? parseFloat(pricingRow.collectionCenterRate) : null;
+          const franchiseRate = pricingRow.franchiseRate !== undefined && pricingRow.franchiseRate !== "" ? parseFloat(pricingRow.franchiseRate) : null;
+          const superFranchiseRate = pricingRow.superFranchiseRate !== undefined && pricingRow.superFranchiseRate !== "" ? parseFloat(pricingRow.superFranchiseRate) : null;
+          const labRate = pricingRow.labRate !== undefined && pricingRow.labRate !== "" ? parseFloat(pricingRow.labRate) : null;
+          const offerPrice = pricingRow.offerPrice !== undefined && pricingRow.offerPrice !== "" ? parseFloat(pricingRow.offerPrice) : null;
+
+          // Standard pricing fallback
+          const priceVal = curRate !== null && !isNaN(curRate) ? curRate : (rate !== null && !isNaN(rate) ? rate : (baseRate !== null && !isNaN(baseRate) ? baseRate : 0));
+
+          let testCode = pricingRow.code?.trim().toUpperCase();
+          if (testCode) {
+            testCode = testCode.slice(0, 6);
+          }
+
+          // C. Look up or create the Test
+          let testRecord = null;
+          if (testCode) {
+            testRecord = await tx.test.findFirst({
+              where: { workspaceId, code: testCode, isDeleted: false }
+            });
+          }
+          if (!testRecord) {
+            testRecord = await tx.test.findFirst({
+              where: { workspaceId, name: orgName, isDeleted: false }
             });
           }
 
-          if (existingTest) {
-            // Update existing test name and price
-            await tx.test.update({
-              where: { id: existingTest.id },
+          const testData = {
+            name: orgName,
+            price: priceVal,
+            baseRate,
+            curRate,
+            rate,
+            collectionCenterRate,
+            franchiseRate,
+            superFranchiseRate,
+            labRate,
+            offerPrice,
+            departmentId: deptId,
+          };
+
+          if (testRecord) {
+            testRecord = await tx.test.update({
+              where: { id: testRecord.id },
               data: {
-                name,
-                price,
+                ...testData,
+                code: testCode || testRecord.code, // retain existing code if sheet row didn't have one
               }
             });
             updatedCount++;
           } else {
-            // Create a new test
-            // If code is not provided, generate a unique one
-            if (!code || code === "") {
-              code = await generateUniqueCode(tx, name, workspaceId);
+            if (!testCode) {
+              testCode = await generateUniqueCode(tx, orgName, workspaceId);
             } else {
-              // Ensure code is unique in this transaction. If already used, append digits or force unique
-              const existingWithCode = await tx.test.findFirst({
-                where: {
-                  workspaceId,
-                  code,
-                }
+              const duplicate = await tx.test.findFirst({
+                where: { workspaceId, code: testCode, isDeleted: false }
               });
-              if (existingWithCode) {
-                // If code is duplicate but name is different, generate a new unique code
-                code = await generateUniqueCode(tx, name, workspaceId);
+              if (duplicate) {
+                testCode = await generateUniqueCode(tx, orgName, workspaceId);
               }
             }
-            
-            const newTest = await tx.test.create({
+
+            testRecord = await tx.test.create({
               data: {
-                name,
-                code,
-                price,
+                ...testData,
+                code: testCode,
                 workspaceId,
-                isProcessed: true
+                isProcessed: true,
               }
             });
-
-            // Seed clinical parameters immediately
-            await seedParametersForTest(tx, newTest.id, name);
             createdCount++;
           }
+
+          // D. Process parameters (Headers and Children)
+          const existingTPs = await tx.testParameter.findMany({
+            where: { testId: testRecord.id }
+          });
+
+          const headerKeyToTpId = {};
+          const reusedTpIds = new Set();
+          let orderCounter = 1;
+
+          // Pass 1: Create or reuse all headers (ends with :- or :)
+          for (let i = 0; i < rows.length; i++) {
+            const row = rows[i];
+            const trimmedName = row.name?.trim();
+            if (!trimmedName) continue;
+
+            const isHeader = trimmedName.endsWith(":-") || trimmedName.endsWith(":");
+            if (!isHeader) continue;
+
+            // Resolve parameter
+            let parameter = await tx.parameter.findFirst({ where: { name: trimmedName } });
+            if (!parameter) {
+              parameter = await tx.parameter.create({
+                data: {
+                  name: trimmedName,
+                  code: row.code?.trim() || null,
+                  normalRangeDefault: "Normal / Negative",
+                  unit: "-NA-",
+                }
+              });
+            }
+
+            let tp = existingTPs.find(x => x.parameterId === parameter.id);
+            if (tp) {
+              tp = await tx.testParameter.update({
+                where: { id: tp.id },
+                data: {
+                  order: orderCounter++,
+                  isHeader: true,
+                  parentId: null,
+                  isDeleted: false,
+                  deletedAt: null,
+                }
+              });
+            } else {
+              tp = await tx.testParameter.create({
+                data: {
+                  testId: testRecord.id,
+                  parameterId: parameter.id,
+                  order: orderCounter++,
+                  isHeader: true,
+                  parentId: null,
+                  isDeleted: false,
+                }
+              });
+            }
+
+            reusedTpIds.add(tp.id);
+            headerKeyToTpId[i] = tp.id;
+          }
+
+          // Pass 2: Create or reuse all child parameters
+          let lastHeaderTpId = null;
+          for (let i = 0; i < rows.length; i++) {
+            const row = rows[i];
+            const trimmedName = row.name?.trim();
+            if (!trimmedName) continue;
+
+            const isHeader = trimmedName.endsWith(":-") || trimmedName.endsWith(":");
+            if (isHeader) {
+              lastHeaderTpId = headerKeyToTpId[i];
+              continue;
+            }
+
+            // Resolve parameter
+            let parameter = await tx.parameter.findFirst({ where: { name: trimmedName } });
+            if (!parameter) {
+              parameter = await tx.parameter.create({
+                data: {
+                  name: trimmedName,
+                  code: row.code?.trim() || null,
+                  normalRangeDefault: "Normal / Negative",
+                  unit: "-NA-",
+                }
+              });
+            } else if (row.code?.trim() && !parameter.code) {
+              parameter = await tx.parameter.update({
+                where: { id: parameter.id },
+                data: { code: row.code.trim() }
+              });
+            }
+
+            let tp = existingTPs.find(x => x.parameterId === parameter.id);
+            if (tp) {
+              tp = await tx.testParameter.update({
+                where: { id: tp.id },
+                data: {
+                  order: orderCounter++,
+                  isHeader: false,
+                  parentId: lastHeaderTpId,
+                  isDeleted: false,
+                  deletedAt: null,
+                }
+              });
+            } else {
+              tp = await tx.testParameter.create({
+                data: {
+                  testId: testRecord.id,
+                  parameterId: parameter.id,
+                  order: orderCounter++,
+                  isHeader: false,
+                  parentId: lastHeaderTpId,
+                  isDeleted: false,
+                }
+              });
+            }
+            reusedTpIds.add(tp.id);
+          }
+
+          // Soft delete parameters that are no longer part of the imported test configuration
+          const toDeleteIds = existingTPs.filter(x => !reusedTpIds.has(x.id)).map(x => x.id);
+          if (toDeleteIds.length > 0) {
+            await tx.testParameter.updateMany({
+              where: { id: { in: toDeleteIds } },
+              data: {
+                isDeleted: true,
+                deletedAt: new Date(),
+              }
+            });
+          }
+
         }, {
-          maxWait: 5000,
-          timeout: 10000
+          maxWait: 15000,
+          timeout: 30000
         });
 
       } catch (err) {
-        console.error("Error importing row:", rawTest, err);
-        errors.push(`Failed to import test "${rawTest.name || 'Unnamed'}": ${err.message}`);
+        console.error("Error importing group:", orgName, err);
+        errors.push(`Failed to import test group "${orgName}": ${err.message}`);
       }
     }
+
+    console.log(`[Import Completed] Success: Created/Synced: ${createdCount}, Updated/Repriced: ${updatedCount}. Total Errors/Warnings: ${errors.length}`);
 
     return NextResponse.json({
       success: true,

@@ -201,6 +201,14 @@ model Test {
   name          String
   code          String?
   price         Decimal            @db.Decimal(10, 2)
+  baseRate            Decimal?     @db.Decimal(10, 2)
+  curRate             Decimal?     @db.Decimal(10, 2)
+  rate                Decimal?     @db.Decimal(10, 2)
+  collectionCenterRate Decimal?    @db.Decimal(10, 2)
+  franchiseRate       Decimal?     @db.Decimal(10, 2)
+  superFranchiseRate  Decimal?     @db.Decimal(10, 2)
+  labRate             Decimal?     @db.Decimal(10, 2)
+  offerPrice          Decimal?     @db.Decimal(10, 2)
   createdAt     DateTime           @default(now())
   updatedAt     DateTime           @updatedAt
   isProcessed   Boolean            @default(false)

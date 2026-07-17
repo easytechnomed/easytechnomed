@@ -701,7 +701,7 @@ function SuperAdminDashboard() {
 
             {/* Stats Grid */}
             <Grid container spacing={3} sx={{ mb: 4 }}>
-              <Grid item xs={12} sm={4}>
+              <Grid size={{ xs: 12, sm: 4 }}>
                 <Card variant="outlined" sx={{ borderRadius: 3 }}>
                   <CardContent sx={{ display: "flex", alignItems: "center", gap: 2.5 }}>
                     <Box sx={{ p: 2, borderRadius: 2, bgcolor: "rgba(124, 58, 237, 0.08)", color: "primary.main" }}>
@@ -719,7 +719,7 @@ function SuperAdminDashboard() {
                 </Card>
               </Grid>
 
-              <Grid item xs={12} sm={4}>
+              <Grid size={{ xs: 12, sm: 4 }}>
                 <Card variant="outlined" sx={{ borderRadius: 3 }}>
                   <CardContent sx={{ display: "flex", alignItems: "center", gap: 2.5 }}>
                     <Box sx={{ p: 2, borderRadius: 2, bgcolor: "rgba(124, 58, 237, 0.08)", color: "primary.main" }}>
@@ -737,7 +737,7 @@ function SuperAdminDashboard() {
                 </Card>
               </Grid>
 
-              <Grid item xs={12} sm={4}>
+              <Grid size={{ xs: 12, sm: 4 }}>
                 <Card variant="outlined" sx={{ borderRadius: 3 }}>
                   <CardContent sx={{ display: "flex", alignItems: "center", gap: 2.5 }}>
                     <Box sx={{ p: 2, borderRadius: 2, bgcolor: "rgba(124, 58, 237, 0.08)", color: "primary.main" }}>
@@ -1107,7 +1107,7 @@ function SuperAdminDashboard() {
                           </Typography>
 
                           <Grid container spacing={3}>
-                            <Grid item xs={12} sm={4}>
+                            <Grid size={{ xs: 12, sm: 4 }}>
                               <FormControl fullWidth size="small">
                                 <InputLabel shrink>Test Name *</InputLabel>
                                 <Select
@@ -1124,7 +1124,7 @@ function SuperAdminDashboard() {
                               </FormControl>
                             </Grid>
 
-                            <Grid item xs={12} sm={4}>
+                            <Grid size={{ xs: 12, sm: 4 }}>
                               <FormControl fullWidth size="small">
                                 <InputLabel shrink>Test Code / ID (Optional)</InputLabel>
                                 <Select
@@ -1141,7 +1141,7 @@ function SuperAdminDashboard() {
                               </FormControl>
                             </Grid>
 
-                            <Grid item xs={12} sm={4}>
+                            <Grid size={{ xs: 12, sm: 4 }}>
                               <FormControl fullWidth size="small">
                                 <InputLabel shrink>Base Price (INR) *</InputLabel>
                                 <Select
@@ -1262,7 +1262,7 @@ function SuperAdminDashboard() {
                           </Typography>
 
                           <Grid container spacing={3} sx={{ mt: 1, mb: 2 }}>
-                            <Grid item xs={6}>
+                            <Grid size={{ xs: 6 }}>
                               <Card variant="outlined" sx={{ p: 2, borderRadius: 2, bgcolor: "rgba(124, 58, 237, 0.04)" }}>
                                 <Typography variant="h4" color="primary.main" sx={{ fontWeight: 800 }}>
                                   {importResult.createdCount}
@@ -1272,7 +1272,7 @@ function SuperAdminDashboard() {
                                 </Typography>
                               </Card>
                             </Grid>
-                            <Grid item xs={6}>
+                            <Grid size={{ xs: 6 }}>
                               <Card variant="outlined" sx={{ p: 2, borderRadius: 2, bgcolor: "rgba(34, 197, 94, 0.04)" }}>
                                 <Typography variant="h4" color="success.main" sx={{ fontWeight: 800 }}>
                                   {importResult.updatedCount}
