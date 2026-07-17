@@ -806,7 +806,7 @@ export default function EditTestDialog({ open, onClose, test, parameterDictionar
               <Divider />
 
               <Box sx={{ width: "100%", overflowX: "hidden", minWidth: 0 }}>
-                <TableContainer component={Paper} variant="outlined" sx={{ overflowX: "auto", maxHeight: "calc(100vh - 320px)", width: "calc(100vw - 48px)", maxWidth: "calc(100vw - 48px)", minWidth: 0 }}>
+                <TableContainer component={Paper} variant="outlined" sx={{ overflowX: "auto", maxHeight: "calc(100vh - 325px)", width: "calc(100vw - 48px)", maxWidth: "calc(100vw - 48px)", minWidth: 0 }}>
                   <Table size="small" stickyHeader sx={{ minWidth: 2200 }}>
                     <TableHead>
                       <TableRow>
