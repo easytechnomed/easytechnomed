@@ -287,14 +287,115 @@ export async function POST(req) {
           const reusedTpIds = new Set();
           let orderCounter = 1;
 
-          // Pass 1: Create or reuse all headers (ends with :- or :)
-          for (let i = 0; i < rows.length; i++) {
-            const row = rows[i];
+          // Exclude the main test row from being duplicated as a parameter under itself for multi-parameter panel tests
+          const parameterRows = rows.filter(row => {
+            const trimmedName = row.name?.trim();
+            if (!trimmedName) return false;
+            
+            // Standalone test (only 1 row in the group), keep it
+            if (rows.length === 1) return true;
+            
+            const nameLower = trimmedName.toLowerCase().replace(/[*:\s]+/g, "");
+            const orgLower = orgName.toLowerCase().replace(/[*:\s]+/g, "");
+            const hasPrice = parseFloat(row.curRate) > 0 || parseFloat(row.rate) > 0 || parseFloat(row.baseRate) > 0;
+            if (nameLower === orgLower && hasPrice) {
+              return false;
+            }
+            return true;
+          });
+
+          // Helper to count leading spaces
+          const getLeadingSpacesCount = (str) => {
+            const match = String(str || "").match(/^ */);
+            return match ? match[0].length : 0;
+          };
+
+          // Helper to check if name starts with a number/bullet like "1.", "2.", "a.", "-", "*"
+          const startsWithBulletOrNumber = (str) => {
+            const clean = String(str || "").trim();
+            return /^(?:\d+[\.\)]\s*|a[\.\)]\s*|[ivxIVX]+[\.\)]\s+|[-*•])/.test(clean);
+          };
+
+          // Check if cleanName matches a header pattern
+          const isHeaderStrPattern = (cleanName) => {
+            if (cleanName.endsWith(":") || cleanName.endsWith(":-") || cleanName.endsWith("*") || cleanName.endsWith("**")) {
+              return true;
+            }
+            const upper = cleanName.toUpperCase();
+            const headerKeywords = [
+              "EXAMINATION",
+              "EXAM.",
+              "EXAM",
+              "CULTURE",
+              "SENSITIVITY",
+              "REPORT",
+              "STUDY",
+              "MOTILITY",
+              "MORPHOLOGY",
+              "WIDAL TEST",
+              "DIFFERENTIAL CELL COUNT",
+              "ABSOLUTE CELL COUNT"
+            ];
+            return headerKeywords.some(keyword => upper.includes(keyword));
+          };
+
+          // Helper to evaluate isHeader for a specific parameter row
+          const checkIsHeader = (cleanName, code, hasIndentedChildren, hasNumberedChildren) => {
+            if (code && code.trim()) return false;
+            if (isHeaderStrPattern(cleanName)) return true;
+            if (hasIndentedChildren || hasNumberedChildren) return true;
+            return false;
+          };
+
+          // Pre-compute header flags
+          const parameterFlags = parameterRows.map((row, i) => {
+            const rawName = row.name || "";
+            const cleanName = rawName.trim();
+            const code = row.code || "";
+            const leadingSpaces = getLeadingSpacesCount(rawName);
+
+            let hasIndentedChildren = false;
+            let hasNumberedChildren = false;
+
+            for (let j = i + 1; j < parameterRows.length; j++) {
+              const nextRow = parameterRows[j];
+              const nextRawName = nextRow.name || "";
+              const nextCleanName = nextRawName.trim();
+              const nextLeadingSpaces = getLeadingSpacesCount(nextRawName);
+              const nextCode = nextRow.code || "";
+
+              // STOP checking if next row is a header by itself
+              if (isHeaderStrPattern(nextCleanName) && !nextCode) {
+                break;
+              }
+
+              if (nextLeadingSpaces > leadingSpaces) {
+                hasIndentedChildren = true;
+                break;
+              }
+              if (nextLeadingSpaces < leadingSpaces) {
+                break;
+              }
+              if (startsWithBulletOrNumber(nextCleanName) && !startsWithBulletOrNumber(cleanName)) {
+                hasNumberedChildren = true;
+                break;
+              }
+            }
+
+            const isHeader = checkIsHeader(cleanName, code, hasIndentedChildren, hasNumberedChildren);
+            return {
+              row,
+              isHeader
+            };
+          });
+
+          // Pass 1: Create or reuse all headers
+          for (let i = 0; i < parameterFlags.length; i++) {
+            const { row, isHeader } = parameterFlags[i];
+            if (!isHeader) continue;
+
             const trimmedName = row.name?.trim();
             if (!trimmedName) continue;
-
-            const isHeader = trimmedName.endsWith(":-") || trimmedName.endsWith(":");
-            if (!isHeader) continue;
 
             // Resolve parameter
             let parameter = await tx.parameter.findFirst({ where: { name: trimmedName } });
@@ -356,16 +457,15 @@ export async function POST(req) {
 
           // Pass 2: Create or reuse all child parameters
           let lastHeaderTpId = null;
-          for (let i = 0; i < rows.length; i++) {
-            const row = rows[i];
-            const trimmedName = row.name?.trim();
-            if (!trimmedName) continue;
-
-            const isHeader = trimmedName.endsWith(":-") || trimmedName.endsWith(":");
+          for (let i = 0; i < parameterFlags.length; i++) {
+            const { row, isHeader } = parameterFlags[i];
             if (isHeader) {
               lastHeaderTpId = headerKeyToTpId[i];
               continue;
             }
+
+            const trimmedName = row.name?.trim();
+            if (!trimmedName) continue;
 
             // Resolve parameter
             let parameter = await tx.parameter.findFirst({ where: { name: trimmedName } });
