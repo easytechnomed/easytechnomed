@@ -20,6 +20,9 @@ import {
   Select,
   MenuItem,
   Divider,
+  Radio,
+  RadioGroup,
+  FormControlLabel,
 } from "@mui/material";
 import {
   CloudUpload as UploadIcon,
@@ -35,6 +38,7 @@ export default function ImporterPage() {
 
   // Import state
   const [importWorkspaceId, setImportWorkspaceId] = useState("");
+  const [importMode, setImportMode] = useState("full"); // "full" or "units_only"
   const [selectedFile, setSelectedFile] = useState(null);
   const [excelHeaders, setExcelHeaders] = useState([]);
   const [excelDataRows, setExcelDataRows] = useState([]);
@@ -52,6 +56,7 @@ export default function ImporterPage() {
     offerPrice: "",
     department: "",
     orgName: "",
+    unit: "",
   });
   const [importStep, setImportStep] = useState(1);
   const [importingProgress, setImportingProgress] = useState(false);
@@ -79,7 +84,7 @@ export default function ImporterPage() {
         const worksheet = workbook.Sheets[workbook.SheetNames[0]];
         const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
         if (jsonData.length === 0) { toast.error("The uploaded file is empty."); return; }
-        
+
         // Clean headers
         const headers = jsonData[0].map((h) => String(h || "").trim()).filter(Boolean);
         setExcelHeaders(headers);
@@ -99,6 +104,7 @@ export default function ImporterPage() {
           offerPrice: "",
           department: "",
           orgName: "",
+          unit: "",
         };
 
         headers.forEach((h) => {
@@ -116,6 +122,7 @@ export default function ImporterPage() {
           else if (clean === "offerprice" || clean === "offer") detected.offerPrice = h;
           else if (clean === "department" || clean === "dept") detected.department = h;
           else if (clean === "orgname" || clean === "parentname" || clean === "originalname") detected.orgName = h;
+          else if (clean === "unit" || clean === "parameterunit" || clean === "testunit") detected.unit = h;
         });
 
         // Fallbacks for the basic fields
@@ -149,9 +156,15 @@ export default function ImporterPage() {
             if (lower.includes("dept") || lower.includes("department")) detected.department = h;
           });
         }
+        if (!detected.unit) {
+          headers.forEach(h => {
+            const lower = h.toLowerCase();
+            if (lower.includes("unit")) detected.unit = h;
+          });
+        }
 
         detected.price = detected.curRate || detected.rate || detected.baseRate || "";
-        
+
         setMappedFields(detected);
         setImportStep(2);
       } catch (err) {
@@ -179,10 +192,17 @@ export default function ImporterPage() {
     const offerColIdx = mappedFields.offerPrice ? excelHeaders.indexOf(mappedFields.offerPrice) : -1;
     const deptColIdx = mappedFields.department ? excelHeaders.indexOf(mappedFields.department) : -1;
     const orgColIdx = mappedFields.orgName ? excelHeaders.indexOf(mappedFields.orgName) : -1;
+    const unitColIdx = mappedFields.unit ? excelHeaders.indexOf(mappedFields.unit) : -1;
 
-    const formattedTests = excelDataRows
+    const formattedData = excelDataRows
       .map((row) => {
         const get = (idx) => (idx !== -1 && row[idx] !== undefined && row[idx] !== null) ? String(row[idx]) : "";
+        if (importMode === "units_only") {
+          return {
+            name: get(nameColIdx),
+            unit: get(unitColIdx),
+          };
+        }
         return {
           name: get(nameColIdx),
           code: get(codeColIdx),
@@ -196,9 +216,10 @@ export default function ImporterPage() {
           offerPrice: get(offerColIdx),
           department: get(deptColIdx),
           orgName: get(orgColIdx),
+          unit: get(unitColIdx),
         };
       })
-      .filter((t) => t.name.trim() !== "" || t.orgName.trim() !== "");
+      .filter((t) => importMode === "units_only" ? t.name.trim() !== "" : (t.name.trim() !== "" || t.orgName.trim() !== ""));
 
     console.log(`Sending ${formattedTests.length} rows to the server for bulk processing. Please wait...`);
 
@@ -208,7 +229,8 @@ export default function ImporterPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           workspaceId: importWorkspaceId === "global" ? null : importWorkspaceId,
-          tests: formattedTests,
+          importMode,
+          tests: formattedData,
         }),
       }).then((r) => r.json());
       if (res.success) {
@@ -234,8 +256,8 @@ export default function ImporterPage() {
     setExcelDataRows([]); setMappedFields({
       name: "", code: "", price: "", baseRate: "", curRate: "", rate: "",
       collectionCenterRate: "", franchiseRate: "", superFranchiseRate: "",
-      labRate: "", offerPrice: "", department: "", orgName: ""
-    }); setImportResult(null);
+      labRate: "", offerPrice: "", department: "", orgName: "", unit: ""
+    }); setImportMode("full"); setImportResult(null);
   };
 
   return (
@@ -303,6 +325,20 @@ export default function ImporterPage() {
               </Select>
             </FormControl>
 
+            <FormControl component="fieldset">
+              <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 700, mb: 1, textTransform: "uppercase" }}>
+                Select Import Mode
+              </Typography>
+              <RadioGroup
+                row
+                value={importMode}
+                onChange={(e) => setImportMode(e.target.value)}
+              >
+                <FormControlLabel value="full" control={<Radio color="primary" />} label="Full Import (Tests & Pricing)" />
+                <FormControlLabel value="units_only" control={<Radio color="primary" />} label="Update Parameter Units Only" />
+              </RadioGroup>
+            </FormControl>
+
             <Box
               sx={{
                 border: "2px dashed", borderColor: "divider", borderRadius: 3, p: 4, textAlign: "center",
@@ -324,61 +360,100 @@ export default function ImporterPage() {
           <Box sx={{ display: "flex", flexDirection: "column", gap: 3 }}>
             <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>Map columns from your Excel sheet to lab database fields:</Typography>
             
-            <Typography variant="body2" sx={{ fontWeight: 700, color: "text.primary", mt: 1 }}>📂 Schema & Structure Mapping</Typography>
-            <Grid container spacing={2}>
-              {[
-                { label: "Test Name / Parameter Name *", field: "name" },
-                { label: "Parent Test Name (Org.Name) *", field: "orgName" },
-                { label: "Test Code / ID (Optional)", field: "code" },
-                { label: "Department (Optional)", field: "department" },
-              ].map(({ label, field }) => (
-                <Grid key={field} size={{ xs: 12, md: 6 }}>
-                  <FormControl fullWidth size="small">
-                    <InputLabel shrink>{label}</InputLabel>
-                    <Select
-                      value={mappedFields[field]}
-                      onChange={(e) => setMappedFields((p) => ({ ...p, [field]: e.target.value }))}
-                      displayEmpty notched
-                    >
-                      <MenuItem value="" disabled={field === "name" || field === "orgName"}>Select column...</MenuItem>
-                      {excelHeaders.map((h) => <MenuItem key={h} value={h}>{h}</MenuItem>)}
-                    </Select>
-                  </FormControl>
+            {importMode === "full" ? (
+              <>
+                <Typography variant="body2" sx={{ fontWeight: 700, color: "text.primary", mt: 1 }}>📂 Schema & Structure Mapping</Typography>
+                <Grid container spacing={2}>
+                  {[
+                    { label: "Test Name / Parameter Name *", field: "name" },
+                    { label: "Parent Test Name (Org.Name) *", field: "orgName" },
+                    { label: "Test Code / ID (Optional)", field: "code" },
+                    { label: "Department (Optional)", field: "department" },
+                    { label: "Unit (Optional)", field: "unit" },
+                  ].map(({ label, field }) => (
+                    <Grid key={field} size={{ xs: 12, md: 6 }}>
+                      <FormControl fullWidth size="small">
+                        <InputLabel shrink>{label}</InputLabel>
+                        <Select
+                          value={mappedFields[field]}
+                          onChange={(e) => setMappedFields((p) => ({ ...p, [field]: e.target.value }))}
+                          displayEmpty notched
+                        >
+                          <MenuItem value="" disabled={field === "name" || field === "orgName"}>Select column...</MenuItem>
+                          {excelHeaders.map((h) => <MenuItem key={h} value={h}>{h}</MenuItem>)}
+                        </Select>
+                      </FormControl>
+                    </Grid>
+                  ))}
                 </Grid>
-              ))}
-            </Grid>
 
-            <Typography variant="body2" sx={{ fontWeight: 700, color: "text.primary", mt: 2 }}>💰 Pricing Tier Mappings</Typography>
-            <Grid container spacing={2}>
-              {[
-                { label: "Current Rate (INR) *", field: "curRate" },
-                { label: "Patient Rate (INR)", field: "rate" },
-                { label: "Base Rate (INR)", field: "baseRate" },
-                { label: "Collection Center Rate (INR)", field: "collectionCenterRate" },
-                { label: "Franchise Rate (INR)", field: "franchiseRate" },
-                { label: "Super Franchise Rate (INR)", field: "superFranchiseRate" },
-                { label: "Lab Rate (INR)", field: "labRate" },
-                { label: "Offer Price (INR)", field: "offerPrice" },
-              ].map(({ label, field }) => (
-                <Grid key={field} size={{ xs: 12, sm: 6, md: 3 }}>
-                  <FormControl fullWidth size="small">
-                    <InputLabel shrink>{label}</InputLabel>
-                    <Select
-                      value={mappedFields[field]}
-                      onChange={(e) => setMappedFields((p) => ({ ...p, [field]: e.target.value }))}
-                      displayEmpty notched
-                    >
-                      <MenuItem value="">{field === "curRate" ? "Select column..." : "[Not Mapped]"}</MenuItem>
-                      {excelHeaders.map((h) => <MenuItem key={h} value={h}>{h}</MenuItem>)}
-                    </Select>
-                  </FormControl>
+                <Typography variant="body2" sx={{ fontWeight: 700, color: "text.primary", mt: 2 }}>💰 Pricing Tier Mappings</Typography>
+                <Grid container spacing={2}>
+                  {[
+                    { label: "Current Rate (INR) *", field: "curRate" },
+                    { label: "Patient Rate (INR)", field: "rate" },
+                    { label: "Base Rate (INR)", field: "baseRate" },
+                    { label: "Collection Center Rate (INR)", field: "collectionCenterRate" },
+                    { label: "Franchise Rate (INR)", field: "franchiseRate" },
+                    { label: "Super Franchise Rate (INR)", field: "superFranchiseRate" },
+                    { label: "Lab Rate (INR)", field: "labRate" },
+                    { label: "Offer Price (INR)", field: "offerPrice" },
+                  ].map(({ label, field }) => (
+                    <Grid key={field} size={{ xs: 12, sm: 6, md: 3 }}>
+                      <FormControl fullWidth size="small">
+                        <InputLabel shrink>{label}</InputLabel>
+                        <Select
+                          value={mappedFields[field]}
+                          onChange={(e) => setMappedFields((p) => ({ ...p, [field]: e.target.value }))}
+                          displayEmpty notched
+                        >
+                          <MenuItem value="">{field === "curRate" ? "Select column..." : "[Not Mapped]"}</MenuItem>
+                          {excelHeaders.map((h) => <MenuItem key={h} value={h}>{h}</MenuItem>)}
+                        </Select>
+                      </FormControl>
+                    </Grid>
+                  ))}
                 </Grid>
-              ))}
-            </Grid>
+              </>
+            ) : (
+              <>
+                <Typography variant="body2" sx={{ fontWeight: 700, color: "text.primary", mt: 1 }}>📂 Parameter Unit Mapping</Typography>
+                <Grid container spacing={2}>
+                  {[
+                    { label: "Parameter Name *", field: "name" },
+                    { label: "Unit Column *", field: "unit" },
+                  ].map(({ label, field }) => (
+                    <Grid key={field} size={{ xs: 12, md: 6 }}>
+                      <FormControl fullWidth size="small">
+                        <InputLabel shrink>{label}</InputLabel>
+                        <Select
+                          value={mappedFields[field]}
+                          onChange={(e) => setMappedFields((p) => ({ ...p, [field]: e.target.value }))}
+                          displayEmpty notched
+                        >
+                          <MenuItem value="" disabled>Select column...</MenuItem>
+                          {excelHeaders.map((h) => <MenuItem key={h} value={h}>{h}</MenuItem>)}
+                        </Select>
+                      </FormControl>
+                    </Grid>
+                  ))}
+                </Grid>
+              </>
+            )}
 
             <Box sx={{ display: "flex", justifyContent: "space-between", mt: 4 }}>
               <Button variant="outlined" onClick={() => setImportStep(1)}>Back</Button>
-              <Button variant="contained" disabled={!mappedFields.name || !mappedFields.orgName || !mappedFields.curRate} onClick={() => setImportStep(3)}>Preview Data</Button>
+              <Button
+                variant="contained"
+                disabled={
+                  importMode === "full"
+                    ? (!mappedFields.name || !mappedFields.orgName || !mappedFields.curRate)
+                    : (!mappedFields.name || !mappedFields.unit)
+                }
+                onClick={() => setImportStep(3)}
+              >
+                Preview Data
+              </Button>
             </Box>
           </Box>
         )}
@@ -392,12 +467,21 @@ export default function ImporterPage() {
                 <TableHead sx={{ bgcolor: "background.paper" }}>
                   <TableRow>
                     <TableCell sx={{ fontWeight: 700 }}>Row</TableCell>
-                    <TableCell sx={{ fontWeight: 700 }}>Test Name (Parameter)</TableCell>
-                    <TableCell sx={{ fontWeight: 700 }}>Code</TableCell>
-                    <TableCell sx={{ fontWeight: 700 }}>Parent (Org.Name)</TableCell>
-                    <TableCell sx={{ fontWeight: 700 }}>Department</TableCell>
-                    <TableCell sx={{ fontWeight: 700 }}>Cur. Rate</TableCell>
-                    <TableCell sx={{ fontWeight: 700 }}>Base Rate</TableCell>
+                    <TableCell sx={{ fontWeight: 700 }}>Parameter Name</TableCell>
+                    {importMode === "full" && (
+                      <>
+                        <TableCell sx={{ fontWeight: 700 }}>Code</TableCell>
+                        <TableCell sx={{ fontWeight: 700 }}>Parent (Org.Name)</TableCell>
+                        <TableCell sx={{ fontWeight: 700 }}>Department</TableCell>
+                      </>
+                    )}
+                    <TableCell sx={{ fontWeight: 700 }}>Unit</TableCell>
+                    {importMode === "full" && (
+                      <>
+                        <TableCell sx={{ fontWeight: 700 }}>Cur. Rate</TableCell>
+                        <TableCell sx={{ fontWeight: 700 }}>Base Rate</TableCell>
+                      </>
+                    )}
                   </TableRow>
                 </TableHead>
                 <TableBody>
@@ -407,31 +491,42 @@ export default function ImporterPage() {
                       const ci = excelHeaders.indexOf(h);
                       return ci !== -1 ? String(row[ci] || "").trim() : null;
                     };
-                    const name = get("name"), code = get("code"), orgName = get("orgName"), department = get("department"), curRate = get("curRate"), baseRate = get("baseRate");
+                    const name = get("name"), code = get("code"), orgName = get("orgName"), department = get("department"), unit = get("unit"), curRate = get("curRate"), baseRate = get("baseRate");
                     return (
                       <TableRow key={idx}>
                         <TableCell>{idx + 1}</TableCell>
                         <TableCell sx={{ fontWeight: 600 }}>
                           {name !== null ? (name || <span style={{ color: "#ef4444" }}>[Empty]</span>) : <span style={{ color: "rgba(0,0,0,0.3)", fontStyle: "italic" }}>[Not Mapped]</span>}
                         </TableCell>
+                        {importMode === "full" && (
+                          <>
+                            <TableCell sx={{ color: "text.secondary" }}>
+                              {mappedFields.code === "" ? <span style={{ color: "#7c3aed", fontStyle: "italic" }}>[Auto-Gen]</span>
+                                : code !== null ? (code || <span style={{ color: "rgba(0,0,0,0.2)" }}>-</span>) : <span style={{ color: "rgba(0,0,0,0.3)", fontStyle: "italic" }}>[Not Mapped]</span>}
+                            </TableCell>
+                            <TableCell sx={{ fontWeight: 500, color: "primary.main" }}>
+                              {orgName !== null ? (orgName || <span style={{ color: "#ef4444" }}>[Empty]</span>) : <span style={{ color: "rgba(0,0,0,0.3)", fontStyle: "italic" }}>[Not Mapped]</span>}
+                            </TableCell>
+                            <TableCell sx={{ color: "text.secondary" }}>
+                              {department || <span style={{ color: "rgba(0,0,0,0.2)" }}>-</span>}
+                            </TableCell>
+                          </>
+                        )}
                         <TableCell sx={{ color: "text.secondary" }}>
-                          {mappedFields.code === "" ? <span style={{ color: "#7c3aed", fontStyle: "italic" }}>[Auto-Gen]</span>
-                            : code !== null ? (code || <span style={{ color: "rgba(0,0,0,0.2)" }}>-</span>) : <span style={{ color: "rgba(0,0,0,0.3)", fontStyle: "italic" }}>[Not Mapped]</span>}
+                          {unit || <span style={{ color: "rgba(0,0,0,0.2)" }}>-</span>}
                         </TableCell>
-                        <TableCell sx={{ fontWeight: 500, color: "primary.main" }}>
-                          {orgName !== null ? (orgName || <span style={{ color: "#ef4444" }}>[Empty]</span>) : <span style={{ color: "rgba(0,0,0,0.3)", fontStyle: "italic" }}>[Not Mapped]</span>}
-                        </TableCell>
-                        <TableCell sx={{ color: "text.secondary" }}>
-                          {department || <span style={{ color: "rgba(0,0,0,0.2)" }}>-</span>}
-                        </TableCell>
-                        <TableCell sx={{ fontWeight: 600 }}>
-                          {curRate !== null ? (curRate && !isNaN(parseFloat(curRate)) ? `₹${parseFloat(curRate).toFixed(2)}` : <span style={{ color: "#ef4444" }}>[Invalid]</span>)
-                            : <span style={{ color: "rgba(0,0,0,0.3)", fontStyle: "italic" }}>[Not Mapped]</span>}
-                        </TableCell>
-                        <TableCell sx={{ color: "text.secondary" }}>
-                          {baseRate !== null ? (baseRate && !isNaN(parseFloat(baseRate)) ? `₹${parseFloat(baseRate).toFixed(2)}` : <span style={{ color: "rgba(0,0,0,0.2)" }}>-</span>)
-                            : <span style={{ color: "rgba(0,0,0,0.3)", fontStyle: "italic" }}>[Not Mapped]</span>}
-                        </TableCell>
+                        {importMode === "full" && (
+                          <>
+                            <TableCell sx={{ fontWeight: 600 }}>
+                              {curRate !== null ? (curRate && !isNaN(parseFloat(curRate)) ? `₹${parseFloat(curRate).toFixed(2)}` : <span style={{ color: "#ef4444" }}>[Invalid]</span>)
+                                : <span style={{ color: "rgba(0,0,0,0.3)", fontStyle: "italic" }}>[Not Mapped]</span>}
+                            </TableCell>
+                            <TableCell sx={{ color: "text.secondary" }}>
+                              {baseRate !== null ? (baseRate && !isNaN(parseFloat(baseRate)) ? `₹${parseFloat(baseRate).toFixed(2)}` : <span style={{ color: "rgba(0,0,0,0.2)" }}>-</span>)
+                                : <span style={{ color: "rgba(0,0,0,0.3)", fontStyle: "italic" }}>[Not Mapped]</span>}
+                            </TableCell>
+                          </>
+                        )}
                       </TableRow>
                     );
                   })}
@@ -442,7 +537,11 @@ export default function ImporterPage() {
               <Button variant="outlined" onClick={() => setImportStep(2)} disabled={importingProgress}>Back</Button>
               <Button
                 variant="contained" color="success"
-                disabled={!mappedFields.name || !mappedFields.orgName || !mappedFields.curRate || importingProgress}
+                disabled={
+                  importMode === "full"
+                    ? (!mappedFields.name || !mappedFields.orgName || !mappedFields.curRate || importingProgress)
+                    : (!mappedFields.name || !mappedFields.unit || importingProgress)
+                }
                 onClick={handleExecuteImport}
                 startIcon={importingProgress ? <CircularProgress size={16} color="inherit" /> : null}
               >
@@ -461,20 +560,31 @@ export default function ImporterPage() {
             <Typography variant="h5" sx={{ fontWeight: 800 }}>
               {importResult.errors?.length > 0 ? "Import Completed with Warnings" : "Import Completed Successfully!"}
             </Typography>
-            <Grid container spacing={3} sx={{ mt: 1, mb: 2 }}>
-              <Grid size={{ xs: 12, md: 6 }}>
-                <Card variant="outlined" sx={{ p: 2, borderRadius: 2, bgcolor: "rgba(124,58,237,0.04)" }}>
-                  <Typography variant="h4" color="primary.main" sx={{ fontWeight: 800 }}>{importResult.createdCount}</Typography>
-                  <Typography variant="body2" color="text.secondary">Tests Created / Synced</Typography>
-                </Card>
+            {importMode === "units_only" ? (
+              <Grid container spacing={3} sx={{ mt: 1, mb: 2 }}>
+                <Grid size={{ xs: 12 }}>
+                  <Card variant="outlined" sx={{ p: 2, borderRadius: 2, bgcolor: "rgba(124,58,237,0.04)" }}>
+                    <Typography variant="h4" color="primary.main" sx={{ fontWeight: 800 }}>{importResult.updatedCount}</Typography>
+                    <Typography variant="body2" color="text.secondary">Parameter Units Updated</Typography>
+                  </Card>
+                </Grid>
               </Grid>
-              <Grid size={{ xs: 12, md: 6 }}>
-                <Card variant="outlined" sx={{ p: 2, borderRadius: 2, bgcolor: "rgba(34,197,94,0.04)" }}>
-                  <Typography variant="h4" color="success.main" sx={{ fontWeight: 800 }}>{importResult.updatedCount}</Typography>
-                  <Typography variant="body2" color="text.secondary">Tests Updated / Repriced</Typography>
-                </Card>
+            ) : (
+              <Grid container spacing={3} sx={{ mt: 1, mb: 2 }}>
+                <Grid size={{ xs: 12, md: 6 }}>
+                  <Card variant="outlined" sx={{ p: 2, borderRadius: 2, bgcolor: "rgba(124,58,237,0.04)" }}>
+                    <Typography variant="h4" color="primary.main" sx={{ fontWeight: 800 }}>{importResult.createdCount}</Typography>
+                    <Typography variant="body2" color="text.secondary">Tests Created / Synced</Typography>
+                  </Card>
+                </Grid>
+                <Grid size={{ xs: 12, md: 6 }}>
+                  <Card variant="outlined" sx={{ p: 2, borderRadius: 2, bgcolor: "rgba(34,197,94,0.04)" }}>
+                    <Typography variant="h4" color="success.main" sx={{ fontWeight: 800 }}>{importResult.updatedCount}</Typography>
+                    <Typography variant="body2" color="text.secondary">Tests Updated / Repriced</Typography>
+                  </Card>
+                </Grid>
               </Grid>
-            </Grid>
+            )}
             {importResult.errors?.length > 0 && (
               <Box sx={{ textAlign: "left" }}>
                 <Typography variant="subtitle2" color="warning.main" sx={{ fontWeight: 700, mb: 1 }}>Warnings ({importResult.errors.length}):</Typography>
