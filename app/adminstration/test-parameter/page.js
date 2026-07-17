@@ -500,588 +500,588 @@ export default function DefaultTestsPage() {
   return (
     <>
       <Box sx={{ flexGrow: 1, p: { xs: 2, md: 3 }, overflow: "hidden", display: "flex", flexDirection: "column", height: "100%", width: "100%", maxWidth: "100%", minWidth: 0 }}>
-            {loading && tests.length === 0 ? (
-              <Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", height: "50vh" }}>
-                <CircularProgress color="primary" />
-              </Box>
-            ) : (
-              <Grid container spacing={3} sx={{ flexGrow: 1, height: "100%", minHeight: 0 }}>
-                {/* Left Side: Test Directory list / Parameter Dictionary List */}
-                <Grid size={{ xs: 12, md: 6 }} sx={{ height: "100%", display: "flex", flexDirection: "column" }}>
-                  <Card sx={{ height: "100%", display: "flex", flexDirection: "column", overflow: "hidden" }}>
-                    <CardContent sx={{ p: 2.5, display: "flex", flexDirection: "column", gap: 2, height: "100%", overflow: "hidden" }}>
-                      
-                      {/* Tab switching bar */}
-                      <Box sx={{ borderBottom: 1, borderColor: "divider", mb: 1 }}>
-                        <Box sx={{ display: "flex", gap: 1 }}>
-                          <Button
-                            onClick={() => setActiveTab("tests")}
-                            sx={{
-                              fontWeight: 800,
-                              fontSize: "0.85rem",
-                              color: activeTab === "tests" ? "primary.main" : "text.secondary",
-                              borderBottom: activeTab === "tests" ? "3px solid" : "none",
-                              borderColor: "primary.main",
-                              borderRadius: 0,
-                              px: 1.5,
-                              pb: 1,
-                              minWidth: 0
+        {loading && tests.length === 0 ? (
+          <Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", height: "50vh" }}>
+            <CircularProgress color="primary" />
+          </Box>
+        ) : (
+          <Grid container spacing={3} sx={{ flexGrow: 1, height: "100%", minHeight: 0 }}>
+            {/* Left Side: Test Directory list / Parameter Dictionary List */}
+            <Grid size={{ xs: 12, md: 6 }} sx={{ height: "100%", display: "flex", flexDirection: "column" }}>
+              <Card sx={{ height: "100%", display: "flex", flexDirection: "column", overflow: "hidden" }}>
+                <CardContent sx={{ p: 2.5, display: "flex", flexDirection: "column", gap: 2, height: "100%", overflow: "hidden" }}>
+
+                  {/* Tab switching bar */}
+                  <Box sx={{ borderBottom: 1, borderColor: "divider", mb: 1 }}>
+                    <Box sx={{ display: "flex", gap: 1 }}>
+                      <Button
+                        onClick={() => setActiveTab("tests")}
+                        sx={{
+                          fontWeight: 800,
+                          fontSize: "0.85rem",
+                          color: activeTab === "tests" ? "primary.main" : "text.secondary",
+                          borderBottom: activeTab === "tests" ? "3px solid" : "none",
+                          borderColor: "primary.main",
+                          borderRadius: 0,
+                          px: 1.5,
+                          pb: 1,
+                          minWidth: 0
+                        }}
+                      >
+                        Tests Catalog
+                      </Button>
+                      <Button
+                        onClick={() => setActiveTab("parameters")}
+                        sx={{
+                          fontWeight: 800,
+                          fontSize: "0.85rem",
+                          color: activeTab === "parameters" ? "primary.main" : "text.secondary",
+                          borderBottom: activeTab === "parameters" ? "3px solid" : "none",
+                          borderColor: "primary.main",
+                          borderRadius: 0,
+                          px: 1.5,
+                          pb: 1,
+                          minWidth: 0
+                        }}
+                      >
+                        Parameters Library
+                      </Button>
+                    </Box>
+                  </Box>
+
+                  {activeTab === "tests" ? (
+                    <>
+                      <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 2 }}>
+                        <Typography variant="subtitle1" sx={{ fontWeight: 800, whiteSpace: "nowrap" }}>
+                          Default Tests
+                        </Typography>
+                        <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, flexGrow: 1, justifyContent: "flex-end" }}>
+                          <TextField
+                            size="small"
+                            variant="outlined"
+                            placeholder="Search tests..."
+                            value={searchVal}
+                            onChange={handleSearchChange}
+                            sx={{ maxWidth: 180, flexGrow: 1 }}
+                            InputProps={{
+                              startAdornment: (
+                                <InputAdornment position="start">
+                                  <SearchIcon sx={{ color: "text.secondary" }} />
+                                </InputAdornment>
+                              ),
                             }}
-                          >
-                            Tests Catalog
-                          </Button>
+                          />
                           <Button
-                            onClick={() => setActiveTab("parameters")}
-                            sx={{
-                              fontWeight: 800,
-                              fontSize: "0.85rem",
-                              color: activeTab === "parameters" ? "primary.main" : "text.secondary",
-                              borderBottom: activeTab === "parameters" ? "3px solid" : "none",
-                              borderColor: "primary.main",
-                              borderRadius: 0,
-                              px: 1.5,
-                              pb: 1,
-                              minWidth: 0
-                            }}
+                            variant="contained"
+                            color="primary"
+                            size="small"
+                            startIcon={<AddIcon />}
+                            onClick={handleAddNewClick}
+                            sx={{ borderRadius: 2, whiteSpace: "nowrap" }}
                           >
-                            Parameters Library
+                            Add Test
                           </Button>
                         </Box>
                       </Box>
 
-                      {activeTab === "tests" ? (
-                        <>
-                          <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 2 }}>
-                            <Typography variant="subtitle1" sx={{ fontWeight: 800, whiteSpace: "nowrap" }}>
-                              Default Tests
-                            </Typography>
-                            <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, flexGrow: 1, justifyContent: "flex-end" }}>
-                              <TextField
-                                size="small"
-                                variant="outlined"
-                                placeholder="Search tests..."
-                                value={searchVal}
-                                onChange={handleSearchChange}
-                                sx={{ maxWidth: 180, flexGrow: 1 }}
-                                InputProps={{
-                                  startAdornment: (
-                                    <InputAdornment position="start">
-                                      <SearchIcon sx={{ color: "text.secondary" }} />
-                                    </InputAdornment>
-                                  ),
-                                }}
-                              />
-                              <Button
-                                variant="contained"
-                                color="primary"
-                                size="small"
-                                startIcon={<AddIcon />}
-                                onClick={handleAddNewClick}
-                                sx={{ borderRadius: 2, whiteSpace: "nowrap" }}
-                              >
-                                Add Test
-                              </Button>
-                            </Box>
-                          </Box>
-
-                          {/* Test Catalog Table */}
-                          <TableContainer component={Paper} elevation={0} sx={{ border: "1px solid", borderColor: "divider", flexGrow: 1, overflowY: "auto", overflowX: "auto", width: "100%", maxWidth: "100%", minWidth: 0 }}>
-                            <Table stickyHeader size="small">
-                              <TableHead>
-                                <TableRow>
-                                  <TableCell sx={{ fontWeight: 700, bgcolor: "#f8fafc", width: 60 }}>S.No</TableCell>
-                                  <TableCell sx={{ fontWeight: 700, bgcolor: "#f8fafc" }}>Test Name</TableCell>
-                                  <TableCell sx={{ fontWeight: 700, bgcolor: "#f8fafc" }}>Params</TableCell>
-                                  <TableCell sx={{ fontWeight: 700, bgcolor: "#f8fafc" }}>Code</TableCell>
-                                  <TableCell align="right" sx={{ fontWeight: 700, bgcolor: "#f8fafc" }}>Base Price</TableCell>
-                                  <TableCell align="center" sx={{ fontWeight: 700, bgcolor: "#f8fafc", width: 80 }}>Action</TableCell>
-                                </TableRow>
-                              </TableHead>
-                              <TableBody>
-                                {tests.length === 0 ? (
-                                  <TableRow>
-                                    <TableCell colSpan={6} align="center" sx={{ py: 6, color: "text.secondary" }}>
-                                      No default tests found matching current filters.
+                      {/* Test Catalog Table */}
+                      <TableContainer component={Paper} elevation={0} sx={{ border: "1px solid", borderColor: "divider", maxHeight: "calc(100vh - 356px)", overflowY: "auto", overflowX: "auto", width: "100%", maxWidth: "100%", minWidth: 0 }}>
+                        <Table stickyHeader size="small">
+                          <TableHead>
+                            <TableRow>
+                              <TableCell sx={{ fontWeight: 700, bgcolor: "#f8fafc", width: 60 }}>S.No</TableCell>
+                              <TableCell sx={{ fontWeight: 700, bgcolor: "#f8fafc" }}>Test Name</TableCell>
+                              <TableCell sx={{ fontWeight: 700, bgcolor: "#f8fafc" }}>Params</TableCell>
+                              <TableCell sx={{ fontWeight: 700, bgcolor: "#f8fafc" }}>Code</TableCell>
+                              <TableCell align="right" sx={{ fontWeight: 700, bgcolor: "#f8fafc" }}>Base Price</TableCell>
+                              <TableCell align="center" sx={{ fontWeight: 700, bgcolor: "#f8fafc", width: 80 }}>Action</TableCell>
+                            </TableRow>
+                          </TableHead>
+                          <TableBody>
+                            {tests.length === 0 ? (
+                              <TableRow>
+                                <TableCell colSpan={6} align="center" sx={{ py: 6, color: "text.secondary" }}>
+                                  No default tests found matching current filters.
+                                </TableCell>
+                              </TableRow>
+                            ) : (
+                              tests.map((test, idx) => {
+                                const isSelected = selectedTest?.id === test.id;
+                                const sNo = (page - 1) * limit + idx + 1;
+                                return (
+                                  <TableRow
+                                    key={test.id}
+                                    hover
+                                    onClick={() => setSelectedTest(test)}
+                                    sx={{
+                                      cursor: "pointer",
+                                      backgroundColor: isSelected ? "rgba(124, 58, 237, 0.06)" : "transparent",
+                                      "&:hover": {
+                                        backgroundColor: isSelected ? "rgba(124, 58, 237, 0.1)" : "rgba(0,0,0,0.02)",
+                                      },
+                                    }}
+                                  >
+                                    <TableCell sx={{ fontWeight: 700, color: "text.secondary" }}>{sNo}</TableCell>
+                                    <TableCell sx={{ fontWeight: 600, color: isSelected ? "primary.main" : "text.primary" }}>
+                                      {test.name}
+                                    </TableCell>
+                                    <TableCell sx={{ color: "text.secondary" }}>
+                                      {test.parameters?.length || 0}
+                                    </TableCell>
+                                    <TableCell sx={{ color: "text.secondary", fontFamily: "monospace" }}>
+                                      {test.code || "-"}
+                                    </TableCell>
+                                    <TableCell align="right" sx={{ fontWeight: 500 }}>
+                                      ₹{parseFloat(test.price).toFixed(2)}
+                                    </TableCell>
+                                    <TableCell align="center" onClick={(e) => e.stopPropagation()}>
+                                      <Box sx={{ display: "flex", justifyContent: "center", gap: 0.5 }}>
+                                        <IconButton
+                                          size="small"
+                                          color="primary"
+                                          title="Duplicate Test"
+                                          onClick={() => {
+                                            setTestToDuplicate(test);
+                                            setDuplicateConfirmOpen(true);
+                                          }}
+                                        >
+                                          <CopyIcon fontSize="small" />
+                                        </IconButton>
+                                        <IconButton
+                                          size="small"
+                                          color="primary"
+                                          onClick={(e) => handleEditClick(test, e)}
+                                        >
+                                          <EditIcon fontSize="small" />
+                                        </IconButton>
+                                        <IconButton
+                                          size="small"
+                                          color="error"
+                                          onClick={(e) => handleDeleteClick(test, e)}
+                                        >
+                                          <DeleteIcon fontSize="small" />
+                                        </IconButton>
+                                      </Box>
                                     </TableCell>
                                   </TableRow>
-                                ) : (
-                                  tests.map((test, idx) => {
-                                    const isSelected = selectedTest?.id === test.id;
-                                    const sNo = (page - 1) * limit + idx + 1;
-                                    return (
-                                      <TableRow
-                                        key={test.id}
-                                        hover
-                                        onClick={() => setSelectedTest(test)}
-                                        sx={{
-                                          cursor: "pointer",
-                                          backgroundColor: isSelected ? "rgba(124, 58, 237, 0.06)" : "transparent",
-                                          "&:hover": {
-                                            backgroundColor: isSelected ? "rgba(124, 58, 237, 0.1)" : "rgba(0,0,0,0.02)",
-                                          },
-                                        }}
-                                      >
-                                        <TableCell sx={{ fontWeight: 700, color: "text.secondary" }}>{sNo}</TableCell>
-                                        <TableCell sx={{ fontWeight: 600, color: isSelected ? "primary.main" : "text.primary" }}>
-                                          {test.name}
-                                        </TableCell>
-                                        <TableCell sx={{ color: "text.secondary" }}>
-                                          {test.parameters?.length || 0}
-                                        </TableCell>
-                                        <TableCell sx={{ color: "text.secondary", fontFamily: "monospace" }}>
-                                          {test.code || "-"}
-                                        </TableCell>
-                                        <TableCell align="right" sx={{ fontWeight: 500 }}>
-                                          ₹{parseFloat(test.price).toFixed(2)}
-                                        </TableCell>
-                                        <TableCell align="center" onClick={(e) => e.stopPropagation()}>
-                                          <Box sx={{ display: "flex", justifyContent: "center", gap: 0.5 }}>
-                                            <IconButton
-                                              size="small"
-                                              color="primary"
-                                              title="Duplicate Test"
-                                              onClick={() => {
-                                                setTestToDuplicate(test);
-                                                setDuplicateConfirmOpen(true);
-                                              }}
-                                            >
-                                              <CopyIcon fontSize="small" />
-                                            </IconButton>
-                                            <IconButton
-                                              size="small"
-                                              color="primary"
-                                              onClick={(e) => handleEditClick(test, e)}
-                                            >
-                                              <EditIcon fontSize="small" />
-                                            </IconButton>
-                                            <IconButton
-                                              size="small"
-                                              color="error"
-                                              onClick={(e) => handleDeleteClick(test, e)}
-                                            >
-                                              <DeleteIcon fontSize="small" />
-                                            </IconButton>
-                                          </Box>
-                                        </TableCell>
-                                      </TableRow>
-                                    );
-                                  })
-                                )}
-                              </TableBody>
-                            </Table>
-                          </TableContainer>
+                                );
+                              })
+                            )}
+                          </TableBody>
+                        </Table>
+                      </TableContainer>
 
-                          {/* Custom Pagination Bar for Tests */}
-                          {totalCount > 0 && (
-                            <Box
-                              sx={{
-                                display: "flex",
-                                flexDirection: { xs: "column", sm: "row" },
-                                justifyContent: "space-between",
-                                alignItems: "center",
-                                gap: { xs: 2, sm: 0 },
-                                pt: 2,
-                                mt: 1,
-                                borderTop: "1px solid",
-                                borderColor: "divider",
-                                bgcolor: "#ffffff",
-                              }}
-                            >
-                              {/* Left Side */}
-                              <Typography variant="body2" sx={{ color: "text.secondary", fontWeight: 500 }}>
-                                {`${(page - 1) * limit + 1}-${Math.min(page * limit, totalCount)} of ${totalCount}`}
+                      {/* Custom Pagination Bar for Tests */}
+                      {totalCount > 0 && (
+                        <Box
+                          sx={{
+                            display: "flex",
+                            flexDirection: { xs: "column", sm: "row" },
+                            justifyContent: "space-between",
+                            alignItems: "center",
+                            gap: { xs: 2, sm: 0 },
+                            pt: 2,
+                            mt: 1,
+                            borderTop: "1px solid",
+                            borderColor: "divider",
+                            bgcolor: "#ffffff",
+                          }}
+                        >
+                          {/* Left Side */}
+                          <Typography variant="body2" sx={{ color: "text.secondary", fontWeight: 500 }}>
+                            {`${(page - 1) * limit + 1}-${Math.min(page * limit, totalCount)} of ${totalCount}`}
+                          </Typography>
+
+                          {/* Right Side Controls */}
+                          <Box sx={{ display: "flex", flexWrap: "wrap", justifyContent: "center", alignItems: "center", gap: { xs: 2, sm: 3 } }}>
+                            {/* Rows per page */}
+                            <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                              <Typography variant="body2" sx={{ color: "text.secondary", fontWeight: 500, fontSize: "0.82rem" }}>
+                                Rows per page
                               </Typography>
-
-                              {/* Right Side Controls */}
-                              <Box sx={{ display: "flex", flexWrap: "wrap", justifyContent: "center", alignItems: "center", gap: { xs: 2, sm: 3 } }}>
-                                {/* Rows per page */}
-                                <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                                  <Typography variant="body2" sx={{ color: "text.secondary", fontWeight: 500, fontSize: "0.82rem" }}>
-                                    Rows per page
-                                  </Typography>
-                                  <select
-                                    value={limit}
-                                    onChange={(e) => {
-                                      setLimit(parseInt(e.target.value, 10));
-                                      setPage(1);
-                                    }}
-                                    style={{
-                                      padding: "4px 8px",
-                                      borderRadius: "6px",
-                                      border: "1px solid rgba(0,0,0,0.15)",
-                                      backgroundColor: "#ffffff",
-                                      fontSize: "0.82rem",
-                                      fontWeight: 600,
-                                      color: "#334155",
-                                      outline: "none",
-                                      cursor: "pointer"
-                                    }}
-                                  >
-                                    {[10, 25, 50, 100].map((size) => (
-                                      <option key={size} value={size}>
-                                        {size}
-                                      </option>
-                                    ))}
-                                  </select>
-                                </Box>
-
-                                {/* Go to Page */}
-                                <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                                  <Typography variant="body2" sx={{ color: "text.secondary", fontWeight: 500, fontSize: "0.82rem" }}>
-                                    Go to Page
-                                  </Typography>
-                                  <select
-                                    value={page}
-                                    onChange={(e) => setPage(parseInt(e.target.value, 10))}
-                                    style={{
-                                      padding: "4px 8px",
-                                      borderRadius: "6px",
-                                      border: "1px solid rgba(0,0,0,0.15)",
-                                      backgroundColor: "#ffffff",
-                                      fontSize: "0.82rem",
-                                      fontWeight: 600,
-                                      color: "#334155",
-                                      outline: "none",
-                                      cursor: "pointer"
-                                    }}
-                                  >
-                                    {Array.from({ length: totalPages }, (_, i) => i + 1).map((pNum) => (
-                                      <option key={pNum} value={pNum}>
-                                        {pNum}
-                                      </option>
-                                    ))}
-                                  </select>
-                                </Box>
-
-                                {/* Prev/Next buttons */}
-                                <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
-                                  <IconButton
-                                    size="small"
-                                    disabled={page === 1}
-                                    onClick={() => setPage((prev) => Math.max(prev - 1, 1))}
-                                    sx={{ border: "1px solid rgba(0,0,0,0.1)", borderRadius: "6px", p: "4px" }}
-                                  >
-                                    <ChevronLeftIcon fontSize="small" />
-                                  </IconButton>
-                                  <IconButton
-                                    size="small"
-                                    disabled={page >= totalPages}
-                                    onClick={() => setPage((prev) => Math.min(prev + 1, totalPages))}
-                                    sx={{ border: "1px solid rgba(0,0,0,0.1)", borderRadius: "6px", p: "4px" }}
-                                  >
-                                    <ChevronRightIcon fontSize="small" />
-                                  </IconButton>
-                                </Box>
-                              </Box>
-                            </Box>
-                          )}
-                        </>
-                      ) : (
-                        <Box sx={{ display: "flex", flexDirection: "column", gap: 2, flexGrow: 1, overflow: "hidden" }}>
-                          <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 2 }}>
-                            <Typography variant="subtitle1" sx={{ fontWeight: 800, whiteSpace: "nowrap" }}>
-                              Parameters Library
-                            </Typography>
-                            <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, flexGrow: 1, justifyContent: "flex-end" }}>
-                              <TextField
-                                size="small"
-                                variant="outlined"
-                                placeholder="Search parameters..."
-                                value={paramSearchQuery}
+                              <select
+                                value={limit}
                                 onChange={(e) => {
-                                  setParamSearchQuery(e.target.value);
-                                  setParamPage(1);
+                                  setLimit(parseInt(e.target.value, 10));
+                                  setPage(1);
                                 }}
-                                sx={{ maxWidth: 180, flexGrow: 1 }}
-                                InputProps={{
-                                  startAdornment: (
-                                    <InputAdornment position="start">
-                                      <SearchIcon sx={{ color: "text.secondary" }} />
-                                    </InputAdornment>
-                                  ),
+                                style={{
+                                  padding: "4px 8px",
+                                  borderRadius: "6px",
+                                  border: "1px solid rgba(0,0,0,0.15)",
+                                  backgroundColor: "#ffffff",
+                                  fontSize: "0.82rem",
+                                  fontWeight: 600,
+                                  color: "#334155",
+                                  outline: "none",
+                                  cursor: "pointer"
                                 }}
-                              />
-                              <Button
-                                variant="contained"
-                                color="primary"
-                                size="small"
-                                startIcon={<AddIcon />}
-                                onClick={handleAddNewParamClick}
-                                sx={{ borderRadius: 2, whiteSpace: "nowrap" }}
                               >
-                                Add Parameter
-                              </Button>
+                                {[10, 25, 50, 100].map((size) => (
+                                  <option key={size} value={size}>
+                                    {size}
+                                  </option>
+                                ))}
+                              </select>
+                            </Box>
+
+                            {/* Go to Page */}
+                            <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                              <Typography variant="body2" sx={{ color: "text.secondary", fontWeight: 500, fontSize: "0.82rem" }}>
+                                Go to Page
+                              </Typography>
+                              <select
+                                value={page}
+                                onChange={(e) => setPage(parseInt(e.target.value, 10))}
+                                style={{
+                                  padding: "4px 8px",
+                                  borderRadius: "6px",
+                                  border: "1px solid rgba(0,0,0,0.15)",
+                                  backgroundColor: "#ffffff",
+                                  fontSize: "0.82rem",
+                                  fontWeight: 600,
+                                  color: "#334155",
+                                  outline: "none",
+                                  cursor: "pointer"
+                                }}
+                              >
+                                {Array.from({ length: totalPages }, (_, i) => i + 1).map((pNum) => (
+                                  <option key={pNum} value={pNum}>
+                                    {pNum}
+                                  </option>
+                                ))}
+                              </select>
+                            </Box>
+
+                            {/* Prev/Next buttons */}
+                            <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
+                              <IconButton
+                                size="small"
+                                disabled={page === 1}
+                                onClick={() => setPage((prev) => Math.max(prev - 1, 1))}
+                                sx={{ border: "1px solid rgba(0,0,0,0.1)", borderRadius: "6px", p: "4px" }}
+                              >
+                                <ChevronLeftIcon fontSize="small" />
+                              </IconButton>
+                              <IconButton
+                                size="small"
+                                disabled={page >= totalPages}
+                                onClick={() => setPage((prev) => Math.min(prev + 1, totalPages))}
+                                sx={{ border: "1px solid rgba(0,0,0,0.1)", borderRadius: "6px", p: "4px" }}
+                              >
+                                <ChevronRightIcon fontSize="small" />
+                              </IconButton>
                             </Box>
                           </Box>
-
-                          {/* Parameters Table */}
-                          <TableContainer component={Paper} elevation={0} sx={{ border: "1px solid", borderColor: "divider", flexGrow: 1, overflowY: "auto", overflowX: "auto", width: "100%", maxWidth: "100%", minWidth: 0 }}>
-                            <Table stickyHeader size="small">
-                              <TableHead>
-                                <TableRow>
-                                  <TableCell sx={{ fontWeight: 700, bgcolor: "#f8fafc", width: 60 }}>S.No</TableCell>
-                                  <TableCell sx={{ fontWeight: 700, bgcolor: "#f8fafc" }}>Name</TableCell>
-                                  <TableCell sx={{ fontWeight: 700, bgcolor: "#f8fafc" }}>Unit</TableCell>
-                                  <TableCell align="center" sx={{ fontWeight: 700, bgcolor: "#f8fafc", width: 90 }}>Action</TableCell>
-                                </TableRow>
-                              </TableHead>
-                              <TableBody>
-                                {paginatedParams.length === 0 ? (
-                                  <TableRow>
-                                    <TableCell colSpan={4} align="center" sx={{ py: 6, color: "text.secondary" }}>
-                                      No parameters found matching current search.
-                                    </TableCell>
-                                  </TableRow>
-                                ) : (
-                                  paginatedParams.map((param, idx) => {
-                                    const sNo = (paramPage - 1) * paramLimit + idx + 1;
-                                    return (
-                                      <TableRow key={param.id} hover>
-                                        <TableCell sx={{ fontWeight: 700, color: "text.secondary" }}>{sNo}</TableCell>
-                                        <TableCell sx={{ fontWeight: 600 }}>{param.name}</TableCell>
-                                      <TableCell sx={{ color: "text.secondary" }}>{param.unit || "-"}</TableCell>
-                                      <TableCell align="center">
-                                        <Box sx={{ display: "flex", justifyContent: "center", gap: 0.5 }}>
-                                          <IconButton
-                                            size="small"
-                                            color="primary"
-                                            onClick={(e) => handleEditParamClick(param, e)}
-                                          >
-                                            <EditIcon fontSize="small" />
-                                          </IconButton>
-                                          <IconButton
-                                            size="small"
-                                            color="error"
-                                            onClick={(e) => handleDeleteParamClick(param, e)}
-                                          >
-                                            <DeleteIcon fontSize="small" />
-                                          </IconButton>
-                                        </Box>
-                                      </TableCell>
-                                    </TableRow>
-                                  );
-                                })
-                              )}
-                              </TableBody>
-                            </Table>
-                          </TableContainer>
-
-                          {/* Custom Pagination Bar for Parameters */}
-                          {paramTotalCount > 0 && (
-                            <Box
-                              sx={{
-                                display: "flex",
-                                flexDirection: { xs: "column", sm: "row" },
-                                justifyContent: "space-between",
-                                alignItems: "center",
-                                gap: { xs: 2, sm: 0 },
-                                pt: 2,
-                                mt: 1,
-                                borderTop: "1px solid",
-                                borderColor: "divider",
-                                bgcolor: "#ffffff",
-                              }}
-                            >
-                              {/* Left Side */}
-                              <Typography variant="body2" sx={{ color: "text.secondary", fontWeight: 500 }}>
-                                {`${(paramPage - 1) * paramLimit + 1}-${Math.min(paramPage * paramLimit, paramTotalCount)} of ${paramTotalCount}`}
-                              </Typography>
-
-                              {/* Right Side Controls */}
-                              <Box sx={{ display: "flex", flexWrap: "wrap", justifyContent: "center", alignItems: "center", gap: { xs: 2, sm: 3 } }}>
-                                {/* Rows per page */}
-                                <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                                  <Typography variant="body2" sx={{ color: "text.secondary", fontWeight: 500, fontSize: "0.82rem" }}>
-                                    Rows per page
-                                  </Typography>
-                                  <select
-                                    value={paramLimit}
-                                    onChange={(e) => {
-                                      setParamLimit(parseInt(e.target.value, 10));
-                                      setParamPage(1);
-                                    }}
-                                    style={{
-                                      padding: "4px 8px",
-                                      borderRadius: "6px",
-                                      border: "1px solid rgba(0,0,0,0.15)",
-                                      backgroundColor: "#ffffff",
-                                      fontSize: "0.82rem",
-                                      fontWeight: 600,
-                                      color: "#334155",
-                                      outline: "none",
-                                      cursor: "pointer"
-                                    }}
-                                  >
-                                    {[10, 25, 50, 100].map((size) => (
-                                      <option key={size} value={size}>
-                                        {size}
-                                      </option>
-                                    ))}
-                                  </select>
-                                </Box>
-
-                                {/* Go to Page */}
-                                <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                                  <Typography variant="body2" sx={{ color: "text.secondary", fontWeight: 500, fontSize: "0.82rem" }}>
-                                    Go to Page
-                                  </Typography>
-                                  <select
-                                    value={paramPage}
-                                    onChange={(e) => setParamPage(parseInt(e.target.value, 10))}
-                                    style={{
-                                      padding: "4px 8px",
-                                      borderRadius: "6px",
-                                      border: "1px solid rgba(0,0,0,0.15)",
-                                      backgroundColor: "#ffffff",
-                                      fontSize: "0.82rem",
-                                      fontWeight: 600,
-                                      color: "#334155",
-                                      outline: "none",
-                                      cursor: "pointer"
-                                    }}
-                                  >
-                                    {Array.from({ length: paramTotalPages }, (_, i) => i + 1).map((pNum) => (
-                                      <option key={pNum} value={pNum}>
-                                        {pNum}
-                                      </option>
-                                    ))}
-                                  </select>
-                                </Box>
-
-                                {/* Prev/Next buttons */}
-                                <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
-                                  <IconButton
-                                    size="small"
-                                    disabled={paramPage === 1}
-                                    onClick={() => setParamPage((prev) => Math.max(prev - 1, 1))}
-                                    sx={{ border: "1px solid rgba(0,0,0,0.1)", borderRadius: "6px", p: "4px" }}
-                                  >
-                                    <ChevronLeftIcon fontSize="small" />
-                                  </IconButton>
-                                  <IconButton
-                                    size="small"
-                                    disabled={paramPage >= paramTotalPages}
-                                    onClick={() => setParamPage((prev) => Math.min(prev + 1, paramTotalPages))}
-                                    sx={{ border: "1px solid rgba(0,0,0,0.1)", borderRadius: "6px", p: "4px" }}
-                                  >
-                                    <ChevronRightIcon fontSize="small" />
-                                  </IconButton>
-                                </Box>
-                              </Box>
-                            </Box>
-                          )}
                         </Box>
                       )}
-                    </CardContent>
-                  </Card>
-                </Grid>
-
-                {/* Right Side: Parameter Detail Card */}
-                <Grid size={{ xs: 12, md: 6 }} sx={{ height: "100%", display: "flex", flexDirection: "column" }}>
-                  {selectedTest ? (
-                    <Card sx={{ height: "100%", display: "flex", flexDirection: "column", overflow: "hidden" }}>
-                      <CardContent sx={{ p: 2.5, display: "flex", flexDirection: "column", gap: 2, height: "100%", overflow: "hidden" }}>
-                        <Box sx={{ borderBottom: "1px solid", borderColor: "divider", pb: 1.5, display: "flex", justifyContent: "space-between", alignItems: "center", minWidth: 0, gap: 2 }}>
-                          <Box sx={{ display: "flex", alignItems: "center", gap: 1, minWidth: 0, flexShrink: 1 }}>
-                            <Typography variant="subtitle1" noWrap sx={{ fontWeight: 800, textOverflow: "ellipsis", overflow: "hidden" }}>
-                              {selectedTest.name}
-                            </Typography>
-                            {selectedTest.code && (
-                              <Typography variant="caption" sx={{ bgcolor: "rgba(0,0,0,0.05)", px: 1, py: 0.2, borderRadius: 1, fontFamily: "monospace", fontWeight: 700, flexShrink: 0 }}>
-                                Code: {selectedTest.code}
-                              </Typography>
-                            )}
-                          </Box>
-                          <Button
+                    </>
+                  ) : (
+                    <Box sx={{ display: "flex", flexDirection: "column", gap: 2, flexGrow: 1, overflow: "hidden" }}>
+                      <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 2 }}>
+                        <Typography variant="subtitle1" sx={{ fontWeight: 800, whiteSpace: "nowrap" }}>
+                          Parameters Library
+                        </Typography>
+                        <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, flexGrow: 1, justifyContent: "flex-end" }}>
+                          <TextField
+                            size="small"
                             variant="outlined"
+                            placeholder="Search parameters..."
+                            value={paramSearchQuery}
+                            onChange={(e) => {
+                              setParamSearchQuery(e.target.value);
+                              setParamPage(1);
+                            }}
+                            sx={{ maxWidth: 180, flexGrow: 1 }}
+                            InputProps={{
+                              startAdornment: (
+                                <InputAdornment position="start">
+                                  <SearchIcon sx={{ color: "text.secondary" }} />
+                                </InputAdornment>
+                              ),
+                            }}
+                          />
+                          <Button
+                            variant="contained"
                             color="primary"
                             size="small"
-                            startIcon={<EditIcon />}
-                            onClick={(e) => handleEditClick(selectedTest, e)}
-                            sx={{ borderRadius: 2, flexShrink: 0 }}
+                            startIcon={<AddIcon />}
+                            onClick={handleAddNewParamClick}
+                            sx={{ borderRadius: 2, whiteSpace: "nowrap" }}
                           >
-                            Edit Test
+                            Add Parameter
                           </Button>
                         </Box>
+                      </Box>
 
-                        <Box sx={{ flexGrow: 1, display: "flex", flexDirection: "column", overflow: "hidden" }}>
-                          {(!selectedTest.parameters || selectedTest.parameters.length === 0) ? (
-                            <Box sx={{ py: 8, display: "flex", flexDirection: "column", alignItems: "center", gap: 1.5 }}>
-                              <InfoIcon sx={{ fontSize: 40, color: "text.secondary", opacity: 0.5 }} />
-                              <Typography variant="body2" color="text.secondary" align="center">
-                                No clinical parameters defined for this default test.
-                              </Typography>
-                            </Box>
-                          ) : (
-                            <Box sx={{ display: "flex", flexDirection: "column", gap: 2, flexGrow: 1, overflow: "hidden" }}>
-                              <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>
-                                Clinical Parameters ({selectedTest.parameters.length})
-                              </Typography>
+                      {/* Parameters Table */}
+                      <TableContainer component={Paper} elevation={0} sx={{ border: "1px solid", borderColor: "divider", maxHeight: "calc(100vh - 356px)", overflowY: "auto", overflowX: "auto", width: "100%", maxWidth: "100%", minWidth: 0 }}>
+                        <Table stickyHeader size="small">
+                          <TableHead>
+                            <TableRow>
+                              <TableCell sx={{ fontWeight: 700, bgcolor: "#f8fafc", width: 60 }}>S.No</TableCell>
+                              <TableCell sx={{ fontWeight: 700, bgcolor: "#f8fafc" }}>Name</TableCell>
+                              <TableCell sx={{ fontWeight: 700, bgcolor: "#f8fafc" }}>Unit</TableCell>
+                              <TableCell align="center" sx={{ fontWeight: 700, bgcolor: "#f8fafc", width: 90 }}>Action</TableCell>
+                            </TableRow>
+                          </TableHead>
+                          <TableBody>
+                            {paginatedParams.length === 0 ? (
+                              <TableRow>
+                                <TableCell colSpan={4} align="center" sx={{ py: 6, color: "text.secondary" }}>
+                                  No parameters found matching current search.
+                                </TableCell>
+                              </TableRow>
+                            ) : (
+                              paginatedParams.map((param, idx) => {
+                                const sNo = (paramPage - 1) * paramLimit + idx + 1;
+                                return (
+                                  <TableRow key={param.id} hover>
+                                    <TableCell sx={{ fontWeight: 700, color: "text.secondary" }}>{sNo}</TableCell>
+                                    <TableCell sx={{ fontWeight: 600 }}>{param.name}</TableCell>
+                                    <TableCell sx={{ color: "text.secondary" }}>{param.unit || "-"}</TableCell>
+                                    <TableCell align="center">
+                                      <Box sx={{ display: "flex", justifyContent: "center", gap: 0.5 }}>
+                                        <IconButton
+                                          size="small"
+                                          color="primary"
+                                          onClick={(e) => handleEditParamClick(param, e)}
+                                        >
+                                          <EditIcon fontSize="small" />
+                                        </IconButton>
+                                        <IconButton
+                                          size="small"
+                                          color="error"
+                                          onClick={(e) => handleDeleteParamClick(param, e)}
+                                        >
+                                          <DeleteIcon fontSize="small" />
+                                        </IconButton>
+                                      </Box>
+                                    </TableCell>
+                                  </TableRow>
+                                );
+                              })
+                            )}
+                          </TableBody>
+                        </Table>
+                      </TableContainer>
 
-                              <TableContainer component={Paper} elevation={0} sx={{ border: "1px solid", borderColor: "divider", flexGrow: 1, overflowY: "auto", overflowX: "auto", width: "100%", maxWidth: "100%", minWidth: 0 }}>
-                                <Table stickyHeader size="small">
-                                  <TableHead>
-                                    <TableRow>
-                                      <TableCell sx={{ fontWeight: 700, bgcolor: "#f8fafc" }}>Name</TableCell>
-                                      <TableCell sx={{ fontWeight: 700, bgcolor: "#f8fafc" }}>Unit</TableCell>
-                                      <TableCell sx={{ fontWeight: 700, bgcolor: "#f8fafc" }}>Male Range</TableCell>
-                                      <TableCell sx={{ fontWeight: 700, bgcolor: "#f8fafc" }}>Female Range</TableCell>
-                                      <TableCell sx={{ fontWeight: 700, bgcolor: "#f8fafc" }}>Baby Range</TableCell>
-                                      <TableCell sx={{ fontWeight: 700, bgcolor: "#f8fafc" }}>Default Range</TableCell>
-                                    </TableRow>
-                                  </TableHead>
-                                  <TableBody>
-                                    {selectedTest.parameters.map((param) => {
-                                      const maleRange = param.normalRangeMale || (param.minValMale !== null || param.maxValMale !== null
-                                        ? `${param.minValMale ?? 0} - ${param.maxValMale ?? 0}`
-                                        : "-");
-                                      const femaleRange = param.normalRangeFemale || (param.minValFemale !== null || param.maxValFemale !== null
-                                        ? `${param.minValFemale ?? 0} - ${param.maxValFemale ?? 0}`
-                                        : "-");
-                                      const babyRange = param.normalRangeBaby || (param.minValBaby !== null || param.maxValBaby !== null
-                                        ? `${param.minValBaby ?? 0} - ${param.maxValBaby ?? 0}`
-                                        : "-");
-
-                                      return (
-                                        <TableRow key={param.id} hover>
-                                          <TableCell sx={{ fontWeight: 600 }}>{param.name}</TableCell>
-                                          <TableCell sx={{ color: "text.secondary" }}>{param.unit || "-"}</TableCell>
-                                          <TableCell sx={{ fontSize: "0.82rem" }}>{maleRange}</TableCell>
-                                          <TableCell sx={{ fontSize: "0.82rem" }}>{femaleRange}</TableCell>
-                                          <TableCell sx={{ fontSize: "0.82rem" }}>{babyRange}</TableCell>
-                                          <TableCell sx={{ fontSize: "0.82rem" }}>{param.normalRangeDefault || "-"}</TableCell>
-                                        </TableRow>
-                                      );
-                                    })}
-                                  </TableBody>
-                                </Table>
-                              </TableContainer>
-                            </Box>
-                          )}
-                        </Box>
-                      </CardContent>
-                    </Card>
-                  ) : (
-                    <Card sx={{ height: "100%", display: "flex", justifyContent: "center", alignItems: "center", py: 8 }}>
-                      <CardContent sx={{ textAlign: "center", display: "flex", flexDirection: "column", alignItems: "center", gap: 2 }}>
-                        <Box sx={{ p: 2.5, borderRadius: "50%", bgcolor: "rgba(124, 58, 237, 0.06)", color: "primary.main" }}>
-                          <ScienceIcon sx={{ fontSize: 40 }} />
-                        </Box>
-                        <Box>
-                          <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>
-                            No Test Selected
+                      {/* Custom Pagination Bar for Parameters */}
+                      {paramTotalCount > 0 && (
+                        <Box
+                          sx={{
+                            display: "flex",
+                            flexDirection: { xs: "column", sm: "row" },
+                            justifyContent: "space-between",
+                            alignItems: "center",
+                            gap: { xs: 2, sm: 0 },
+                            pt: 2,
+                            mt: 1,
+                            borderTop: "1px solid",
+                            borderColor: "divider",
+                            bgcolor: "#ffffff",
+                          }}
+                        >
+                          {/* Left Side */}
+                          <Typography variant="body2" sx={{ color: "text.secondary", fontWeight: 500 }}>
+                            {`${(paramPage - 1) * paramLimit + 1}-${Math.min(paramPage * paramLimit, paramTotalCount)} of ${paramTotalCount}`}
                           </Typography>
-                          <Typography variant="body2" color="text.secondary" sx={{ maxWidth: 300, mt: 0.5 }}>
-                            Select a default test from the list on the left to inspect its configured parameters and references.
-                          </Typography>
+
+                          {/* Right Side Controls */}
+                          <Box sx={{ display: "flex", flexWrap: "wrap", justifyContent: "center", alignItems: "center", gap: { xs: 2, sm: 3 } }}>
+                            {/* Rows per page */}
+                            <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                              <Typography variant="body2" sx={{ color: "text.secondary", fontWeight: 500, fontSize: "0.82rem" }}>
+                                Rows per page
+                              </Typography>
+                              <select
+                                value={paramLimit}
+                                onChange={(e) => {
+                                  setParamLimit(parseInt(e.target.value, 10));
+                                  setParamPage(1);
+                                }}
+                                style={{
+                                  padding: "4px 8px",
+                                  borderRadius: "6px",
+                                  border: "1px solid rgba(0,0,0,0.15)",
+                                  backgroundColor: "#ffffff",
+                                  fontSize: "0.82rem",
+                                  fontWeight: 600,
+                                  color: "#334155",
+                                  outline: "none",
+                                  cursor: "pointer"
+                                }}
+                              >
+                                {[10, 25, 50, 100].map((size) => (
+                                  <option key={size} value={size}>
+                                    {size}
+                                  </option>
+                                ))}
+                              </select>
+                            </Box>
+
+                            {/* Go to Page */}
+                            <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                              <Typography variant="body2" sx={{ color: "text.secondary", fontWeight: 500, fontSize: "0.82rem" }}>
+                                Go to Page
+                              </Typography>
+                              <select
+                                value={paramPage}
+                                onChange={(e) => setParamPage(parseInt(e.target.value, 10))}
+                                style={{
+                                  padding: "4px 8px",
+                                  borderRadius: "6px",
+                                  border: "1px solid rgba(0,0,0,0.15)",
+                                  backgroundColor: "#ffffff",
+                                  fontSize: "0.82rem",
+                                  fontWeight: 600,
+                                  color: "#334155",
+                                  outline: "none",
+                                  cursor: "pointer"
+                                }}
+                              >
+                                {Array.from({ length: paramTotalPages }, (_, i) => i + 1).map((pNum) => (
+                                  <option key={pNum} value={pNum}>
+                                    {pNum}
+                                  </option>
+                                ))}
+                              </select>
+                            </Box>
+
+                            {/* Prev/Next buttons */}
+                            <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
+                              <IconButton
+                                size="small"
+                                disabled={paramPage === 1}
+                                onClick={() => setParamPage((prev) => Math.max(prev - 1, 1))}
+                                sx={{ border: "1px solid rgba(0,0,0,0.1)", borderRadius: "6px", p: "4px" }}
+                              >
+                                <ChevronLeftIcon fontSize="small" />
+                              </IconButton>
+                              <IconButton
+                                size="small"
+                                disabled={paramPage >= paramTotalPages}
+                                onClick={() => setParamPage((prev) => Math.min(prev + 1, paramTotalPages))}
+                                sx={{ border: "1px solid rgba(0,0,0,0.1)", borderRadius: "6px", p: "4px" }}
+                              >
+                                <ChevronRightIcon fontSize="small" />
+                              </IconButton>
+                            </Box>
+                          </Box>
                         </Box>
-                      </CardContent>
-                    </Card>
+                      )}
+                    </Box>
                   )}
-                </Grid>
-              </Grid>
-            )}
-          </Box>
+                </CardContent>
+              </Card>
+            </Grid>
+
+            {/* Right Side: Parameter Detail Card */}
+            <Grid size={{ xs: 12, md: 6 }} sx={{ height: "100%", display: "flex", flexDirection: "column" }}>
+              {selectedTest ? (
+                <Card sx={{ height: "100%", display: "flex", flexDirection: "column", overflow: "hidden" }}>
+                  <CardContent sx={{ p: 2.5, display: "flex", flexDirection: "column", gap: 2, height: "100%", overflow: "hidden" }}>
+                    <Box sx={{ borderBottom: "1px solid", borderColor: "divider", pb: 1.5, display: "flex", justifyContent: "space-between", alignItems: "center", minWidth: 0, gap: 2 }}>
+                      <Box sx={{ display: "flex", alignItems: "center", gap: 1, minWidth: 0, flexShrink: 1 }}>
+                        <Typography variant="subtitle1" noWrap sx={{ fontWeight: 800, textOverflow: "ellipsis", overflow: "hidden" }}>
+                          {selectedTest.name}
+                        </Typography>
+                        {selectedTest.code && (
+                          <Typography variant="caption" sx={{ bgcolor: "rgba(0,0,0,0.05)", px: 1, py: 0.2, borderRadius: 1, fontFamily: "monospace", fontWeight: 700, flexShrink: 0 }}>
+                            Code: {selectedTest.code}
+                          </Typography>
+                        )}
+                      </Box>
+                      <Button
+                        variant="outlined"
+                        color="primary"
+                        size="small"
+                        startIcon={<EditIcon />}
+                        onClick={(e) => handleEditClick(selectedTest, e)}
+                        sx={{ borderRadius: 2, flexShrink: 0 }}
+                      >
+                        Edit Test
+                      </Button>
+                    </Box>
+
+                    <Box sx={{ flexGrow: 1, display: "flex", flexDirection: "column", overflow: "hidden" }}>
+                      {(!selectedTest.parameters || selectedTest.parameters.length === 0) ? (
+                        <Box sx={{ py: 8, display: "flex", flexDirection: "column", alignItems: "center", gap: 1.5 }}>
+                          <InfoIcon sx={{ fontSize: 40, color: "text.secondary", opacity: 0.5 }} />
+                          <Typography variant="body2" color="text.secondary" align="center">
+                            No clinical parameters defined for this default test.
+                          </Typography>
+                        </Box>
+                      ) : (
+                        <Box sx={{ display: "flex", flexDirection: "column", gap: 2, flexGrow: 1, overflow: "hidden" }}>
+                          <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>
+                            Clinical Parameters ({selectedTest.parameters.length})
+                          </Typography>
+
+                          <TableContainer component={Paper} elevation={0} sx={{ border: "1px solid", borderColor: "divider", maxHeight: "calc(100vh - 220px)", overflowY: "auto", overflowX: "auto", width: "100%", maxWidth: "100%", minWidth: 0 }}>
+                            <Table stickyHeader size="small">
+                              <TableHead>
+                                <TableRow>
+                                  <TableCell sx={{ fontWeight: 700, bgcolor: "#f8fafc" }}>Name</TableCell>
+                                  <TableCell sx={{ fontWeight: 700, bgcolor: "#f8fafc" }}>Unit</TableCell>
+                                  <TableCell sx={{ fontWeight: 700, bgcolor: "#f8fafc" }}>Male Range</TableCell>
+                                  <TableCell sx={{ fontWeight: 700, bgcolor: "#f8fafc" }}>Female Range</TableCell>
+                                  <TableCell sx={{ fontWeight: 700, bgcolor: "#f8fafc" }}>Baby Range</TableCell>
+                                  <TableCell sx={{ fontWeight: 700, bgcolor: "#f8fafc" }}>Default Range</TableCell>
+                                </TableRow>
+                              </TableHead>
+                              <TableBody>
+                                {selectedTest.parameters.map((param) => {
+                                  const maleRange = param.normalRangeMale || (param.minValMale !== null || param.maxValMale !== null
+                                    ? `${param.minValMale ?? 0} - ${param.maxValMale ?? 0}`
+                                    : "-");
+                                  const femaleRange = param.normalRangeFemale || (param.minValFemale !== null || param.maxValFemale !== null
+                                    ? `${param.minValFemale ?? 0} - ${param.maxValFemale ?? 0}`
+                                    : "-");
+                                  const babyRange = param.normalRangeBaby || (param.minValBaby !== null || param.maxValBaby !== null
+                                    ? `${param.minValBaby ?? 0} - ${param.maxValBaby ?? 0}`
+                                    : "-");
+
+                                  return (
+                                    <TableRow key={param.id} hover>
+                                      <TableCell sx={{ fontWeight: 600 }}>{param.name}</TableCell>
+                                      <TableCell sx={{ color: "text.secondary" }}>{param.unit || "-"}</TableCell>
+                                      <TableCell sx={{ fontSize: "0.82rem" }}>{maleRange}</TableCell>
+                                      <TableCell sx={{ fontSize: "0.82rem" }}>{femaleRange}</TableCell>
+                                      <TableCell sx={{ fontSize: "0.82rem" }}>{babyRange}</TableCell>
+                                      <TableCell sx={{ fontSize: "0.82rem" }}>{param.normalRangeDefault || "-"}</TableCell>
+                                    </TableRow>
+                                  );
+                                })}
+                              </TableBody>
+                            </Table>
+                          </TableContainer>
+                        </Box>
+                      )}
+                    </Box>
+                  </CardContent>
+                </Card>
+              ) : (
+                <Card sx={{ height: "100%", display: "flex", justifyContent: "center", alignItems: "center", py: 8 }}>
+                  <CardContent sx={{ textAlign: "center", display: "flex", flexDirection: "column", alignItems: "center", gap: 2 }}>
+                    <Box sx={{ p: 2.5, borderRadius: "50%", bgcolor: "rgba(124, 58, 237, 0.06)", color: "primary.main" }}>
+                      <ScienceIcon sx={{ fontSize: 40 }} />
+                    </Box>
+                    <Box>
+                      <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>
+                        No Test Selected
+                      </Typography>
+                      <Typography variant="body2" color="text.secondary" sx={{ maxWidth: 300, mt: 0.5 }}>
+                        Select a default test from the list on the left to inspect its configured parameters and references.
+                      </Typography>
+                    </Box>
+                  </CardContent>
+                </Card>
+              )}
+            </Grid>
+          </Grid>
+        )}
+      </Box>
 
       {editModalOpen && (
         <EditTestDialog
