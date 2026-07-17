@@ -221,7 +221,7 @@ export default function ImporterPage() {
       })
       .filter((t) => importMode === "units_only" ? t.name.trim() !== "" : (t.name.trim() !== "" || t.orgName.trim() !== ""));
 
-    console.log(`Sending ${formattedTests.length} rows to the server for bulk processing. Please wait...`);
+    console.log(`Sending ${formattedData.length} rows to the server for bulk processing. Please wait...`);
 
     try {
       const res = await fetch("/adminstration/api/tests/import", {

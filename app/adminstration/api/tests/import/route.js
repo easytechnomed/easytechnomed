@@ -84,34 +84,41 @@ export async function POST(req) {
       const errors = [];
 
       try {
-        await prisma.$transaction(async (tx) => {
-          for (const item of tests) {
-            const name = item.name?.trim();
-            const unit = item.unit?.trim() ?? "";
-            if (!name) continue;
+        const batchSize = 50;
+        for (let i = 0; i < tests.length; i += batchSize) {
+          const batch = tests.slice(i, i + batchSize);
+          await Promise.all(
+            batch.map(async (item) => {
+              const name = item.name?.trim();
+              const unit = item.unit?.trim() ?? "";
+              if (!name) return;
 
-            // Find parameter by name and workspaceId
-            const parameter = await tx.parameter.findFirst({
-              where: {
-                workspaceId,
-                name: { equals: name }
-              }
-            });
-
-            if (parameter) {
-              if (parameter.unit !== unit) {
-                await tx.parameter.update({
-                  where: { id: parameter.id },
-                  data: { unit }
+              try {
+                // Find parameter by name and workspaceId
+                const parameter = await prisma.parameter.findFirst({
+                  where: {
+                    workspaceId,
+                    name: { equals: name }
+                  }
                 });
-                updatedCount++;
+
+                if (parameter) {
+                  if (parameter.unit !== unit) {
+                    console.log(`[Import Mode: units_only] Updating parameter "${name}" unit: "${parameter.unit}" -> "${unit}"`);
+                    await prisma.parameter.update({
+                      where: { id: parameter.id },
+                      data: { unit }
+                    });
+                    updatedCount++;
+                  }
+                }
+              } catch (err) {
+                console.error(`Error updating parameter unit for "${name}":`, err);
+                errors.push(`Failed for "${name}": ${err.message}`);
               }
-            }
-          }
-        }, {
-          maxWait: 15000,
-          timeout: 30000
-        });
+            })
+          );
+        }
 
         return NextResponse.json({
           success: true,
@@ -292,6 +299,7 @@ export async function POST(req) {
             // Resolve parameter
             let parameter = await tx.parameter.findFirst({ where: { name: trimmedName } });
             if (!parameter) {
+              console.log(`[Import Mode: full] Creating parameter "${trimmedName}" with unit: "${row.unit?.trim() || ""}"`);
               parameter = await tx.parameter.create({
                 data: {
                   name: trimmedName,
@@ -306,6 +314,7 @@ export async function POST(req) {
                 updatedData.code = row.code.trim();
               }
               if (row.unit?.trim() && parameter.unit !== row.unit.trim()) {
+                console.log(`[Import Mode: full] Updating parameter "${trimmedName}" unit: "${parameter.unit}" -> "${row.unit.trim()}"`);
                 updatedData.unit = row.unit.trim();
               }
               if (Object.keys(updatedData).length > 0) {
@@ -361,6 +370,7 @@ export async function POST(req) {
             // Resolve parameter
             let parameter = await tx.parameter.findFirst({ where: { name: trimmedName } });
             if (!parameter) {
+              console.log(`[Import Mode: full] Creating parameter "${trimmedName}" with unit: "${row.unit?.trim() || ""}"`);
               parameter = await tx.parameter.create({
                 data: {
                   name: trimmedName,
@@ -375,6 +385,7 @@ export async function POST(req) {
                 updatedData.code = row.code.trim();
               }
               if (row.unit?.trim() && parameter.unit !== row.unit.trim()) {
+                console.log(`[Import Mode: full] Updating parameter "${trimmedName}" unit: "${parameter.unit}" -> "${row.unit.trim()}"`);
                 updatedData.unit = row.unit.trim();
               }
               if (Object.keys(updatedData).length > 0) {
