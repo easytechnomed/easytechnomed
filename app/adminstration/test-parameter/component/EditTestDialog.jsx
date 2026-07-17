@@ -806,13 +806,15 @@ export default function EditTestDialog({ open, onClose, test, parameterDictionar
               <Divider />
 
               <Box sx={{ width: "100%", overflowX: "hidden", minWidth: 0 }}>
-                <TableContainer component={Paper} variant="outlined" sx={{ overflowX: "auto", maxHeight: "380px", width: "calc(100vw - 48px)", maxWidth: "calc(100vw - 48px)", minWidth: 0 }}>
+                <TableContainer component={Paper} variant="outlined" sx={{ overflowX: "auto", maxHeight: "calc(100vh - 320px)", width: "calc(100vw - 48px)", maxWidth: "calc(100vw - 48px)", minWidth: 0 }}>
                   <Table size="small" stickyHeader sx={{ minWidth: 2200 }}>
                     <TableHead>
                       <TableRow>
                         <TableCell align="center" sx={{ fontWeight: 700, width: 30, bgcolor: "#f8fafc" }}></TableCell>
                         <TableCell align="center" sx={{ fontWeight: 700, width: 40, bgcolor: "#f8fafc" }}>#</TableCell>
                         <TableCell align="center" sx={{ fontWeight: 700, width: 50, bgcolor: "#f8fafc" }}>Action</TableCell>
+                        <TableCell align="center" sx={{ fontWeight: 700, width: 90, bgcolor: "#f8fafc" }}>Is Header?</TableCell>
+                        <TableCell sx={{ fontWeight: 700, width: 200, bgcolor: "#fff7ed" }}>Parent Header</TableCell>
                         <TableCell sx={{ fontWeight: 700, width: 450, bgcolor: "#f8fafc" }}>Parameter Name *</TableCell>
                         <TableCell sx={{ fontWeight: 700, width: 170, bgcolor: "#f8fafc" }}>Unit</TableCell>
                         <TableCell sx={{ fontWeight: 700, width: 100, bgcolor: "#f8fafc" }}>Order</TableCell>
@@ -834,8 +836,6 @@ export default function EditTestDialog({ open, onClose, test, parameterDictionar
 
                         {/* Default */}
                         <TableCell sx={{ fontWeight: 700, width: 200, bgcolor: "#fafaf9" }}>Default Range Text</TableCell>
-                        <TableCell align="center" sx={{ fontWeight: 700, width: 90, bgcolor: "#f8fafc" }}>Is Header?</TableCell>
-                        <TableCell sx={{ fontWeight: 700, width: 200, bgcolor: "#fff7ed" }}>Parent Header</TableCell>
                       </TableRow>
                     </TableHead>
                     <TableBody>
@@ -878,6 +878,74 @@ export default function EditTestDialog({ open, onClose, test, parameterDictionar
                               >
                                 <DeleteIcon fontSize="small" />
                               </IconButton>
+                            </TableCell>
+
+                            {/* Is Header */}
+                            <TableCell align="center" sx={{ bgcolor: "#f8fafc" }}>
+                              <Checkbox
+                                checked={!!param.isHeader}
+                                onChange={(e) => handleParamChange(index, "isHeader", e.target.checked)}
+                                color="primary"
+                              />
+                            </TableCell>
+
+                            {/* Parent Header — link this row to a header group */}
+                            <TableCell sx={{ bgcolor: "#fff7ed" }}>
+                              {param.isHeader ? (
+                                // Headers cannot have a parent
+                                <Box sx={{ fontSize: "0.8rem", color: "text.disabled", pl: 1 }}>—</Box>
+                              ) : (
+                                <Select
+                                  size="small"
+                                  fullWidth
+                                  displayEmpty
+                                  value={param.parentKey || (param.parentId ? String(param.parentId) : "")}
+                                  onChange={(e) => {
+                                    const selected = e.target.value;
+                                    if (!selected) {
+                                      // (None) → remove parent link
+                                      setEditForm((prev) => {
+                                        const p = [...prev.parameters];
+                                        p[index] = { ...p[index], parentKey: null, parentId: null };
+                                        return { ...prev, parameters: p };
+                                      });
+                                    } else {
+                                      // Find the chosen header row by its key (or string-id for existing rows)
+                                      const chosenHeader = editForm.parameters.find(
+                                        (h) => h.isHeader && (h.key === selected || String(h.id) === selected)
+                                      );
+                                      setEditForm((prev) => {
+                                        const p = [...prev.parameters];
+                                        p[index] = {
+                                          ...p[index],
+                                          parentKey: chosenHeader?.key || null,
+                                          parentId: chosenHeader?.id ? chosenHeader.id : null,
+                                        };
+                                        return { ...prev, parameters: p };
+                                      });
+                                    }
+                                  }}
+                                  sx={{ fontSize: "0.8rem" }}
+                                >
+                                  <MenuItem value="">
+                                    <Box component="span" sx={{ color: "text.secondary", fontStyle: "italic", fontSize: "0.78rem" }}>
+                                      (None – standalone)
+                                    </Box>
+                                  </MenuItem>
+                                  {editForm.parameters
+                                    .filter((h) => h.isHeader && h.name)
+                                    .map((h) => (
+                                      <MenuItem
+                                        key={h.key}
+                                        value={h.key || String(h.id)}
+                                        sx={{ fontSize: "0.82rem" }}
+                                      >
+                                        {h.name}
+                                      </MenuItem>
+                                    ))
+                                  }
+                                </Select>
+                              )}
                             </TableCell>
 
                             {/* Name — combined Test + Parameter autocomplete */}
@@ -1140,73 +1208,7 @@ export default function EditTestDialog({ open, onClose, test, parameterDictionar
                               />
                             </TableCell>
 
-                            {/* Is Header */}
-                            <TableCell align="center" sx={{ bgcolor: "#f8fafc" }}>
-                              <Checkbox
-                                checked={!!param.isHeader}
-                                onChange={(e) => handleParamChange(index, "isHeader", e.target.checked)}
-                                color="primary"
-                              />
-                            </TableCell>
 
-                            {/* Parent Header — link this row to a header group */}
-                            <TableCell sx={{ bgcolor: "#fff7ed" }}>
-                              {param.isHeader ? (
-                                // Headers cannot have a parent
-                                <Box sx={{ fontSize: "0.8rem", color: "text.disabled", pl: 1 }}>—</Box>
-                              ) : (
-                                <Select
-                                  size="small"
-                                  fullWidth
-                                  displayEmpty
-                                  value={param.parentKey || (param.parentId ? String(param.parentId) : "")}
-                                  onChange={(e) => {
-                                    const selected = e.target.value;
-                                    if (!selected) {
-                                      // (None) → remove parent link
-                                      setEditForm((prev) => {
-                                        const p = [...prev.parameters];
-                                        p[index] = { ...p[index], parentKey: null, parentId: null };
-                                        return { ...prev, parameters: p };
-                                      });
-                                    } else {
-                                      // Find the chosen header row by its key (or string-id for existing rows)
-                                      const chosenHeader = editForm.parameters.find(
-                                        (h) => h.isHeader && (h.key === selected || String(h.id) === selected)
-                                      );
-                                      setEditForm((prev) => {
-                                        const p = [...prev.parameters];
-                                        p[index] = {
-                                          ...p[index],
-                                          parentKey: chosenHeader?.key || null,
-                                          parentId: chosenHeader?.id ? chosenHeader.id : null,
-                                        };
-                                        return { ...prev, parameters: p };
-                                      });
-                                    }
-                                  }}
-                                  sx={{ fontSize: "0.8rem" }}
-                                >
-                                  <MenuItem value="">
-                                    <Box component="span" sx={{ color: "text.secondary", fontStyle: "italic", fontSize: "0.78rem" }}>
-                                      (None – standalone)
-                                    </Box>
-                                  </MenuItem>
-                                  {editForm.parameters
-                                    .filter((h) => h.isHeader && h.name)
-                                    .map((h) => (
-                                      <MenuItem
-                                        key={h.key}
-                                        value={h.key || String(h.id)}
-                                        sx={{ fontSize: "0.82rem" }}
-                                      >
-                                        {h.name}
-                                      </MenuItem>
-                                    ))
-                                  }
-                                </Select>
-                              )}
-                            </TableCell>
                           </TableRow>
                         ))
                       )}
