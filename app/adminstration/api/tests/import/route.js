@@ -66,9 +66,6 @@ async function generateUniqueCode(tx, name, workspaceId) {
   return Math.random().toString(36).substring(2, 8).toUpperCase();
 }
 
-}
-}
-
 export async function POST(req) {
   try {
     await verifySuperAdminAPI();
