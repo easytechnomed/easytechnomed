@@ -365,7 +365,7 @@ export async function POST(req) {
                 data: {
                   name: trimmedName,
                   code: row.code?.trim() || null,
-                  normalRangeDefault: "Normal / Negative",
+                  normalRangeDefault: null,
                   unit: "-NA-",
                 }
               });
@@ -420,7 +420,7 @@ export async function POST(req) {
                 data: {
                   name: trimmedName,
                   code: row.code?.trim() || null,
-                  normalRangeDefault: "Normal / Negative",
+                  normalRangeDefault: null,
                   unit: "-NA-",
                 }
               });
