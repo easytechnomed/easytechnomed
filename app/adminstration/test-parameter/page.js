@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useRef } from "react";
 import { debounce } from "../../utils/debounce";
 import { useRouter, usePathname } from "next/navigation";
 import {
@@ -42,7 +42,11 @@ import {
   useMediaQuery,
   Pagination,
   Autocomplete,
-  Tooltip
+  Tooltip,
+  FormControl,
+  Select,
+  MenuItem,
+  InputLabel
 } from "@mui/material";
 import {
   ExitToApp as LogoutIcon,
@@ -161,6 +165,9 @@ export default function DefaultTestsPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [searchVal, setSearchVal] = useState("");
   const [loading, setLoading] = useState(true);
+  const [departments, setDepartments] = useState([]);
+  const [selectedDepartment, setSelectedDepartment] = useState("all");
+  const fetchIdRef = useRef(0);
 
   // Pagination states
   const [page, setPage] = useState(1);
@@ -202,11 +209,14 @@ export default function DefaultTestsPage() {
     (paramPage - 1) * paramLimit + paramLimit
   );
 
-  const fetchTests = async (currentPage = page, query = searchQuery) => {
+  const fetchTests = async (currentPage = page, query = searchQuery, deptId = selectedDepartment) => {
+    const currentFetchId = ++fetchIdRef.current;
     setLoading(true);
     try {
-      const url = `/adminstration/api/tests?page=${currentPage}&limit=${limit}&search=${encodeURIComponent(query)}`;
+      const url = `/adminstration/api/tests?page=${currentPage}&limit=${limit}&search=${encodeURIComponent(query)}&departmentId=${deptId}`;
       const res = await fetch(url).then((r) => r.json());
+
+      if (currentFetchId !== fetchIdRef.current) return;
 
       if (!res.success && (res.error === "NEXT_REDIRECT" || res.error === "Unauthorized")) {
         router.push("/adminstration/login");
@@ -220,16 +230,22 @@ export default function DefaultTestsPage() {
         // Preserve selectedTest reference if it still exists in the fresh list
         if (selectedTest) {
           const freshSelected = res.tests.find((t) => t.id === selectedTest.id);
-          setSelectedTest(freshSelected || null);
+          if (freshSelected) {
+            setSelectedTest(freshSelected);
+          }
         }
       } else {
         toast.error(res.error || "Failed to load default tests.");
       }
     } catch (error) {
-      console.error("Error fetching default tests:", error);
-      toast.error("Failed to load default tests.");
+      if (currentFetchId === fetchIdRef.current) {
+        console.error("Error fetching default tests:", error);
+        toast.error("Failed to load default tests.");
+      }
     } finally {
-      setLoading(false);
+      if (currentFetchId === fetchIdRef.current) {
+        setLoading(false);
+      }
     }
   };
 
@@ -244,22 +260,34 @@ export default function DefaultTestsPage() {
     }
   };
 
-  // Fetch when page, limit, or searchQuery changes
+  const fetchDepartments = async () => {
+    try {
+      const res = await fetch("/adminstration/api/departments").then((r) => r.json());
+      if (res.success) {
+        setDepartments(res.departments || []);
+      }
+    } catch (err) {
+      console.error("Error fetching departments:", err);
+    }
+  };
+
+  // Fetch departments once on mount
   useEffect(() => {
-    Promise.resolve().then(() => {
-      fetchTests(page, searchQuery);
-      fetchParameterDictionary();
-    });
+    fetchDepartments();
+  }, []);
+
+  // Fetch when page, limit, searchQuery, or selectedDepartment changes
+  useEffect(() => {
+    fetchTests(page, searchQuery, selectedDepartment);
+    fetchParameterDictionary();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [page, limit, searchQuery]);
+  }, [page, limit, searchQuery, selectedDepartment]);
 
   const debouncedSearch = useMemo(
     () =>
       debounce((val) => {
-        Promise.resolve().then(() => {
-          setSearchQuery(val);
-          setPage(1);
-        });
+        setSearchQuery(val);
+        setPage(1);
       }, 400),
     []
   );
@@ -556,6 +584,23 @@ export default function DefaultTestsPage() {
                           Default Tests
                         </Typography>
                         <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, flexGrow: 1, justifyContent: "flex-end" }}>
+                          <FormControl size="small" sx={{ minWidth: 150 }}>
+                            <Select
+                              value={selectedDepartment}
+                              onChange={(e) => {
+                                setSelectedDepartment(e.target.value);
+                                setPage(1);
+                              }}
+                              displayEmpty
+                            >
+                              <MenuItem value="all">All Departments</MenuItem>
+                              {departments.map((dept) => (
+                                <MenuItem key={dept.id} value={dept.id.toString()}>
+                                  {dept.name}
+                                </MenuItem>
+                              ))}
+                            </Select>
+                          </FormControl>
                           <TextField
                             size="small"
                             variant="outlined"
@@ -591,6 +636,7 @@ export default function DefaultTestsPage() {
                             <TableRow>
                               <TableCell sx={{ fontWeight: 700, bgcolor: "#f8fafc", width: 60 }}>S.No</TableCell>
                               <TableCell sx={{ fontWeight: 700, bgcolor: "#f8fafc" }}>Test Name</TableCell>
+                              <TableCell sx={{ fontWeight: 700, bgcolor: "#f8fafc" }}>Department</TableCell>
                               <TableCell sx={{ fontWeight: 700, bgcolor: "#f8fafc" }}>Params</TableCell>
                               <TableCell sx={{ fontWeight: 700, bgcolor: "#f8fafc" }}>Code</TableCell>
                               <TableCell align="right" sx={{ fontWeight: 700, bgcolor: "#f8fafc" }}>Base Price</TableCell>
@@ -600,7 +646,7 @@ export default function DefaultTestsPage() {
                           <TableBody>
                             {tests.length === 0 ? (
                               <TableRow>
-                                <TableCell colSpan={6} align="center" sx={{ py: 6, color: "text.secondary" }}>
+                                <TableCell colSpan={7} align="center" sx={{ py: 6, color: "text.secondary" }}>
                                   No default tests found matching current filters.
                                 </TableCell>
                               </TableRow>
@@ -624,6 +670,9 @@ export default function DefaultTestsPage() {
                                     <TableCell sx={{ fontWeight: 700, color: "text.secondary" }}>{sNo}</TableCell>
                                     <TableCell sx={{ fontWeight: 600, color: isSelected ? "primary.main" : "text.primary" }}>
                                       {test.name}
+                                    </TableCell>
+                                    <TableCell sx={{ color: "text.secondary" }}>
+                                      {test.department?.name || "-"}
                                     </TableCell>
                                     <TableCell sx={{ color: "text.secondary" }}>
                                       {test.parameters?.length || 0}
@@ -1091,7 +1140,7 @@ export default function DefaultTestsPage() {
           parameterDictionary={parameterDictionary}
           onSaveSuccess={async (savedTest, isNew) => {
             await fetchTests();
-            if (isNew && savedTest) {
+            if (savedTest) {
               setSelectedTest(savedTest);
             }
           }}

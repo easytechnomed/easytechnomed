@@ -69,6 +69,7 @@ export async function GET(req) {
     const pageParam = searchParams.get("page");
     const limitParam = searchParams.get("limit");
     const search = searchParams.get("search") || "";
+    const departmentIdParam = searchParams.get("departmentId");
 
     const page = pageParam ? parseInt(pageParam) : 1;
     const limit = limitParam ? parseInt(limitParam) : 10;
@@ -81,6 +82,9 @@ export async function GET(req) {
           { name: { contains: search } },
           { code: { contains: search } }
         ]
+      } : {}),
+      ...(departmentIdParam && departmentIdParam !== "all" ? {
+        departmentId: parseInt(departmentIdParam, 10)
       } : {})
     };
 
@@ -89,6 +93,7 @@ export async function GET(req) {
     const defaultTests = await prisma.test.findMany({
       where,
       include: {
+        department: true,
         parameters: {
           where: { isDeleted: false },
           orderBy: { order: "asc" },
@@ -124,7 +129,7 @@ export async function POST(req) {
     await verifySuperAdminAPI();
     
     const body = await req.json().catch(() => ({}));
-    const { name, code, price, parameters } = body;
+    const { name, code, price, parameters, departmentId } = body;
 
     if (!name || typeof name !== "string" || name.trim() === "") {
       return NextResponse.json({ success: false, error: "Test name is required." }, { status: 400 });
@@ -165,6 +170,7 @@ export async function POST(req) {
           price: parseFloat(price),
           workspaceId: null,
           isDeleted: false,
+          departmentId: departmentId ? parseInt(departmentId, 10) : null,
         }
       });
 
@@ -238,6 +244,7 @@ export async function POST(req) {
       return await tx.test.findUnique({
         where: { id: testRecord.id },
         include: {
+          department: true,
           parameters: {
             where: { isDeleted: false },
             orderBy: { order: "asc" },

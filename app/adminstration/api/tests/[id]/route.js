@@ -58,7 +58,7 @@ export async function PUT(req, { params }) {
     }
 
     const body = await req.json().catch(() => ({}));
-    const { name, code, price, parameters } = body;
+    const { name, code, price, parameters, departmentId } = body;
 
     if (!name || typeof name !== "string" || name.trim() === "") {
       return NextResponse.json({ success: false, error: "Test name is required." }, { status: 400 });
@@ -101,6 +101,7 @@ export async function PUT(req, { params }) {
             name: name.trim(),
             code: code ? code.trim() : null,
             price: parseFloat(price),
+            departmentId: departmentId ? parseInt(departmentId, 10) : null,
           }
         });
 

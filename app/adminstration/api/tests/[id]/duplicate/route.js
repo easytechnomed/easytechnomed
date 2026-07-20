@@ -88,6 +88,7 @@ export async function POST(req, { params }) {
           price: sourceTest.price,
           workspaceId: null,
           isDeleted: false,
+          departmentId: sourceTest.departmentId,
         }
       });
 

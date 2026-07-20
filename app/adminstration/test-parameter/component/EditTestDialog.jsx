@@ -179,6 +179,7 @@ export default function EditTestDialog({ open, onClose, test, parameterDictionar
         name: test.name,
         code: test.code || "",
         price: test.price.toString(),
+        departmentId: test.departmentId ? test.departmentId.toString() : "",
         parameters: paramsCopy
       };
     } else {
@@ -187,6 +188,7 @@ export default function EditTestDialog({ open, onClose, test, parameterDictionar
         name: "",
         code: "",
         price: "0.00",
+        departmentId: "",
         parameters: []
       };
     }
@@ -209,6 +211,17 @@ export default function EditTestDialog({ open, onClose, test, parameterDictionar
   // Custom interactive simulation states
   const [editedFormulas, setEditedFormulas] = useState({});
   const [simValues, setSimValues] = useState({});
+
+  const [departments, setDepartments] = useState([]);
+
+  useEffect(() => {
+    fetch("/adminstration/api/departments")
+      .then((r) => r.json())
+      .then((res) => {
+        if (res.success) setDepartments(res.departments || []);
+      })
+      .catch((err) => console.error("Error fetching departments in EditTestDialog:", err));
+  }, []);
 
   // Fetch test catalog for bulk-insert autocomplete on dialog open
   useEffect(() => {
@@ -652,6 +665,7 @@ export default function EditTestDialog({ open, onClose, test, parameterDictionar
           name: editForm.name,
           code: editForm.code,
           price: editForm.price,
+          departmentId: editForm.departmentId ? parseInt(editForm.departmentId, 10) : null,
           parameters: editForm.parameters
         })
       }).then((r) => r.json());
@@ -769,7 +783,7 @@ export default function EditTestDialog({ open, onClose, test, parameterDictionar
                   Test Metadata
                 </Typography>
                 <Grid container spacing={2}>
-                  <Grid item xs={12} md={5}>
+                  <Grid item xs={12} md={4}>
                     <TextField
                       required
                       fullWidth
@@ -779,7 +793,7 @@ export default function EditTestDialog({ open, onClose, test, parameterDictionar
                       onChange={(e) => setEditForm((prev) => ({ ...prev, name: e.target.value }))}
                     />
                   </Grid>
-                  <Grid item xs={6} md={3}>
+                  <Grid item xs={6} md={2}>
                     <TextField
                       fullWidth
                       size="small"
@@ -788,7 +802,7 @@ export default function EditTestDialog({ open, onClose, test, parameterDictionar
                       onChange={(e) => setEditForm((prev) => ({ ...prev, code: e.target.value }))}
                     />
                   </Grid>
-                  <Grid item xs={6} md={4}>
+                  <Grid item xs={6} md={3}>
                     <TextField
                       required
                       fullWidth
@@ -799,6 +813,26 @@ export default function EditTestDialog({ open, onClose, test, parameterDictionar
                       value={editForm.price}
                       onChange={(e) => setEditForm((prev) => ({ ...prev, price: e.target.value }))}
                     />
+                  </Grid>
+                  <Grid item xs={12} md={3}>
+                    <FormControl fullWidth size="small">
+                      <InputLabel id="department-select-label">Department</InputLabel>
+                      <Select
+                        labelId="department-select-label"
+                        label="Department"
+                        value={editForm.departmentId || ""}
+                        onChange={(e) => setEditForm((prev) => ({ ...prev, departmentId: e.target.value }))}
+                      >
+                        <MenuItem value="">
+                          <em>None</em>
+                        </MenuItem>
+                        {departments.map((dept) => (
+                          <MenuItem key={dept.id} value={dept.id.toString()}>
+                            {dept.name}
+                          </MenuItem>
+                        ))}
+                      </Select>
+                    </FormControl>
                   </Grid>
                 </Grid>
               </Box>
