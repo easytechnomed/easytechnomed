@@ -351,8 +351,7 @@ export async function POST(req) {
       // 15. Fetch default interpretation rules and clone
       const defaultRules = await tx.interpretationRule.findMany({
         where: {
-          workspaceId: null,
-          isActive: true
+          workspaceId: null
         },
         include: {
           test: true,
@@ -373,16 +372,15 @@ export async function POST(req) {
             newParamId = paramNameToIdMap[dr.parameter.name.toLowerCase()] || null;
           }
 
-          rulesToCreate.push({
-            workspaceId: workspace.id,
-            testId: newTestId,
-            parameterId: newParamId,
-            ruleType: dr.ruleType,
-            conditionJson: dr.conditionJson,
-            interpretationText: dr.interpretationText,
-            priority: dr.priority,
-            isActive: dr.isActive
-          });
+          if (newTestId && newParamId) {
+            rulesToCreate.push({
+              workspaceId: workspace.id,
+              testId: newTestId,
+              parameterId: newParamId,
+              condition: dr.condition,
+              interpretation: dr.interpretation
+            });
+          }
         }
         if (rulesToCreate.length > 0) {
           await tx.interpretationRule.createMany({ data: rulesToCreate });
