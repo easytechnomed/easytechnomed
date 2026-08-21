@@ -185,13 +185,17 @@ export async function POST(req) {
             });
           }
 
-          // 3. Fetch existing test parameters
+          // 3. Fetch existing test parameters & formulas
           const existingTPs = await tx.testParameter.findMany({
             where: { testId: testRecord.id },
           });
 
           const activeTpIds = new Set();
           let lastHeaderTpId = null;
+
+          const paramNameToId = new Map();
+          const paramCodeToId = new Map();
+          const inlineFormulas = [];
 
           // 4. Process incoming parameters in order
           for (let i = 0; i < incomingParams.length; i++) {
@@ -213,10 +217,16 @@ export async function POST(req) {
 
             const optionsVal = parseNullableOptions(p.options);
             const unitVal = parseNullableString(p.unit);
+            const isCalculated = Boolean(p.isCalculated || p.formula || p.calculationFormula);
+            const decimalPlace = p.decimalPlace !== undefined && !isNaN(parseInt(p.decimalPlace, 10)) ? parseInt(p.decimalPlace, 10) : 2;
+            const roundingMethod = parseNullableString(p.roundingMethod) || "HALF_UP";
+            const section = parseNullableString(p.section);
+
+            const paramCode = p.code ? String(p.code).trim().toUpperCase().replace(/[^A-Z0-9_]/g, "") : null;
 
             const paramData = {
               name: paramName,
-              code: p.code ? String(p.code).trim().toUpperCase().replace(/[^A-Z0-9_]/g, "") : null,
+              code: paramCode,
               unit: unitVal,
               valueType: valueType,
               options: optionsVal,
@@ -230,6 +240,22 @@ export async function POST(req) {
               maxValBaby,
               normalRangeBaby: parseNullableString(p.normalRangeBaby),
               normalRangeDefault: parseNullableString(p.normalRangeDefault),
+              criticalMinValMale: isNumeric ? parseNullableFloat(p.criticalMinValMale) : null,
+              criticalMaxValMale: isNumeric ? parseNullableFloat(p.criticalMaxValMale) : null,
+              criticalMinValFemale: isNumeric ? parseNullableFloat(p.criticalMinValFemale) : null,
+              criticalMaxValFemale: isNumeric ? parseNullableFloat(p.criticalMaxValFemale) : null,
+              criticalMinValBaby: isNumeric ? parseNullableFloat(p.criticalMinValBaby) : null,
+              criticalMaxValBaby: isNumeric ? parseNullableFloat(p.criticalMaxValBaby) : null,
+              criticalMinValDefault: isNumeric ? parseNullableFloat(p.criticalMinValDefault) : null,
+              criticalMaxValDefault: isNumeric ? parseNullableFloat(p.criticalMaxValDefault) : null,
+              borderlineMinValMale: isNumeric ? parseNullableFloat(p.borderlineMinValMale) : null,
+              borderlineMaxValMale: isNumeric ? parseNullableFloat(p.borderlineMaxValMale) : null,
+              borderlineMinValFemale: isNumeric ? parseNullableFloat(p.borderlineMinValFemale) : null,
+              borderlineMaxValFemale: isNumeric ? parseNullableFloat(p.borderlineMaxValFemale) : null,
+              borderlineMinValBaby: isNumeric ? parseNullableFloat(p.borderlineMinValBaby) : null,
+              borderlineMaxValBaby: isNumeric ? parseNullableFloat(p.borderlineMaxValBaby) : null,
+              borderlineMinValDefault: isNumeric ? parseNullableFloat(p.borderlineMinValDefault) : null,
+              borderlineMaxValDefault: isNumeric ? parseNullableFloat(p.borderlineMaxValDefault) : null,
             };
 
             // Upsert master parameter dictionary record (workspaceId: null)
@@ -254,6 +280,22 @@ export async function POST(req) {
               });
             }
 
+            paramNameToId.set(paramName.toLowerCase(), parameter.id);
+            if (paramCode) {
+              paramCodeToId.set(paramCode.toUpperCase(), parameter.id);
+            }
+
+            // Check if inline formula is defined on the parameter
+            const inlineFormulaExpr = parseNullableString(p.formula || p.calculationFormula);
+            if (inlineFormulaExpr) {
+              inlineFormulas.push({
+                outputParameterId: parameter.id,
+                formula: inlineFormulaExpr,
+                name: parseNullableString(p.formulaName),
+                description: parseNullableString(p.formulaDescription),
+              });
+            }
+
             // Link in TestParameter table
             const order = p.order !== undefined && !isNaN(parseInt(p.order, 10)) ? parseInt(p.order, 10) : i + 1;
             const parentId = isHeader ? null : (p.parentId !== undefined ? p.parentId : lastHeaderTpId);
@@ -267,6 +309,10 @@ export async function POST(req) {
               unit: unitVal,
               valueType: valueType,
               options: optionsVal,
+              isCalculated: isCalculated,
+              decimalPlace: decimalPlace,
+              roundingMethod: roundingMethod,
+              section: section,
               isDeleted: false,
               deletedAt: null,
               workspaceId: null,
@@ -294,7 +340,108 @@ export async function POST(req) {
             }
           }
 
-          // 5. Soft-delete old parameters not in the incoming payload
+          // 5. Process Formulas (both inline parameter formulas and top-level item.formulas)
+          const incomingFormulas = Array.isArray(item.formulas) ? item.formulas : [];
+          const allFormulasToProcess = [...inlineFormulas];
+
+          for (const f of incomingFormulas) {
+            if (!f) continue;
+            const formulaStr = parseNullableString(f.formula || f.expression || f.calculationFormula);
+            if (!formulaStr) continue;
+
+            let targetParamId = null;
+
+            if (f.outputParameterId && !isNaN(parseInt(f.outputParameterId, 10))) {
+              targetParamId = parseInt(f.outputParameterId, 10);
+            } else if (f.parameterId && !isNaN(parseInt(f.parameterId, 10))) {
+              targetParamId = parseInt(f.parameterId, 10);
+            }
+
+            if (!targetParamId) {
+              const outName = parseNullableString(f.outputParameter || f.outputParameterName || f.parameterName || f.name);
+              if (outName && paramNameToId.has(outName.toLowerCase())) {
+                targetParamId = paramNameToId.get(outName.toLowerCase());
+              } else if (outName) {
+                const dbParam = await tx.parameter.findFirst({
+                  where: { workspaceId: null, name: { equals: outName } },
+                });
+                if (dbParam) targetParamId = dbParam.id;
+              }
+            }
+
+            if (!targetParamId) {
+              const outCode = parseNullableString(f.outputParameterCode || f.parameterCode || f.code);
+              if (outCode && paramCodeToId.has(outCode.toUpperCase())) {
+                targetParamId = paramCodeToId.get(outCode.toUpperCase());
+              } else if (outCode) {
+                const dbParam = await tx.parameter.findFirst({
+                  where: { workspaceId: null, code: outCode.toUpperCase() },
+                });
+                if (dbParam) targetParamId = dbParam.id;
+              }
+            }
+
+            if (targetParamId) {
+              allFormulasToProcess.push({
+                outputParameterId: targetParamId,
+                formula: formulaStr,
+                name: parseNullableString(f.name || f.formulaName),
+                description: parseNullableString(f.description || f.formulaDescription),
+                isActive: f.isActive !== undefined ? Boolean(f.isActive) : true,
+              });
+            }
+          }
+
+          const processedFormulaIds = new Set();
+          for (const form of allFormulasToProcess) {
+            // Guarantee isCalculated is true on the testParameter mapping
+            await tx.testParameter.updateMany({
+              where: {
+                testId: testRecord.id,
+                parameterId: form.outputParameterId,
+              },
+              data: { isCalculated: true },
+            });
+
+            const existingFormula = await tx.testFormula.findFirst({
+              where: {
+                workspaceId: null,
+                testId: testRecord.id,
+                outputParameterId: form.outputParameterId,
+              },
+            });
+
+            let tf;
+            if (existingFormula) {
+              tf = await tx.testFormula.update({
+                where: { id: existingFormula.id },
+                data: {
+                  formula: form.formula,
+                  name: form.name || existingFormula.name || null,
+                  description: form.description || existingFormula.description || null,
+                  isActive: form.isActive !== undefined ? form.isActive : true,
+                  version: (existingFormula.version || 1) + 1,
+                },
+              });
+            } else {
+              tf = await tx.testFormula.create({
+                data: {
+                  workspaceId: null,
+                  testId: testRecord.id,
+                  outputParameterId: form.outputParameterId,
+                  formula: form.formula,
+                  name: form.name || null,
+                  description: form.description || null,
+                  isActive: form.isActive !== undefined ? form.isActive : true,
+                  version: 1,
+                },
+              });
+            }
+
+            processedFormulaIds.add(tf.id);
+          }
+
+          // 6. Soft-delete old parameters not in the incoming payload
           const toDeleteIds = existingTPs
             .filter((x) => !activeTpIds.has(x.id) && !x.isDeleted)
             .map((x) => x.id);
@@ -315,6 +462,7 @@ export async function POST(req) {
             code: testRecord.code,
             isProcessed: testRecord.isProcessed,
             parametersCount: activeTpIds.size,
+            formulasCount: processedFormulaIds.size,
           };
         },
         {
