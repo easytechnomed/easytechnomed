@@ -117,6 +117,7 @@ export async function POST(req) {
         await tx.parameter.createMany({
           data: uniqueParamsList.map((p) => ({
             name: p.name,
+            code: p.code,
             unit: p.unit,
             valueType: p.valueType || "NUMERIC",
             options: p.options || null,
@@ -130,6 +131,22 @@ export async function POST(req) {
             maxValBaby: p.maxValBaby,
             normalRangeBaby: p.normalRangeBaby,
             normalRangeDefault: p.normalRangeDefault,
+            criticalMinValMale: p.criticalMinValMale,
+            criticalMaxValMale: p.criticalMaxValMale,
+            criticalMinValFemale: p.criticalMinValFemale,
+            criticalMaxValFemale: p.criticalMaxValFemale,
+            criticalMinValBaby: p.criticalMinValBaby,
+            criticalMaxValBaby: p.criticalMaxValBaby,
+            criticalMinValDefault: p.criticalMinValDefault,
+            criticalMaxValDefault: p.criticalMaxValDefault,
+            borderlineMinValMale: p.borderlineMinValMale,
+            borderlineMaxValMale: p.borderlineMaxValMale,
+            borderlineMinValFemale: p.borderlineMinValFemale,
+            borderlineMaxValFemale: p.borderlineMaxValFemale,
+            borderlineMinValBaby: p.borderlineMinValBaby,
+            borderlineMaxValBaby: p.borderlineMaxValBaby,
+            borderlineMinValDefault: p.borderlineMinValDefault,
+            borderlineMaxValDefault: p.borderlineMaxValDefault,
             workspaceId: ws.id,
           }))
         });
@@ -151,6 +168,15 @@ export async function POST(req) {
         name: gt.name,
         code: gt.code,
         price: gt.price,
+        baseRate: gt.baseRate,
+        curRate: gt.curRate,
+        rate: gt.rate,
+        collectionCenterRate: gt.collectionCenterRate,
+        franchiseRate: gt.franchiseRate,
+        superFranchiseRate: gt.superFranchiseRate,
+        labRate: gt.labRate,
+        offerPrice: gt.offerPrice,
+        departmentId: gt.departmentId,
         isProcessed: gt.isProcessed,
         workspaceId: ws.id,
       }));
@@ -165,37 +191,166 @@ export async function POST(req) {
         where: { workspaceId: ws.id },
       });
 
-      // 8. Map parameters to the newly inserted test IDs and parameter IDs
-      const allClonedParams = [];
+      // Map test name+code key to its new database ID
+      const testKeyToIdMap = {};
+      for (const nt of insertedTests) {
+        const key = `${nt.name.toLowerCase()}_${(nt.code || "").toLowerCase()}`;
+        testKeyToIdMap[key] = nt.id;
+      }
+
+      // 8. Two-pass insertion of TestParameters to preserve isHeader -> child parentId mapping
+      const defaultTpIdToNewTpIdMap = new Map();
+
       for (const gt of globalTests) {
-        const clonedTest = insertedTests.find(
-          (t) => t.code === gt.code && t.name === gt.name
-        );
-        if (clonedTest && gt.parameters && gt.parameters.length > 0) {
-          for (const tp of gt.parameters) {
-            if (tp.parameter) {
-              const newParamId = paramNameToIdMap[tp.parameter.name.toLowerCase()];
-              if (newParamId) {
-                allClonedParams.push({
-                  testId: clonedTest.id,
+        const key = `${gt.name.toLowerCase()}_${(gt.code || "").toLowerCase()}`;
+        const newTestId = testKeyToIdMap[key];
+        if (newTestId && gt.parameters) {
+          const headerTps = gt.parameters.filter(tp => tp.isHeader && tp.parameter);
+          for (const tp of headerTps) {
+            const newParamId = paramNameToIdMap[tp.parameter.name.toLowerCase()];
+            if (newParamId) {
+              const createdHeaderTp = await tx.testParameter.create({
+                data: {
+                  testId: newTestId,
                   parameterId: newParamId,
                   order: tp.order,
-                  isHeader: tp.isHeader || false,
-                  valueType: tp.valueType || tp.parameter.valueType || null,
+                  isHeader: true,
+                  parentId: null,
+                  unit: tp.unit || tp.parameter.unit || null,
+                  valueType: tp.valueType || tp.parameter.valueType || "OPTIONS",
                   options: tp.options || tp.parameter.options || null,
+                  isCalculated: tp.isCalculated || false,
+                  decimalPlace: tp.decimalPlace ?? 2,
+                  roundingMethod: tp.roundingMethod || "HALF_UP",
+                  section: tp.section || null,
                   workspaceId: ws.id,
-                });
-              }
+                }
+              });
+              defaultTpIdToNewTpIdMap.set(tp.id, createdHeaderTp.id);
             }
           }
         }
       }
 
-      // 9. Bulk insert all parameters in one operation
-      if (allClonedParams.length > 0) {
+      // Pass 2: Insert child & standalone parameters
+      const childParamsToCreate = [];
+      for (const gt of globalTests) {
+        const key = `${gt.name.toLowerCase()}_${(gt.code || "").toLowerCase()}`;
+        const newTestId = testKeyToIdMap[key];
+        if (newTestId && gt.parameters) {
+          const nonHeaderTps = gt.parameters.filter(tp => !tp.isHeader && tp.parameter);
+          for (const tp of nonHeaderTps) {
+            const newParamId = paramNameToIdMap[tp.parameter.name.toLowerCase()];
+            if (newParamId) {
+              const newParentId = tp.parentId ? (defaultTpIdToNewTpIdMap.get(tp.parentId) || null) : null;
+              childParamsToCreate.push({
+                testId: newTestId,
+                parameterId: newParamId,
+                order: tp.order,
+                isHeader: false,
+                parentId: newParentId,
+                unit: tp.unit || tp.parameter.unit || null,
+                valueType: tp.valueType || tp.parameter.valueType || "NUMERIC",
+                options: tp.options || tp.parameter.options || null,
+                isCalculated: tp.isCalculated || false,
+                decimalPlace: tp.decimalPlace ?? 2,
+                roundingMethod: tp.roundingMethod || "HALF_UP",
+                section: tp.section || null,
+                workspaceId: ws.id,
+              });
+            }
+          }
+        }
+      }
+
+      // 9. Bulk insert all child parameters in one operation
+      if (childParamsToCreate.length > 0) {
         await tx.testParameter.createMany({
-          data: allClonedParams,
+          data: childParamsToCreate,
         });
+      }
+
+      // 10. Fetch default test formulas and clone
+      const defaultFormulas = await tx.testFormula.findMany({
+        where: {
+          workspaceId: null,
+          isActive: true
+        },
+        include: {
+          test: true,
+          outputParameter: true
+        }
+      });
+
+      if (defaultFormulas.length > 0) {
+        const formulasToCreate = [];
+        for (const df of defaultFormulas) {
+          if (df.test && df.outputParameter) {
+            const testKey = `${df.test.name.toLowerCase()}_${(df.test.code || "").toLowerCase()}`;
+            const newTestId = testKeyToIdMap[testKey];
+            const newOutputParamId = paramNameToIdMap[df.outputParameter.name.toLowerCase()];
+
+            if (newTestId && newOutputParamId) {
+              formulasToCreate.push({
+                workspaceId: ws.id,
+                testId: newTestId,
+                outputParameterId: newOutputParamId,
+                formula: df.formula,
+                description: df.description,
+                name: df.name,
+                version: df.version,
+                isActive: df.isActive
+              });
+            }
+          }
+        }
+
+        if (formulasToCreate.length > 0) {
+          await tx.testFormula.createMany({
+            data: formulasToCreate
+          });
+        }
+      }
+
+      // 11. Fetch default interpretation rules and clone
+      const defaultRules = await tx.interpretationRule.findMany({
+        where: {
+          workspaceId: null,
+          isActive: true
+        },
+        include: {
+          test: true,
+          parameter: true
+        }
+      });
+
+      if (defaultRules.length > 0) {
+        const rulesToCreate = [];
+        for (const dr of defaultRules) {
+          let newTestId = null;
+          if (dr.test) {
+            const testKey = `${dr.test.name.toLowerCase()}_${(dr.test.code || "").toLowerCase()}`;
+            newTestId = testKeyToIdMap[testKey] || null;
+          }
+          let newParamId = null;
+          if (dr.parameter) {
+            newParamId = paramNameToIdMap[dr.parameter.name.toLowerCase()] || null;
+          }
+
+          rulesToCreate.push({
+            workspaceId: ws.id,
+            testId: newTestId,
+            parameterId: newParamId,
+            ruleType: dr.ruleType,
+            conditionJson: dr.conditionJson,
+            interpretationText: dr.interpretationText,
+            priority: dr.priority,
+            isActive: dr.isActive
+          });
+        }
+        if (rulesToCreate.length > 0) {
+          await tx.interpretationRule.createMany({ data: rulesToCreate });
+        }
       }
 
       return ws;

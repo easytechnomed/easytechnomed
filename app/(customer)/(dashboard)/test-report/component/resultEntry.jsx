@@ -839,24 +839,91 @@ export default function ResultEntry({ open, onClose, selectedReg, onSaveSuccess,
                           </TableHead>
                           <TableBody>
                             {(() => {
-                              let currentHeader = null;
-                              let serialNo = 0;
-                              return params.map((param) => {
+                              let mainCounter = 0;
+                              let currentHeaderInfo = null;
+                              const headerInfoById = new Map();
+
+                              const computedRows = params.map((param) => {
                                 const ref = getReferenceRange(param, resultRegDetails);
-                                const isHeader = param.isHeader || (!param.unit && (!ref || !ref.rangeStr || ref.rangeStr === "" || ref.rangeStr === "-NA-"));
+                                const isHeader = Boolean(param.isHeader) || (param.isHeader === undefined && !param.unit && (!ref || !ref.rangeStr || ref.rangeStr === "" || ref.rangeStr === "-NA-"));
 
                                 if (isHeader) {
-                                  currentHeader = param.name;
+                                  mainCounter++;
+                                  const headerInfo = {
+                                    mainNumber: mainCounter,
+                                    name: param.name,
+                                    childCounter: 0
+                                  };
+                                  headerInfoById.set(param.id, headerInfo);
+                                  currentHeaderInfo = headerInfo;
+                                  return {
+                                    param,
+                                    ref,
+                                    isHeader: true,
+                                    isChild: false,
+                                    displaySerial: `${mainCounter}.`
+                                  };
+                                }
+
+                                // Check if this parameter is a child
+                                let parentInfo = null;
+                                if (param.parentId != null && headerInfoById.has(param.parentId)) {
+                                  parentInfo = headerInfoById.get(param.parentId);
+                                } else if (param.parentId === undefined && currentHeaderInfo != null) {
+                                  parentInfo = currentHeaderInfo;
+                                }
+
+                                if (parentInfo) {
+                                  parentInfo.childCounter++;
+                                  return {
+                                    param,
+                                    ref,
+                                    isHeader: false,
+                                    isChild: true,
+                                    displaySerial: `${parentInfo.mainNumber}.${parentInfo.childCounter}`
+                                  };
+                                } else {
+                                  mainCounter++;
+                                  currentHeaderInfo = null;
+                                  return {
+                                    param,
+                                    ref,
+                                    isHeader: false,
+                                    isChild: false,
+                                    displaySerial: `${mainCounter}`
+                                  };
+                                }
+                              });
+
+                              return computedRows.map(({ param, ref, isHeader, isChild, displaySerial }) => {
+                                if (isHeader) {
                                   return (
-                                    <TableRow key={param.id} sx={{ bgcolor: "rgba(15, 118, 110, 0.04)" }}>
-                                      <TableCell colSpan={6} sx={{ fontWeight: 800, color: "primary.main", py: 1 }}>
-                                        {param.name}
+                                    <TableRow key={param.id} sx={{ bgcolor: "rgba(15, 118, 110, 0.06)", borderLeft: "4px solid", borderColor: "primary.main" }}>
+                                      <TableCell sx={{ fontWeight: 800, color: "primary.main", py: 1 }}>
+                                        {displaySerial}
+                                      </TableCell>
+                                      <TableCell colSpan={5} sx={{ fontWeight: 800, color: "primary.main", py: 1 }}>
+                                        <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                                          <Typography variant="subtitle2" sx={{ fontWeight: 800, color: "primary.main" }}>
+                                            {param.name}
+                                          </Typography>
+                                          <Chip
+                                            label="Section Header"
+                                            size="small"
+                                            sx={{
+                                              height: 20,
+                                              fontSize: "0.68rem",
+                                              fontWeight: 700,
+                                              bgcolor: "rgba(15, 118, 110, 0.12)",
+                                              color: "primary.main"
+                                            }}
+                                          />
+                                        </Box>
                                       </TableCell>
                                     </TableRow>
                                   );
                                 }
 
-                                serialNo++;
                                 const val = resultValues[param.id] || "";
                                 const isAbnormal = isOutOfRange(val, ref.min, ref.max, param, ref.rangeStr);
 
@@ -893,7 +960,6 @@ export default function ResultEntry({ open, onClose, selectedReg, onSaveSuccess,
                                 }
 
                                 const hasOptions = dropdownOptions.length > 0;
-                                const isChild = !!currentHeader;
 
                                 // Check if parameter has an active math formula
                                 const testFormulas = resultTests.flatMap(t => t.formulas || []);
@@ -903,9 +969,18 @@ export default function ResultEntry({ open, onClose, selectedReg, onSaveSuccess,
 
                                 return (
                                   <TableRow key={param.id} hover>
-                                    <TableCell>{serialNo}</TableCell>
-                                    <TableCell sx={{ fontWeight: 600, pl: isChild ? 4 : 2 }}>
-                                      {isChild ? `▪ ${param.name}` : param.name}
+                                    <TableCell sx={{ color: isChild ? "text.secondary" : "text.primary", fontWeight: isChild ? 600 : 700 }}>
+                                      {displaySerial}
+                                    </TableCell>
+                                    <TableCell sx={{ fontWeight: 600, pl: isChild ? 3.5 : 2 }}>
+                                      <Box sx={{ display: "flex", alignItems: "center", gap: 0.8 }}>
+                                        {isChild && (
+                                          <Typography variant="caption" sx={{ color: "text.disabled", fontWeight: 700 }}>↳</Typography>
+                                        )}
+                                        <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                                          {param.name}
+                                        </Typography>
+                                      </Box>
                                     </TableCell>
                                     <TableCell sx={{ fontSize: "0.85rem" }}>
                                       {ref.rangeStr || ""}

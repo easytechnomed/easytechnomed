@@ -163,6 +163,22 @@ export async function POST(req) {
             maxValBaby: p.maxValBaby,
             normalRangeBaby: p.normalRangeBaby,
             normalRangeDefault: p.normalRangeDefault,
+            criticalMinValMale: p.criticalMinValMale,
+            criticalMaxValMale: p.criticalMaxValMale,
+            criticalMinValFemale: p.criticalMinValFemale,
+            criticalMaxValFemale: p.criticalMaxValFemale,
+            criticalMinValBaby: p.criticalMinValBaby,
+            criticalMaxValBaby: p.criticalMaxValBaby,
+            criticalMinValDefault: p.criticalMinValDefault,
+            criticalMaxValDefault: p.criticalMaxValDefault,
+            borderlineMinValMale: p.borderlineMinValMale,
+            borderlineMaxValMale: p.borderlineMaxValMale,
+            borderlineMinValFemale: p.borderlineMinValFemale,
+            borderlineMaxValFemale: p.borderlineMaxValFemale,
+            borderlineMinValBaby: p.borderlineMinValBaby,
+            borderlineMaxValBaby: p.borderlineMaxValBaby,
+            borderlineMinValDefault: p.borderlineMinValDefault,
+            borderlineMaxValDefault: p.borderlineMaxValDefault,
             workspaceId: workspace.id
           }))
         });
@@ -185,6 +201,15 @@ export async function POST(req) {
           name: dt.name,
           code: dt.code,
           price: dt.price,
+          baseRate: dt.baseRate,
+          curRate: dt.curRate,
+          rate: dt.rate,
+          collectionCenterRate: dt.collectionCenterRate,
+          franchiseRate: dt.franchiseRate,
+          superFranchiseRate: dt.superFranchiseRate,
+          labRate: dt.labRate,
+          offerPrice: dt.offerPrice,
+          departmentId: dt.departmentId,
           workspaceId: workspace.id,
           isProcessed: dt.isProcessed,
           isDeleted: false
@@ -206,36 +231,78 @@ export async function POST(req) {
         testKeyToIdMap[key] = nt.id;
       }
 
-      // 10. Prepare all test parameters for bulk insert with workspace scoping
-      const testParametersToCreate = [];
+      // 10. Two-pass insertion of TestParameters to preserve isHeader -> child parentId mapping
+      // Pass 1: Insert all isHeader rows first to get their new DB IDs
+      const defaultTpIdToNewTpIdMap = new Map();
+
       for (const dt of defaultTests) {
         const key = `${dt.name.toLowerCase()}_${(dt.code || "").toLowerCase()}`;
         const newTestId = testKeyToIdMap[key];
         if (newTestId && dt.parameters) {
-          for (const tp of dt.parameters) {
-            if (tp.parameter) {
-              const newParamId = paramNameToIdMap[tp.parameter.name.toLowerCase()];
-              if (newParamId) {
-                testParametersToCreate.push({
+          const headerTps = dt.parameters.filter(tp => tp.isHeader && tp.parameter);
+          for (const tp of headerTps) {
+            const newParamId = paramNameToIdMap[tp.parameter.name.toLowerCase()];
+            if (newParamId) {
+              const createdHeaderTp = await tx.testParameter.create({
+                data: {
                   testId: newTestId,
                   parameterId: newParamId,
                   order: tp.order,
-                  isHeader: tp.isHeader || false,
-                  valueType: tp.valueType || tp.parameter.valueType || null,
+                  isHeader: true,
+                  parentId: null,
+                  unit: tp.unit || tp.parameter.unit || null,
+                  valueType: tp.valueType || tp.parameter.valueType || "OPTIONS",
                   options: tp.options || tp.parameter.options || null,
+                  isCalculated: tp.isCalculated || false,
+                  decimalPlace: tp.decimalPlace ?? 2,
+                  roundingMethod: tp.roundingMethod || "HALF_UP",
+                  section: tp.section || null,
                   isDeleted: false,
-                  workspaceId: workspace.id
-                });
-              }
+                  workspaceId: workspace.id,
+                }
+              });
+              defaultTpIdToNewTpIdMap.set(tp.id, createdHeaderTp.id);
             }
           }
         }
       }
 
-      // 11. Bulk insert all test parameters in a single query
-      if (testParametersToCreate.length > 0) {
+      // Pass 2: Insert all child and standalone rows (!isHeader) linking parentId
+      const childParamsToCreate = [];
+      for (const dt of defaultTests) {
+        const key = `${dt.name.toLowerCase()}_${(dt.code || "").toLowerCase()}`;
+        const newTestId = testKeyToIdMap[key];
+        if (newTestId && dt.parameters) {
+          const nonHeaderTps = dt.parameters.filter(tp => !tp.isHeader && tp.parameter);
+          for (const tp of nonHeaderTps) {
+            const newParamId = paramNameToIdMap[tp.parameter.name.toLowerCase()];
+            if (newParamId) {
+              const newParentId = tp.parentId ? (defaultTpIdToNewTpIdMap.get(tp.parentId) || null) : null;
+              childParamsToCreate.push({
+                testId: newTestId,
+                parameterId: newParamId,
+                order: tp.order,
+                isHeader: false,
+                parentId: newParentId,
+                unit: tp.unit || tp.parameter.unit || null,
+                valueType: tp.valueType || tp.parameter.valueType || "NUMERIC",
+                options: tp.options || tp.parameter.options || null,
+                isCalculated: tp.isCalculated || false,
+                decimalPlace: tp.decimalPlace ?? 2,
+                roundingMethod: tp.roundingMethod || "HALF_UP",
+                section: tp.section || null,
+                isDeleted: false,
+                workspaceId: workspace.id,
+              });
+            }
+          }
+        }
+      }
+
+      // 11. Bulk insert all child test parameters
+      if (childParamsToCreate.length > 0) {
         await tx.testParameter.createMany({
-          data: testParametersToCreate
+          data: childParamsToCreate
         });
       }
 
@@ -279,6 +346,47 @@ export async function POST(req) {
         await tx.testFormula.createMany({
           data: formulasToCreate
         });
+      }
+
+      // 15. Fetch default interpretation rules and clone
+      const defaultRules = await tx.interpretationRule.findMany({
+        where: {
+          workspaceId: null,
+          isActive: true
+        },
+        include: {
+          test: true,
+          parameter: true
+        }
+      });
+
+      if (defaultRules.length > 0) {
+        const rulesToCreate = [];
+        for (const dr of defaultRules) {
+          let newTestId = null;
+          if (dr.test) {
+            const testKey = `${dr.test.name.toLowerCase()}_${(dr.test.code || "").toLowerCase()}`;
+            newTestId = testKeyToIdMap[testKey] || null;
+          }
+          let newParamId = null;
+          if (dr.parameter) {
+            newParamId = paramNameToIdMap[dr.parameter.name.toLowerCase()] || null;
+          }
+
+          rulesToCreate.push({
+            workspaceId: workspace.id,
+            testId: newTestId,
+            parameterId: newParamId,
+            ruleType: dr.ruleType,
+            conditionJson: dr.conditionJson,
+            interpretationText: dr.interpretationText,
+            priority: dr.priority,
+            isActive: dr.isActive
+          });
+        }
+        if (rulesToCreate.length > 0) {
+          await tx.interpretationRule.createMany({ data: rulesToCreate });
+        }
       }
 
       result = {

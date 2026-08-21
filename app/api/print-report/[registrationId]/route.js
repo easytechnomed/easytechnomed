@@ -418,8 +418,9 @@ export async function GET(req, { params }) {
         color: rgb(0.92, 0.94, 0.96),
       });
 
-      drawText(page, "Test Parameter", leftMargin + 10, y - 14, 9, true);
-      drawText(page, "Observed Value", leftMargin + 200, y - 14, 9, true);
+      drawText(page, "S/No", leftMargin + 8, y - 14, 9, true);
+      drawText(page, "Test Parameter", leftMargin + 42, y - 14, 9, true);
+      drawText(page, "Observed Value", leftMargin + 215, y - 14, 9, true);
       drawText(page, "Unit", leftMargin + 310, y - 14, 9, true);
       drawText(page, "Normal Reference Range", leftMargin + 380, y - 14, 9, true);
 
@@ -500,12 +501,6 @@ export async function GET(req, { params }) {
         }
 
         // ── Build render groups: prefer explicit parentId, fallback to positional ─
-        // New data (saved after this update): params have parentId set → use it.
-        //   - Headers (isHeader=true, parentId=null) start groups
-        //   - Children (isHeader=false, parentId=headerId) belong to that exact header
-        //   - Standalone (isHeader=false, parentId=null) never treated as children
-        // Old data (saved before this update): all parentId=null → positional grouping
-        //   (all non-header params between two isHeader params = children of first)
         const renderGroups = [];
         const hasParentIdData = sectionParams.some(p => p.parentId != null);
 
@@ -562,9 +557,8 @@ export async function GET(req, { params }) {
         }
         // ───────────────────────────────────────────────────────────────────────
 
-
         // Helper to draw a single data row (value + unit + range)
-        const drawParamRow = async (param, indented) => {
+        const drawParamRow = async (param, indented, serialNo = "") => {
           const rawVal = resultsMap[param.id];
           const val = rawVal ?? "";
           const flag = flagsMap[param.id];
@@ -602,33 +596,46 @@ export async function GET(req, { params }) {
           }
 
           const displayName = indented ? `  -  ${param.name}` : param.name;
-          const indentX = indented ? 22 : 10;
+          const indentX = indented ? 52 : 42;
+
+          if (serialNo) {
+            drawText(currentPage, String(serialNo), leftMargin + 8, tableActiveY - 14, 8.5, !indented, indented ? rgb(0.35, 0.4, 0.45) : rgb(0.09, 0.12, 0.18));
+          }
           drawText(currentPage, displayName, leftMargin + indentX, tableActiveY - 14, 9, false);
-          drawText(currentPage, displayVal || "-", leftMargin + 200, tableActiveY - 14, 9, isAbnormal, resultColor);
+          drawText(currentPage, displayVal || "-", leftMargin + 215, tableActiveY - 14, 9, isAbnormal, resultColor);
           drawText(currentPage, param.unit || "-", leftMargin + 310, tableActiveY - 14, 9, false);
           drawText(currentPage, ref.rangeStr || "", leftMargin + 380, tableActiveY - 14, 9, false);
           tableActiveY -= 20;
 
           if (interpretation) {
             if (tableActiveY < footerMargin + 25) { await addNewPage(); tableActiveY = drawTableHeader(currentPage, pageHeight - headerMargin - 15); }
-            drawText(currentPage, `* Note: ${interpretation}`, leftMargin + (indented ? 35 : 25), tableActiveY - 12, 7.5, false, rgb(0.4, 0.45, 0.5));
+            drawText(currentPage, `* Note: ${interpretation}`, leftMargin + (indented ? 55 : 42), tableActiveY - 12, 7.5, false, rgb(0.4, 0.45, 0.5));
             tableActiveY -= 15;
           }
         };
 
+        let mainCounter = 0;
+
         for (const group of renderGroups) {
           if (group.type === "standalone") {
-            // Top-level param — no indent, no parent
-            await drawParamRow(group.param, false);
+            // Check if standalone has a result before incrementing mainCounter
+            const v = resultsMap[group.param.id];
+            if (v !== null && v !== undefined && v !== "" && v !== "-") {
+              mainCounter++;
+              await drawParamRow(group.param, false, `${mainCounter}`);
+            }
 
           } else {
             // Header group — only draw if at least one child has a result
             const { header, children } = group;
-            const hasAnyChildResult = children.some(c => {
+            const activeChildren = children.filter(c => {
               const v = resultsMap[c.id];
               return v !== null && v !== undefined && v !== "" && v !== "-";
             });
-            if (!hasAnyChildResult) continue;
+            if (activeChildren.length === 0) continue;
+
+            mainCounter++;
+            const headerSerial = `${mainCounter}.`;
 
             // Draw header row
             if (tableActiveY < footerMargin + 35) {
@@ -639,11 +646,16 @@ export async function GET(req, { params }) {
               tableActiveY -= 20;
             }
             currentPage.drawLine({ start: { x: leftMargin, y: tableActiveY }, end: { x: pageWidth - leftMargin, y: tableActiveY }, thickness: 0.3, color: rgb(0.9, 0.92, 0.94) });
-            drawText(currentPage, header.name, leftMargin + 10, tableActiveY - 14, 9, true, rgb(0.06, 0.46, 0.43));
+            drawText(currentPage, headerSerial, leftMargin + 8, tableActiveY - 14, 9, true, rgb(0.06, 0.46, 0.43));
+            drawText(currentPage, header.name, leftMargin + 42, tableActiveY - 14, 9, true, rgb(0.06, 0.46, 0.43));
             tableActiveY -= 20;
 
-            // Draw children (indented), skipping those without results
-            for (const child of children) {
+            // Draw children (indented) with sub-numbering 1.1, 1.2...
+            let childCounter = 0;
+            for (const child of activeChildren) {
+              childCounter++;
+              const childSerial = `${mainCounter}.${childCounter}`;
+
               // If we're about to page-break inside a group, re-draw the parent header for context
               if (tableActiveY < footerMargin + 35) {
                 await addNewPage();
@@ -652,10 +664,11 @@ export async function GET(req, { params }) {
                 drawText(currentPage, `${test.name} (${test.code}) - Continued`, leftMargin + 10, tableActiveY - 13, 9, true, rgb(0.06, 0.46, 0.43));
                 tableActiveY -= 20;
                 currentPage.drawLine({ start: { x: leftMargin, y: tableActiveY }, end: { x: pageWidth - leftMargin, y: tableActiveY }, thickness: 0.3, color: rgb(0.9, 0.92, 0.94) });
-                drawText(currentPage, `${header.name} (cont.)`, leftMargin + 10, tableActiveY - 14, 9, true, rgb(0.06, 0.46, 0.43));
+                drawText(currentPage, headerSerial, leftMargin + 8, tableActiveY - 14, 9, true, rgb(0.06, 0.46, 0.43));
+                drawText(currentPage, `${header.name} (cont.)`, leftMargin + 42, tableActiveY - 14, 9, true, rgb(0.06, 0.46, 0.43));
                 tableActiveY -= 20;
               }
-              await drawParamRow(child, true);
+              await drawParamRow(child, true, childSerial);
             }
           }
         }
