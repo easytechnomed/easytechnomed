@@ -8,6 +8,12 @@ const JWT_SECRET = new TextEncoder().encode(
 
 export async function proxy(request) {
   const { pathname } = request.nextUrl;
+
+  // Allow all /api/n8n webhook endpoints without cookie/session checks
+  if (pathname.startsWith("/api/n8n")) {
+    return NextResponse.next();
+  }
+
   const adminToken = request.cookies.get("admin_session_token")?.value;
   const superAdminToken = request.cookies.get("super_admin_session_token")?.value;
 
