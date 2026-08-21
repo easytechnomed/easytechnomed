@@ -16,7 +16,9 @@ function serializeRegistration(reg) {
               ...rest,
               name: parameter.name,
               code: parameter.code,
-              unit: parameter.unit,
+              unit: tp.unit || parameter.unit,
+              valueType: tp.valueType || parameter.valueType || "NUMERIC",
+              options: tp.options || parameter.options || null,
               minValMale: parameter.minValMale,
               maxValMale: parameter.maxValMale,
               normalRangeMale: parameter.normalRangeMale,
@@ -119,19 +121,22 @@ export async function POST(req, { params }) {
         let parameter = await tx.parameter.findFirst({
           where: { name: { equals: normName } }
         });
+        const isNumeric = (param.valueType || parameter?.valueType || "NUMERIC") === "NUMERIC";
         const pData = {
           name: normName,
-          minValMale: param.minValMale !== undefined && param.minValMale !== null && param.minValMale !== "" ? parseFloat(param.minValMale) : null,
-          maxValMale: param.maxValMale !== undefined && param.maxValMale !== null && param.maxValMale !== "" ? parseFloat(param.maxValMale) : null,
+          valueType: param.valueType || (parameter?.valueType ?? "NUMERIC"),
+          options: param.options !== undefined ? param.options : (parameter?.options ?? null),
+          minValMale: isNumeric && param.minValMale !== undefined && param.minValMale !== null && param.minValMale !== "" ? parseFloat(param.minValMale) : null,
+          maxValMale: isNumeric && param.maxValMale !== undefined && param.maxValMale !== null && param.maxValMale !== "" ? parseFloat(param.maxValMale) : null,
           normalRangeMale: param.normalRangeMale || null,
-          minValFemale: param.minValFemale !== undefined && param.minValFemale !== null && param.minValFemale !== "" ? parseFloat(param.minValFemale) : null,
-          maxValFemale: param.maxValFemale !== undefined && param.maxValFemale !== null && param.maxValFemale !== "" ? parseFloat(param.maxValFemale) : null,
+          minValFemale: isNumeric && param.minValFemale !== undefined && param.minValFemale !== null && param.minValFemale !== "" ? parseFloat(param.minValFemale) : null,
+          maxValFemale: isNumeric && param.maxValFemale !== undefined && param.maxValFemale !== null && param.maxValFemale !== "" ? parseFloat(param.maxValFemale) : null,
           normalRangeFemale: param.normalRangeFemale || null,
-          minValBaby: param.minValBaby !== undefined && param.minValBaby !== null && param.minValBaby !== "" ? parseFloat(param.minValBaby) : null,
-          maxValBaby: param.maxValBaby !== undefined && param.maxValBaby !== null && param.maxValBaby !== "" ? parseFloat(param.maxValBaby) : null,
+          minValBaby: isNumeric && param.minValBaby !== undefined && param.minValBaby !== null && param.minValBaby !== "" ? parseFloat(param.minValBaby) : null,
+          maxValBaby: isNumeric && param.maxValBaby !== undefined && param.maxValBaby !== null && param.maxValBaby !== "" ? parseFloat(param.maxValBaby) : null,
           normalRangeBaby: param.normalRangeBaby || null,
           normalRangeDefault: param.normalRangeDefault || null,
-          unit: param.unit || "-NA-",
+          unit: param.unit || null,
         };
         if (!parameter) {
           parameter = await tx.parameter.create({ data: pData });
@@ -156,6 +161,8 @@ export async function POST(req, { params }) {
             order: index + 1,
             isHeader: true,
             parentId: null,
+            valueType: param.valueType || parameter.valueType || null,
+            options: param.options || parameter.options || null,
             isDeleted: false,
           }
         });
@@ -182,6 +189,8 @@ export async function POST(req, { params }) {
             order: index + 1,
             isHeader: false,
             parentId: resolvedParentId,
+            valueType: param.valueType || parameter.valueType || null,
+            options: param.options || parameter.options || null,
             isDeleted: false,
           }
         });

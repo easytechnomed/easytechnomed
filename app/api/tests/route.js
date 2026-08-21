@@ -12,7 +12,9 @@ function serializeTests(tests) {
           return {
             ...rest,
             name: parameter.name,
-            unit: parameter.unit,
+            unit: tp.unit || parameter.unit,
+            valueType: tp.valueType || parameter.valueType || "NUMERIC",
+            options: tp.options || parameter.options || null,
             minValMale: parameter.minValMale,
             maxValMale: parameter.maxValMale,
             normalRangeMale: parameter.normalRangeMale,
@@ -42,7 +44,9 @@ function serializeSingleTest(test) {
         return {
           ...rest,
           name: parameter.name,
-          unit: parameter.unit,
+          unit: tp.unit || parameter.unit,
+          valueType: tp.valueType || parameter.valueType || "NUMERIC",
+          options: tp.options || parameter.options || null,
           minValMale: parameter.minValMale,
           maxValMale: parameter.maxValMale,
           normalRangeMale: parameter.normalRangeMale,
@@ -321,6 +325,8 @@ export async function PUT(req) {
           parameterId: p.parameterId, // Keep it pointed to the same master parameter
           order: p.order,
           isHeader: p.isHeader || false,
+          valueType: p.valueType,
+          options: p.options,
         }));
 
         await tx.testParameter.createMany({

@@ -868,27 +868,61 @@ export default function DefaultTestsPage() {
                         <Table stickyHeader size="small">
                           <TableHead>
                             <TableRow>
-                              <TableCell sx={{ fontWeight: 700, bgcolor: "#f8fafc", width: 60 }}>S.No</TableCell>
+                              <TableCell sx={{ fontWeight: 700, bgcolor: "#f8fafc", width: 50 }}>S.No</TableCell>
                               <TableCell sx={{ fontWeight: 700, bgcolor: "#f8fafc" }}>Name</TableCell>
-                              <TableCell sx={{ fontWeight: 700, bgcolor: "#f8fafc" }}>Unit</TableCell>
+                              <TableCell sx={{ fontWeight: 700, bgcolor: "#f8fafc", width: 130 }}>Type</TableCell>
+                              <TableCell sx={{ fontWeight: 700, bgcolor: "#f8fafc" }}>Unit / Reference</TableCell>
                               <TableCell align="center" sx={{ fontWeight: 700, bgcolor: "#f8fafc", width: 90 }}>Action</TableCell>
                             </TableRow>
                           </TableHead>
                           <TableBody>
                             {paginatedParams.length === 0 ? (
                               <TableRow>
-                                <TableCell colSpan={4} align="center" sx={{ py: 6, color: "text.secondary" }}>
+                                <TableCell colSpan={5} align="center" sx={{ py: 6, color: "text.secondary" }}>
                                   No parameters found matching current search.
                                 </TableCell>
                               </TableRow>
                             ) : (
                               paginatedParams.map((param, idx) => {
                                 const sNo = (paramPage - 1) * paramLimit + idx + 1;
+                                const isQualitative = param.valueType === "OPTIONS";
+                                const isText = param.valueType === "TEXT";
+
                                 return (
                                   <TableRow key={param.id} hover>
                                     <TableCell sx={{ fontWeight: 700, color: "text.secondary" }}>{sNo}</TableCell>
-                                    <TableCell sx={{ fontWeight: 600 }}>{param.name}</TableCell>
-                                    <TableCell sx={{ color: "text.secondary" }}>{param.unit || "-"}</TableCell>
+                                    <TableCell sx={{ fontWeight: 600 }}>
+                                      {param.name}
+                                      {param.code && (
+                                        <Typography variant="caption" sx={{ display: "block", color: "text.secondary", fontFamily: "monospace" }}>
+                                          {param.code}
+                                        </Typography>
+                                      )}
+                                    </TableCell>
+                                    <TableCell>
+                                      {isQualitative ? (
+                                        <Box sx={{ display: "inline-flex", alignItems: "center", px: 1, py: 0.2, bgcolor: "rgba(124, 58, 237, 0.08)", color: "primary.main", borderRadius: 1, fontSize: "0.75rem", fontWeight: 700 }}>
+                                          Options / Boolean
+                                        </Box>
+                                      ) : isText ? (
+                                        <Box sx={{ display: "inline-flex", alignItems: "center", px: 1, py: 0.2, bgcolor: "rgba(100, 116, 139, 0.1)", color: "#475569", borderRadius: 1, fontSize: "0.75rem", fontWeight: 700 }}>
+                                          Free Text
+                                        </Box>
+                                      ) : (
+                                        <Box sx={{ display: "inline-flex", alignItems: "center", px: 1, py: 0.2, bgcolor: "rgba(16, 185, 129, 0.08)", color: "#059669", borderRadius: 1, fontSize: "0.75rem", fontWeight: 700 }}>
+                                          Numeric Range
+                                        </Box>
+                                      )}
+                                    </TableCell>
+                                    <TableCell sx={{ color: "text.secondary", fontSize: "0.82rem" }}>
+                                      {isQualitative ? (
+                                        <Typography variant="caption" sx={{ color: "text.primary", fontWeight: 600, display: "block" }}>
+                                          {param.options ? `[${param.options}]` : (param.normalRangeDefault || "Negative/Positive")}
+                                        </Typography>
+                                      ) : (
+                                        param.unit || param.normalRangeDefault || "-"
+                                      )}
+                                    </TableCell>
                                     <TableCell align="center">
                                       <Box sx={{ display: "flex", justifyContent: "center", gap: 0.5 }}>
                                         <IconButton

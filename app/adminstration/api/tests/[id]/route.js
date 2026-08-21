@@ -136,16 +136,19 @@ export async function PUT(req, { params }) {
         const resolveParam = async (p) => {
           const normName = (p.name || "").trim();
           let parameter = await tx.parameter.findFirst({ where: { name: { equals: normName } } });
+          const isNumeric = (p.valueType || parameter?.valueType || "NUMERIC") === "NUMERIC";
           const pData = {
             name: normName,
-            minValMale: p.minValMale !== undefined && p.minValMale !== null && p.minValMale !== "" ? parseFloat(p.minValMale) : (parameter?.minValMale ?? null),
-            maxValMale: p.maxValMale !== undefined && p.maxValMale !== null && p.maxValMale !== "" ? parseFloat(p.maxValMale) : (parameter?.maxValMale ?? null),
+            valueType: p.valueType || (parameter?.valueType ?? "NUMERIC"),
+            options: p.options !== undefined ? p.options : (parameter?.options ?? null),
+            minValMale: isNumeric && p.minValMale !== undefined && p.minValMale !== null && p.minValMale !== "" ? parseFloat(p.minValMale) : (isNumeric ? (parameter?.minValMale ?? null) : null),
+            maxValMale: isNumeric && p.maxValMale !== undefined && p.maxValMale !== null && p.maxValMale !== "" ? parseFloat(p.maxValMale) : (isNumeric ? (parameter?.maxValMale ?? null) : null),
             normalRangeMale: p.normalRangeMale || (parameter?.normalRangeMale ?? null),
-            minValFemale: p.minValFemale !== undefined && p.minValFemale !== null && p.minValFemale !== "" ? parseFloat(p.minValFemale) : (parameter?.minValFemale ?? null),
-            maxValFemale: p.maxValFemale !== undefined && p.maxValFemale !== null && p.maxValFemale !== "" ? parseFloat(p.maxValFemale) : (parameter?.maxValFemale ?? null),
+            minValFemale: isNumeric && p.minValFemale !== undefined && p.minValFemale !== null && p.minValFemale !== "" ? parseFloat(p.minValFemale) : (isNumeric ? (parameter?.minValFemale ?? null) : null),
+            maxValFemale: isNumeric && p.maxValFemale !== undefined && p.maxValFemale !== null && p.maxValFemale !== "" ? parseFloat(p.maxValFemale) : (isNumeric ? (parameter?.maxValFemale ?? null) : null),
             normalRangeFemale: p.normalRangeFemale || (parameter?.normalRangeFemale ?? null),
-            minValBaby: p.minValBaby !== undefined && p.minValBaby !== null && p.minValBaby !== "" ? parseFloat(p.minValBaby) : (parameter?.minValBaby ?? null),
-            maxValBaby: p.maxValBaby !== undefined && p.maxValBaby !== null && p.maxValBaby !== "" ? parseFloat(p.maxValBaby) : (parameter?.maxValBaby ?? null),
+            minValBaby: isNumeric && p.minValBaby !== undefined && p.minValBaby !== null && p.minValBaby !== "" ? parseFloat(p.minValBaby) : (isNumeric ? (parameter?.minValBaby ?? null) : null),
+            maxValBaby: isNumeric && p.maxValBaby !== undefined && p.maxValBaby !== null && p.maxValBaby !== "" ? parseFloat(p.maxValBaby) : (isNumeric ? (parameter?.maxValBaby ?? null) : null),
             normalRangeBaby: p.normalRangeBaby || (parameter?.normalRangeBaby ?? null),
             normalRangeDefault: p.normalRangeDefault || (parameter?.normalRangeDefault ?? null),
             unit: p.unit || (parameter?.unit ?? null),
@@ -169,7 +172,16 @@ export async function PUT(req, { params }) {
             // Existing header: update, record key→id
             await tx.testParameter.update({
               where: { id: p.id },
-              data: { parameterId: parameter.id, order: parseInt(p.order) || 1, isHeader: true, parentId: null, isDeleted: false, deletedAt: null }
+              data: {
+                parameterId: parameter.id,
+                order: parseInt(p.order) || 1,
+                isHeader: true,
+                parentId: null,
+                valueType: p.valueType || parameter.valueType || null,
+                options: p.options || parameter.options || null,
+                isDeleted: false,
+                deletedAt: null
+              }
             });
             // For existing rows, EditTestDialog sets key = p.id
             if (p.key) keyToTpId[p.key] = p.id;
@@ -177,7 +189,16 @@ export async function PUT(req, { params }) {
           } else {
             // New header: create, record key→newId
             const tp = await tx.testParameter.create({
-              data: { testId, parameterId: parameter.id, order: parseInt(p.order) || 1, isHeader: true, parentId: null, isDeleted: false }
+              data: {
+                testId,
+                parameterId: parameter.id,
+                order: parseInt(p.order) || 1,
+                isHeader: true,
+                parentId: null,
+                valueType: p.valueType || parameter.valueType || null,
+                options: p.options || parameter.options || null,
+                isDeleted: false
+              }
             });
             if (p.key) keyToTpId[p.key] = tp.id;
           }
@@ -204,6 +225,8 @@ export async function PUT(req, { params }) {
                 order: parseInt(p.order) || 1,
                 isHeader: false,
                 parentId: resolvedParentId,
+                valueType: p.valueType || parameter.valueType || null,
+                options: p.options || parameter.options || null,
                 isDeleted: false,
                 deletedAt: null
               }
@@ -216,6 +239,8 @@ export async function PUT(req, { params }) {
                 order: parseInt(p.order) || 1,
                 isHeader: false,
                 parentId: resolvedParentId,
+                valueType: p.valueType || parameter.valueType || null,
+                options: p.options || parameter.options || null,
                 isDeleted: false
               }
             });

@@ -72,6 +72,8 @@ export async function POST(req, { params }) {
               name: dp.parameter.name,
               code: dp.parameter.code,
               unit: dp.parameter.unit,
+              valueType: dp.parameter.valueType,
+              options: dp.parameter.options,
               minValMale: dp.parameter.minValMale,
               maxValMale: dp.parameter.maxValMale,
               normalRangeMale: dp.parameter.normalRangeMale,
@@ -190,10 +192,12 @@ export async function POST(req, { params }) {
               const existingMapping = allMatchingMappings[0];
               workspaceTpId = existingMapping.id;
 
-              // Compare parameter details (ranges, unit) before updating to save DB writes
+              // Compare parameter details (ranges, unit, type, options) before updating to save DB writes
               const needsParamDetailUpdate = 
                 existingMapping.parameter.code !== dp.parameter.code ||
                 existingMapping.parameter.unit !== dp.parameter.unit ||
+                existingMapping.parameter.valueType !== dp.parameter.valueType ||
+                existingMapping.parameter.options !== dp.parameter.options ||
                 existingMapping.parameter.minValMale !== dp.parameter.minValMale ||
                 existingMapping.parameter.maxValMale !== dp.parameter.maxValMale ||
                 existingMapping.parameter.normalRangeMale !== dp.parameter.normalRangeMale ||
@@ -211,6 +215,8 @@ export async function POST(req, { params }) {
                   data: {
                     code: dp.parameter.code,
                     unit: dp.parameter.unit,
+                    valueType: dp.parameter.valueType,
+                    options: dp.parameter.options,
                     minValMale: dp.parameter.minValMale,
                     maxValMale: dp.parameter.maxValMale,
                     normalRangeMale: dp.parameter.normalRangeMale,
@@ -228,6 +234,8 @@ export async function POST(req, { params }) {
               const needsParamMappingUpdate = 
                 existingMapping.order !== dp.order ||
                 existingMapping.isHeader !== dp.isHeader ||
+                existingMapping.valueType !== dp.valueType ||
+                existingMapping.options !== dp.options ||
                 existingMapping.parentId !== null ||
                 existingMapping.isDeleted === true;
 
@@ -237,6 +245,8 @@ export async function POST(req, { params }) {
                   data: {
                     order: dp.order,
                     isHeader: dp.isHeader,
+                    valueType: dp.valueType,
+                    options: dp.options,
                     parentId: null, // Headers have no parentId
                     isDeleted: false,
                     deletedAt: null
@@ -259,6 +269,8 @@ export async function POST(req, { params }) {
                   parameterId: wParamId,
                   order: dp.order,
                   isHeader: dp.isHeader,
+                  valueType: dp.valueType,
+                  options: dp.options,
                   parentId: null,
                   workspaceId
                 }
@@ -284,10 +296,12 @@ export async function POST(req, { params }) {
             if (allMatchingMappings.length > 0) {
               const existingMapping = allMatchingMappings[0];
 
-              // Compare parameter details (ranges, unit) before updating to save DB writes
+              // Compare parameter details (ranges, unit, type, options) before updating to save DB writes
               const needsParamDetailUpdate = 
                 existingMapping.parameter.code !== dp.parameter.code ||
                 existingMapping.parameter.unit !== dp.parameter.unit ||
+                existingMapping.parameter.valueType !== dp.parameter.valueType ||
+                existingMapping.parameter.options !== dp.parameter.options ||
                 existingMapping.parameter.minValMale !== dp.parameter.minValMale ||
                 existingMapping.parameter.maxValMale !== dp.parameter.maxValMale ||
                 existingMapping.parameter.normalRangeMale !== dp.parameter.normalRangeMale ||
@@ -305,6 +319,8 @@ export async function POST(req, { params }) {
                   data: {
                     code: dp.parameter.code,
                     unit: dp.parameter.unit,
+                    valueType: dp.parameter.valueType,
+                    options: dp.parameter.options,
                     minValMale: dp.parameter.minValMale,
                     maxValMale: dp.parameter.maxValMale,
                     normalRangeMale: dp.parameter.normalRangeMale,
@@ -322,6 +338,8 @@ export async function POST(req, { params }) {
               const needsParamMappingUpdate = 
                 existingMapping.order !== dp.order ||
                 existingMapping.isHeader !== dp.isHeader ||
+                existingMapping.valueType !== dp.valueType ||
+                existingMapping.options !== dp.options ||
                 existingMapping.parentId !== resolvedParentId ||
                 existingMapping.isDeleted === true;
 
@@ -331,6 +349,8 @@ export async function POST(req, { params }) {
                   data: {
                     order: dp.order,
                     isHeader: dp.isHeader,
+                    valueType: dp.valueType,
+                    options: dp.options,
                     parentId: resolvedParentId,
                     isDeleted: false,
                     deletedAt: null
@@ -353,6 +373,8 @@ export async function POST(req, { params }) {
                   parameterId: wParamId,
                   order: dp.order,
                   isHeader: dp.isHeader,
+                  valueType: dp.valueType,
+                  options: dp.options,
                   parentId: resolvedParentId,
                   workspaceId
                 }
@@ -445,6 +467,8 @@ export async function POST(req, { params }) {
                 order: dp.order,
                 isHeader: true,
                 parentId: null,
+                valueType: dp.valueType,
+                options: dp.options,
                 workspaceId
               }
             });
@@ -466,6 +490,8 @@ export async function POST(req, { params }) {
                 order: dp.order,
                 isHeader: false,
                 parentId: resolvedParentId,
+                valueType: dp.valueType,
+                options: dp.options,
                 workspaceId
               }
             });

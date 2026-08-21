@@ -13,7 +13,9 @@ function serializeSingleTest(test) {
         return {
           ...rest,
           name: parameter.name,
-          unit: parameter.unit,
+          unit: tp.unit || parameter.unit,
+          valueType: tp.valueType || parameter.valueType || "NUMERIC",
+          options: tp.options || parameter.options || null,
           minValMale: parameter.minValMale,
           maxValMale: parameter.maxValMale,
           normalRangeMale: parameter.normalRangeMale,
@@ -117,6 +119,8 @@ export async function POST(req, { params }) {
             roundingMethod: tp.roundingMethod,
             section: tp.section,
             unit: tp.unit,
+            valueType: tp.valueType,
+            options: tp.options,
           }
         });
 
@@ -140,6 +144,8 @@ export async function POST(req, { params }) {
             roundingMethod: tp.roundingMethod,
             section: tp.section,
             unit: tp.unit,
+            valueType: tp.valueType,
+            options: tp.options,
           }
         });
       }

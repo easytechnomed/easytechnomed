@@ -27,7 +27,8 @@ import {
   TextField,
   Snackbar,
   Alert,
-  InputAdornment
+  InputAdornment,
+  Chip
 } from "@mui/material";
 import {
   Close as CloseIcon,
@@ -431,31 +432,66 @@ const calculateAllDependents = (values, tests, changedId, overrides = new Set())
   return res;
 };
 
-const isOutOfRange = (valStr, min, max) => {
-  if (!valStr || min === null || max === null) return false;
-  const num = parseFloat(valStr);
-  if (isNaN(num)) return false;
-  return num < min || num > max;
+const isQualitativeAbnormal = (valStr, refRangeStr = "") => {
+  if (!valStr || typeof valStr !== "string") return false;
+  const valLower = valStr.trim().toLowerCase();
+  const refLower = (refRangeStr || "").trim().toLowerCase();
+
+  // If matches ref exactly, it's normal
+  if (refLower && valLower === refLower) return false;
+
+  // Abnormal keywords
+  if (valLower.includes("reactive") && !valLower.includes("non")) return true;
+  if (valLower.includes("positive") && !valLower.includes("non")) return true;
+  if (valLower.includes("present") && !valLower.includes("absent")) return true;
+  if (valLower.includes("detected") && !valLower.includes("not")) return true;
+  if (["abnormal", "trace", "seen", "+", "++", "+++", "++++", "1+", "2+", "3+", "4+", "cloudy", "turbid", "hazy"].some(k => valLower === k || (k.startsWith("+") && valLower.includes(k)))) {
+    return true;
+  }
+
+  // Normal keywords
+  if (valLower.includes("negative") || valLower.includes("non-reactive") || valLower.includes("non reactive") || valLower.includes("nonreactive") || valLower.includes("absent") || valLower.includes("not detected") || valLower === "nil" || valLower === "normal" || valLower === "clear") {
+    return false;
+  }
+
+  // If normal range expects negative/absent/nil and value is different
+  if (refLower.includes("negative") && valLower.includes("positive")) return true;
+  if ((refLower.includes("non-reactive") || refLower.includes("non reactive")) && valLower.includes("reactive") && !valLower.includes("non")) return true;
+  if ((refLower.includes("absent") || refLower.includes("nil")) && valLower.includes("present")) return true;
+
+  return false;
+};
+
+const isOutOfRange = (valStr, min, max, param = null, refRangeStr = "") => {
+  if (!valStr) return false;
+  const valRaw = String(valStr).trim();
+  const num = parseFloat(valRaw);
+  if (!isNaN(num) && /^-?\d+(\.\d+)?$/.test(valRaw) && (min !== null || max !== null)) {
+    if (min !== null && min !== undefined && num < min) return true;
+    if (max !== null && max !== undefined && num > max) return true;
+    return false;
+  }
+  return isQualitativeAbnormal(valRaw, refRangeStr);
 };
 
 const getReferenceRange = (param, reg) => {
   const isBaby = reg.ageUnit !== "Year" || reg.age < 12;
   if (isBaby) {
     return {
-      rangeStr: param.normalRangeBaby || param.normalRangeDefault || "Normal",
+      rangeStr: param.normalRangeBaby || param.normalRangeDefault || "",
       min: param.minValBaby,
       max: param.maxValBaby,
     };
   }
   if (reg.gender === "Female") {
     return {
-      rangeStr: param.normalRangeFemale || param.normalRangeDefault || "Normal",
+      rangeStr: param.normalRangeFemale || param.normalRangeDefault || "",
       min: param.minValFemale,
       max: param.maxValFemale,
     };
   }
   return {
-    rangeStr: param.normalRangeMale || param.normalRangeDefault || "Normal",
+    rangeStr: param.normalRangeMale || param.normalRangeDefault || "",
     min: param.minValMale,
     max: param.maxValMale,
   };
@@ -822,22 +858,41 @@ export default function ResultEntry({ open, onClose, selectedReg, onSaveSuccess,
 
                                 serialNo++;
                                 const val = resultValues[param.id] || "";
-                                const isAbnormal = isOutOfRange(val, ref.min, ref.max);
+                                const isAbnormal = isOutOfRange(val, ref.min, ref.max, param, ref.rangeStr);
 
                                 const normalValLower = (ref.rangeStr || "").toLowerCase();
-                                const isNegativeOrPositive = normalValLower.includes("negative") || normalValLower.includes("positive");
-                                const isReactiveOrNonReactive = normalValLower.includes("reactive");
-                                const showDropdown = isNegativeOrPositive || isReactiveOrNonReactive;
+                                const isParamOptionType = param.valueType === "OPTIONS";
+                                const isParamTextType = param.valueType === "TEXT";
+
                                 let dropdownOptions = [];
-                                if (isReactiveOrNonReactive) {
-                                  dropdownOptions = ["Non-reactive", "Reactive"];
-                                } else if (isNegativeOrPositive) {
+                                if (param.options) {
+                                  dropdownOptions = param.options
+                                    .split(",")
+                                    .map(o => o.trim())
+                                    .filter(Boolean);
+                                } else if (isParamOptionType) {
+                                  if (normalValLower.includes("reactive")) {
+                                    dropdownOptions = ["Non-Reactive", "Reactive"];
+                                  } else if (normalValLower.includes("absent") || normalValLower.includes("present")) {
+                                    dropdownOptions = ["Absent", "Present"];
+                                  } else if (normalValLower.includes("detected")) {
+                                    dropdownOptions = ["Not Detected", "Detected"];
+                                  } else {
+                                    dropdownOptions = ["Negative", "Positive"];
+                                  }
+                                } else if (normalValLower.includes("negative") || normalValLower.includes("positive")) {
                                   dropdownOptions = ["Negative", "Positive"];
+                                } else if (normalValLower.includes("reactive")) {
+                                  dropdownOptions = ["Non-Reactive", "Reactive"];
+                                } else if (normalValLower.includes("absent") || normalValLower.includes("present")) {
+                                  dropdownOptions = ["Absent", "Present"];
                                 }
-                                if (val && !dropdownOptions.includes(val)) {
+
+                                if (val && !dropdownOptions.includes(val) && dropdownOptions.length > 0) {
                                   dropdownOptions.push(val);
                                 }
 
+                                const hasOptions = dropdownOptions.length > 0;
                                 const isChild = !!currentHeader;
 
                                 // Check if parameter has an active math formula
@@ -852,28 +907,72 @@ export default function ResultEntry({ open, onClose, selectedReg, onSaveSuccess,
                                     <TableCell sx={{ fontWeight: 600, pl: isChild ? 4 : 2 }}>
                                       {isChild ? `▪ ${param.name}` : param.name}
                                     </TableCell>
-                                    <TableCell>{ref.rangeStr}</TableCell>
-                                    <TableCell>{param.unit}</TableCell>
-                                    <TableCell>
+                                    <TableCell sx={{ fontSize: "0.85rem" }}>
+                                      {ref.rangeStr || ""}
+                                    </TableCell>
+                                    <TableCell sx={{ color: "text.secondary" }}>{param.unit || "-"}</TableCell>
+                                    <TableCell sx={{ minWidth: 220 }}>
+                                      {/* Quick Select Buttons for Qualitative Options */}
+                                      {hasOptions && (
+                                        <Box sx={{ display: "flex", gap: 0.5, flexWrap: "wrap", mb: 0.75 }}>
+                                          {dropdownOptions.map((opt) => {
+                                            const isSelected = (val || "").trim().toLowerCase() === opt.trim().toLowerCase();
+                                            const isOptAbnormal = isQualitativeAbnormal(opt, ref.rangeStr);
+                                            return (
+                                              <Chip
+                                                key={opt}
+                                                label={opt}
+                                                size="small"
+                                                clickable
+                                                onClick={() => handleResultValueChange(param.id, opt, true)}
+                                                sx={{
+                                                  height: 24,
+                                                  fontSize: "0.75rem",
+                                                  fontWeight: 700,
+                                                  cursor: "pointer",
+                                                  bgcolor: isSelected
+                                                    ? (isOptAbnormal ? "rgba(239, 68, 68, 0.2)" : "rgba(16, 185, 129, 0.2)")
+                                                    : "rgba(0, 0, 0, 0.05)",
+                                                  color: isSelected
+                                                    ? (isOptAbnormal ? "#dc2626" : "#059669")
+                                                    : "text.primary",
+                                                  border: isSelected
+                                                    ? `1.5px solid ${isOptAbnormal ? "#dc2626" : "#059669"}`
+                                                    : "1px solid rgba(0, 0, 0, 0.12)",
+                                                  "&:hover": {
+                                                    bgcolor: isSelected
+                                                      ? (isOptAbnormal ? "rgba(239, 68, 68, 0.3)" : "rgba(16, 185, 129, 0.3)")
+                                                      : "rgba(0, 0, 0, 0.1)"
+                                                  }
+                                                }}
+                                              />
+                                            );
+                                          })}
+                                        </Box>
+                                      )}
+
                                       <TextField
                                         className="result-input-field"
-                                        select={showDropdown}
+                                        select={hasOptions}
                                         size="small"
                                         fullWidth
                                         disabled={!param.editable}
                                         value={val}
-                                        onChange={(e) => handleResultValueChange(param.id, e.target.value, showDropdown)}
+                                        onChange={(e) => handleResultValueChange(param.id, e.target.value, hasOptions)}
                                         onBlur={() => handleResultValueBlur(param.id)}
                                         onKeyDown={handleKeyDown}
                                         error={isAbnormal}
+                                        placeholder={isParamTextType ? "Enter observation note..." : "Enter result..."}
                                         sx={{
                                           "& .MuiInputBase-root": {
-                                            bgcolor: isAbnormal ? "rgba(239, 68, 68, 0.15)" : "inherit"
+                                            bgcolor: isAbnormal ? "rgba(239, 68, 68, 0.12)" : "inherit",
+                                            borderColor: isAbnormal ? "#ef4444" : undefined
                                           },
                                           "& .MuiInputBase-input": {
                                             py: 0.5,
                                             fontSize: "0.85rem",
-                                            fontWeight: isAbnormal ? 700 : (hasFormula && !isOverridden ? 700 : 500)
+                                            fontWeight: isAbnormal ? 700 : (hasFormula && !isOverridden ? 700 : 500),
+                                            color: isAbnormal ? "#b91c1c" : "inherit"
                                           }
                                         }}
                                         slotProps={{
@@ -891,7 +990,7 @@ export default function ResultEntry({ open, onClose, selectedReg, onSaveSuccess,
                                                   </Tooltip>
                                                 )}
                                                 {isAbnormal && (
-                                                  <Tooltip title="Out of normal range!">
+                                                  <Tooltip title="Out of normal reference range!">
                                                     <WarningIcon color="error" fontSize="small" sx={{ mr: 0.5 }} />
                                                   </Tooltip>
                                                 )}
@@ -900,9 +999,9 @@ export default function ResultEntry({ open, onClose, selectedReg, onSaveSuccess,
                                           }
                                         }}
                                       >
-                                        {showDropdown ? (
+                                        {hasOptions ? (
                                           [
-                                            <MenuItem key="empty" value=""><em>Select</em></MenuItem>,
+                                            <MenuItem key="empty" value=""><em>Select option</em></MenuItem>,
                                             ...dropdownOptions.map(opt => (
                                               <MenuItem key={opt} value={opt}>{opt}</MenuItem>
                                             ))

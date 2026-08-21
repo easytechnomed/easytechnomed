@@ -302,6 +302,8 @@ export default function TestsClient() {
       name: p.name,
       isHeader: p.isHeader || false,
       unit: p.unit || "",
+      valueType: p.valueType || "NUMERIC",
+      options: p.options || "",
       normalRangeDefault: p.normalRangeDefault || "",
       minValMale: p.minValMale !== null && p.minValMale !== undefined ? String(p.minValMale) : "",
       maxValMale: p.maxValMale !== null && p.maxValMale !== undefined ? String(p.maxValMale) : "",
@@ -330,6 +332,8 @@ export default function TestsClient() {
         name: "",
         isHeader: false,
         unit: "",
+        valueType: "NUMERIC",
+        options: "",
         normalRangeDefault: "",
         minValMale: "",
         maxValMale: "",
@@ -420,6 +424,8 @@ export default function TestsClient() {
           ...newParams[index],
           name: template.name,
           unit: template.unit || "",
+          valueType: template.valueType || "NUMERIC",
+          options: template.options || "",
           parameterId: template.id,
           isHeader: false,
           minValMale: template.minValMale !== null && template.minValMale !== undefined ? template.minValMale.toString() : "",
@@ -476,6 +482,8 @@ export default function TestsClient() {
       name: child.name || "",
       isHeader: false,
       unit: child.unit || "",
+      valueType: child.valueType || "NUMERIC",
+      options: child.options || "",
       minValMale: child.minValMale !== null && child.minValMale !== undefined ? child.minValMale.toString() : "",
       maxValMale: child.maxValMale !== null && child.maxValMale !== undefined ? child.maxValMale.toString() : "",
       normalRangeMale: child.normalRangeMale || "",
@@ -575,6 +583,8 @@ export default function TestsClient() {
             name: p.name.trim(),
             isHeader: p.isHeader || false,
             unit: p.unit || "",
+            valueType: p.valueType || "NUMERIC",
+            options: p.options || null,
             normalRangeDefault: p.normalRangeDefault || "",
             minValMale: p.minValMale !== "" ? parseFloat(p.minValMale) : null,
             maxValMale: p.maxValMale !== "" ? parseFloat(p.maxValMale) : null,
@@ -879,29 +889,31 @@ export default function TestsClient() {
               <Table size="small" stickyHeader sx={{ minWidth: 2000 }}>
                 <TableHead>
                   <TableRow>
-                    <TableCell align="center" sx={{ fontWeight: 700, width: 80, bgcolor: "#f8fafc" }}>#</TableCell>
-                    <TableCell sx={{ fontWeight: 700, width: 500, bgcolor: "#f8fafc" }}>Parameter Name *</TableCell>
-                    <TableCell sx={{ fontWeight: 700, width: 180, bgcolor: "#f8fafc" }}>Unit</TableCell>
+                    <TableCell align="center" sx={{ fontWeight: 700, width: 60, bgcolor: "#f8fafc" }}>#</TableCell>
+                    <TableCell sx={{ fontWeight: 700, width: 380, bgcolor: "#f8fafc" }}>Parameter Name *</TableCell>
+                    <TableCell sx={{ fontWeight: 700, width: 140, bgcolor: "#f8fafc" }}>Type</TableCell>
+                    <TableCell sx={{ fontWeight: 700, width: 180, bgcolor: "#f8fafc" }}>Options / Preset</TableCell>
+                    <TableCell sx={{ fontWeight: 700, width: 140, bgcolor: "#f8fafc" }}>Unit</TableCell>
 
                     {/* Male */}
                     <TableCell sx={{ fontWeight: 700, width: 120, bgcolor: "#eff6ff" }}>Male Min</TableCell>
                     <TableCell sx={{ fontWeight: 700, width: 120, bgcolor: "#eff6ff" }}>Male Max</TableCell>
-                    <TableCell sx={{ fontWeight: 700, width: 180, bgcolor: "#eff6ff" }}>Male Range Text</TableCell>
+                    <TableCell sx={{ fontWeight: 700, width: 160, bgcolor: "#eff6ff" }}>Male Range Text</TableCell>
 
                     {/* Female */}
                     <TableCell sx={{ fontWeight: 700, width: 120, bgcolor: "#fdf2f8" }}>Female Min</TableCell>
                     <TableCell sx={{ fontWeight: 700, width: 120, bgcolor: "#fdf2f8" }}>Female Max</TableCell>
-                    <TableCell sx={{ fontWeight: 700, width: 180, bgcolor: "#fdf2f8" }}>Female Range Text</TableCell>
+                    <TableCell sx={{ fontWeight: 700, width: 160, bgcolor: "#fdf2f8" }}>Female Range Text</TableCell>
 
                     {/* Baby */}
                     <TableCell sx={{ fontWeight: 700, width: 120, bgcolor: "#f0fdf4" }}>Baby Min</TableCell>
                     <TableCell sx={{ fontWeight: 700, width: 120, bgcolor: "#f0fdf4" }}>Baby Max</TableCell>
-                    <TableCell sx={{ fontWeight: 700, width: 180, bgcolor: "#f0fdf4" }}>Baby Range Text</TableCell>
+                    <TableCell sx={{ fontWeight: 700, width: 160, bgcolor: "#f0fdf4" }}>Baby Range Text</TableCell>
 
                     {/* Default */}
-                    <TableCell sx={{ fontWeight: 700, width: 220, bgcolor: "#fafaf9" }}>Default Range Text</TableCell>
+                    <TableCell sx={{ fontWeight: 700, width: 200, bgcolor: "#fafaf9" }}>Default Range / Normal</TableCell>
                     <TableCell align="center" sx={{ fontWeight: 700, width: 90, bgcolor: "#f8fafc" }}>Is Header?</TableCell>
-                    <TableCell sx={{ fontWeight: 700, width: 250, bgcolor: "#fff7ed" }}>Parent Header</TableCell>
+                    <TableCell sx={{ fontWeight: 700, width: 200, bgcolor: "#fff7ed" }}>Parent Header</TableCell>
                     <TableCell align="center" sx={{ fontWeight: 700, width: 50, bgcolor: "#f8fafc" }}>Action</TableCell>
                   </TableRow>
                 </TableHead>
@@ -1004,10 +1016,57 @@ export default function TestsClient() {
                           />
                         </TableCell>
 
+                        {/* Type */}
+                        <TableCell>
+                          {param.isHeader ? (
+                            <Box sx={{ fontSize: "0.8rem", color: "text.disabled", pl: 1 }}>—</Box>
+                          ) : (
+                            <Select
+                              size="small"
+                              fullWidth
+                              value={param.valueType || "NUMERIC"}
+                              onChange={(e) => {
+                                const val = e.target.value;
+                                setParametersList((prev) => {
+                                  const p = [...prev];
+                                  p[idx] = {
+                                    ...p[idx],
+                                    valueType: val,
+                                    ...(val === "OPTIONS" && !p[idx].options ? { options: "Negative, Positive", normalRangeDefault: p[idx].normalRangeDefault || "Negative" } : {})
+                                  };
+                                  return p;
+                                });
+                              }}
+                              sx={{ fontSize: "0.8rem" }}
+                            >
+                              <MenuItem value="NUMERIC" sx={{ fontSize: "0.8rem" }}>Numeric</MenuItem>
+                              <MenuItem value="OPTIONS" sx={{ fontSize: "0.8rem" }}>Options / Boolean</MenuItem>
+                              <MenuItem value="TEXT" sx={{ fontSize: "0.8rem" }}>Free Text</MenuItem>
+                            </Select>
+                          )}
+                        </TableCell>
+
+                        {/* Options / Preset */}
+                        <TableCell>
+                          {param.isHeader || (param.valueType || "NUMERIC") !== "OPTIONS" ? (
+                            <Box sx={{ fontSize: "0.8rem", color: "text.disabled", pl: 1 }}>—</Box>
+                          ) : (
+                            <TextField
+                              fullWidth
+                              size="small"
+                              value={param.options || ""}
+                              onChange={(e) => handleParamRowChange(idx, "options", e.target.value)}
+                              placeholder="e.g. Negative, Positive"
+                              sx={{ '& .MuiOutlinedInput-root': { borderRadius: 1.5 } }}
+                            />
+                          )}
+                        </TableCell>
+
                         {/* Unit */}
                         <TableCell>
                           <Autocomplete
                             freeSolo
+                            disabled={!!param.isHeader || (param.valueType || "NUMERIC") === "TEXT"}
                             size="small"
                             options={COMMON_LAB_UNITS}
                             value={param.unit || ""}
@@ -1031,12 +1090,13 @@ export default function TestsClient() {
                         <TableCell sx={{ bgcolor: "#f8fafc" }}>
                           <TextField
                             fullWidth
+                            disabled={!!param.isHeader || (param.valueType || "NUMERIC") !== "NUMERIC"}
                             size="small"
                             type="number"
                             inputProps={{ step: "any" }}
                             value={param.minValMale}
                             onChange={(e) => handleParamRowChange(idx, "minValMale", e.target.value)}
-                            placeholder="Min"
+                            placeholder={(param.valueType || "NUMERIC") === "NUMERIC" ? "Min" : "—"}
                             sx={{ '& .MuiOutlinedInput-root': { borderRadius: 1.5 } }}
                           />
                         </TableCell>
@@ -1045,12 +1105,13 @@ export default function TestsClient() {
                         <TableCell sx={{ bgcolor: "#f8fafc" }}>
                           <TextField
                             fullWidth
+                            disabled={!!param.isHeader || (param.valueType || "NUMERIC") !== "NUMERIC"}
                             size="small"
                             type="number"
                             inputProps={{ step: "any" }}
                             value={param.maxValMale}
                             onChange={(e) => handleParamRowChange(idx, "maxValMale", e.target.value)}
-                            placeholder="Max"
+                            placeholder={(param.valueType || "NUMERIC") === "NUMERIC" ? "Max" : "—"}
                             sx={{ '& .MuiOutlinedInput-root': { borderRadius: 1.5 } }}
                           />
                         </TableCell>
@@ -1059,10 +1120,11 @@ export default function TestsClient() {
                         <TableCell sx={{ bgcolor: "#f8fafc" }}>
                           <TextField
                             fullWidth
+                            disabled={!!param.isHeader || (param.valueType || "NUMERIC") !== "NUMERIC"}
                             size="small"
                             value={param.normalRangeMale}
                             onChange={(e) => handleParamRowChange(idx, "normalRangeMale", e.target.value)}
-                            placeholder="Range text"
+                            placeholder={(param.valueType || "NUMERIC") === "NUMERIC" ? "Range text" : "—"}
                             disabled={param.minValMale !== "" && param.maxValMale !== ""}
                             sx={{ '& .MuiOutlinedInput-root': { borderRadius: 1.5 } }}
                           />
@@ -1072,12 +1134,13 @@ export default function TestsClient() {
                         <TableCell sx={{ bgcolor: "#f8fafc" }}>
                           <TextField
                             fullWidth
+                            disabled={!!param.isHeader || (param.valueType || "NUMERIC") !== "NUMERIC"}
                             size="small"
                             type="number"
                             inputProps={{ step: "any" }}
                             value={param.minValFemale}
                             onChange={(e) => handleParamRowChange(idx, "minValFemale", e.target.value)}
-                            placeholder="Min"
+                            placeholder={(param.valueType || "NUMERIC") === "NUMERIC" ? "Min" : "—"}
                             sx={{ '& .MuiOutlinedInput-root': { borderRadius: 1.5 } }}
                           />
                         </TableCell>
@@ -1086,12 +1149,13 @@ export default function TestsClient() {
                         <TableCell sx={{ bgcolor: "#f8fafc" }}>
                           <TextField
                             fullWidth
+                            disabled={!!param.isHeader || (param.valueType || "NUMERIC") !== "NUMERIC"}
                             size="small"
                             type="number"
                             inputProps={{ step: "any" }}
                             value={param.maxValFemale}
                             onChange={(e) => handleParamRowChange(idx, "maxValFemale", e.target.value)}
-                            placeholder="Max"
+                            placeholder={(param.valueType || "NUMERIC") === "NUMERIC" ? "Max" : "—"}
                             sx={{ '& .MuiOutlinedInput-root': { borderRadius: 1.5 } }}
                           />
                         </TableCell>
@@ -1100,10 +1164,11 @@ export default function TestsClient() {
                         <TableCell sx={{ bgcolor: "#f8fafc" }}>
                           <TextField
                             fullWidth
+                            disabled={!!param.isHeader || (param.valueType || "NUMERIC") !== "NUMERIC"}
                             size="small"
                             value={param.normalRangeFemale}
                             onChange={(e) => handleParamRowChange(idx, "normalRangeFemale", e.target.value)}
-                            placeholder="Range text"
+                            placeholder={(param.valueType || "NUMERIC") === "NUMERIC" ? "Range text" : "—"}
                             disabled={param.minValFemale !== "" && param.maxValFemale !== ""}
                             sx={{ '& .MuiOutlinedInput-root': { borderRadius: 1.5 } }}
                           />
@@ -1113,12 +1178,13 @@ export default function TestsClient() {
                         <TableCell sx={{ bgcolor: "#f8fafc" }}>
                           <TextField
                             fullWidth
+                            disabled={!!param.isHeader || (param.valueType || "NUMERIC") !== "NUMERIC"}
                             size="small"
                             type="number"
                             inputProps={{ step: "any" }}
                             value={param.minValBaby}
                             onChange={(e) => handleParamRowChange(idx, "minValBaby", e.target.value)}
-                            placeholder="Min"
+                            placeholder={(param.valueType || "NUMERIC") === "NUMERIC" ? "Min" : "—"}
                             sx={{ '& .MuiOutlinedInput-root': { borderRadius: 1.5 } }}
                           />
                         </TableCell>
@@ -1127,12 +1193,13 @@ export default function TestsClient() {
                         <TableCell sx={{ bgcolor: "#f8fafc" }}>
                           <TextField
                             fullWidth
+                            disabled={!!param.isHeader || (param.valueType || "NUMERIC") !== "NUMERIC"}
                             size="small"
                             type="number"
                             inputProps={{ step: "any" }}
                             value={param.maxValBaby}
                             onChange={(e) => handleParamRowChange(idx, "maxValBaby", e.target.value)}
-                            placeholder="Max"
+                            placeholder={(param.valueType || "NUMERIC") === "NUMERIC" ? "Max" : "—"}
                             sx={{ '& .MuiOutlinedInput-root': { borderRadius: 1.5 } }}
                           />
                         </TableCell>
@@ -1141,10 +1208,11 @@ export default function TestsClient() {
                         <TableCell sx={{ bgcolor: "#f8fafc" }}>
                           <TextField
                             fullWidth
+                            disabled={!!param.isHeader || (param.valueType || "NUMERIC") !== "NUMERIC"}
                             size="small"
                             value={param.normalRangeBaby}
                             onChange={(e) => handleParamRowChange(idx, "normalRangeBaby", e.target.value)}
-                            placeholder="Range text"
+                            placeholder={(param.valueType || "NUMERIC") === "NUMERIC" ? "Range text" : "—"}
                             disabled={param.minValBaby !== "" && param.maxValBaby !== ""}
                             sx={{ '& .MuiOutlinedInput-root': { borderRadius: 1.5 } }}
                           />

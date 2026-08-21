@@ -18,6 +18,8 @@ export async function PUT(req, { params }) {
       name,
       code,
       unit,
+      valueType,
+      options,
       minValMale,
       maxValMale,
       normalRangeMale,
@@ -50,20 +52,24 @@ export async function PUT(req, { params }) {
       return NextResponse.json({ success: false, error: `Parameter name "${normName}" is already taken.` }, { status: 400 });
     }
 
+    const isNumeric = (valueType || "NUMERIC") === "NUMERIC";
+
     const updated = await prisma.parameter.update({
       where: { id: parameterId },
       data: {
         name: normName,
         code: normCode || null,
         unit: unit || null,
-        minValMale: minValMale !== "" && minValMale !== null && minValMale !== undefined ? parseFloat(minValMale) : null,
-        maxValMale: maxValMale !== "" && maxValMale !== null && maxValMale !== undefined ? parseFloat(maxValMale) : null,
+        valueType: valueType || "NUMERIC",
+        options: options || null,
+        minValMale: isNumeric && minValMale !== "" && minValMale !== null && minValMale !== undefined ? parseFloat(minValMale) : null,
+        maxValMale: isNumeric && maxValMale !== "" && maxValMale !== null && maxValMale !== undefined ? parseFloat(maxValMale) : null,
         normalRangeMale: normalRangeMale || null,
-        minValFemale: minValFemale !== "" && minValFemale !== null && minValFemale !== undefined ? parseFloat(minValFemale) : null,
-        maxValFemale: maxValFemale !== "" && maxValFemale !== null && maxValFemale !== undefined ? parseFloat(maxValFemale) : null,
+        minValFemale: isNumeric && minValFemale !== "" && minValFemale !== null && minValFemale !== undefined ? parseFloat(minValFemale) : null,
+        maxValFemale: isNumeric && maxValFemale !== "" && maxValFemale !== null && maxValFemale !== undefined ? parseFloat(maxValFemale) : null,
         normalRangeFemale: normalRangeFemale || null,
-        minValBaby: minValBaby !== "" && minValBaby !== null && minValBaby !== undefined ? parseFloat(minValBaby) : null,
-        maxValBaby: maxValBaby !== "" && maxValBaby !== null && maxValBaby !== undefined ? parseFloat(maxValBaby) : null,
+        minValBaby: isNumeric && minValBaby !== "" && minValBaby !== null && minValBaby !== undefined ? parseFloat(minValBaby) : null,
+        maxValBaby: isNumeric && maxValBaby !== "" && maxValBaby !== null && maxValBaby !== undefined ? parseFloat(maxValBaby) : null,
         normalRangeBaby: normalRangeBaby || null,
         normalRangeDefault: normalRangeDefault || null
       }

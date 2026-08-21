@@ -33,30 +33,65 @@ const getReferenceRange = (param, reg) => {
   const isBaby = reg.ageUnit !== "Year" || reg.age < 12;
   if (isBaby) {
     return {
-      rangeStr: param.normalRangeBaby || param.normalRangeDefault || "Normal",
+      rangeStr: param.normalRangeBaby || param.normalRangeDefault || "",
       min: param.minValBaby,
       max: param.maxValBaby,
     };
   }
   if (reg.gender === "Female") {
     return {
-      rangeStr: param.normalRangeFemale || param.normalRangeDefault || "Normal",
+      rangeStr: param.normalRangeFemale || param.normalRangeDefault || "",
       min: param.minValFemale,
       max: param.maxValFemale,
     };
   }
   return {
-    rangeStr: param.normalRangeMale || param.normalRangeDefault || "Normal",
+    rangeStr: param.normalRangeMale || param.normalRangeDefault || "",
     min: param.minValMale,
     max: param.maxValMale,
   };
 };
 
-const isOutOfRange = (valStr, min, max) => {
-  if (!valStr || min === null || max === null) return false;
-  const num = parseFloat(valStr);
-  if (isNaN(num)) return false;
-  return num < min || num > max;
+const isQualitativeAbnormal = (valStr, refRangeStr = "") => {
+  if (!valStr || typeof valStr !== "string") return false;
+  const valLower = valStr.trim().toLowerCase();
+  const refLower = (refRangeStr || "").trim().toLowerCase();
+
+  // If matches ref exactly, it's normal
+  if (refLower && valLower === refLower) return false;
+
+  // Abnormal keywords
+  if (valLower.includes("reactive") && !valLower.includes("non")) return true;
+  if (valLower.includes("positive") && !valLower.includes("non")) return true;
+  if (valLower.includes("present") && !valLower.includes("absent")) return true;
+  if (valLower.includes("detected") && !valLower.includes("not")) return true;
+  if (["abnormal", "trace", "seen", "+", "++", "+++", "++++", "1+", "2+", "3+", "4+", "cloudy", "turbid", "hazy"].some(k => valLower === k || (k.startsWith("+") && valLower.includes(k)))) {
+    return true;
+  }
+
+  // Normal keywords
+  if (valLower.includes("negative") || valLower.includes("non-reactive") || valLower.includes("non reactive") || valLower.includes("nonreactive") || valLower.includes("absent") || valLower.includes("not detected") || valLower === "nil" || valLower === "normal" || valLower === "clear") {
+    return false;
+  }
+
+  // If normal range expects negative/absent/nil and value is different
+  if (refLower.includes("negative") && valLower.includes("positive")) return true;
+  if ((refLower.includes("non-reactive") || refLower.includes("non reactive")) && valLower.includes("reactive") && !valLower.includes("non")) return true;
+  if ((refLower.includes("absent") || refLower.includes("nil")) && valLower.includes("present")) return true;
+
+  return false;
+};
+
+const isOutOfRange = (valStr, min, max, refRangeStr = "") => {
+  if (!valStr) return false;
+  const valRaw = String(valStr).trim();
+  const num = parseFloat(valRaw);
+  if (!isNaN(num) && /^-?\d+(\.\d+)?$/.test(valRaw) && (min !== null || max !== null)) {
+    if (min !== null && min !== undefined && num < min) return true;
+    if (max !== null && max !== undefined && num > max) return true;
+    return false;
+  }
+  return isQualitativeAbnormal(valRaw, refRangeStr);
 };
 
 export default function ShowResult({ open, onClose, selectedReg }) {
@@ -216,7 +251,7 @@ export default function ShowResult({ open, onClose, selectedReg }) {
                             const result = previewData.results?.find(r => r.testParameterId === param.id);
                             const val = result ? result.value : "";
                             const ref = getReferenceRange(param, previewData);
-                            const isAbnormal = isOutOfRange(val, ref.min, ref.max);
+                            const isAbnormal = isOutOfRange(val, ref.min, ref.max, ref.rangeStr);
 
                             return (
                               <TableRow key={keyIndex} hover>
@@ -230,7 +265,7 @@ export default function ShowResult({ open, onClose, selectedReg }) {
                                   {val || "-"}
                                 </TableCell>
                                 <TableCell>{param.unit || "-"}</TableCell>
-                                <TableCell>{ref.rangeStr || "-"}</TableCell>
+                                <TableCell>{ref.rangeStr || ""}</TableCell>
                               </TableRow>
                             );
                           };

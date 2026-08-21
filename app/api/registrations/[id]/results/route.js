@@ -36,7 +36,12 @@ export async function POST(req, { params }) {
         const testParam = testParameters.find(tp => tp.id === res.testParameterId);
         let flag = null;
         if (testParam && testParam.parameter && res.value !== null && res.value !== undefined && res.value !== "") {
-          const thresholds = getRangeAndCriticalThresholds(testParam.parameter, existing);
+          const mergedParam = {
+            ...testParam.parameter,
+            valueType: testParam.valueType || testParam.parameter.valueType || "NUMERIC",
+            options: testParam.options || testParam.parameter.options || null,
+          };
+          const thresholds = getRangeAndCriticalThresholds(mergedParam, existing);
           flag = determineFlag(res.value, thresholds);
         }
 

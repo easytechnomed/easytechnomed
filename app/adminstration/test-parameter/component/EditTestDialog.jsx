@@ -158,6 +158,8 @@ export default function EditTestDialog({ open, onClose, test, parameterDictionar
           name: p.name || "",
           isHeader: p.isHeader || false,
           unit: p.unit || "",
+          valueType: p.valueType || (p.parameter?.valueType ?? "NUMERIC"),
+          options: p.options || (p.parameter?.options ?? ""),
           order: p.order?.toString() || "1",
           editable: p.editable !== undefined ? p.editable : true,
           isCalculated: p.isCalculated !== undefined ? p.isCalculated : false,
@@ -467,6 +469,8 @@ export default function EditTestDialog({ open, onClose, test, parameterDictionar
           key: `new-${Date.now()}-${Math.random()}`,
           name: "",
           unit: defaultUnit,
+          valueType: "NUMERIC",
+          options: "",
           order: (prev.parameters.length + 1).toString(),
           parameterId: null,
           parentId: null,
@@ -541,6 +545,8 @@ export default function EditTestDialog({ open, onClose, test, parameterDictionar
           ...newParams[index],
           name: template.name,
           unit: template.unit || "",
+          valueType: template.valueType || "NUMERIC",
+          options: template.options || "",
           parameterId: template.id,
           isHeader: false,
           editable: template.editable !== undefined ? template.editable : true,
@@ -611,6 +617,8 @@ export default function EditTestDialog({ open, onClose, test, parameterDictionar
       name: child.name || "",
       isHeader: false,
       unit: child.unit || "",
+      valueType: child.valueType || "NUMERIC",
+      options: child.options || "",
       order: "1",
       editable: child.editable !== undefined ? child.editable : true,
       isCalculated: child.isCalculated !== undefined ? child.isCalculated : false,
@@ -848,10 +856,12 @@ export default function EditTestDialog({ open, onClose, test, parameterDictionar
                         <TableCell align="center" sx={{ fontWeight: 700, width: 40, bgcolor: "#f8fafc" }}>#</TableCell>
                         <TableCell align="center" sx={{ fontWeight: 700, width: 50, bgcolor: "#f8fafc" }}>Action</TableCell>
                         <TableCell align="center" sx={{ fontWeight: 700, width: 90, bgcolor: "#f8fafc" }}>Is Header?</TableCell>
-                        <TableCell sx={{ fontWeight: 700, width: 200, bgcolor: "#fff7ed" }}>Parent Header</TableCell>
-                        <TableCell sx={{ fontWeight: 700, width: 450, bgcolor: "#f8fafc" }}>Parameter Name *</TableCell>
-                        <TableCell sx={{ fontWeight: 700, width: 170, bgcolor: "#f8fafc" }}>Unit</TableCell>
-                        <TableCell sx={{ fontWeight: 700, width: 100, bgcolor: "#f8fafc" }}>Order</TableCell>
+                        <TableCell sx={{ fontWeight: 700, width: 180, bgcolor: "#fff7ed" }}>Parent Header</TableCell>
+                        <TableCell sx={{ fontWeight: 700, width: 380, bgcolor: "#f8fafc" }}>Parameter Name *</TableCell>
+                        <TableCell sx={{ fontWeight: 700, width: 140, bgcolor: "#f8fafc" }}>Type</TableCell>
+                        <TableCell sx={{ fontWeight: 700, width: 180, bgcolor: "#f8fafc" }}>Options / Preset</TableCell>
+                        <TableCell sx={{ fontWeight: 700, width: 140, bgcolor: "#f8fafc" }}>Unit</TableCell>
+                        <TableCell sx={{ fontWeight: 700, width: 80, bgcolor: "#f8fafc" }}>Order</TableCell>
 
                         {/* Male */}
                         <TableCell sx={{ fontWeight: 700, width: 140, bgcolor: "#eff6ff" }}>Male Min</TableCell>
@@ -1046,11 +1056,57 @@ export default function EditTestDialog({ open, onClose, test, parameterDictionar
                               />
                             </TableCell>
 
+                            {/* Type */}
+                            <TableCell>
+                              {param.isHeader ? (
+                                <Box sx={{ fontSize: "0.8rem", color: "text.disabled", pl: 1 }}>—</Box>
+                              ) : (
+                                <Select
+                                  size="small"
+                                  fullWidth
+                                  value={param.valueType || "NUMERIC"}
+                                  onChange={(e) => {
+                                    const val = e.target.value;
+                                    setEditForm((prev) => {
+                                      const p = [...prev.parameters];
+                                      p[index] = {
+                                        ...p[index],
+                                        valueType: val,
+                                        ...(val === "OPTIONS" && !p[index].options ? { options: "Negative, Positive", normalRangeDefault: p[index].normalRangeDefault || "Negative" } : {})
+                                      };
+                                      return { ...prev, parameters: p };
+                                    });
+                                  }}
+                                  sx={{ fontSize: "0.8rem" }}
+                                >
+                                  <MenuItem value="NUMERIC" sx={{ fontSize: "0.8rem" }}>Numeric</MenuItem>
+                                  <MenuItem value="OPTIONS" sx={{ fontSize: "0.8rem" }}>Options / Boolean</MenuItem>
+                                  <MenuItem value="TEXT" sx={{ fontSize: "0.8rem" }}>Free Text</MenuItem>
+                                </Select>
+                              )}
+                            </TableCell>
+
+                            {/* Options / Preset */}
+                            <TableCell>
+                              {param.isHeader || (param.valueType || "NUMERIC") !== "OPTIONS" ? (
+                                <Box sx={{ fontSize: "0.8rem", color: "text.disabled", pl: 1 }}>—</Box>
+                              ) : (
+                                <TextField
+                                  fullWidth
+                                  size="small"
+                                  value={param.options || ""}
+                                  onChange={(e) => handleParamChange(index, "options", e.target.value)}
+                                  placeholder="e.g. Negative, Positive"
+                                  sx={{ "& .MuiOutlinedInput-root": { borderRadius: 1 } }}
+                                />
+                              )}
+                            </TableCell>
+
                             {/* Unit */}
                             <TableCell>
                               <Autocomplete
                                 freeSolo
-                                disabled={!!param.isHeader}
+                                disabled={!!param.isHeader || (param.valueType || "NUMERIC") === "TEXT"}
                                 size="small"
                                 options={COMMON_LAB_UNITS}
                                 value={param.unit}
@@ -1104,13 +1160,13 @@ export default function EditTestDialog({ open, onClose, test, parameterDictionar
                             <TableCell sx={{ bgcolor: "#f8fafc" }}>
                               <TextField
                                 fullWidth
-                                disabled={!!param.isHeader}
+                                disabled={!!param.isHeader || (param.valueType || "NUMERIC") !== "NUMERIC"}
                                 size="small"
                                 type="number"
                                 inputProps={{ step: "any" }}
                                 value={param.minValMale}
                                 onChange={(e) => handleParamChange(index, "minValMale", e.target.value)}
-                                placeholder="Min"
+                                placeholder={(param.valueType || "NUMERIC") === "NUMERIC" ? "Min" : "—"}
                                 sx={{ "& .MuiOutlinedInput-root": { borderRadius: 1 } }}
                               />
                             </TableCell>
@@ -1119,13 +1175,13 @@ export default function EditTestDialog({ open, onClose, test, parameterDictionar
                             <TableCell sx={{ bgcolor: "#f8fafc" }}>
                               <TextField
                                 fullWidth
-                                disabled={!!param.isHeader}
+                                disabled={!!param.isHeader || (param.valueType || "NUMERIC") !== "NUMERIC"}
                                 size="small"
                                 type="number"
                                 inputProps={{ step: "any" }}
                                 value={param.maxValMale}
                                 onChange={(e) => handleParamChange(index, "maxValMale", e.target.value)}
-                                placeholder="Max"
+                                placeholder={(param.valueType || "NUMERIC") === "NUMERIC" ? "Max" : "—"}
                                 sx={{ "& .MuiOutlinedInput-root": { borderRadius: 1 } }}
                               />
                             </TableCell>
@@ -1134,11 +1190,11 @@ export default function EditTestDialog({ open, onClose, test, parameterDictionar
                             <TableCell sx={{ bgcolor: "#f8fafc" }}>
                               <TextField
                                 fullWidth
-                                disabled={!!param.isHeader}
+                                disabled={!!param.isHeader || (param.valueType || "NUMERIC") !== "NUMERIC"}
                                 size="small"
                                 value={param.normalRangeMale}
                                 onChange={(e) => handleParamChange(index, "normalRangeMale", e.target.value)}
-                                placeholder="Range text"
+                                placeholder={(param.valueType || "NUMERIC") === "NUMERIC" ? "Range text" : "—"}
                                 sx={{ "& .MuiOutlinedInput-root": { borderRadius: 1 } }}
                               />
                             </TableCell>
@@ -1147,13 +1203,13 @@ export default function EditTestDialog({ open, onClose, test, parameterDictionar
                             <TableCell sx={{ bgcolor: "#fdf2f8" }}>
                               <TextField
                                 fullWidth
-                                disabled={!!param.isHeader}
+                                disabled={!!param.isHeader || (param.valueType || "NUMERIC") !== "NUMERIC"}
                                 size="small"
                                 type="number"
                                 inputProps={{ step: "any" }}
                                 value={param.minValFemale}
                                 onChange={(e) => handleParamChange(index, "minValFemale", e.target.value)}
-                                placeholder="Min"
+                                placeholder={(param.valueType || "NUMERIC") === "NUMERIC" ? "Min" : "—"}
                                 sx={{ "& .MuiOutlinedInput-root": { borderRadius: 1 } }}
                               />
                             </TableCell>
@@ -1162,13 +1218,13 @@ export default function EditTestDialog({ open, onClose, test, parameterDictionar
                             <TableCell sx={{ bgcolor: "#fdf2f8" }}>
                               <TextField
                                 fullWidth
-                                disabled={!!param.isHeader}
+                                disabled={!!param.isHeader || (param.valueType || "NUMERIC") !== "NUMERIC"}
                                 size="small"
                                 type="number"
                                 inputProps={{ step: "any" }}
                                 value={param.maxValFemale}
                                 onChange={(e) => handleParamChange(index, "maxValFemale", e.target.value)}
-                                placeholder="Max"
+                                placeholder={(param.valueType || "NUMERIC") === "NUMERIC" ? "Max" : "—"}
                                 sx={{ "& .MuiOutlinedInput-root": { borderRadius: 1 } }}
                               />
                             </TableCell>
@@ -1177,11 +1233,11 @@ export default function EditTestDialog({ open, onClose, test, parameterDictionar
                             <TableCell sx={{ bgcolor: "#fdf2f8" }}>
                               <TextField
                                 fullWidth
-                                disabled={!!param.isHeader}
+                                disabled={!!param.isHeader || (param.valueType || "NUMERIC") !== "NUMERIC"}
                                 size="small"
                                 value={param.normalRangeFemale}
                                 onChange={(e) => handleParamChange(index, "normalRangeFemale", e.target.value)}
-                                placeholder="Range text"
+                                placeholder={(param.valueType || "NUMERIC") === "NUMERIC" ? "Range text" : "—"}
                                 sx={{ "& .MuiOutlinedInput-root": { borderRadius: 1 } }}
                               />
                             </TableCell>
@@ -1190,13 +1246,13 @@ export default function EditTestDialog({ open, onClose, test, parameterDictionar
                             <TableCell sx={{ bgcolor: "#f0fdf4" }}>
                               <TextField
                                 fullWidth
-                                disabled={!!param.isHeader}
+                                disabled={!!param.isHeader || (param.valueType || "NUMERIC") !== "NUMERIC"}
                                 size="small"
                                 type="number"
                                 inputProps={{ step: "any" }}
                                 value={param.minValBaby}
                                 onChange={(e) => handleParamChange(index, "minValBaby", e.target.value)}
-                                placeholder="Min"
+                                placeholder={(param.valueType || "NUMERIC") === "NUMERIC" ? "Min" : "—"}
                                 sx={{ "& .MuiOutlinedInput-root": { borderRadius: 1 } }}
                               />
                             </TableCell>
@@ -1205,13 +1261,13 @@ export default function EditTestDialog({ open, onClose, test, parameterDictionar
                             <TableCell sx={{ bgcolor: "#f0fdf4" }}>
                               <TextField
                                 fullWidth
-                                disabled={!!param.isHeader}
+                                disabled={!!param.isHeader || (param.valueType || "NUMERIC") !== "NUMERIC"}
                                 size="small"
                                 type="number"
                                 inputProps={{ step: "any" }}
                                 value={param.maxValBaby}
                                 onChange={(e) => handleParamChange(index, "maxValBaby", e.target.value)}
-                                placeholder="Max"
+                                placeholder={(param.valueType || "NUMERIC") === "NUMERIC" ? "Max" : "—"}
                                 sx={{ "& .MuiOutlinedInput-root": { borderRadius: 1 } }}
                               />
                             </TableCell>
@@ -1220,11 +1276,11 @@ export default function EditTestDialog({ open, onClose, test, parameterDictionar
                             <TableCell sx={{ bgcolor: "#f0fdf4" }}>
                               <TextField
                                 fullWidth
-                                disabled={!!param.isHeader}
+                                disabled={!!param.isHeader || (param.valueType || "NUMERIC") !== "NUMERIC"}
                                 size="small"
                                 value={param.normalRangeBaby}
                                 onChange={(e) => handleParamChange(index, "normalRangeBaby", e.target.value)}
-                                placeholder="Range text"
+                                placeholder={(param.valueType || "NUMERIC") === "NUMERIC" ? "Range text" : "—"}
                                 sx={{ "& .MuiOutlinedInput-root": { borderRadius: 1 } }}
                               />
                             </TableCell>

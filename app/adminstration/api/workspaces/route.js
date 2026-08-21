@@ -118,6 +118,8 @@ export async function POST(req) {
           data: uniqueParamsList.map((p) => ({
             name: p.name,
             unit: p.unit,
+            valueType: p.valueType || "NUMERIC",
+            options: p.options || null,
             minValMale: p.minValMale,
             maxValMale: p.maxValMale,
             normalRangeMale: p.normalRangeMale,
@@ -179,6 +181,8 @@ export async function POST(req) {
                   parameterId: newParamId,
                   order: tp.order,
                   isHeader: tp.isHeader || false,
+                  valueType: tp.valueType || tp.parameter.valueType || null,
+                  options: tp.options || tp.parameter.options || null,
                   workspaceId: ws.id,
                 });
               }
