@@ -2,540 +2,636 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { verifySuperAdminAPI } from "@/lib/auth";
 
+// Helpers for safe, field-by-field value comparisons
+function isNumEqual(a, b) {
+  if ((a === null || a === undefined) && (b === null || b === undefined)) return true;
+  if (a === null || a === undefined || b === null || b === undefined) return false;
+  return Number(a) === Number(b);
+}
+
+function isStrEqual(a, b) {
+  const sA = a === null || a === undefined ? null : String(a).trim();
+  const sB = b === null || b === undefined ? null : String(b).trim();
+  if (sA === "" && sB === null) return true;
+  if (sB === "" && sA === null) return true;
+  return sA === sB;
+}
+
+function isBoolEqual(a, b) {
+  return Boolean(a) === Boolean(b);
+}
+
+// 1. Parameter field comparison & data extraction (30+ fields)
+function hasParameterChanged(existing, defaultP) {
+  return (
+    !isStrEqual(existing.code, defaultP.code) ||
+    !isStrEqual(existing.unit, defaultP.unit) ||
+    !isStrEqual(existing.valueType, defaultP.valueType) ||
+    !isStrEqual(existing.options, defaultP.options) ||
+    !isNumEqual(existing.minValMale, defaultP.minValMale) ||
+    !isNumEqual(existing.maxValMale, defaultP.maxValMale) ||
+    !isStrEqual(existing.normalRangeMale, defaultP.normalRangeMale) ||
+    !isNumEqual(existing.minValFemale, defaultP.minValFemale) ||
+    !isNumEqual(existing.maxValFemale, defaultP.maxValFemale) ||
+    !isStrEqual(existing.normalRangeFemale, defaultP.normalRangeFemale) ||
+    !isNumEqual(existing.minValBaby, defaultP.minValBaby) ||
+    !isNumEqual(existing.maxValBaby, defaultP.maxValBaby) ||
+    !isStrEqual(existing.normalRangeBaby, defaultP.normalRangeBaby) ||
+    !isStrEqual(existing.normalRangeDefault, defaultP.normalRangeDefault) ||
+    !isNumEqual(existing.criticalMinValMale, defaultP.criticalMinValMale) ||
+    !isNumEqual(existing.criticalMaxValMale, defaultP.criticalMaxValMale) ||
+    !isNumEqual(existing.criticalMinValFemale, defaultP.criticalMinValFemale) ||
+    !isNumEqual(existing.criticalMaxValFemale, defaultP.criticalMaxValFemale) ||
+    !isNumEqual(existing.criticalMinValBaby, defaultP.criticalMinValBaby) ||
+    !isNumEqual(existing.criticalMaxValBaby, defaultP.criticalMaxValBaby) ||
+    !isNumEqual(existing.criticalMinValDefault, defaultP.criticalMinValDefault) ||
+    !isNumEqual(existing.criticalMaxValDefault, defaultP.criticalMaxValDefault) ||
+    !isNumEqual(existing.borderlineMinValMale, defaultP.borderlineMinValMale) ||
+    !isNumEqual(existing.borderlineMaxValMale, defaultP.borderlineMaxValMale) ||
+    !isNumEqual(existing.borderlineMinValFemale, defaultP.borderlineMinValFemale) ||
+    !isNumEqual(existing.borderlineMaxValFemale, defaultP.borderlineMaxValFemale) ||
+    !isNumEqual(existing.borderlineMinValBaby, defaultP.borderlineMinValBaby) ||
+    !isNumEqual(existing.borderlineMaxValBaby, defaultP.borderlineMaxValBaby) ||
+    !isNumEqual(existing.borderlineMinValDefault, defaultP.borderlineMinValDefault) ||
+    !isNumEqual(existing.borderlineMaxValDefault, defaultP.borderlineMaxValDefault)
+  );
+}
+
+function extractParameterData(p, workspaceId) {
+  return {
+    name: p.name,
+    code: p.code ?? null,
+    unit: p.unit ?? null,
+    valueType: p.valueType ?? "NUMERIC",
+    options: p.options ?? null,
+    minValMale: p.minValMale ?? null,
+    maxValMale: p.maxValMale ?? null,
+    normalRangeMale: p.normalRangeMale ?? null,
+    minValFemale: p.minValFemale ?? null,
+    maxValFemale: p.maxValFemale ?? null,
+    normalRangeFemale: p.normalRangeFemale ?? null,
+    minValBaby: p.minValBaby ?? null,
+    maxValBaby: p.maxValBaby ?? null,
+    normalRangeBaby: p.normalRangeBaby ?? null,
+    normalRangeDefault: p.normalRangeDefault ?? null,
+    criticalMinValMale: p.criticalMinValMale ?? null,
+    criticalMaxValMale: p.criticalMaxValMale ?? null,
+    criticalMinValFemale: p.criticalMinValFemale ?? null,
+    criticalMaxValFemale: p.criticalMaxValFemale ?? null,
+    criticalMinValBaby: p.criticalMinValBaby ?? null,
+    criticalMaxValBaby: p.criticalMaxValBaby ?? null,
+    criticalMinValDefault: p.criticalMinValDefault ?? null,
+    criticalMaxValDefault: p.criticalMaxValDefault ?? null,
+    borderlineMinValMale: p.borderlineMinValMale ?? null,
+    borderlineMaxValMale: p.borderlineMaxValMale ?? null,
+    borderlineMinValFemale: p.borderlineMinValFemale ?? null,
+    borderlineMaxValFemale: p.borderlineMaxValFemale ?? null,
+    borderlineMinValBaby: p.borderlineMinValBaby ?? null,
+    borderlineMaxValBaby: p.borderlineMaxValBaby ?? null,
+    borderlineMinValDefault: p.borderlineMinValDefault ?? null,
+    borderlineMaxValDefault: p.borderlineMaxValDefault ?? null,
+    ...(workspaceId !== undefined ? { workspaceId } : {}),
+  };
+}
+
+// 2. Test field comparison & data extraction
+function hasTestChanged(existing, defaultT) {
+  return (
+    !isStrEqual(existing.name, defaultT.name) ||
+    !isStrEqual(existing.code, defaultT.code) ||
+    !isNumEqual(existing.price, defaultT.price) ||
+    !isNumEqual(existing.baseRate, defaultT.baseRate) ||
+    !isNumEqual(existing.curRate, defaultT.curRate) ||
+    !isNumEqual(existing.rate, defaultT.rate) ||
+    !isNumEqual(existing.collectionCenterRate, defaultT.collectionCenterRate) ||
+    !isNumEqual(existing.franchiseRate, defaultT.franchiseRate) ||
+    !isNumEqual(existing.superFranchiseRate, defaultT.superFranchiseRate) ||
+    !isNumEqual(existing.labRate, defaultT.labRate) ||
+    !isNumEqual(existing.offerPrice, defaultT.offerPrice) ||
+    !isBoolEqual(existing.isProcessed, defaultT.isProcessed) ||
+    existing.departmentId !== defaultT.departmentId ||
+    existing.isDeleted === true
+  );
+}
+
+function extractTestData(t, workspaceId, defaultUpdatedAt) {
+  return {
+    name: t.name,
+    code: t.code ?? null,
+    price: t.price ?? 0.0,
+    baseRate: t.baseRate ?? null,
+    curRate: t.curRate ?? null,
+    rate: t.rate ?? null,
+    collectionCenterRate: t.collectionCenterRate ?? null,
+    franchiseRate: t.franchiseRate ?? null,
+    superFranchiseRate: t.superFranchiseRate ?? null,
+    labRate: t.labRate ?? null,
+    offerPrice: t.offerPrice ?? null,
+    isProcessed: Boolean(t.isProcessed),
+    departmentId: t.departmentId ?? null,
+    isDeleted: false,
+    deletedAt: null,
+    ...(workspaceId !== undefined ? { workspaceId } : {}),
+    ...(defaultUpdatedAt !== undefined ? { defaultUpdatedAt } : {}),
+  };
+}
+
+// 3. TestParameter mapping field comparison & data extraction
+function hasTestParameterChanged(existing, defaultTp, resolvedParentId) {
+  return (
+    existing.order !== defaultTp.order ||
+    !isBoolEqual(existing.isHeader, defaultTp.isHeader) ||
+    existing.parentId !== resolvedParentId ||
+    !isStrEqual(existing.unit, defaultTp.unit) ||
+    !isStrEqual(existing.valueType, defaultTp.valueType) ||
+    !isStrEqual(existing.options, defaultTp.options) ||
+    !isBoolEqual(existing.editable, defaultTp.editable) ||
+    !isBoolEqual(existing.isCalculated, defaultTp.isCalculated) ||
+    (existing.decimalPlace ?? 2) !== (defaultTp.decimalPlace ?? 2) ||
+    !isStrEqual(existing.roundingMethod || "HALF_UP", defaultTp.roundingMethod || "HALF_UP") ||
+    !isStrEqual(existing.section, defaultTp.section) ||
+    existing.isDeleted === true
+  );
+}
+
+function extractTestParameterData(tp, testId, parameterId, resolvedParentId, workspaceId) {
+  return {
+    ...(testId ? { testId } : {}),
+    ...(parameterId ? { parameterId } : {}),
+    order: tp.order ?? 1,
+    isHeader: Boolean(tp.isHeader),
+    parentId: resolvedParentId,
+    unit: tp.unit ?? null,
+    valueType: tp.valueType ?? null,
+    options: tp.options ?? null,
+    editable: tp.editable !== undefined ? Boolean(tp.editable) : true,
+    isCalculated: Boolean(tp.isCalculated),
+    decimalPlace: tp.decimalPlace !== undefined ? Number(tp.decimalPlace) : 2,
+    roundingMethod: tp.roundingMethod || "HALF_UP",
+    section: tp.section ?? null,
+    isDeleted: false,
+    deletedAt: null,
+    ...(workspaceId !== undefined ? { workspaceId } : {}),
+  };
+}
+
 export async function POST(req, { params }) {
   try {
     await verifySuperAdminAPI();
     const { id } = await params;
-    const workspaceId = parseInt(id);
+    const workspaceId = parseInt(id, 10);
 
     if (isNaN(workspaceId)) {
       return NextResponse.json({ success: false, error: "Invalid workspace ID" }, { status: 400 });
     }
 
     const workspace = await prisma.workspace.findFirst({
-      where: { id: workspaceId, isDeleted: false }
+      where: { id: workspaceId, isDeleted: false },
     });
 
     if (!workspace) {
       return NextResponse.json({ success: false, error: "Workspace not found" }, { status: 404 });
     }
 
-    // 1. Fetch all active default tests with parameters and formulas
+    // 1. Fetch all active default tests with parameters, formulas, and interpretation rules
     const defaultTests = await prisma.test.findMany({
       where: { workspaceId: null, isDeleted: false },
       include: {
         parameters: {
           where: { isDeleted: false },
-          include: { parameter: true }
+          include: { parameter: true },
         },
         formulas: {
           where: { isActive: true },
-          include: { outputParameter: true }
-        }
-      }
+          include: { outputParameter: true },
+        },
+        interpretationRules: {
+          include: { parameter: true },
+        },
+      },
     });
 
-    // 2. Fetch all active workspace tests with parameters and formulas
+    // 2. Fetch all workspace tests (active and soft-deleted) with parameters, formulas, and interpretation rules
     const workspaceTests = await prisma.test.findMany({
-      where: { workspaceId, isDeleted: false },
+      where: { workspaceId },
       include: {
         parameters: {
-          where: { isDeleted: false },
-          include: { parameter: true }
+          include: { parameter: true },
         },
-        formulas: {
-          where: { isActive: true }
-        }
-      }
+        formulas: true,
+        interpretationRules: true,
+      },
     });
 
-    // 3. Create helper mappings of workspace parameters to find parameter IDs by name
-    const workspaceParams = await prisma.parameter.findMany({
-      where: { workspaceId }
-    });
-    const workspaceParamNameToIdMap = {};
-    workspaceParams.forEach(p => {
-      workspaceParamNameToIdMap[p.name.toLowerCase().trim()] = p.id;
-    });
-
-    // 4. Pre-create missing parameters in the workspace in a single bulk operation
-    const missingParamsToCreate = [];
-    const seenParamNames = new Set();
-    
+    // 3. Collect all default parameters and sync workspace parameters dictionary first
+    const defaultParamMap = new Map();
     for (const dt of defaultTests) {
       for (const dp of dt.parameters) {
-        if (dp.parameter) {
-          const nameNorm = dp.parameter.name.toLowerCase().trim();
-          if (!workspaceParamNameToIdMap[nameNorm] && !seenParamNames.has(nameNorm)) {
-            seenParamNames.add(nameNorm);
-            missingParamsToCreate.push({
-              name: dp.parameter.name,
-              code: dp.parameter.code,
-              unit: dp.parameter.unit,
-              valueType: dp.parameter.valueType,
-              options: dp.parameter.options,
-              minValMale: dp.parameter.minValMale,
-              maxValMale: dp.parameter.maxValMale,
-              normalRangeMale: dp.parameter.normalRangeMale,
-              minValFemale: dp.parameter.minValFemale,
-              maxValFemale: dp.parameter.maxValFemale,
-              normalRangeFemale: dp.parameter.normalRangeFemale,
-              minValBaby: dp.parameter.minValBaby,
-              maxValBaby: dp.parameter.maxValBaby,
-              normalRangeBaby: dp.parameter.normalRangeBaby,
-              normalRangeDefault: dp.parameter.normalRangeDefault,
-              workspaceId
-            });
+        if (dp.parameter && dp.parameter.name) {
+          const norm = dp.parameter.name.toLowerCase().trim();
+          if (!defaultParamMap.has(norm)) {
+            defaultParamMap.set(norm, dp.parameter);
           }
         }
+      }
+    }
+
+    // Fetch existing workspace parameters
+    let workspaceParams = await prisma.parameter.findMany({
+      where: { workspaceId },
+    });
+    const workspaceParamMap = new Map();
+    workspaceParams.forEach((p) => {
+      workspaceParamMap.set(p.name.toLowerCase().trim(), p);
+    });
+
+    // A. Pre-create missing parameters in workspace with all 30+ fields
+    const missingParamsToCreate = [];
+    for (const [normName, defaultP] of defaultParamMap.entries()) {
+      if (!workspaceParamMap.has(normName)) {
+        missingParamsToCreate.push(extractParameterData(defaultP, workspaceId));
       }
     }
 
     if (missingParamsToCreate.length > 0) {
       await prisma.parameter.createMany({
-        data: missingParamsToCreate
+        data: missingParamsToCreate,
       });
-      // Refresh parameter map
-      const updatedParams = await prisma.parameter.findMany({
-        where: { workspaceId }
+      // Refresh workspace parameter map
+      workspaceParams = await prisma.parameter.findMany({
+        where: { workspaceId },
       });
-      updatedParams.forEach(p => {
-        workspaceParamNameToIdMap[p.name.toLowerCase().trim()] = p.id;
+      workspaceParams.forEach((p) => {
+        workspaceParamMap.set(p.name.toLowerCase().trim(), p);
       });
+    }
+
+    // B. Compare every single field of existing parameters and update if any field changed
+    let updatedParamsCount = 0;
+    for (const [normName, defaultP] of defaultParamMap.entries()) {
+      const existingP = workspaceParamMap.get(normName);
+      if (existingP && hasParameterChanged(existingP, defaultP)) {
+        await prisma.parameter.update({
+          where: { id: existingP.id },
+          data: extractParameterData(defaultP),
+        });
+        updatedParamsCount++;
+      }
     }
 
     let syncedCount = 0;
     let createdCount = 0;
     let skippedCount = 0;
+    let updatedTestsCount = 0;
 
-    // Batch process tests in parallel to prevent connection hanging and timeout (pending)
-    const batchSize = 30;
+    // 4. Batch process tests in parallel
+    const batchSize = 25;
     for (let i = 0; i < defaultTests.length; i += batchSize) {
       const batch = defaultTests.slice(i, i + batchSize);
-      
-      await Promise.all(batch.map(async (dt) => {
-        const dtCode = (dt.code || "").toLowerCase().trim();
-        const dtNameNorm = dt.name.toLowerCase().trim();
 
-        const match = workspaceTests.find(wt => {
-          if (dtCode && wt.code) {
-            return wt.code.toLowerCase().trim() === dtCode;
-          }
-          return wt.name.toLowerCase().trim() === dtNameNorm;
-        });
+      await Promise.all(
+        batch.map(async (dt) => {
+          const dtCode = (dt.code || "").toLowerCase().trim();
+          const dtNameNorm = dt.name.toLowerCase().trim();
 
-        if (match) {
-          if (match.isCustomized) {
-            skippedCount++;
-            return;
-          }
-
-          // Optimize: compare default test's updatedAt to skip completely if identical
-          const dtUpdatedTime = dt.updatedAt.getTime();
-          const matchDefaultUpdatedTime = match.defaultUpdatedAt ? match.defaultUpdatedAt.getTime() : null;
-
-          if (matchDefaultUpdatedTime === dtUpdatedTime) {
-            syncedCount++;
-            return;
-          }
-
-          // Compare test details
-          const needsMetadataUpdate = 
-            match.name !== dt.name ||
-            match.code !== dt.code ||
-            parseFloat(match.price) !== parseFloat(dt.price) ||
-            match.isProcessed !== dt.isProcessed ||
-            matchDefaultUpdatedTime === null;
-
-          if (needsMetadataUpdate) {
-            await prisma.test.update({
-              where: { id: match.id },
-              data: {
-                name: dt.name,
-                code: dt.code,
-                price: dt.price,
-                isProcessed: dt.isProcessed,
-                defaultUpdatedAt: dt.updatedAt // Save default test's updatedAt timestamp
-              }
-            });
-          }
-
-          // Compare Parameter Mappings
-          const incomingParams = dt.parameters || [];
-          const existingParams = match.parameters || [];
-
-          // Soft delete mappings that are no longer in the defaults list
-          const incomingParamNames = incomingParams.map(ip => ip.parameter.name.toLowerCase().trim());
-          const paramsToDelete = existingParams.filter(ep => !incomingParamNames.includes(ep.parameter.name.toLowerCase().trim()));
-          
-          if (paramsToDelete.length > 0) {
-            await prisma.testParameter.updateMany({
-              where: { id: { in: paramsToDelete.map(p => p.id) } },
-              data: { isDeleted: true, deletedAt: new Date() }
-            });
-          }
-
-          // Map to track: defaultTestParameterId -> workspaceTestParameterId
-          const defaultToWorkspaceTpIdMap = {};
-
-          // Pass 1: Add or update isHeader mappings first to establish parent DB IDs
-          for (const dp of incomingParams) {
-            if (!dp.isHeader) continue;
-            const normName = dp.parameter.name.toLowerCase().trim();
-            const wParamId = workspaceParamNameToIdMap[normName];
-            if (!wParamId) continue;
-
-            const allMatchingMappings = existingParams.filter(ep => ep.parameter.name.toLowerCase().trim() === normName);
-            let workspaceTpId = null;
-
-            if (allMatchingMappings.length > 0) {
-              const existingMapping = allMatchingMappings[0];
-              workspaceTpId = existingMapping.id;
-
-              // Compare parameter details (ranges, unit, type, options) before updating to save DB writes
-              const needsParamDetailUpdate = 
-                existingMapping.parameter.code !== dp.parameter.code ||
-                existingMapping.parameter.unit !== dp.parameter.unit ||
-                existingMapping.parameter.valueType !== dp.parameter.valueType ||
-                existingMapping.parameter.options !== dp.parameter.options ||
-                existingMapping.parameter.minValMale !== dp.parameter.minValMale ||
-                existingMapping.parameter.maxValMale !== dp.parameter.maxValMale ||
-                existingMapping.parameter.normalRangeMale !== dp.parameter.normalRangeMale ||
-                existingMapping.parameter.minValFemale !== dp.parameter.minValFemale ||
-                existingMapping.parameter.maxValFemale !== dp.parameter.maxValFemale ||
-                existingMapping.parameter.normalRangeFemale !== dp.parameter.normalRangeFemale ||
-                existingMapping.parameter.minValBaby !== dp.parameter.minValBaby ||
-                existingMapping.parameter.maxValBaby !== dp.parameter.maxValBaby ||
-                existingMapping.parameter.normalRangeBaby !== dp.parameter.normalRangeBaby ||
-                existingMapping.parameter.normalRangeDefault !== dp.parameter.normalRangeDefault;
-
-              if (needsParamDetailUpdate) {
-                await prisma.parameter.update({
-                  where: { id: wParamId },
-                  data: {
-                    code: dp.parameter.code,
-                    unit: dp.parameter.unit,
-                    valueType: dp.parameter.valueType,
-                    options: dp.parameter.options,
-                    minValMale: dp.parameter.minValMale,
-                    maxValMale: dp.parameter.maxValMale,
-                    normalRangeMale: dp.parameter.normalRangeMale,
-                    minValFemale: dp.parameter.minValFemale,
-                    maxValFemale: dp.parameter.maxValFemale,
-                    normalRangeFemale: dp.parameter.normalRangeFemale,
-                    minValBaby: dp.parameter.minValBaby,
-                    maxValBaby: dp.parameter.maxValBaby,
-                    normalRangeBaby: dp.parameter.normalRangeBaby,
-                    normalRangeDefault: dp.parameter.normalRangeDefault,
-                  }
-                });
-              }
-
-              const needsParamMappingUpdate = 
-                existingMapping.order !== dp.order ||
-                existingMapping.isHeader !== dp.isHeader ||
-                existingMapping.valueType !== dp.valueType ||
-                existingMapping.options !== dp.options ||
-                existingMapping.parentId !== null ||
-                existingMapping.isDeleted === true;
-
-              if (needsParamMappingUpdate) {
-                await prisma.testParameter.update({
-                  where: { id: existingMapping.id },
-                  data: {
-                    order: dp.order,
-                    isHeader: dp.isHeader,
-                    valueType: dp.valueType,
-                    options: dp.options,
-                    parentId: null, // Headers have no parentId
-                    isDeleted: false,
-                    deletedAt: null
-                  }
-                });
-              }
-
-              // Clean up duplicate mappings
-              if (allMatchingMappings.length > 1) {
-                const duplicatesToDelete = allMatchingMappings.slice(1);
-                await prisma.testParameter.updateMany({
-                  where: { id: { in: duplicatesToDelete.map(d => d.id) } },
-                  data: { isDeleted: true, deletedAt: new Date() }
-                });
-              }
-            } else {
-              const newTp = await prisma.testParameter.create({
-                data: {
-                  testId: match.id,
-                  parameterId: wParamId,
-                  order: dp.order,
-                  isHeader: dp.isHeader,
-                  valueType: dp.valueType,
-                  options: dp.options,
-                  parentId: null,
-                  workspaceId
-                }
-              });
-              workspaceTpId = newTp.id;
+          const match = workspaceTests.find((wt) => {
+            if (dtCode && wt.code) {
+              return wt.code.toLowerCase().trim() === dtCode;
             }
-
-            if (workspaceTpId) {
-              defaultToWorkspaceTpIdMap[dp.id] = workspaceTpId;
-            }
-          }
-
-          // Pass 2: Add or update child parameters, linking parentId correctly
-          for (const dp of incomingParams) {
-            if (dp.isHeader) continue;
-            const normName = dp.parameter.name.toLowerCase().trim();
-            const wParamId = workspaceParamNameToIdMap[normName];
-            if (!wParamId) continue;
-
-            const resolvedParentId = dp.parentId ? (defaultToWorkspaceTpIdMap[dp.parentId] || null) : null;
-            const allMatchingMappings = existingParams.filter(ep => ep.parameter.name.toLowerCase().trim() === normName);
-
-            if (allMatchingMappings.length > 0) {
-              const existingMapping = allMatchingMappings[0];
-
-              // Compare parameter details (ranges, unit, type, options) before updating to save DB writes
-              const needsParamDetailUpdate = 
-                existingMapping.parameter.code !== dp.parameter.code ||
-                existingMapping.parameter.unit !== dp.parameter.unit ||
-                existingMapping.parameter.valueType !== dp.parameter.valueType ||
-                existingMapping.parameter.options !== dp.parameter.options ||
-                existingMapping.parameter.minValMale !== dp.parameter.minValMale ||
-                existingMapping.parameter.maxValMale !== dp.parameter.maxValMale ||
-                existingMapping.parameter.normalRangeMale !== dp.parameter.normalRangeMale ||
-                existingMapping.parameter.minValFemale !== dp.parameter.minValFemale ||
-                existingMapping.parameter.maxValFemale !== dp.parameter.maxValFemale ||
-                existingMapping.parameter.normalRangeFemale !== dp.parameter.normalRangeFemale ||
-                existingMapping.parameter.minValBaby !== dp.parameter.minValBaby ||
-                existingMapping.parameter.maxValBaby !== dp.parameter.maxValBaby ||
-                existingMapping.parameter.normalRangeBaby !== dp.parameter.normalRangeBaby ||
-                existingMapping.parameter.normalRangeDefault !== dp.parameter.normalRangeDefault;
-
-              if (needsParamDetailUpdate) {
-                await prisma.parameter.update({
-                  where: { id: wParamId },
-                  data: {
-                    code: dp.parameter.code,
-                    unit: dp.parameter.unit,
-                    valueType: dp.parameter.valueType,
-                    options: dp.parameter.options,
-                    minValMale: dp.parameter.minValMale,
-                    maxValMale: dp.parameter.maxValMale,
-                    normalRangeMale: dp.parameter.normalRangeMale,
-                    minValFemale: dp.parameter.minValFemale,
-                    maxValFemale: dp.parameter.maxValFemale,
-                    normalRangeFemale: dp.parameter.normalRangeFemale,
-                    minValBaby: dp.parameter.minValBaby,
-                    maxValBaby: dp.parameter.maxValBaby,
-                    normalRangeBaby: dp.parameter.normalRangeBaby,
-                    normalRangeDefault: dp.parameter.normalRangeDefault,
-                  }
-                });
-              }
-
-              const needsParamMappingUpdate = 
-                existingMapping.order !== dp.order ||
-                existingMapping.isHeader !== dp.isHeader ||
-                existingMapping.valueType !== dp.valueType ||
-                existingMapping.options !== dp.options ||
-                existingMapping.parentId !== resolvedParentId ||
-                existingMapping.isDeleted === true;
-
-              if (needsParamMappingUpdate) {
-                await prisma.testParameter.update({
-                  where: { id: existingMapping.id },
-                  data: {
-                    order: dp.order,
-                    isHeader: dp.isHeader,
-                    valueType: dp.valueType,
-                    options: dp.options,
-                    parentId: resolvedParentId,
-                    isDeleted: false,
-                    deletedAt: null
-                  }
-                });
-              }
-
-              // Clean up duplicate mappings
-              if (allMatchingMappings.length > 1) {
-                const duplicatesToDelete = allMatchingMappings.slice(1);
-                await prisma.testParameter.updateMany({
-                  where: { id: { in: duplicatesToDelete.map(d => d.id) } },
-                  data: { isDeleted: true, deletedAt: new Date() }
-                });
-              }
-            } else {
-              await prisma.testParameter.create({
-                data: {
-                  testId: match.id,
-                  parameterId: wParamId,
-                  order: dp.order,
-                  isHeader: dp.isHeader,
-                  valueType: dp.valueType,
-                  options: dp.options,
-                  parentId: resolvedParentId,
-                  workspaceId
-                }
-              });
-            }
-          }
-
-
-          // Compare Formulas selectively
-          const incomingFormulas = dt.formulas || [];
-          const existingFormulas = match.formulas || [];
-
-          const incomingFormulasMapped = [];
-          const seenIncomingKeys = new Set();
-
-          incomingFormulas.forEach(df => {
-            const outName = df.outputParameter.name.toLowerCase().trim();
-            const wOutParamId = workspaceParamNameToIdMap[outName];
-            if (wOutParamId && !seenIncomingKeys.has(wOutParamId)) {
-              seenIncomingKeys.add(wOutParamId);
-              incomingFormulasMapped.push({
-                outputParameterId: wOutParamId,
-                formula: df.formula
-              });
-            }
+            return wt.name.toLowerCase().trim() === dtNameNorm;
           });
 
-          const incomingOutputParamIds = incomingFormulasMapped.map(f => f.outputParameterId);
-          const formulasToDelete = existingFormulas.filter(ef => !incomingOutputParamIds.includes(ef.outputParameterId));
-          if (formulasToDelete.length > 0) {
-            await prisma.testFormula.deleteMany({
-              where: { id: { in: formulasToDelete.map(f => f.id) } }
-            });
-          }
+          if (match) {
+            // If the workspace administrator customized this test specifically, skip overwriting
+            if (match.isCustomized) {
+              skippedCount++;
+              return;
+            }
 
-          for (const df of incomingFormulasMapped) {
-            const existingFormula = existingFormulas.find(ef => ef.outputParameterId === df.outputParameterId);
-            if (existingFormula) {
-              if (existingFormula.formula !== df.formula || !existingFormula.isActive) {
-                await prisma.testFormula.update({
-                  where: { id: existingFormula.id },
-                  data: {
+            // Compare each field of Test record
+            if (hasTestChanged(match, dt)) {
+              await prisma.test.update({
+                where: { id: match.id },
+                data: {
+                  ...extractTestData(dt),
+                  defaultUpdatedAt: dt.updatedAt,
+                },
+              });
+              updatedTestsCount++;
+            }
+
+            // Map incoming default parameters and existing workspace mappings
+            const incomingParams = dt.parameters || [];
+            const existingMappings = match.parameters || [];
+
+            // Soft-delete workspace mappings that no longer exist in default test
+            const incomingParamNormNames = new Set(
+              incomingParams
+                .filter((ip) => ip.parameter)
+                .map((ip) => ip.parameter.name.toLowerCase().trim())
+            );
+
+            const mappingsToDelete = existingMappings.filter(
+              (ep) => ep.parameter && !incomingParamNormNames.has(ep.parameter.name.toLowerCase().trim()) && !ep.isDeleted
+            );
+
+            if (mappingsToDelete.length > 0) {
+              await prisma.testParameter.updateMany({
+                where: { id: { in: mappingsToDelete.map((m) => m.id) } },
+                data: { isDeleted: true, deletedAt: new Date() },
+              });
+            }
+
+            // Map to track: defaultTestParameter.id -> workspaceTestParameter.id
+            const defaultToWorkspaceTpIdMap = {};
+
+            // Pass 1: Add or update isHeader mappings first to establish parent DB IDs
+            const headers = incomingParams.filter((dp) => dp.isHeader && dp.parameter);
+            for (const dp of headers) {
+              const normName = dp.parameter.name.toLowerCase().trim();
+              const wParam = workspaceParamMap.get(normName);
+              if (!wParam) continue;
+
+              const allMatching = existingMappings.filter(
+                (ep) => ep.parameter && ep.parameter.name.toLowerCase().trim() === normName
+              );
+
+              let workspaceTpId = null;
+
+              if (allMatching.length > 0) {
+                const existingMapping = allMatching[0];
+                workspaceTpId = existingMapping.id;
+
+                if (hasTestParameterChanged(existingMapping, dp, null)) {
+                  await prisma.testParameter.update({
+                    where: { id: existingMapping.id },
+                    data: extractTestParameterData(dp, null, null, null),
+                  });
+                }
+
+                // Clean up any duplicate mapping rows if they exist
+                if (allMatching.length > 1) {
+                  const dupes = allMatching.slice(1);
+                  await prisma.testParameter.updateMany({
+                    where: { id: { in: dupes.map((d) => d.id) } },
+                    data: { isDeleted: true, deletedAt: new Date() },
+                  });
+                }
+              } else {
+                const newTp = await prisma.testParameter.create({
+                  data: extractTestParameterData(dp, match.id, wParam.id, null, workspaceId),
+                });
+                workspaceTpId = newTp.id;
+              }
+
+              if (workspaceTpId) {
+                defaultToWorkspaceTpIdMap[dp.id] = workspaceTpId;
+              }
+            }
+
+            // Pass 2: Add or update child parameters, linking parentId correctly
+            const children = incomingParams.filter((dp) => !dp.isHeader && dp.parameter);
+            for (const dp of children) {
+              const normName = dp.parameter.name.toLowerCase().trim();
+              const wParam = workspaceParamMap.get(normName);
+              if (!wParam) continue;
+
+              const resolvedParentId = dp.parentId ? defaultToWorkspaceTpIdMap[dp.parentId] || null : null;
+              const allMatching = existingMappings.filter(
+                (ep) => ep.parameter && ep.parameter.name.toLowerCase().trim() === normName
+              );
+
+              if (allMatching.length > 0) {
+                const existingMapping = allMatching[0];
+
+                if (hasTestParameterChanged(existingMapping, dp, resolvedParentId)) {
+                  await prisma.testParameter.update({
+                    where: { id: existingMapping.id },
+                    data: extractTestParameterData(dp, null, null, resolvedParentId),
+                  });
+                }
+
+                // Clean up any duplicate mapping rows if they exist
+                if (allMatching.length > 1) {
+                  const dupes = allMatching.slice(1);
+                  await prisma.testParameter.updateMany({
+                    where: { id: { in: dupes.map((d) => d.id) } },
+                    data: { isDeleted: true, deletedAt: new Date() },
+                  });
+                }
+              } else {
+                await prisma.testParameter.create({
+                  data: extractTestParameterData(dp, match.id, wParam.id, resolvedParentId, workspaceId),
+                });
+              }
+            }
+
+            // Formulas comparison
+            const incomingFormulas = dt.formulas || [];
+            const existingFormulas = match.formulas || [];
+
+            const incomingFormulasMapped = [];
+            const seenIncomingFormulaKeys = new Set();
+
+            incomingFormulas.forEach((df) => {
+              if (df.outputParameter) {
+                const outName = df.outputParameter.name.toLowerCase().trim();
+                const wParam = workspaceParamMap.get(outName);
+                if (wParam && !seenIncomingFormulaKeys.has(wParam.id)) {
+                  seenIncomingFormulaKeys.add(wParam.id);
+                  incomingFormulasMapped.push({
+                    outputParameterId: wParam.id,
                     formula: df.formula,
-                    isActive: true
-                  }
+                  });
+                }
+              }
+            });
+
+            const incomingOutputParamIds = incomingFormulasMapped.map((f) => f.outputParameterId);
+            const formulasToDelete = existingFormulas.filter(
+              (ef) => !incomingOutputParamIds.includes(ef.outputParameterId)
+            );
+            if (formulasToDelete.length > 0) {
+              await prisma.testFormula.deleteMany({
+                where: { id: { in: formulasToDelete.map((f) => f.id) } },
+              });
+            }
+
+            for (const df of incomingFormulasMapped) {
+              const existingFormula = existingFormulas.find(
+                (ef) => ef.outputParameterId === df.outputParameterId
+              );
+              if (existingFormula) {
+                if (existingFormula.formula !== df.formula || !existingFormula.isActive) {
+                  await prisma.testFormula.update({
+                    where: { id: existingFormula.id },
+                    data: { formula: df.formula, isActive: true },
+                  });
+                }
+              } else {
+                await prisma.testFormula.create({
+                  data: {
+                    testId: match.id,
+                    outputParameterId: df.outputParameterId,
+                    formula: df.formula,
+                    workspaceId,
+                    isActive: true,
+                  },
                 });
               }
-            } else {
-              await prisma.testFormula.create({
-                data: {
-                  testId: match.id,
-                  outputParameterId: df.outputParameterId,
-                  formula: df.formula,
-                  workspaceId,
-                  isActive: true
+            }
+
+            // Interpretation rules comparison
+            const incomingRules = dt.interpretationRules || [];
+            const existingRules = match.interpretationRules || [];
+
+            const incomingRulesMapped = [];
+            incomingRules.forEach((dr) => {
+              if (dr.parameter) {
+                const pName = dr.parameter.name.toLowerCase().trim();
+                const wParam = workspaceParamMap.get(pName);
+                if (wParam) {
+                  incomingRulesMapped.push({
+                    parameterId: wParam.id,
+                    condition: dr.condition,
+                    interpretation: dr.interpretation,
+                  });
                 }
-              });
-            }
-          }
-
-          syncedCount++;
-        } else {
-          // Clone test directly
-          const newTest = await prisma.test.create({
-            data: {
-              name: dt.name,
-              code: dt.code,
-              price: dt.price,
-              isProcessed: dt.isProcessed,
-              workspaceId,
-              isCustomized: false,
-              defaultUpdatedAt: dt.updatedAt
-            }
-          });
-
-          // Track: defaultTestParameterId -> workspaceTestParameterId
-          const defaultToWorkspaceTpIdMap = {};
-
-          // Pass 1: Clone headers first
-          const headersToCreate = dt.parameters.filter(dp => dp.isHeader);
-          for (const dp of headersToCreate) {
-            const normName = dp.parameter.name.toLowerCase().trim();
-            const wParamId = workspaceParamNameToIdMap[normName];
-            if (!wParamId) continue;
-
-            const newTp = await prisma.testParameter.create({
-              data: {
-                testId: newTest.id,
-                parameterId: wParamId,
-                order: dp.order,
-                isHeader: true,
-                parentId: null,
-                valueType: dp.valueType,
-                options: dp.options,
-                workspaceId
               }
             });
-            defaultToWorkspaceTpIdMap[dp.id] = newTp.id;
-          }
 
-          // Pass 2: Clone child parameters
-          const childrenToCreate = dt.parameters.filter(dp => !dp.isHeader);
-          for (const dp of childrenToCreate) {
-            const normName = dp.parameter.name.toLowerCase().trim();
-            const wParamId = workspaceParamNameToIdMap[normName];
-            if (!wParamId) continue;
-
-            const resolvedParentId = dp.parentId ? (defaultToWorkspaceTpIdMap[dp.parentId] || null) : null;
-            await prisma.testParameter.create({
-              data: {
-                testId: newTest.id,
-                parameterId: wParamId,
-                order: dp.order,
-                isHeader: false,
-                parentId: resolvedParentId,
-                valueType: dp.valueType,
-                options: dp.options,
-                workspaceId
+            // Clean up rules not in default test
+            for (const er of existingRules) {
+              const stillExists = incomingRulesMapped.some(
+                (ir) => ir.parameterId === er.parameterId && ir.condition === er.condition
+              );
+              if (!stillExists) {
+                await prisma.interpretationRule.delete({ where: { id: er.id } });
               }
+            }
+
+            for (const ir of incomingRulesMapped) {
+              const existingRule = existingRules.find(
+                (er) => er.parameterId === ir.parameterId && er.condition === ir.condition
+              );
+              if (existingRule) {
+                if (existingRule.interpretation !== ir.interpretation) {
+                  await prisma.interpretationRule.update({
+                    where: { id: existingRule.id },
+                    data: { interpretation: ir.interpretation },
+                  });
+                }
+              } else {
+                await prisma.interpretationRule.create({
+                  data: {
+                    testId: match.id,
+                    parameterId: ir.parameterId,
+                    condition: ir.condition,
+                    interpretation: ir.interpretation,
+                    workspaceId,
+                  },
+                });
+              }
+            }
+
+            syncedCount++;
+          } else {
+            // New Test creation
+            const newTest = await prisma.test.create({
+              data: {
+                ...extractTestData(dt, workspaceId, dt.updatedAt),
+                isCustomized: false,
+              },
             });
-          }
 
-          const addedFormulaKeys = new Set();
-          const testFormulasToCreate = [];
-          for (const df of dt.formulas) {
-            const outName = df.outputParameter.name.toLowerCase().trim();
-            const wOutParamId = workspaceParamNameToIdMap[outName];
-            if (wOutParamId) {
-              const formulaKey = `${newTest.id}_${wOutParamId}`;
-              if (addedFormulaKeys.has(formulaKey)) continue;
-              addedFormulaKeys.add(formulaKey);
+            const defaultToWorkspaceTpIdMap = {};
 
-              testFormulasToCreate.push({
-                testId: newTest.id,
-                outputParameterId: wOutParamId,
-                formula: df.formula,
-                workspaceId,
-                isActive: true
+            // Pass 1: Clone headers first
+            const headers = (dt.parameters || []).filter((dp) => dp.isHeader && dp.parameter);
+            for (const dp of headers) {
+              const normName = dp.parameter.name.toLowerCase().trim();
+              const wParam = workspaceParamMap.get(normName);
+              if (!wParam) continue;
+
+              const newTp = await prisma.testParameter.create({
+                data: extractTestParameterData(dp, newTest.id, wParam.id, null, workspaceId),
+              });
+              defaultToWorkspaceTpIdMap[dp.id] = newTp.id;
+            }
+
+            // Pass 2: Clone children
+            const children = (dt.parameters || []).filter((dp) => !dp.isHeader && dp.parameter);
+            for (const dp of children) {
+              const normName = dp.parameter.name.toLowerCase().trim();
+              const wParam = workspaceParamMap.get(normName);
+              if (!wParam) continue;
+
+              const resolvedParentId = dp.parentId ? defaultToWorkspaceTpIdMap[dp.parentId] || null : null;
+              await prisma.testParameter.create({
+                data: extractTestParameterData(dp, newTest.id, wParam.id, resolvedParentId, workspaceId),
               });
             }
-          }
 
-          if (testFormulasToCreate.length > 0) {
-            await prisma.testFormula.createMany({
-              data: testFormulasToCreate
-            });
-          }
+            // Clone formulas
+            const addedFormulaKeys = new Set();
+            const formulasToCreate = [];
+            for (const df of dt.formulas || []) {
+              if (df.outputParameter) {
+                const outName = df.outputParameter.name.toLowerCase().trim();
+                const wParam = workspaceParamMap.get(outName);
+                if (wParam && !addedFormulaKeys.has(wParam.id)) {
+                  addedFormulaKeys.add(wParam.id);
+                  formulasToCreate.push({
+                    testId: newTest.id,
+                    outputParameterId: wParam.id,
+                    formula: df.formula,
+                    workspaceId,
+                    isActive: true,
+                  });
+                }
+              }
+            }
 
-          createdCount++;
-        }
-      }));
+            if (formulasToCreate.length > 0) {
+              await prisma.testFormula.createMany({ data: formulasToCreate });
+            }
+
+            // Clone interpretation rules
+            const rulesToCreate = [];
+            for (const dr of dt.interpretationRules || []) {
+              if (dr.parameter) {
+                const pName = dr.parameter.name.toLowerCase().trim();
+                const wParam = workspaceParamMap.get(pName);
+                if (wParam) {
+                  rulesToCreate.push({
+                    testId: newTest.id,
+                    parameterId: wParam.id,
+                    condition: dr.condition,
+                    interpretation: dr.interpretation,
+                    workspaceId,
+                  });
+                }
+              }
+            }
+
+            if (rulesToCreate.length > 0) {
+              await prisma.interpretationRule.createMany({ data: rulesToCreate });
+            }
+
+            createdCount++;
+          }
+        })
+      );
     }
 
     return NextResponse.json({
       success: true,
-      message: `Workspace synced successfully! Synced: ${syncedCount}, Added: ${createdCount}, Skipped (Customized by Admin): ${skippedCount}`
+      message: `Workspace synced successfully! Synced: ${syncedCount}, Added: ${createdCount}, Updated Params: ${updatedParamsCount}, Updated Tests: ${updatedTestsCount}, Skipped (Customized): ${skippedCount}`,
     });
-
   } catch (error) {
     console.error("SuperAdmin Workspace Sync Defaults Error:", error);
     const status = error.message === "Unauthorized" ? 401 : 500;
     return NextResponse.json({ success: false, error: error.message }, { status });
   }
 }
+
