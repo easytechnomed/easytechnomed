@@ -190,6 +190,7 @@ export async function POST(req) {
             where: { testId: testRecord.id },
           });
 
+          const activeTpIds = new Set();
           const headerTpMapByName = new Map();
           const headerTpMapByCode = new Map();
           const headerTpMapByOrder = new Map();
