@@ -190,14 +190,17 @@ export async function POST(req) {
             where: { testId: testRecord.id },
           });
 
-          const activeTpIds = new Set();
-          let lastHeaderTpId = null;
+          const headerTpMapByName = new Map();
+          const headerTpMapByCode = new Map();
+          const headerTpMapByOrder = new Map();
+          let currentSectionHeaderTpId = null;
 
           const paramNameToId = new Map();
           const paramCodeToId = new Map();
           const inlineFormulas = [];
+          const resolvedParamsList = [];
 
-          // 4. Process incoming parameters in order
+          // 4. Upsert Parameter master records and parse incoming data
           for (let i = 0; i < incomingParams.length; i++) {
             const p = incomingParams[i];
             const paramName = parseNullableString(p.name);
@@ -285,6 +288,8 @@ export async function POST(req) {
               paramCodeToId.set(paramCode.toUpperCase(), parameter.id);
             }
 
+            const order = p.order !== undefined && !isNaN(parseInt(p.order, 10)) ? parseInt(p.order, 10) : i + 1;
+
             // Check if inline formula is defined on the parameter
             const inlineFormulaExpr = parseNullableString(p.formula || p.calculationFormula);
             if (inlineFormulaExpr) {
@@ -296,23 +301,39 @@ export async function POST(req) {
               });
             }
 
-            // Link in TestParameter table
-            const order = p.order !== undefined && !isNaN(parseInt(p.order, 10)) ? parseInt(p.order, 10) : i + 1;
-            const parentId = isHeader ? null : (p.parentId !== undefined ? p.parentId : lastHeaderTpId);
+            resolvedParamsList.push({
+              raw: p,
+              parameter,
+              paramName,
+              paramCode,
+              order,
+              isHeader,
+              unitVal,
+              valueType,
+              optionsVal,
+              isCalculated,
+              decimalPlace,
+              roundingMethod,
+              section,
+            });
+          }
 
-            let tp = existingTPs.find((x) => x.parameterId === parameter.id);
+          // Step 4A: Upsert Headers first to obtain their TestParameter IDs
+          for (const itemP of resolvedParamsList) {
+            if (!itemP.isHeader) continue;
 
+            let tp = existingTPs.find((x) => x.parameterId === itemP.parameter.id);
             const tpData = {
-              order: order,
-              isHeader: isHeader,
-              parentId: parentId,
-              unit: unitVal,
-              valueType: valueType,
-              options: optionsVal,
-              isCalculated: isCalculated,
-              decimalPlace: decimalPlace,
-              roundingMethod: roundingMethod,
-              section: section,
+              order: itemP.order,
+              isHeader: true,
+              parentId: null,
+              unit: itemP.unitVal,
+              valueType: itemP.valueType,
+              options: itemP.optionsVal,
+              isCalculated: itemP.isCalculated,
+              decimalPlace: itemP.decimalPlace,
+              roundingMethod: itemP.roundingMethod,
+              section: itemP.section,
               isDeleted: false,
               deletedAt: null,
               workspaceId: null,
@@ -327,17 +348,96 @@ export async function POST(req) {
               tp = await tx.testParameter.create({
                 data: {
                   testId: testRecord.id,
-                  parameterId: parameter.id,
+                  parameterId: itemP.parameter.id,
                   ...tpData,
                 },
               });
             }
 
             activeTpIds.add(tp.id);
-
-            if (isHeader) {
-              lastHeaderTpId = tp.id;
+            headerTpMapByName.set(itemP.paramName.toLowerCase(), tp.id);
+            if (itemP.paramCode) {
+              headerTpMapByCode.set(itemP.paramCode.toUpperCase(), tp.id);
             }
+            headerTpMapByOrder.set(itemP.order, tp.id);
+          }
+
+          // Step 4B: Upsert Children and link parentId
+          for (const itemP of resolvedParamsList) {
+            if (itemP.isHeader) {
+              currentSectionHeaderTpId = headerTpMapByName.get(itemP.paramName.toLowerCase()) || null;
+              continue;
+            }
+
+            const p = itemP.raw;
+            let resolvedParentId = null;
+
+            // 1. Explicit parent header name
+            const parentHeaderName = parseNullableString(p.parentHeaderName || p.parentHeader || p.parentSection || (typeof p.parentId === "string" ? p.parentId : null));
+            if (parentHeaderName && headerTpMapByName.has(parentHeaderName.toLowerCase())) {
+              resolvedParentId = headerTpMapByName.get(parentHeaderName.toLowerCase());
+            }
+
+            // 2. Explicit parent order
+            if (!resolvedParentId && (p.parentOrder !== undefined || (typeof p.parentId === "number" && !isNaN(p.parentId)))) {
+              const pOrder = p.parentOrder !== undefined ? parseInt(p.parentOrder, 10) : parseInt(p.parentId, 10);
+              if (headerTpMapByOrder.has(pOrder)) {
+                resolvedParentId = headerTpMapByOrder.get(pOrder);
+              }
+            }
+
+            // 3. Explicit parent code
+            if (!resolvedParentId) {
+              const parentCode = parseNullableString(p.parentHeaderCode || p.parentCode);
+              if (parentCode && headerTpMapByCode.has(parentCode.toUpperCase())) {
+                resolvedParentId = headerTpMapByCode.get(parentCode.toUpperCase());
+              }
+            }
+
+            // 4. Fallback: If no explicit parent specified and not standalone, use preceding header
+            if (!resolvedParentId && p.parentId === undefined && p.parentHeaderName === undefined && !p.isStandalone) {
+              resolvedParentId = currentSectionHeaderTpId;
+            }
+
+            // 5. Explicitly standalone or explicitly null
+            if (p.parentId === null || p.parentHeaderName === null || p.isStandalone === true) {
+              resolvedParentId = null;
+              currentSectionHeaderTpId = null;
+            }
+
+            let tp = existingTPs.find((x) => x.parameterId === itemP.parameter.id);
+            const tpData = {
+              order: itemP.order,
+              isHeader: false,
+              parentId: resolvedParentId,
+              unit: itemP.unitVal,
+              valueType: itemP.valueType,
+              options: itemP.optionsVal,
+              isCalculated: itemP.isCalculated,
+              decimalPlace: itemP.decimalPlace,
+              roundingMethod: itemP.roundingMethod,
+              section: itemP.section,
+              isDeleted: false,
+              deletedAt: null,
+              workspaceId: null,
+            };
+
+            if (tp) {
+              tp = await tx.testParameter.update({
+                where: { id: tp.id },
+                data: tpData,
+              });
+            } else {
+              tp = await tx.testParameter.create({
+                data: {
+                  testId: testRecord.id,
+                  parameterId: itemP.parameter.id,
+                  ...tpData,
+                },
+              });
+            }
+
+            activeTpIds.add(tp.id);
           }
 
           // 5. Process Formulas (both inline parameter formulas and top-level item.formulas)
