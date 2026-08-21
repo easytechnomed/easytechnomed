@@ -1105,34 +1105,143 @@ export default function DefaultTestsPage() {
                             <Table stickyHeader size="small">
                               <TableHead>
                                 <TableRow>
-                                  <TableCell sx={{ fontWeight: 700, bgcolor: "#f8fafc" }}>Name</TableCell>
-                                  <TableCell sx={{ fontWeight: 700, bgcolor: "#f8fafc" }}>Unit</TableCell>
-                                  <TableCell sx={{ fontWeight: 700, bgcolor: "#f8fafc" }}>Male Range</TableCell>
-                                  <TableCell sx={{ fontWeight: 700, bgcolor: "#f8fafc" }}>Female Range</TableCell>
-                                  <TableCell sx={{ fontWeight: 700, bgcolor: "#f8fafc" }}>Baby Range</TableCell>
-                                  <TableCell sx={{ fontWeight: 700, bgcolor: "#f8fafc" }}>Default Range</TableCell>
+                                  <TableCell sx={{ fontWeight: 700, bgcolor: "#f8fafc", width: "32%" }}>Parameter Name</TableCell>
+                                  <TableCell sx={{ fontWeight: 700, bgcolor: "#f8fafc", width: "16%" }}>Type</TableCell>
+                                  <TableCell sx={{ fontWeight: 700, bgcolor: "#f8fafc", width: "12%" }}>Unit</TableCell>
+                                  <TableCell sx={{ fontWeight: 700, bgcolor: "#f8fafc", width: "40%" }}>Reference Values / Options</TableCell>
                                 </TableRow>
                               </TableHead>
                               <TableBody>
                                 {selectedTest.parameters.map((param) => {
-                                  const maleRange = param.normalRangeMale || (param.minValMale !== null || param.maxValMale !== null
-                                    ? `${param.minValMale ?? 0} - ${param.maxValMale ?? 0}`
-                                    : "-");
-                                  const femaleRange = param.normalRangeFemale || (param.minValFemale !== null || param.maxValFemale !== null
-                                    ? `${param.minValFemale ?? 0} - ${param.maxValFemale ?? 0}`
-                                    : "-");
-                                  const babyRange = param.normalRangeBaby || (param.minValBaby !== null || param.maxValBaby !== null
-                                    ? `${param.minValBaby ?? 0} - ${param.maxValBaby ?? 0}`
-                                    : "-");
+                                  if (param.isHeader) {
+                                    return (
+                                      <TableRow key={param.id} sx={{ bgcolor: "rgba(124, 58, 237, 0.05)" }}>
+                                        <TableCell colSpan={4} sx={{ py: 1, px: 2 }}>
+                                          <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                                            <Typography variant="caption" sx={{ bgcolor: "primary.main", color: "#ffffff", px: 1, py: 0.2, borderRadius: 1, fontWeight: 800, fontSize: "0.7rem", textTransform: "uppercase" }}>
+                                              Section Header
+                                            </Typography>
+                                            <Typography variant="subtitle2" sx={{ fontWeight: 800, color: "primary.dark" }}>
+                                              {param.name}
+                                            </Typography>
+                                          </Box>
+                                        </TableCell>
+                                      </TableRow>
+                                    );
+                                  }
+
+                                  const isOptions = param.valueType === "OPTIONS";
+                                  const isText = param.valueType === "TEXT";
+                                  const isNumeric = !isOptions && !isText;
+
+                                  const maleRange = param.normalRangeMale || (param.minValMale !== null && param.maxValMale !== null
+                                    ? `${param.minValMale} - ${param.maxValMale}`
+                                    : null);
+                                  const femaleRange = param.normalRangeFemale || (param.minValFemale !== null && param.maxValFemale !== null
+                                    ? `${param.minValFemale} - ${param.maxValFemale}`
+                                    : null);
+                                  const babyRange = param.normalRangeBaby || (param.minValBaby !== null && param.maxValBaby !== null
+                                    ? `${param.minValBaby} - ${param.maxValBaby}`
+                                    : null);
+                                  const defaultRange = param.normalRangeDefault || null;
 
                                   return (
                                     <TableRow key={param.id} hover>
-                                      <TableCell sx={{ fontWeight: 600 }}>{param.name}</TableCell>
-                                      <TableCell sx={{ color: "text.secondary" }}>{param.unit || "-"}</TableCell>
-                                      <TableCell sx={{ fontSize: "0.82rem" }}>{maleRange}</TableCell>
-                                      <TableCell sx={{ fontSize: "0.82rem" }}>{femaleRange}</TableCell>
-                                      <TableCell sx={{ fontSize: "0.82rem" }}>{babyRange}</TableCell>
-                                      <TableCell sx={{ fontSize: "0.82rem" }}>{param.normalRangeDefault || "-"}</TableCell>
+                                      <TableCell sx={{ fontWeight: 600, pl: param.parentId ? 3 : 2 }}>
+                                        <Box sx={{ display: "flex", alignItems: "center", gap: 0.8 }}>
+                                          {param.parentId && (
+                                            <Typography variant="caption" sx={{ color: "text.disabled", fontWeight: 700 }}>↳</Typography>
+                                          )}
+                                          <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                                            {param.name}
+                                          </Typography>
+                                        </Box>
+                                        {param.code && (
+                                          <Typography variant="caption" sx={{ display: "block", color: "text.secondary", fontFamily: "monospace", fontSize: "0.72rem", pl: param.parentId ? 1.8 : 0 }}>
+                                            Code: {param.code}
+                                          </Typography>
+                                        )}
+                                      </TableCell>
+
+                                      <TableCell>
+                                        {isOptions ? (
+                                          <Box sx={{ display: "inline-flex", alignItems: "center", px: 1, py: 0.3, bgcolor: "rgba(124, 58, 237, 0.08)", color: "primary.main", borderRadius: 1, fontSize: "0.72rem", fontWeight: 700 }}>
+                                            Options / Boolean
+                                          </Box>
+                                        ) : isText ? (
+                                          <Box sx={{ display: "inline-flex", alignItems: "center", px: 1, py: 0.3, bgcolor: "rgba(100, 116, 139, 0.1)", color: "#475569", borderRadius: 1, fontSize: "0.72rem", fontWeight: 700 }}>
+                                            Free Text
+                                          </Box>
+                                        ) : (
+                                          <Box sx={{ display: "inline-flex", alignItems: "center", px: 1, py: 0.3, bgcolor: "rgba(16, 185, 129, 0.08)", color: "#059669", borderRadius: 1, fontSize: "0.72rem", fontWeight: 700 }}>
+                                            Numeric Range
+                                          </Box>
+                                        )}
+                                      </TableCell>
+
+                                      <TableCell sx={{ color: "text.secondary", fontSize: "0.82rem", fontWeight: 500 }}>
+                                        {param.unit || "—"}
+                                      </TableCell>
+
+                                      <TableCell sx={{ fontSize: "0.82rem" }}>
+                                        {isOptions ? (
+                                          <Box sx={{ display: "flex", flexDirection: "column", gap: 0.5 }}>
+                                            {param.options && (
+                                              <Box sx={{ display: "flex", flexWrap: "wrap", gap: 0.5 }}>
+                                                {param.options.split(",").map((opt, i) => (
+                                                  <Box
+                                                    key={i}
+                                                    sx={{
+                                                      px: 0.8,
+                                                      py: 0.1,
+                                                      bgcolor: "#f1f5f9",
+                                                      color: "#334155",
+                                                      borderRadius: "4px",
+                                                      fontSize: "0.75rem",
+                                                      fontWeight: 600,
+                                                      border: "1px solid #e2e8f0"
+                                                    }}
+                                                  >
+                                                    {opt.trim()}
+                                                  </Box>
+                                                ))}
+                                              </Box>
+                                            )}
+                                            {param.normalRangeDefault && (
+                                              <Typography variant="caption" sx={{ color: "#059669", fontWeight: 700, display: "block" }}>
+                                                Normal Expected: {param.normalRangeDefault}
+                                              </Typography>
+                                            )}
+                                          </Box>
+                                        ) : isText ? (
+                                          <Typography variant="caption" sx={{ color: "text.secondary", fontStyle: "italic" }}>
+                                            {param.normalRangeDefault || "Descriptive observation / impression"}
+                                          </Typography>
+                                        ) : (
+                                          <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1, alignItems: "center" }}>
+                                            {maleRange && (
+                                              <Box sx={{ bgcolor: "#eff6ff", px: 0.8, py: 0.2, borderRadius: 1, fontSize: "0.75rem", color: "#1d4ed8", fontWeight: 600 }}>
+                                                M: {maleRange}
+                                              </Box>
+                                            )}
+                                            {femaleRange && (
+                                              <Box sx={{ bgcolor: "#fdf2f8", px: 0.8, py: 0.2, borderRadius: 1, fontSize: "0.75rem", color: "#be185d", fontWeight: 600 }}>
+                                                F: {femaleRange}
+                                              </Box>
+                                            )}
+                                            {babyRange && (
+                                              <Box sx={{ bgcolor: "#f0fdf4", px: 0.8, py: 0.2, borderRadius: 1, fontSize: "0.75rem", color: "#15803d", fontWeight: 600 }}>
+                                                Baby: {babyRange}
+                                              </Box>
+                                            )}
+                                            {!maleRange && !femaleRange && !babyRange && (
+                                              <Typography variant="caption" sx={{ color: "text.primary", fontWeight: 600 }}>
+                                                {defaultRange || "—"}
+                                              </Typography>
+                                            )}
+                                          </Box>
+                                        )}
+                                      </TableCell>
                                     </TableRow>
                                   );
                                 })}

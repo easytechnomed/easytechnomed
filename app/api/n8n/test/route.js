@@ -12,6 +12,40 @@ function parseNullableFloat(val) {
   return isNaN(num) ? null : num;
 }
 
+// Helper to safely parse strings from strings/numbers/arrays
+function parseNullableString(val) {
+  if (val === null || val === undefined) return null;
+  if (typeof val === "string") {
+    const trimmed = val.trim();
+    return trimmed.length > 0 ? trimmed : null;
+  }
+  if (Array.isArray(val)) {
+    const list = val.map((x) => (x !== null && x !== undefined ? String(x).trim() : "")).filter(Boolean);
+    return list.length > 0 ? list.join(", ") : null;
+  }
+  if (typeof val === "number" || typeof val === "boolean") {
+    return String(val).trim();
+  }
+  return null;
+}
+
+// Helper to safely format options list (array of strings or comma-separated string)
+function parseNullableOptions(val) {
+  if (val === null || val === undefined) return null;
+  if (Array.isArray(val)) {
+    const list = val.map((x) => (x !== null && x !== undefined ? String(x).trim() : "")).filter(Boolean);
+    return list.length > 0 ? list.join(", ") : null;
+  }
+  if (typeof val === "string") {
+    const trimmed = val.trim();
+    return trimmed.length > 0 ? trimmed : null;
+  }
+  if (typeof val === "number" || typeof val === "boolean") {
+    return String(val).trim();
+  }
+  return null;
+}
+
 export async function GET(req) {
   try {
     return NextResponse.json({
@@ -68,9 +102,9 @@ export async function POST(req) {
         continue;
       }
 
-      const testName = rawTestName ? rawTestName.trim() : null;
+      const testName = rawTestName ? String(rawTestName).trim() : null;
       const isProcessed = item.isProcessed !== undefined ? Boolean(item.isProcessed) : true;
-      const departmentName = item.departmentName || item.department || null;
+      const departmentName = parseNullableString(item.departmentName || item.department);
       const incomingParams = Array.isArray(item.parameters) ? item.parameters : [];
 
       // Execute in a transaction per test with safe timeout
@@ -78,8 +112,8 @@ export async function POST(req) {
         async (tx) => {
           // 1. Resolve Department if provided
           let deptId = null;
-          if (departmentName && typeof departmentName === "string" && departmentName.trim()) {
-            const cleanDept = departmentName.trim();
+          if (departmentName) {
+            const cleanDept = departmentName;
             const dept = await tx.testDepartment.upsert({
               where: { name: cleanDept },
               update: {},
@@ -129,7 +163,7 @@ export async function POST(req) {
             testRecord = await tx.test.create({
               data: {
                 name: testName || `Test ${Date.now()}`,
-                code: item.code ? item.code.trim().toUpperCase() : null,
+                code: item.code ? String(item.code).trim().toUpperCase() : null,
                 price: item.price ? parseFloat(item.price) : 0.0,
                 workspaceId: null,
                 isProcessed: true,
@@ -144,7 +178,7 @@ export async function POST(req) {
               data: {
                 isProcessed: true,
                 ...(testName ? { name: testName } : {}),
-                ...(item.code ? { code: item.code.trim().toUpperCase() } : {}),
+                ...(item.code ? { code: String(item.code).trim().toUpperCase() } : {}),
                 ...(item.price !== undefined ? { price: parseFloat(item.price) } : {}),
                 ...(deptId ? { departmentId: deptId } : {}),
               },
@@ -162,11 +196,12 @@ export async function POST(req) {
           // 4. Process incoming parameters in order
           for (let i = 0; i < incomingParams.length; i++) {
             const p = incomingParams[i];
-            const paramName = (p.name || "").trim();
+            const paramName = parseNullableString(p.name);
             if (!paramName) continue;
 
             const isHeader = Boolean(p.isHeader);
-            const valueType = (p.valueType || (isHeader ? "OPTIONS" : "NUMERIC")).toUpperCase();
+            const rawValueType = parseNullableString(p.valueType);
+            const valueType = (rawValueType || (isHeader ? "OPTIONS" : "NUMERIC")).toUpperCase();
             const isNumeric = valueType === "NUMERIC";
 
             const minValMale = isNumeric ? parseNullableFloat(p.minValMale) : null;
@@ -176,22 +211,25 @@ export async function POST(req) {
             const minValBaby = isNumeric ? parseNullableFloat(p.minValBaby) : null;
             const maxValBaby = isNumeric ? parseNullableFloat(p.maxValBaby) : null;
 
+            const optionsVal = parseNullableOptions(p.options);
+            const unitVal = parseNullableString(p.unit);
+
             const paramData = {
               name: paramName,
-              code: p.code ? p.code.trim().toUpperCase().replace(/[^A-Z0-9_]/g, "") : null,
-              unit: p.unit !== undefined && p.unit !== null ? p.unit.trim() : null,
+              code: p.code ? String(p.code).trim().toUpperCase().replace(/[^A-Z0-9_]/g, "") : null,
+              unit: unitVal,
               valueType: valueType,
-              options: p.options ? p.options.trim() : null,
+              options: optionsVal,
               minValMale,
               maxValMale,
-              normalRangeMale: p.normalRangeMale ? p.normalRangeMale.trim() : null,
+              normalRangeMale: parseNullableString(p.normalRangeMale),
               minValFemale,
               maxValFemale,
-              normalRangeFemale: p.normalRangeFemale ? p.normalRangeFemale.trim() : null,
+              normalRangeFemale: parseNullableString(p.normalRangeFemale),
               minValBaby,
               maxValBaby,
-              normalRangeBaby: p.normalRangeBaby ? p.normalRangeBaby.trim() : null,
-              normalRangeDefault: p.normalRangeDefault ? p.normalRangeDefault.trim() : null,
+              normalRangeBaby: parseNullableString(p.normalRangeBaby),
+              normalRangeDefault: parseNullableString(p.normalRangeDefault),
             };
 
             // Upsert master parameter dictionary record (workspaceId: null)
@@ -226,9 +264,9 @@ export async function POST(req) {
               order: order,
               isHeader: isHeader,
               parentId: parentId,
-              unit: p.unit !== undefined && p.unit !== null ? p.unit.trim() : null,
+              unit: unitVal,
               valueType: valueType,
-              options: p.options ? p.options.trim() : null,
+              options: optionsVal,
               isDeleted: false,
               deletedAt: null,
               workspaceId: null,

@@ -849,7 +849,7 @@ export default function EditTestDialog({ open, onClose, test, parameterDictionar
 
               <Box sx={{ width: "100%", overflowX: "hidden", minWidth: 0 }}>
                 <TableContainer component={Paper} variant="outlined" sx={{ overflowX: "auto", maxHeight: "calc(100vh - 325px)", width: "calc(100vw - 48px)", maxWidth: "calc(100vw - 48px)", minWidth: 0 }}>
-                  <Table size="small" stickyHeader sx={{ minWidth: 2200 }}>
+                  <Table size="small" stickyHeader sx={{ minWidth: 2600 }}>
                     <TableHead>
                       <TableRow>
                         <TableCell align="center" sx={{ fontWeight: 700, width: 30, bgcolor: "#f8fafc" }}></TableCell>
@@ -859,448 +859,559 @@ export default function EditTestDialog({ open, onClose, test, parameterDictionar
                         <TableCell sx={{ fontWeight: 700, width: 180, bgcolor: "#fff7ed" }}>Parent Header</TableCell>
                         <TableCell sx={{ fontWeight: 700, width: 380, bgcolor: "#f8fafc" }}>Parameter Name *</TableCell>
                         <TableCell sx={{ fontWeight: 700, width: 140, bgcolor: "#f8fafc" }}>Type</TableCell>
-                        <TableCell sx={{ fontWeight: 700, width: 180, bgcolor: "#f8fafc" }}>Options / Preset</TableCell>
                         <TableCell sx={{ fontWeight: 700, width: 140, bgcolor: "#f8fafc" }}>Unit</TableCell>
-                        <TableCell sx={{ fontWeight: 700, width: 80, bgcolor: "#f8fafc" }}>Order</TableCell>
+                        <TableCell sx={{ fontWeight: 700, width: 110, minWidth: 110, bgcolor: "#f8fafc" }}>Order</TableCell>
 
-                        {/* Male */}
-                        <TableCell sx={{ fontWeight: 700, width: 140, bgcolor: "#eff6ff" }}>Male Min</TableCell>
-                        <TableCell sx={{ fontWeight: 700, width: 140, bgcolor: "#eff6ff" }}>Male Max</TableCell>
-                        <TableCell sx={{ fontWeight: 700, width: 160, bgcolor: "#eff6ff" }}>Male Range Text</TableCell>
+                        {/* Options / Preset / Numeric Reference */}
+                        <TableCell sx={{ fontWeight: 700, width: 160, bgcolor: "#f8fafc" }}>Options / Preset</TableCell>
+                        <TableCell sx={{ fontWeight: 700, width: 130, bgcolor: "#eff6ff" }}>Male Min</TableCell>
+                        <TableCell sx={{ fontWeight: 700, width: 130, bgcolor: "#eff6ff" }}>Male Max</TableCell>
+                        <TableCell sx={{ fontWeight: 700, width: 150, bgcolor: "#eff6ff" }}>Male Range Text</TableCell>
 
                         {/* Female */}
-                        <TableCell sx={{ fontWeight: 700, width: 140, bgcolor: "#fdf2f8" }}>Female Min</TableCell>
-                        <TableCell sx={{ fontWeight: 700, width: 140, bgcolor: "#fdf2f8" }}>Female Max</TableCell>
-                        <TableCell sx={{ fontWeight: 700, width: 160, bgcolor: "#fdf2f8" }}>Female Range Text</TableCell>
+                        <TableCell sx={{ fontWeight: 700, width: 130, bgcolor: "#fdf2f8" }}>Female Min</TableCell>
+                        <TableCell sx={{ fontWeight: 700, width: 130, bgcolor: "#fdf2f8" }}>Female Max</TableCell>
+                        <TableCell sx={{ fontWeight: 700, width: 150, bgcolor: "#fdf2f8" }}>Female Range Text</TableCell>
 
                         {/* Baby */}
-                        <TableCell sx={{ fontWeight: 700, width: 140, bgcolor: "#f0fdf4" }}>Baby Min</TableCell>
-                        <TableCell sx={{ fontWeight: 700, width: 140, bgcolor: "#f0fdf4" }}>Baby Max</TableCell>
-                        <TableCell sx={{ fontWeight: 700, width: 180, bgcolor: "#f0fdf4" }}>Baby Range Text</TableCell>
+                        <TableCell sx={{ fontWeight: 700, width: 130, bgcolor: "#f0fdf4" }}>Baby Min</TableCell>
+                        <TableCell sx={{ fontWeight: 700, width: 130, bgcolor: "#f0fdf4" }}>Baby Max</TableCell>
+                        <TableCell sx={{ fontWeight: 700, width: 160, bgcolor: "#f0fdf4" }}>Baby Range Text</TableCell>
 
                         {/* Default */}
-                        <TableCell sx={{ fontWeight: 700, width: 200, bgcolor: "#fafaf9" }}>Default Range Text</TableCell>
+                        <TableCell sx={{ fontWeight: 700, width: 300, minWidth: 300, bgcolor: "#fafaf9" }}>Default Range / Expected Normal</TableCell>
                       </TableRow>
                     </TableHead>
                     <TableBody>
                       {editForm.parameters.length === 0 ? (
                         <TableRow>
-                          <TableCell colSpan={15} align="center" sx={{ py: 6, color: "text.secondary" }}>
+                          <TableCell colSpan={20} align="center" sx={{ py: 6, color: "text.secondary" }}>
                             No parameters added yet. Click &quot;Add Parameter&quot; to start.
                           </TableCell>
                         </TableRow>
                       ) : (
-                        editForm.parameters.map((param, index) => (
-                          <TableRow
-                            key={param.key}
-                            hover
-                            onDragOver={(e) => handleDragOver(e, index)}
-                            onDrop={handleDrop}
-                            sx={{
-                              opacity: draggedKey === param.key ? 0.4 : 1,
-                              bgcolor: draggedKey === param.key ? "rgba(124, 58, 237, 0.04)" : "inherit",
-                              "&:hover": { bgcolor: "rgba(0,0,0,0.01)" }
-                            }}
-                          >
-                            <TableCell align="center" sx={{ width: 30, p: 0.5 }}>
-                              <IconButton
-                                size="small"
-                                sx={{ cursor: "grab", color: "text.secondary" }}
-                                draggable
-                                onDragStart={(e) => handleDragStart(e, param.key)}
-                                onDragEnd={handleDragEnd}
-                              >
-                                <DragIndicatorIcon fontSize="small" />
-                              </IconButton>
-                            </TableCell>
-                            <TableCell align="center" sx={{ fontWeight: 700 }}>{index + 1}</TableCell>
-                            <TableCell align="center">
-                              <IconButton
-                                size="small"
-                                color="error"
-                                onClick={() => handleRemoveParamRow(index)}
-                              >
-                                <DeleteIcon fontSize="small" />
-                              </IconButton>
-                            </TableCell>
+                        editForm.parameters.map((param, index) => {
+                          const isOptions = (param.valueType || "NUMERIC") === "OPTIONS";
+                          const isText = (param.valueType || "NUMERIC") === "TEXT";
+                          const isNumeric = !isOptions && !isText;
 
-                            {/* Is Header */}
-                            <TableCell align="center" sx={{ bgcolor: "#f8fafc" }}>
-                              <Checkbox
-                                checked={!!param.isHeader}
-                                onChange={(e) => handleParamChange(index, "isHeader", e.target.checked)}
-                                color="primary"
-                              />
-                            </TableCell>
-
-                            {/* Parent Header — link this row to a header group */}
-                            <TableCell sx={{ bgcolor: "#fff7ed" }}>
-                              {param.isHeader ? (
-                                // Headers cannot have a parent
-                                <Box sx={{ fontSize: "0.8rem", color: "text.disabled", pl: 1 }}>—</Box>
-                              ) : (
-                                <Select
+                          return (
+                            <TableRow
+                              key={param.key}
+                              hover
+                              onDragOver={(e) => handleDragOver(e, index)}
+                              onDrop={handleDrop}
+                              sx={{
+                                opacity: draggedKey === param.key ? 0.4 : 1,
+                                bgcolor: draggedKey === param.key ? "rgba(124, 58, 237, 0.04)" : (param.isHeader ? "rgba(124, 58, 237, 0.04)" : "inherit"),
+                                "&:hover": { bgcolor: "rgba(0,0,0,0.01)" }
+                              }}
+                            >
+                              <TableCell align="center" sx={{ width: 30, p: 0.5 }}>
+                                <IconButton
                                   size="small"
-                                  fullWidth
-                                  displayEmpty
-                                  value={param.parentKey || (param.parentId ? String(param.parentId) : "")}
-                                  onChange={(e) => {
-                                    const selected = e.target.value;
-                                    if (!selected) {
-                                      // (None) → remove parent link
-                                      setEditForm((prev) => {
-                                        const p = [...prev.parameters];
-                                        p[index] = { ...p[index], parentKey: null, parentId: null };
-                                        return { ...prev, parameters: p };
-                                      });
+                                  sx={{ cursor: "grab", color: "text.secondary" }}
+                                  draggable
+                                  onDragStart={(e) => handleDragStart(e, param.key)}
+                                  onDragEnd={handleDragEnd}
+                                >
+                                  <DragIndicatorIcon fontSize="small" />
+                                </IconButton>
+                              </TableCell>
+                              <TableCell align="center" sx={{ fontWeight: 700 }}>{index + 1}</TableCell>
+                              <TableCell align="center">
+                                <IconButton
+                                  size="small"
+                                  color="error"
+                                  onClick={() => handleRemoveParamRow(index)}
+                                >
+                                  <DeleteIcon fontSize="small" />
+                                </IconButton>
+                              </TableCell>
+
+                              {/* Is Header */}
+                              <TableCell align="center" sx={{ bgcolor: "#f8fafc" }}>
+                                <Checkbox
+                                  checked={!!param.isHeader}
+                                  onChange={(e) => handleParamChange(index, "isHeader", e.target.checked)}
+                                  color="primary"
+                                />
+                              </TableCell>
+
+                              {/* Parent Header — link this row to a header group */}
+                              <TableCell sx={{ bgcolor: "#fff7ed" }}>
+                                {param.isHeader ? (
+                                  <Box sx={{ fontSize: "0.8rem", color: "text.disabled", pl: 1 }}>—</Box>
+                                ) : (
+                                  <Select
+                                    size="small"
+                                    fullWidth
+                                    displayEmpty
+                                    value={param.parentKey || (param.parentId ? String(param.parentId) : "")}
+                                    onChange={(e) => {
+                                      const selected = e.target.value;
+                                      if (!selected) {
+                                        setEditForm((prev) => {
+                                          const p = [...prev.parameters];
+                                          p[index] = { ...p[index], parentKey: null, parentId: null };
+                                          return { ...prev, parameters: p };
+                                        });
+                                      } else {
+                                        const chosenHeader = editForm.parameters.find(
+                                          (h) => h.isHeader && (h.key === selected || String(h.id) === selected)
+                                        );
+                                        setEditForm((prev) => {
+                                          const p = [...prev.parameters];
+                                          p[index] = {
+                                            ...p[index],
+                                            parentKey: chosenHeader?.key || null,
+                                            parentId: chosenHeader?.id ? chosenHeader.id : null,
+                                          };
+                                          return { ...prev, parameters: p };
+                                        });
+                                      }
+                                    }}
+                                    sx={{ fontSize: "0.8rem" }}
+                                  >
+                                    <MenuItem value="">
+                                      <Box component="span" sx={{ color: "text.secondary", fontStyle: "italic", fontSize: "0.78rem" }}>
+                                        (None – standalone)
+                                      </Box>
+                                    </MenuItem>
+                                    {editForm.parameters
+                                      .filter((h) => h.isHeader && h.name)
+                                      .map((h) => (
+                                        <MenuItem
+                                          key={h.key}
+                                          value={h.key || String(h.id)}
+                                          sx={{ fontSize: "0.82rem" }}
+                                        >
+                                          {h.name}
+                                        </MenuItem>
+                                      ))
+                                    }
+                                  </Select>
+                                )}
+                              </TableCell>
+
+                              {/* Name */}
+                              <TableCell>
+                                <Autocomplete
+                                  freeSolo
+                                  size="small"
+                                  options={autocompleteOptions}
+                                  groupBy={(option) => typeof option === "string" ? "" : (option.type === "test" ? "📋 Tests (bulk-add all children)" : "🔬 Individual Parameters")}
+                                  getOptionLabel={(option) => typeof option === "string" ? option : (option.name || "")}
+                                  isOptionEqualToValue={(option, value) => {
+                                    const optionName = typeof option === "string" ? option : option.name;
+                                    const valueName = typeof value === "string" ? value : value?.name;
+                                    return optionName === valueName;
+                                  }}
+                                  value={param.name || ""}
+                                  onChange={(event, newValue) => {
+                                    if (!newValue) return;
+                                    if (typeof newValue === "string") {
+                                      handleParamChange(index, "name", newValue);
+                                    } else if (newValue.type === "test") {
+                                      handleTestBulkInsert(index, newValue);
                                     } else {
-                                      // Find the chosen header row by its key (or string-id for existing rows)
-                                      const chosenHeader = editForm.parameters.find(
-                                        (h) => h.isHeader && (h.key === selected || String(h.id) === selected)
-                                      );
+                                      handleParamNameSelect(index, newValue.name);
+                                    }
+                                  }}
+                                  onInputChange={(event, newInputValue) => {
+                                    handleParamChange(index, "name", newInputValue);
+                                  }}
+                                  renderOption={(props, option) => {
+                                    const { key, ...restProps } = props;
+                                    const isTest = option.type === "test";
+                                    return (
+                                      <Box
+                                        component="li"
+                                        key={key}
+                                        {...restProps}
+                                        sx={{ display: "flex", alignItems: "center", gap: 1, py: "6px !important" }}
+                                      >
+                                        <Box
+                                          sx={{
+                                            fontSize: "0.82rem",
+                                            color: isTest ? "#ef4444" : "#2563eb",
+                                            fontWeight: 600
+                                          }}
+                                        >
+                                          {option.name}
+                                        </Box>
+                                        {isTest && (
+                                          <Box sx={{ fontSize: "0.7rem", color: "#ef4444", opacity: 0.8, ml: "auto", flexShrink: 0, fontStyle: "italic" }}>
+                                            ({option.parameters?.length || 0} children)
+                                          </Box>
+                                        )}
+                                      </Box>
+                                    );
+                                  }}
+                                  renderInput={(params) => (
+                                    <TextField
+                                      {...params}
+                                      placeholder="Parameter or Test Name *"
+                                      sx={{ "& .MuiOutlinedInput-root": { borderRadius: 1 } }}
+                                    />
+                                  )}
+                                />
+                              </TableCell>
+
+                              {/* Type */}
+                              <TableCell>
+                                {param.isHeader ? (
+                                  <Box sx={{ fontSize: "0.8rem", color: "text.disabled", pl: 1 }}>—</Box>
+                                ) : (
+                                  <Select
+                                    size="small"
+                                    fullWidth
+                                    value={param.valueType || "NUMERIC"}
+                                    onChange={(e) => {
+                                      const val = e.target.value;
                                       setEditForm((prev) => {
                                         const p = [...prev.parameters];
                                         p[index] = {
                                           ...p[index],
-                                          parentKey: chosenHeader?.key || null,
-                                          parentId: chosenHeader?.id ? chosenHeader.id : null,
+                                          valueType: val,
+                                          ...(val === "OPTIONS" ? {
+                                            minValMale: "",
+                                            maxValMale: "",
+                                            normalRangeMale: "",
+                                            minValFemale: "",
+                                            maxValFemale: "",
+                                            normalRangeFemale: "",
+                                            minValBaby: "",
+                                            maxValBaby: "",
+                                            normalRangeBaby: "",
+                                            options: p[index].options || "Negative, Positive",
+                                            normalRangeDefault: p[index].normalRangeDefault || "Negative"
+                                          } : {}),
+                                          ...(val === "TEXT" ? {
+                                            minValMale: "",
+                                            maxValMale: "",
+                                            normalRangeMale: "",
+                                            minValFemale: "",
+                                            maxValFemale: "",
+                                            normalRangeFemale: "",
+                                            minValBaby: "",
+                                            maxValBaby: "",
+                                            normalRangeBaby: "",
+                                            options: "",
+                                            unit: ""
+                                          } : {})
                                         };
                                         return { ...prev, parameters: p };
                                       });
-                                    }
-                                  }}
-                                  sx={{ fontSize: "0.8rem" }}
-                                >
-                                  <MenuItem value="">
-                                    <Box component="span" sx={{ color: "text.secondary", fontStyle: "italic", fontSize: "0.78rem" }}>
-                                      (None – standalone)
-                                    </Box>
-                                  </MenuItem>
-                                  {editForm.parameters
-                                    .filter((h) => h.isHeader && h.name)
-                                    .map((h) => (
-                                      <MenuItem
-                                        key={h.key}
-                                        value={h.key || String(h.id)}
-                                        sx={{ fontSize: "0.82rem" }}
-                                      >
-                                        {h.name}
-                                      </MenuItem>
-                                    ))
-                                  }
-                                </Select>
-                              )}
-                            </TableCell>
+                                    }}
+                                    sx={{ fontSize: "0.8rem" }}
+                                  >
+                                    <MenuItem value="NUMERIC" sx={{ fontSize: "0.8rem" }}>Numeric</MenuItem>
+                                    <MenuItem value="OPTIONS" sx={{ fontSize: "0.8rem" }}>Options / Boolean</MenuItem>
+                                    <MenuItem value="TEXT" sx={{ fontSize: "0.8rem" }}>Free Text</MenuItem>
+                                  </Select>
+                                )}
+                              </TableCell>
 
-                            {/* Name — combined Test + Parameter autocomplete */}
-                            <TableCell>
-                              <Autocomplete
-                                freeSolo
-                                size="small"
-                                options={autocompleteOptions}
-                                groupBy={(option) => typeof option === "string" ? "" : (option.type === "test" ? "📋 Tests (bulk-add all children)" : "🔬 Individual Parameters")}
-                                getOptionLabel={(option) => typeof option === "string" ? option : (option.name || "")}
-                                isOptionEqualToValue={(option, value) => {
-                                  const optionName = typeof option === "string" ? option : option.name;
-                                  const valueName = typeof value === "string" ? value : value?.name;
-                                  return optionName === valueName;
-                                }}
-                                value={param.name || ""}
-                                onChange={(event, newValue) => {
-                                  if (!newValue) return;
-                                  if (typeof newValue === "string") {
-                                    handleParamChange(index, "name", newValue);
-                                  } else if (newValue.type === "test") {
-                                    handleTestBulkInsert(index, newValue);
-                                  } else {
-                                    handleParamNameSelect(index, newValue.name);
-                                  }
-                                }}
-                                onInputChange={(event, newInputValue) => {
-                                  handleParamChange(index, "name", newInputValue);
-                                }}
-                                renderOption={(props, option) => {
-                                  const { key, ...restProps } = props;
-                                  const isTest = option.type === "test";
-                                  return (
-                                    <Box
-                                      component="li"
-                                      key={key}
-                                      {...restProps}
-                                      sx={{ display: "flex", alignItems: "center", gap: 1, py: "6px !important" }}
-                                    >
-                                      <Box
+                              {/* IF HEADER ROW: SPAN ACROSS REST OF COLUMNS */}
+                              {param.isHeader ? (
+                                <TableCell colSpan={13} sx={{ bgcolor: "rgba(124, 58, 237, 0.06)", py: 1 }}>
+                                  <Typography variant="caption" sx={{ fontWeight: 700, color: "primary.main", letterSpacing: "0.5px", textTransform: "uppercase" }}>
+                                    Section Group Header (Child parameters will be grouped under this)
+                                  </Typography>
+                                </TableCell>
+                              ) : isOptions ? (
+                                <>
+                                  {/* Unit */}
+                                  <TableCell>
+                                    <Autocomplete
+                                      freeSolo
+                                      size="small"
+                                      options={COMMON_LAB_UNITS}
+                                      value={param.unit}
+                                      onChange={(event, newValue) => handleParamChange(index, "unit", newValue || "")}
+                                      onInputChange={(event, newInputValue) => handleParamChange(index, "unit", newInputValue)}
+                                      renderInput={(params) => (
+                                        <TextField {...params} placeholder="Unit (optional)" sx={{ "& .MuiOutlinedInput-root": { borderRadius: 1 } }} />
+                                      )}
+                                    />
+                                  </TableCell>
+
+                                  {/* Order */}
+                                  <TableCell sx={{ width: 110, minWidth: 110 }}>
+                                    <TextField
+                                      fullWidth
+                                      size="small"
+                                      type="number"
+                                      value={param.order}
+                                      onChange={(e) => handleParamChange(index, "order", e.target.value)}
+                                      sx={{ "& .MuiOutlinedInput-root": { borderRadius: 1 } }}
+                                    />
+                                  </TableCell>
+
+                                  {/* OPTIONS / PRESET SPANNING ALL 10 MIN/MAX/RANGE COLUMNS */}
+                                  <TableCell colSpan={10} sx={{ bgcolor: "rgba(124, 58, 237, 0.03)", px: 2 }}>
+                                    <Box sx={{ display: "flex", flexDirection: "column", gap: 0.8 }}>
+                                      <TextField
+                                        fullWidth
+                                        size="small"
+                                        value={param.options || ""}
+                                        onChange={(e) => handleParamChange(index, "options", e.target.value)}
+                                        placeholder="Selectable Options (comma-separated, e.g. Negative, 1:20, 1:40, 1:80, 1:160, 1:320 or Non-Reactive, Reactive)"
                                         sx={{
-                                          fontSize: "0.82rem",
-                                          color: isTest ? "#ef4444" : "#2563eb",
-                                          fontWeight: 600
+                                          "& .MuiOutlinedInput-root": {
+                                            borderRadius: 1,
+                                            bgcolor: "#ffffff",
+                                            fontWeight: 600,
+                                            fontSize: "0.85rem"
+                                          }
                                         }}
-                                      >
-                                        {option.name}
-                                      </Box>
-                                      {isTest && (
-                                        <Box sx={{ fontSize: "0.7rem", color: "#ef4444", opacity: 0.8, ml: "auto", flexShrink: 0, fontStyle: "italic" }}>
-                                          ({option.parameters?.length || 0} children)
+                                      />
+                                      {param.options && (
+                                        <Box sx={{ display: "flex", flexWrap: "wrap", gap: 0.5, alignItems: "center" }}>
+                                          <Typography variant="caption" sx={{ color: "primary.main", fontWeight: 700, fontSize: "0.7rem" }}>
+                                            Live Options:
+                                          </Typography>
+                                          {param.options.split(",").map((opt, i) => (
+                                            <Box
+                                              key={i}
+                                              sx={{
+                                                px: 0.8,
+                                                py: 0.1,
+                                                bgcolor: "#ffffff",
+                                                color: "#334155",
+                                                borderRadius: "4px",
+                                                fontSize: "0.72rem",
+                                                fontWeight: 700,
+                                                border: "1px solid #cbd5e1"
+                                              }}
+                                            >
+                                              {opt.trim()}
+                                            </Box>
+                                          ))}
                                         </Box>
                                       )}
                                     </Box>
-                                  );
-                                }}
-                                renderInput={(params) => (
-                                  <TextField
-                                    {...params}
-                                    placeholder="Parameter or Test Name *"
-                                    sx={{ "& .MuiOutlinedInput-root": { borderRadius: 1 } }}
-                                  />
-                                )}
-                              />
-                            </TableCell>
+                                  </TableCell>
 
-                            {/* Type */}
-                            <TableCell>
-                              {param.isHeader ? (
-                                <Box sx={{ fontSize: "0.8rem", color: "text.disabled", pl: 1 }}>—</Box>
+                                  {/* Default Range Text */}
+                                  <TableCell sx={{ width: 300, minWidth: 300, bgcolor: "#fafaf9" }}>
+                                    <TextField
+                                      fullWidth
+                                      size="small"
+                                      value={param.normalRangeDefault}
+                                      onChange={(e) => handleParamChange(index, "normalRangeDefault", e.target.value)}
+                                      placeholder="e.g. Negative (< 1:80)"
+                                      sx={{ "& .MuiOutlinedInput-root": { borderRadius: 1 } }}
+                                    />
+                                  </TableCell>
+                                </>
+                              ) : isText ? (
+                                <>
+                                  {/* Unit */}
+                                  <TableCell>
+                                    <Box sx={{ fontSize: "0.8rem", color: "text.disabled", pl: 1 }}>—</Box>
+                                  </TableCell>
+
+                                  {/* Order */}
+                                  <TableCell sx={{ width: 110, minWidth: 110 }}>
+                                    <TextField
+                                      fullWidth
+                                      size="small"
+                                      type="number"
+                                      value={param.order}
+                                      onChange={(e) => handleParamChange(index, "order", e.target.value)}
+                                      sx={{ "& .MuiOutlinedInput-root": { borderRadius: 1 } }}
+                                    />
+                                  </TableCell>
+
+                                  {/* FREE TEXT SPANNING ALL 10 COLUMNS */}
+                                  <TableCell colSpan={10} sx={{ bgcolor: "#f8fafc", px: 2 }}>
+                                    <TextField
+                                      fullWidth
+                                      size="small"
+                                      value={param.normalRangeDefault || ""}
+                                      onChange={(e) => handleParamChange(index, "normalRangeDefault", e.target.value)}
+                                      placeholder="Free text expected observation / note (e.g. Normal morphology seen)"
+                                      sx={{ "& .MuiOutlinedInput-root": { borderRadius: 1, bgcolor: "#ffffff" } }}
+                                    />
+                                  </TableCell>
+
+                                  {/* Default Range Text */}
+                                  <TableCell sx={{ width: 300, minWidth: 300, bgcolor: "#fafaf9", color: "text.disabled", fontSize: "0.8rem", pl: 2 }}>
+                                    (Main note above)
+                                  </TableCell>
+                                </>
                               ) : (
-                                <Select
-                                  size="small"
-                                  fullWidth
-                                  value={param.valueType || "NUMERIC"}
-                                  onChange={(e) => {
-                                    const val = e.target.value;
-                                    setEditForm((prev) => {
-                                      const p = [...prev.parameters];
-                                      p[index] = {
-                                        ...p[index],
-                                        valueType: val,
-                                        ...(val === "OPTIONS" && !p[index].options ? { options: "Negative, Positive", normalRangeDefault: p[index].normalRangeDefault || "Negative" } : {})
-                                      };
-                                      return { ...prev, parameters: p };
-                                    });
-                                  }}
-                                  sx={{ fontSize: "0.8rem" }}
-                                >
-                                  <MenuItem value="NUMERIC" sx={{ fontSize: "0.8rem" }}>Numeric</MenuItem>
-                                  <MenuItem value="OPTIONS" sx={{ fontSize: "0.8rem" }}>Options / Boolean</MenuItem>
-                                  <MenuItem value="TEXT" sx={{ fontSize: "0.8rem" }}>Free Text</MenuItem>
-                                </Select>
+                                <>
+                                  {/* Unit */}
+                                  <TableCell>
+                                    <Autocomplete
+                                      freeSolo
+                                      size="small"
+                                      options={COMMON_LAB_UNITS}
+                                      value={param.unit}
+                                      onChange={(event, newValue) => handleParamChange(index, "unit", newValue || "")}
+                                      onInputChange={(event, newInputValue) => handleParamChange(index, "unit", newInputValue)}
+                                      renderInput={(params) => (
+                                        <TextField {...params} placeholder="e.g. g/dL" sx={{ "& .MuiOutlinedInput-root": { borderRadius: 1 } }} />
+                                      )}
+                                    />
+                                  </TableCell>
+
+                                  {/* Order */}
+                                  <TableCell sx={{ width: 110, minWidth: 110 }}>
+                                    <TextField
+                                      fullWidth
+                                      size="small"
+                                      type="number"
+                                      value={param.order}
+                                      onChange={(e) => handleParamChange(index, "order", e.target.value)}
+                                      sx={{ "& .MuiOutlinedInput-root": { borderRadius: 1 } }}
+                                    />
+                                  </TableCell>
+
+                                  {/* Options: disabled for Numeric */}
+                                  <TableCell sx={{ bgcolor: "#f8fafc" }}>
+                                    <Box sx={{ fontSize: "0.8rem", color: "text.disabled", pl: 1 }}>—</Box>
+                                  </TableCell>
+
+                                  {/* Male Min */}
+                                  <TableCell sx={{ bgcolor: "#eff6ff" }}>
+                                    <TextField
+                                      fullWidth
+                                      size="small"
+                                      type="number"
+                                      inputProps={{ step: "any" }}
+                                      value={param.minValMale}
+                                      onChange={(e) => handleParamChange(index, "minValMale", e.target.value)}
+                                      placeholder="Min"
+                                      sx={{ "& .MuiOutlinedInput-root": { borderRadius: 1 } }}
+                                    />
+                                  </TableCell>
+
+                                  {/* Male Max */}
+                                  <TableCell sx={{ bgcolor: "#eff6ff" }}>
+                                    <TextField
+                                      fullWidth
+                                      size="small"
+                                      type="number"
+                                      inputProps={{ step: "any" }}
+                                      value={param.maxValMale}
+                                      onChange={(e) => handleParamChange(index, "maxValMale", e.target.value)}
+                                      placeholder="Max"
+                                      sx={{ "& .MuiOutlinedInput-root": { borderRadius: 1 } }}
+                                    />
+                                  </TableCell>
+
+                                  {/* Male Range Text */}
+                                  <TableCell sx={{ bgcolor: "#eff6ff" }}>
+                                    <TextField
+                                      fullWidth
+                                      size="small"
+                                      value={param.normalRangeMale}
+                                      onChange={(e) => handleParamChange(index, "normalRangeMale", e.target.value)}
+                                      placeholder="e.g. 13.0 - 17.0"
+                                      sx={{ "& .MuiOutlinedInput-root": { borderRadius: 1 } }}
+                                    />
+                                  </TableCell>
+
+                                  {/* Female Min */}
+                                  <TableCell sx={{ bgcolor: "#fdf2f8" }}>
+                                    <TextField
+                                      fullWidth
+                                      size="small"
+                                      type="number"
+                                      inputProps={{ step: "any" }}
+                                      value={param.minValFemale}
+                                      onChange={(e) => handleParamChange(index, "minValFemale", e.target.value)}
+                                      placeholder="Min"
+                                      sx={{ "& .MuiOutlinedInput-root": { borderRadius: 1 } }}
+                                    />
+                                  </TableCell>
+
+                                  {/* Female Max */}
+                                  <TableCell sx={{ bgcolor: "#fdf2f8" }}>
+                                    <TextField
+                                      fullWidth
+                                      size="small"
+                                      type="number"
+                                      inputProps={{ step: "any" }}
+                                      value={param.maxValFemale}
+                                      onChange={(e) => handleParamChange(index, "maxValFemale", e.target.value)}
+                                      placeholder="Max"
+                                      sx={{ "& .MuiOutlinedInput-root": { borderRadius: 1 } }}
+                                    />
+                                  </TableCell>
+
+                                  {/* Female Range Text */}
+                                  <TableCell sx={{ bgcolor: "#fdf2f8" }}>
+                                    <TextField
+                                      fullWidth
+                                      size="small"
+                                      value={param.normalRangeFemale}
+                                      onChange={(e) => handleParamChange(index, "normalRangeFemale", e.target.value)}
+                                      placeholder="e.g. 12.0 - 15.0"
+                                      sx={{ "& .MuiOutlinedInput-root": { borderRadius: 1 } }}
+                                    />
+                                  </TableCell>
+
+                                  {/* Baby Min */}
+                                  <TableCell sx={{ bgcolor: "#f0fdf4" }}>
+                                    <TextField
+                                      fullWidth
+                                      size="small"
+                                      type="number"
+                                      inputProps={{ step: "any" }}
+                                      value={param.minValBaby}
+                                      onChange={(e) => handleParamChange(index, "minValBaby", e.target.value)}
+                                      placeholder="Min"
+                                      sx={{ "& .MuiOutlinedInput-root": { borderRadius: 1 } }}
+                                    />
+                                  </TableCell>
+
+                                  {/* Baby Max */}
+                                  <TableCell sx={{ bgcolor: "#f0fdf4" }}>
+                                    <TextField
+                                      fullWidth
+                                      size="small"
+                                      type="number"
+                                      inputProps={{ step: "any" }}
+                                      value={param.maxValBaby}
+                                      onChange={(e) => handleParamChange(index, "maxValBaby", e.target.value)}
+                                      placeholder="Max"
+                                      sx={{ "& .MuiOutlinedInput-root": { borderRadius: 1 } }}
+                                    />
+                                  </TableCell>
+
+                                  {/* Baby Range Text */}
+                                  <TableCell sx={{ bgcolor: "#f0fdf4" }}>
+                                    <TextField
+                                      fullWidth
+                                      size="small"
+                                      value={param.normalRangeBaby}
+                                      onChange={(e) => handleParamChange(index, "normalRangeBaby", e.target.value)}
+                                      placeholder="e.g. 11.0 - 14.0"
+                                      sx={{ "& .MuiOutlinedInput-root": { borderRadius: 1 } }}
+                                    />
+                                  </TableCell>
+
+                                  {/* Default Range Text */}
+                                  <TableCell sx={{ width: 300, minWidth: 300, bgcolor: "#fafaf9" }}>
+                                    <TextField
+                                      fullWidth
+                                      size="small"
+                                      value={param.normalRangeDefault}
+                                      onChange={(e) => handleParamChange(index, "normalRangeDefault", e.target.value)}
+                                      placeholder="e.g. 12.0 - 17.0"
+                                      sx={{ "& .MuiOutlinedInput-root": { borderRadius: 1 } }}
+                                    />
+                                  </TableCell>
+                                </>
                               )}
-                            </TableCell>
-
-                            {/* Options / Preset */}
-                            <TableCell>
-                              {param.isHeader || (param.valueType || "NUMERIC") !== "OPTIONS" ? (
-                                <Box sx={{ fontSize: "0.8rem", color: "text.disabled", pl: 1 }}>—</Box>
-                              ) : (
-                                <TextField
-                                  fullWidth
-                                  size="small"
-                                  value={param.options || ""}
-                                  onChange={(e) => handleParamChange(index, "options", e.target.value)}
-                                  placeholder="e.g. Negative, Positive"
-                                  sx={{ "& .MuiOutlinedInput-root": { borderRadius: 1 } }}
-                                />
-                              )}
-                            </TableCell>
-
-                            {/* Unit */}
-                            <TableCell>
-                              <Autocomplete
-                                freeSolo
-                                disabled={!!param.isHeader || (param.valueType || "NUMERIC") === "TEXT"}
-                                size="small"
-                                options={COMMON_LAB_UNITS}
-                                value={param.unit}
-                                onChange={(event, newValue) => {
-                                  handleParamChange(index, "unit", newValue || "");
-                                }}
-                                onInputChange={(event, newInputValue) => {
-                                  handleParamChange(index, "unit", newInputValue);
-                                }}
-                                onBlur={() => {
-                                  if (!param.unit || param.unit.trim() === "") {
-                                    // 1. Try to restore original unit configured at the time the dialog was opened
-                                    const initialParam = initialParameters[index];
-                                    if (initialParam && initialParam.unit && initialParam.unit.trim() !== "") {
-                                      handleParamChange(index, "unit", initialParam.unit);
-                                      return;
-                                    }
-
-                                    // 2. Fallback: Search upwards for closest preceding parameter with a unit
-                                    for (let i = index - 1; i >= 0; i--) {
-                                      if (editForm.parameters[i].unit && editForm.parameters[i].unit.trim() !== "") {
-                                        handleParamChange(index, "unit", editForm.parameters[i].unit);
-                                        break;
-                                      }
-                                    }
-                                  }
-                                }}
-                                renderInput={(params) => (
-                                  <TextField
-                                    {...params}
-                                    placeholder="e.g. g/dL"
-                                    sx={{ "& .MuiOutlinedInput-root": { borderRadius: 1 } }}
-                                  />
-                                )}
-                              />
-                            </TableCell>
-
-                            {/* Order */}
-                            <TableCell>
-                              <TextField
-                                fullWidth
-                                size="small"
-                                type="number"
-                                value={param.order}
-                                onChange={(e) => handleParamChange(index, "order", e.target.value)}
-                                sx={{ "& .MuiOutlinedInput-root": { borderRadius: 1 } }}
-                              />
-                            </TableCell>
-
-                            {/* Male Min */}
-                            <TableCell sx={{ bgcolor: "#f8fafc" }}>
-                              <TextField
-                                fullWidth
-                                disabled={!!param.isHeader || (param.valueType || "NUMERIC") !== "NUMERIC"}
-                                size="small"
-                                type="number"
-                                inputProps={{ step: "any" }}
-                                value={param.minValMale}
-                                onChange={(e) => handleParamChange(index, "minValMale", e.target.value)}
-                                placeholder={(param.valueType || "NUMERIC") === "NUMERIC" ? "Min" : "—"}
-                                sx={{ "& .MuiOutlinedInput-root": { borderRadius: 1 } }}
-                              />
-                            </TableCell>
-
-                            {/* Male Max */}
-                            <TableCell sx={{ bgcolor: "#f8fafc" }}>
-                              <TextField
-                                fullWidth
-                                disabled={!!param.isHeader || (param.valueType || "NUMERIC") !== "NUMERIC"}
-                                size="small"
-                                type="number"
-                                inputProps={{ step: "any" }}
-                                value={param.maxValMale}
-                                onChange={(e) => handleParamChange(index, "maxValMale", e.target.value)}
-                                placeholder={(param.valueType || "NUMERIC") === "NUMERIC" ? "Max" : "—"}
-                                sx={{ "& .MuiOutlinedInput-root": { borderRadius: 1 } }}
-                              />
-                            </TableCell>
-
-                            {/* Male Range Text */}
-                            <TableCell sx={{ bgcolor: "#f8fafc" }}>
-                              <TextField
-                                fullWidth
-                                disabled={!!param.isHeader || (param.valueType || "NUMERIC") !== "NUMERIC"}
-                                size="small"
-                                value={param.normalRangeMale}
-                                onChange={(e) => handleParamChange(index, "normalRangeMale", e.target.value)}
-                                placeholder={(param.valueType || "NUMERIC") === "NUMERIC" ? "Range text" : "—"}
-                                sx={{ "& .MuiOutlinedInput-root": { borderRadius: 1 } }}
-                              />
-                            </TableCell>
-
-                            {/* Female Min */}
-                            <TableCell sx={{ bgcolor: "#fdf2f8" }}>
-                              <TextField
-                                fullWidth
-                                disabled={!!param.isHeader || (param.valueType || "NUMERIC") !== "NUMERIC"}
-                                size="small"
-                                type="number"
-                                inputProps={{ step: "any" }}
-                                value={param.minValFemale}
-                                onChange={(e) => handleParamChange(index, "minValFemale", e.target.value)}
-                                placeholder={(param.valueType || "NUMERIC") === "NUMERIC" ? "Min" : "—"}
-                                sx={{ "& .MuiOutlinedInput-root": { borderRadius: 1 } }}
-                              />
-                            </TableCell>
-
-                            {/* Female Max */}
-                            <TableCell sx={{ bgcolor: "#fdf2f8" }}>
-                              <TextField
-                                fullWidth
-                                disabled={!!param.isHeader || (param.valueType || "NUMERIC") !== "NUMERIC"}
-                                size="small"
-                                type="number"
-                                inputProps={{ step: "any" }}
-                                value={param.maxValFemale}
-                                onChange={(e) => handleParamChange(index, "maxValFemale", e.target.value)}
-                                placeholder={(param.valueType || "NUMERIC") === "NUMERIC" ? "Max" : "—"}
-                                sx={{ "& .MuiOutlinedInput-root": { borderRadius: 1 } }}
-                              />
-                            </TableCell>
-
-                            {/* Female Range Text */}
-                            <TableCell sx={{ bgcolor: "#fdf2f8" }}>
-                              <TextField
-                                fullWidth
-                                disabled={!!param.isHeader || (param.valueType || "NUMERIC") !== "NUMERIC"}
-                                size="small"
-                                value={param.normalRangeFemale}
-                                onChange={(e) => handleParamChange(index, "normalRangeFemale", e.target.value)}
-                                placeholder={(param.valueType || "NUMERIC") === "NUMERIC" ? "Range text" : "—"}
-                                sx={{ "& .MuiOutlinedInput-root": { borderRadius: 1 } }}
-                              />
-                            </TableCell>
-
-                            {/* Baby Min */}
-                            <TableCell sx={{ bgcolor: "#f0fdf4" }}>
-                              <TextField
-                                fullWidth
-                                disabled={!!param.isHeader || (param.valueType || "NUMERIC") !== "NUMERIC"}
-                                size="small"
-                                type="number"
-                                inputProps={{ step: "any" }}
-                                value={param.minValBaby}
-                                onChange={(e) => handleParamChange(index, "minValBaby", e.target.value)}
-                                placeholder={(param.valueType || "NUMERIC") === "NUMERIC" ? "Min" : "—"}
-                                sx={{ "& .MuiOutlinedInput-root": { borderRadius: 1 } }}
-                              />
-                            </TableCell>
-
-                            {/* Baby Max */}
-                            <TableCell sx={{ bgcolor: "#f0fdf4" }}>
-                              <TextField
-                                fullWidth
-                                disabled={!!param.isHeader || (param.valueType || "NUMERIC") !== "NUMERIC"}
-                                size="small"
-                                type="number"
-                                inputProps={{ step: "any" }}
-                                value={param.maxValBaby}
-                                onChange={(e) => handleParamChange(index, "maxValBaby", e.target.value)}
-                                placeholder={(param.valueType || "NUMERIC") === "NUMERIC" ? "Max" : "—"}
-                                sx={{ "& .MuiOutlinedInput-root": { borderRadius: 1 } }}
-                              />
-                            </TableCell>
-
-                            {/* Baby Range Text */}
-                            <TableCell sx={{ bgcolor: "#f0fdf4" }}>
-                              <TextField
-                                fullWidth
-                                disabled={!!param.isHeader || (param.valueType || "NUMERIC") !== "NUMERIC"}
-                                size="small"
-                                value={param.normalRangeBaby}
-                                onChange={(e) => handleParamChange(index, "normalRangeBaby", e.target.value)}
-                                placeholder={(param.valueType || "NUMERIC") === "NUMERIC" ? "Range text" : "—"}
-                                sx={{ "& .MuiOutlinedInput-root": { borderRadius: 1 } }}
-                              />
-                            </TableCell>
-
-                            {/* Default Range Text */}
-                            <TableCell sx={{ bgcolor: "#fafaf9" }}>
-                              <TextField
-                                fullWidth
-                                disabled={!!param.isHeader}
-                                size="small"
-                                value={param.normalRangeDefault}
-                                onChange={(e) => handleParamChange(index, "normalRangeDefault", e.target.value)}
-                                placeholder="Default range"
-                                sx={{ "& .MuiOutlinedInput-root": { borderRadius: 1 } }}
-                              />
-                            </TableCell>
-
-
-                          </TableRow>
-                        ))
+                            </TableRow>
+                          );
+                        })
                       )}
                     </TableBody>
                   </Table>
