@@ -488,6 +488,23 @@ export async function GET(req, { params }) {
       }
     }
 
+    // Sort departments: HAEMATOLOGY (1st priority) -> BIOCHEMISTRY (2nd priority) -> Rest
+    const getDepartmentPriority = (name) => {
+      const norm = String(name || "").toUpperCase().trim();
+      if (norm.includes("HAEMATOLOGY") || norm.includes("HEMATOLOGY")) return 1;
+      if (norm.includes("BIOCHEMISTRY")) return 2;
+      return 3;
+    };
+
+    departmentGroups.sort((a, b) => {
+      const prioA = getDepartmentPriority(a.name);
+      const prioB = getDepartmentPriority(b.name);
+      if (prioA !== prioB) {
+        return prioA - prioB;
+      }
+      return (a.name || "").localeCompare(b.name || "");
+    });
+
     let tableActiveY = pageHeight - headerMargin - 15;
 
     if (departmentGroups.length === 0) {

@@ -109,7 +109,7 @@ function hasTestChanged(existing, defaultT) {
     !isNumEqual(existing.labRate, defaultT.labRate) ||
     !isNumEqual(existing.offerPrice, defaultT.offerPrice) ||
     !isBoolEqual(existing.isProcessed, defaultT.isProcessed) ||
-    existing.departmentId !== defaultT.departmentId ||
+    !isNumEqual(existing.departmentId, defaultT.departmentId) ||
     existing.isDeleted === true
   );
 }
@@ -193,10 +193,11 @@ export async function POST(req, { params }) {
       return NextResponse.json({ success: false, error: "Workspace not found" }, { status: 404 });
     }
 
-    // 1. Fetch all active default tests with parameters, formulas, and interpretation rules
+    // 1. Fetch all active default tests with department, parameters, formulas, and interpretation rules
     const defaultTests = await prisma.test.findMany({
       where: { workspaceId: null, isDeleted: false },
       include: {
+        department: true,
         parameters: {
           where: { isDeleted: false },
           include: { parameter: true },
@@ -211,10 +212,11 @@ export async function POST(req, { params }) {
       },
     });
 
-    // 2. Fetch all workspace tests (active and soft-deleted) with parameters, formulas, and interpretation rules
+    // 2. Fetch all workspace tests (active and soft-deleted) with department, parameters, formulas, and interpretation rules
     const workspaceTests = await prisma.test.findMany({
       where: { workspaceId },
       include: {
+        department: true,
         parameters: {
           include: { parameter: true },
         },
@@ -302,8 +304,15 @@ export async function POST(req, { params }) {
           });
 
           if (match) {
-            // If the workspace administrator customized this test specifically, skip overwriting
+            // If the workspace administrator customized this test specifically, check departmentId sync
             if (match.isCustomized) {
+              if (!isNumEqual(match.departmentId, dt.departmentId)) {
+                await prisma.test.update({
+                  where: { id: match.id },
+                  data: { departmentId: dt.departmentId ?? null },
+                });
+                updatedTestsCount++;
+              }
               skippedCount++;
               return;
             }
