@@ -385,6 +385,89 @@ export async function GET(req, { params }) {
       });
     };
 
+    /**
+     * Splits text into paragraphs and word tokens supporting **bold** markdown
+     */
+    const parseMarkdownTokens = (text) => {
+      const cleanText = String(text || "")
+        .replace(/[μµ]/g, "u")
+        .replace(/–/g, "-")
+        .replace(/—/g, "-")
+        .replace(/[“”]/g, '"')
+        .replace(/[‘’]/g, "'");
+
+      const rawLines = cleanText.split("\n");
+      const paragraphs = [];
+
+      for (const rawLine of rawLines) {
+        const lineTokens = [];
+        const regex = /(\*\*.*?\*\*)|([^\*]+|\*)/g;
+        let match;
+        while ((match = regex.exec(rawLine)) !== null) {
+          const chunk = match[0];
+          if (chunk.startsWith("**") && chunk.endsWith("**") && chunk.length >= 4) {
+            const boldContent = chunk.slice(2, -2);
+            const words = boldContent.split(/(\s+)/);
+            words.forEach((w) => {
+              if (w) lineTokens.push({ text: w, isBold: true, isSpace: /^\s+$/.test(w) });
+            });
+          } else {
+            const words = chunk.split(/(\s+)/);
+            words.forEach((w) => {
+              if (w) lineTokens.push({ text: w, isBold: false, isSpace: /^\s+$/.test(w) });
+            });
+          }
+        }
+        paragraphs.push(lineTokens);
+      }
+      return paragraphs;
+    };
+
+    /**
+     * Word-wraps markdown paragraphs into lines fitting within maxWidth
+     */
+    const layoutMarkdownLines = (paragraphs, maxWidth, fontSize) => {
+      const formattedLines = [];
+
+      for (const tokens of paragraphs) {
+        if (tokens.length === 0) {
+          formattedLines.push([]);
+          continue;
+        }
+
+        let currentLine = [];
+        let currentLineWidth = 0;
+
+        for (const token of tokens) {
+          const activeFont = token.isBold ? fontBold : font;
+          const tokenWidth = activeFont.widthOfTextAtSize(token.text, fontSize);
+
+          if (currentLineWidth + tokenWidth > maxWidth && currentLine.length > 0 && !token.isSpace) {
+            formattedLines.push(currentLine);
+            currentLine = [];
+            currentLineWidth = 0;
+          }
+
+          if (currentLine.length === 0 && token.isSpace) {
+            continue;
+          }
+
+          currentLine.push({
+            text: token.text,
+            isBold: token.isBold,
+            width: tokenWidth,
+          });
+          currentLineWidth += tokenWidth;
+        }
+
+        if (currentLine.length > 0) {
+          formattedLines.push(currentLine);
+        }
+      }
+
+      return formattedLines;
+    };
+
     // Helper to draw Patient Demographics Box on any page
     const drawPatientDemographics = (page) => {
       const topY = pageHeight - headerMargin - 15;
@@ -816,20 +899,72 @@ export async function GET(req, { params }) {
       tableActiveY = drawPatientDemographics(currentPage);
     }
 
-    // Draw Report Remarks / Notes
-    if (reg.remark) {
+    // Draw Report Remarks / Summary Note Box with Markdown & Text Wrapping
+    if (reg.remark && reg.remark.trim()) {
+      const remarkFontSize = 8;
+      const lineHeight = 11.5;
+      const boxPaddingX = 10;
+      const boxPaddingY = 8;
+      const titleHeight = 14;
+      const maxTextWidth = contentWidth - boxPaddingX * 2;
+
+      const paragraphs = parseMarkdownTokens(reg.remark.trim());
+      const wrappedLines = layoutMarkdownLines(paragraphs, maxTextWidth, remarkFontSize);
+
+      const textBlockHeight = wrappedLines.length * lineHeight;
+      const totalBoxHeight = titleHeight + textBlockHeight + boxPaddingY * 2;
+
+      // Check if box fits on current page before footer margin
+      if (tableActiveY - totalBoxHeight < footerMargin + 80) {
+        await addNewPage();
+        tableActiveY = drawPatientDemographics(currentPage);
+      }
+
+      const boxTopY = tableActiveY - 5;
+      const boxBottomY = boxTopY - totalBoxHeight;
+
+      // Draw background rectangle containing the whole remark
       currentPage.drawRectangle({
         x: leftMargin,
-        y: tableActiveY - 50,
+        y: boxBottomY,
         width: contentWidth,
-        height: 45,
-        borderColor: rgb(0.88, 0.9, 0.94),
+        height: totalBoxHeight,
+        borderColor: rgb(0.85, 0.88, 0.94),
         borderWidth: 0.5,
-        color: rgb(0.99, 0.99, 1),
+        color: rgb(0.985, 0.99, 1),
       });
-      drawText(currentPage, "Report Remarks / Summary Note:", leftMargin + 10, tableActiveY - 15, 8.5, true, rgb(0.2, 0.25, 0.3));
-      drawText(currentPage, reg.remark, leftMargin + 10, tableActiveY - 30, 8.5, false, rgb(0.25, 0.3, 0.4));
-      tableActiveY -= 65;
+
+      // Draw Title
+      let textCursorY = boxTopY - boxPaddingY - 4;
+      drawText(
+        currentPage,
+        "Report Remarks / Summary Note:",
+        leftMargin + boxPaddingX,
+        textCursorY,
+        8.5,
+        true,
+        rgb(0.15, 0.2, 0.3)
+      );
+
+      textCursorY -= lineHeight + 2;
+
+      // Draw wrapped lines with inline bold/regular segments
+      for (const line of wrappedLines) {
+        let textCursorX = leftMargin + boxPaddingX;
+        for (const segment of line) {
+          currentPage.drawText(segment.text, {
+            x: textCursorX,
+            y: textCursorY,
+            size: remarkFontSize,
+            font: segment.isBold ? fontBold : font,
+            color: rgb(0.2, 0.25, 0.35),
+          });
+          textCursorX += segment.width;
+        }
+        textCursorY -= lineHeight;
+      }
+
+      tableActiveY = boxBottomY - 15;
     }
 
     // Double check spacing for signatures

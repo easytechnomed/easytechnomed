@@ -244,7 +244,7 @@ model Registration {
   gender           String
   refById          Int?
   secondRefId      Int?
-  remark           String?
+  remark           String?               @db.Text
   colType          String                @default("Camp")
   expRptDate       DateTime?
   sampleDate       DateTime?

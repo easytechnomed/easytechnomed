@@ -327,11 +327,49 @@ export default function ShowResult({ open, onClose, selectedReg }) {
 
             {/* Remarks */}
             {previewData.remark && (
-              <Card variant="outlined" sx={{ p: 2, bgcolor: "warning.50", borderColor: "warning.200" }}>
-                <Typography variant="subtitle2" sx={{ fontWeight: 700, color: "warning.800" }}>
+              <Card variant="outlined" sx={{ p: 2, bgcolor: "rgba(15, 118, 110, 0.04)", borderColor: "primary.light" }}>
+                <Typography variant="subtitle2" sx={{ fontWeight: 800, color: "primary.main", mb: 1 }}>
                   Report Remarks / Summary Note
                 </Typography>
-                <Typography variant="body2" sx={{ mt: 0.5 }}>{previewData.remark}</Typography>
+                <Box sx={{ mt: 0.5 }}>
+                  {previewData.remark.split("\n").map((line, lineIdx) => {
+                    const parts = [];
+                    const regex = /\*\*(.*?)\*\*/g;
+                    let lastIndex = 0;
+                    let match;
+
+                    while ((match = regex.exec(line)) !== null) {
+                      if (match.index > lastIndex) {
+                        parts.push(line.substring(lastIndex, match.index));
+                      }
+                      parts.push(
+                        <strong key={`b-${lineIdx}-${match.index}`} style={{ fontWeight: 700 }}>
+                          {match[1]}
+                        </strong>
+                      );
+                      lastIndex = regex.lastIndex;
+                    }
+
+                    if (lastIndex < line.length) {
+                      parts.push(line.substring(lastIndex));
+                    }
+
+                    return (
+                      <Typography
+                        key={`line-${lineIdx}`}
+                        variant="body2"
+                        sx={{
+                          minHeight: line.trim() === "" ? "0.8em" : "auto",
+                          mb: 0.3,
+                          color: "text.primary",
+                          lineHeight: 1.5,
+                        }}
+                      >
+                        {parts.length > 0 ? parts : "\u00A0"}
+                      </Typography>
+                    );
+                  })}
+                </Box>
               </Card>
             )}
           </Stack>

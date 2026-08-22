@@ -42,7 +42,8 @@ import {
   CloudDone as CloudDoneIcon,
   CloudQueue as CloudQueueIcon,
   CloudOff as CloudOffIcon,
-  Drafts as DraftsIcon
+  Drafts as DraftsIcon,
+  AutoAwesome as AutoAwesomeIcon
 } from "@mui/icons-material";
 import DifferentialHeaderBadge, { validateDifferentialOnSave } from "./DifferentialCountTracker";
 
@@ -526,6 +527,9 @@ export default function ResultEntry({ open, onClose, selectedReg, onSaveSuccess,
   const [configTest, setConfigTest] = useState(null);
   const [configParams, setConfigParams] = useState([]);
 
+  // AI Summary generation state
+  const [aiGenerating, setAiGenerating] = useState(false);
+
   // Toast notifications inside component
   const [toast, setToast] = useState({ open: false, message: "", severity: "success" });
 
@@ -711,6 +715,71 @@ export default function ResultEntry({ open, onClose, selectedReg, onSaveSuccess,
       isSavingRef.current = false;
       setIsDraftSaving(false);
       setResultSaving(false);
+    }
+  };
+
+  // AI Summary Generator
+  const handleGenerateAiSummary = async () => {
+    if (!resultRegDetails || resultTests.length === 0) return;
+
+    // Check if at least one parameter has an entered value
+    const hasAnyValue = Object.values(resultValues).some((v) => v !== undefined && v !== null && String(v).trim() !== "");
+    if (!hasAnyValue) {
+      showToast("Please enter at least one test result before generating AI remarks.", "warning");
+      return;
+    }
+
+    setAiGenerating(true);
+    try {
+      const testsPayload = resultTests.map((test) => {
+        const params = (test.parameters || []).map((tp) => {
+          const ref = getReferenceRange(tp, resultRegDetails);
+          const val = resultValues[tp.id] || "";
+          const isAbn = isOutOfRange(val, ref.min, ref.max, tp, ref.rangeStr);
+          return {
+            name: tp.name,
+            code: tp.code,
+            isHeader: tp.isHeader,
+            value: val,
+            unit: tp.unit || "",
+            min: ref.min,
+            max: ref.max,
+            rangeStr: ref.rangeStr,
+            flag: isAbn ? (parseFloat(val) > ref.max ? "High" : "Low") : (val ? "Normal" : null),
+          };
+        });
+
+        return {
+          testName: test.name,
+          parameters: params,
+        };
+      });
+
+      const res = await fetch("/api/ai/suggestion", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          patientInfo: {
+            age: resultRegDetails.age,
+            ageUnit: resultRegDetails.ageUnit,
+            gender: resultRegDetails.gender,
+            name: resultRegDetails.name || resultRegDetails.patientName,
+          },
+          tests: testsPayload,
+        }),
+      }).then((r) => r.json());
+
+      if (res.success && res.suggestion) {
+        setReportNotes(res.suggestion);
+        showToast("AI Summary generated successfully!", "success");
+      } else {
+        showToast(res.message || res.error || "Failed to generate AI suggestion", "error");
+      }
+    } catch (err) {
+      console.error("AI Generation Error:", err);
+      showToast(err.message || "Failed to contact AI service", "error");
+    } finally {
+      setAiGenerating(false);
     }
   };
 
@@ -1395,7 +1464,45 @@ export default function ResultEntry({ open, onClose, selectedReg, onSaveSuccess,
 
               {/* Note/Remark editor */}
               <Box sx={{ mt: 3 }}>
-                <Typography variant="body2" sx={{ fontWeight: 700, mb: 1 }}>Report Remarks / Summary Note</Typography>
+                <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", mb: 1.2, flexWrap: "wrap", gap: 1 }}>
+                  <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                    <Typography variant="body2" sx={{ fontWeight: 700 }}>
+                      Report Remarks / Summary Note
+                    </Typography>
+                    <Chip
+                      label="AI Enabled"
+                      size="small"
+                      color="primary"
+                      variant="outlined"
+                      sx={{ height: 20, fontSize: "0.68rem", fontWeight: 700 }}
+                    />
+                  </Box>
+
+                  <Button
+                    size="small"
+                    variant="outlined"
+                    color="primary"
+                    disabled={aiGenerating}
+                    onClick={handleGenerateAiSummary}
+                    startIcon={aiGenerating ? <CircularProgress size={14} color="inherit" /> : <AutoAwesomeIcon sx={{ fontSize: 16 }} />}
+                    sx={{
+                      textTransform: "none",
+                      fontWeight: 700,
+                      fontSize: "0.78rem",
+                      borderRadius: "8px",
+                      px: 1.8,
+                      py: 0.6,
+                      background: "linear-gradient(135deg, rgba(15, 118, 110, 0.08) 0%, rgba(59, 130, 246, 0.08) 100%)",
+                      borderColor: "primary.light",
+                      "&:hover": {
+                        background: "linear-gradient(135deg, rgba(15, 118, 110, 0.16) 0%, rgba(59, 130, 246, 0.16) 100%)",
+                        borderColor: "primary.main",
+                      },
+                    }}
+                  >
+                    {aiGenerating ? "Generating Summary..." : (reportNotes ? "✨ Regenerate AI Summary" : "✨ AI Generate Summary")}
+                  </Button>
+                </Box>
                 <TextField
                   id="remarks-field"
                   fullWidth
@@ -1403,9 +1510,44 @@ export default function ResultEntry({ open, onClose, selectedReg, onSaveSuccess,
                   rows={4}
                   value={reportNotes}
                   onChange={(e) => setReportNotes(e.target.value)}
-                  placeholder="Enter overall review comment, findings summary or notes..."
+                  placeholder="Enter overall review comment, clinical impression (supports **bold** text) or click 'AI Generate Summary'..."
                   variant="outlined"
                 />
+                {reportNotes && reportNotes.includes("**") && (
+                  <Box sx={{ mt: 1, p: 1.5, bgcolor: "grey.50", borderRadius: 1.5, border: "1px dashed", borderColor: "grey.300" }}>
+                    <Typography variant="caption" sx={{ fontWeight: 800, color: "primary.main", display: "block", mb: 0.5 }}>
+                      Formatted Report / PDF Preview:
+                    </Typography>
+                    {reportNotes.split("\n").map((line, lineIdx) => {
+                      const parts = [];
+                      const regex = /\*\*(.*?)\*\*/g;
+                      let lastIndex = 0;
+                      let match;
+
+                      while ((match = regex.exec(line)) !== null) {
+                        if (match.index > lastIndex) {
+                          parts.push(line.substring(lastIndex, match.index));
+                        }
+                        parts.push(
+                          <strong key={`b-${lineIdx}-${match.index}`} style={{ fontWeight: 700, color: "#0f766e" }}>
+                            {match[1]}
+                          </strong>
+                        );
+                        lastIndex = regex.lastIndex;
+                      }
+
+                      if (lastIndex < line.length) {
+                        parts.push(line.substring(lastIndex));
+                      }
+
+                      return (
+                        <Typography key={`prev-${lineIdx}`} variant="caption" sx={{ display: "block", color: "text.primary", lineHeight: 1.4 }}>
+                          {parts.length > 0 ? parts : "\u00A0"}
+                        </Typography>
+                      );
+                    })}
+                  </Box>
+                )}
               </Box>
             </>
           ) : (
