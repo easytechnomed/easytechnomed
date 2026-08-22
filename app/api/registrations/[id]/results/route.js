@@ -26,15 +26,23 @@ export async function POST(req, { params }) {
     let finalStatus = "Completed";
 
     await prisma.$transaction(async (tx) => {
-      // 1. Fetch testParameter and Parameter configurations for incoming manual results
+      // 1. Fetch testParameter configurations and existing patient results
       const testParamIds = resultsData.map(r => r.testParameterId);
-      const testParameters = await tx.testParameter.findMany({
-        where: { id: { in: testParamIds } },
-        include: { parameter: true }
-      });
+      const [testParameters, existingPatientResults] = await Promise.all([
+        tx.testParameter.findMany({
+          where: { id: { in: testParamIds } },
+          include: { parameter: true }
+        }),
+        tx.patientResult.findMany({
+          where: { registrationId },
+          select: { id: true, testParameterId: true }
+        })
+      ]);
 
-      // 2. Upsert manual results with computed flags in parallel
-      const upsertPromises = resultsData.map((res) => {
+      const resultMap = new Map(existingPatientResults.map(r => [r.testParameterId, r.id]));
+
+      // 2. Perform direct update (by PK ID) or create to prevent MySQL InnoDB gap locks
+      for (const res of resultsData) {
         const testParam = testParameters.find(tp => tp.id === res.testParameterId);
         let flag = null;
         if (testParam && testParam.parameter && res.value !== null && res.value !== undefined && res.value !== "") {
@@ -47,27 +55,27 @@ export async function POST(req, { params }) {
           flag = determineFlag(res.value, thresholds);
         }
 
-        return tx.patientResult.upsert({
-          where: {
-            registrationId_testParameterId: {
+        const existingResultId = resultMap.get(res.testParameterId);
+        if (existingResultId) {
+          await tx.patientResult.update({
+            where: { id: existingResultId },
+            data: {
+              value: String(res.value ?? ""),
+              flag: flag
+            }
+          });
+        } else {
+          const created = await tx.patientResult.create({
+            data: {
               registrationId,
               testParameterId: res.testParameterId,
-            },
-          },
-          update: {
-            value: String(res.value ?? ""),
-            flag: flag
-          },
-          create: {
-            registrationId,
-            testParameterId: res.testParameterId,
-            value: String(res.value ?? ""),
-            flag: flag
-          },
-        });
-      });
-
-      await Promise.all(upsertPromises);
+              value: String(res.value ?? ""),
+              flag: flag
+            }
+          });
+          resultMap.set(res.testParameterId, created.id);
+        }
+      }
 
       // 3. Update registration status (keep existing status or "Pending" if draft, else "Completed")
       finalStatus = isDraft
