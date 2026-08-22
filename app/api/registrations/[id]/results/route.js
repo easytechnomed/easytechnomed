@@ -33,8 +33,8 @@ export async function POST(req, { params }) {
         include: { parameter: true }
       });
 
-      // 2. Upsert manual results with computed flags
-      for (const res of resultsData) {
+      // 2. Upsert manual results with computed flags in parallel
+      const upsertPromises = resultsData.map((res) => {
         const testParam = testParameters.find(tp => tp.id === res.testParameterId);
         let flag = null;
         if (testParam && testParam.parameter && res.value !== null && res.value !== undefined && res.value !== "") {
@@ -47,7 +47,7 @@ export async function POST(req, { params }) {
           flag = determineFlag(res.value, thresholds);
         }
 
-        await tx.patientResult.upsert({
+        return tx.patientResult.upsert({
           where: {
             registrationId_testParameterId: {
               registrationId,
@@ -65,7 +65,9 @@ export async function POST(req, { params }) {
             flag: flag
           },
         });
-      }
+      });
+
+      await Promise.all(upsertPromises);
 
       // 3. Update registration status (keep existing status or "Pending" if draft, else "Completed")
       finalStatus = isDraft
@@ -79,7 +81,7 @@ export async function POST(req, { params }) {
           status: finalStatus,
         },
       });
-    }, { maxWait: 10000, timeout: 20000 });
+    }, { maxWait: 20000, timeout: 60000 });
 
     // 4. Run the LIMS formula engine to compute derived values
     await runFormulaEngine(registrationId);

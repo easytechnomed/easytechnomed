@@ -519,6 +519,7 @@ export default function ResultEntry({ open, onClose, selectedReg, onSaveSuccess,
   const [lastSavedTime, setLastSavedTime] = useState("");
   const debounceTimerRef = React.useRef(null);
   const isInitialLoadRef = React.useRef(true);
+  const isSavingRef = React.useRef(false);
 
   // Configurator States
   const [configDialogOpen, setConfigDialogOpen] = useState(false);
@@ -631,6 +632,11 @@ export default function ResultEntry({ open, onClose, selectedReg, onSaveSuccess,
     if (!resultRegDetails?.id) return;
     if (!canWrite) return;
 
+    // Concurrency guard: If already saving and this is an auto-save, skip this cycle
+    if (isSavingRef.current && isSilent) {
+      return;
+    }
+
     // --- Differential Count 100% Validation (Only on Final Save & Complete, not Draft / Auto-save) ---
     if (!isDraft) {
       const dlcError = validateDifferentialOnSave(resultTests, resultValues);
@@ -639,6 +645,8 @@ export default function ResultEntry({ open, onClose, selectedReg, onSaveSuccess,
         return;
       }
     }
+
+    isSavingRef.current = true;
 
     if (isDraft) {
       if (isSilent) {
@@ -695,6 +703,7 @@ export default function ResultEntry({ open, onClose, selectedReg, onSaveSuccess,
         showToast(err.message || "Failed to save results", "error");
       }
     } finally {
+      isSavingRef.current = false;
       setIsDraftSaving(false);
       setResultSaving(false);
     }
