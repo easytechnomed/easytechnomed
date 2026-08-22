@@ -149,6 +149,22 @@ export async function GET(req, { params }) {
       return new Response("Registration not found", { status: 404 });
     }
 
+    // Filter tests by testIds query parameter if specified
+    const searchParams = req.nextUrl?.searchParams || new URL(req.url).searchParams;
+    const testIdsParam = searchParams.get("testIds");
+
+    if (testIdsParam && reg.tests) {
+      const allowedTestIds = new Set(
+        testIdsParam
+          .split(",")
+          .map((s) => parseInt(s.trim()))
+          .filter((n) => !isNaN(n))
+      );
+      if (allowedTestIds.size > 0) {
+        reg.tests = reg.tests.filter((t) => allowedTestIds.has(t.testId) || allowedTestIds.has(t.test?.id));
+      }
+    }
+
     const cookieStore = await cookies();
     const isAdminToken = cookieStore.get("admin_session_token")?.value;
     const isSuperAdminToken = cookieStore.get("super_admin_session_token")?.value;
@@ -268,7 +284,6 @@ export async function GET(req, { params }) {
       },
     });
 
-    const searchParams = req.nextUrl.searchParams;
     const withFrameParam = searchParams.get("withFrame");
 
     // Determine whether to use frame

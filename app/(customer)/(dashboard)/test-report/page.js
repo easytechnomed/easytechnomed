@@ -314,8 +314,47 @@ export default function TestReportPage() {
   const [toast, setToast] = useState({ open: false, message: "", severity: "success" });
 
   const [printDialogOpen, setPrintDialogOpen] = useState(false);
+  const [selectedTestIdsForPrint, setSelectedTestIdsForPrint] = useState([]);
   const [reportPreviewOpen, setReportPreviewOpen] = useState(false);
   const [adminSettings, setAdminSettings] = useState({ framePdfUrl: "", useFrameDefault: true });
+
+  // Initialize all tests checked by default whenever print dialog opens
+  useEffect(() => {
+    if (printDialogOpen && selectedReg?.tests) {
+      const allIds = selectedReg.tests.map((rt) => rt.test?.id || rt.testId).filter(Boolean);
+      setSelectedTestIdsForPrint(allIds);
+    }
+  }, [printDialogOpen, selectedReg]);
+
+  const handleToggleTestForPrint = (testId) => {
+    setSelectedTestIdsForPrint((prev) => {
+      if (prev.includes(testId)) {
+        return prev.filter((id) => id !== testId);
+      } else {
+        return [...prev, testId];
+      }
+    });
+  };
+
+  const handleToggleAllTestsForPrint = () => {
+    const allIds = (selectedReg?.tests || []).map((rt) => rt.test?.id || rt.testId).filter(Boolean);
+    if (selectedTestIdsForPrint.length === allIds.length) {
+      setSelectedTestIdsForPrint([]);
+    } else {
+      setSelectedTestIdsForPrint(allIds);
+    }
+  };
+
+  const handleExecutePrint = (withFrame) => {
+    if (!selectedReg?.id) return;
+    if (selectedTestIdsForPrint.length === 0) {
+      showToast("Please select at least one test to print", "warning");
+      return;
+    }
+    const testIdsQuery = `&testIds=${selectedTestIdsForPrint.join(",")}`;
+    window.open(`/api/print-report/${selectedReg.id}?withFrame=${withFrame}${testIdsQuery}`, "_blank");
+    setPrintDialogOpen(false);
+  };
 
   // Money Receipt Drawer states
   const [receiptDrawerOpen, setReceiptDrawerOpen] = useState(false);
@@ -1352,35 +1391,148 @@ export default function TestReportPage() {
         handlePrintReport={handlePrintReport}
       />
 
-      {/* --- PRINT OPTION DIALOG --- */}
+      {/* --- PRINT OPTION DIALOG WITH SELECTIVE TEST CHECKMARKS --- */}
       <Dialog
         open={printDialogOpen}
         onClose={() => setPrintDialogOpen(false)}
-        maxWidth="xs"
+        maxWidth="sm"
         fullWidth
         PaperProps={{ sx: { borderRadius: 3, p: 1 } }}
       >
-        <DialogTitle sx={{ fontWeight: 800, pb: 1 }}>
-          🖨️ Select Print Option
+        <DialogTitle sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontWeight: 800, pb: 1 }}>
+          <Typography variant="h6" sx={{ fontWeight: 800 }}>
+            🖨️ Select Print Option
+          </Typography>
+          {selectedReg && (
+            <Chip
+              label={`Reg: ${selectedReg.regNo}`}
+              size="small"
+              color="primary"
+              variant="outlined"
+              sx={{ fontWeight: 700 }}
+            />
+          )}
         </DialogTitle>
         <DialogContent sx={{ pb: 2 }}>
           <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-            Choose whether to overlay the clinical report onto your pre-printed letterhead template or generate it on a blank page.
+            Patient: <strong>{selectedReg?.name}</strong> ({selectedReg?.gender} / {Math.round(selectedReg?.age || 0)} {selectedReg?.ageUnit || "Y"})
           </Typography>
 
-          <Stack spacing={2} sx={{ mt: 1 }}>
+          {/* Selective Test Selection Box */}
+          <Box sx={{ mb: 2.5, p: 1.5, bgcolor: "grey.50", borderRadius: 2, border: "1px solid", borderColor: "grey.200" }}>
+            <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 1, pb: 0.5, borderBottom: "1px solid", borderColor: "grey.200" }}>
+              <FormControlLabel
+                control={
+                  <Checkbox
+                    size="small"
+                    checked={
+                      (selectedReg?.tests || []).length > 0 &&
+                      selectedTestIdsForPrint.length === (selectedReg?.tests || []).length
+                    }
+                    indeterminate={
+                      selectedTestIdsForPrint.length > 0 &&
+                      selectedTestIdsForPrint.length < (selectedReg?.tests || []).length
+                    }
+                    onChange={handleToggleAllTestsForPrint}
+                  />
+                }
+                label={
+                  <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>
+                    Select Tests to Print ({selectedTestIdsForPrint.length}/{(selectedReg?.tests || []).length})
+                  </Typography>
+                }
+              />
+              <Button
+                size="small"
+                variant="text"
+                onClick={handleToggleAllTestsForPrint}
+                sx={{ textTransform: "none", fontSize: "0.78rem", fontWeight: 600 }}
+              >
+                {selectedTestIdsForPrint.length === (selectedReg?.tests || []).length ? "Deselect All" : "Select All"}
+              </Button>
+            </Box>
+
+            {/* Test Checkbox List */}
+            <Stack spacing={1} sx={{ maxHeight: 220, overflowY: "auto", pr: 0.5, mt: 1 }}>
+              {(selectedReg?.tests || []).map((rt, idx) => {
+                const testObj = rt.test || {};
+                const tId = testObj.id || rt.testId;
+                const isChecked = selectedTestIdsForPrint.includes(tId);
+
+                return (
+                  <Paper
+                    key={tId || idx}
+                    variant="outlined"
+                    onClick={() => handleToggleTestForPrint(tId)}
+                    sx={{
+                      p: 1,
+                      px: 1.5,
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "space-between",
+                      cursor: "pointer",
+                      borderRadius: 1.5,
+                      bgcolor: isChecked ? "rgba(15, 118, 110, 0.05)" : "white",
+                      borderColor: isChecked ? "primary.main" : "grey.300",
+                      transition: "all 0.15s ease",
+                      "&:hover": {
+                        bgcolor: isChecked ? "rgba(15, 118, 110, 0.09)" : "grey.100",
+                      }
+                    }}
+                  >
+                    <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                      <Checkbox
+                        size="small"
+                        checked={isChecked}
+                        onChange={() => handleToggleTestForPrint(tId)}
+                        onClick={(e) => e.stopPropagation()}
+                        sx={{ p: 0.5 }}
+                      />
+                      <Typography variant="body2" sx={{ fontWeight: isChecked ? 700 : 500 }}>
+                        {testObj.name || `Test #${tId}`}
+                      </Typography>
+                    </Box>
+
+                    {testObj.department?.name && (
+                      <Chip
+                        label={testObj.department.name}
+                        size="small"
+                        sx={{
+                          height: 20,
+                          fontSize: "0.68rem",
+                          fontWeight: 600,
+                          bgcolor: "rgba(15, 118, 110, 0.08)",
+                          color: "primary.main"
+                        }}
+                      />
+                    )}
+                  </Paper>
+                );
+              })}
+            </Stack>
+
+            {selectedTestIdsForPrint.length === 0 && (
+              <Typography variant="caption" color="error.main" sx={{ display: "block", mt: 1, fontWeight: 600, textAlign: "center" }}>
+                ⚠️ Please select at least one test to print.
+              </Typography>
+            )}
+          </Box>
+
+          <Typography variant="caption" color="text.secondary" sx={{ display: "block", mb: 1.5, fontWeight: 600 }}>
+            Print Layout Format:
+          </Typography>
+
+          <Stack spacing={1.5}>
             {adminSettings.framePdfUrl ? (
               <Button
                 variant="contained"
                 fullWidth
                 color="primary"
-                onClick={() => {
-                  window.open(`/api/print-report/${selectedReg?.id}?withFrame=true`, "_blank");
-                  setPrintDialogOpen(false);
-                }}
+                disabled={selectedTestIdsForPrint.length === 0}
+                onClick={() => handleExecutePrint(true)}
                 sx={{ py: 1.2, fontWeight: 700 }}
               >
-                Print with Letterhead Frame
+                Print with Letterhead Frame ({selectedTestIdsForPrint.length} Test{selectedTestIdsForPrint.length !== 1 ? "s" : ""})
               </Button>
             ) : (
               <Button
@@ -1400,13 +1552,11 @@ export default function TestReportPage() {
             <Button
               variant="outlined"
               fullWidth
-              onClick={() => {
-                window.open(`/api/print-report/${selectedReg?.id}?withFrame=false`, "_blank");
-                setPrintDialogOpen(false);
-              }}
+              disabled={selectedTestIdsForPrint.length === 0}
+              onClick={() => handleExecutePrint(false)}
               sx={{ py: 1.2, fontWeight: 700 }}
             >
-              Print without Letterhead Frame
+              Print without Letterhead Frame ({selectedTestIdsForPrint.length} Test{selectedTestIdsForPrint.length !== 1 ? "s" : ""})
             </Button>
           </Stack>
         </DialogContent>
