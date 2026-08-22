@@ -44,6 +44,7 @@ import {
   CloudOff as CloudOffIcon,
   Drafts as DraftsIcon
 } from "@mui/icons-material";
+import DifferentialHeaderBadge, { validateDifferentialOnSave } from "./DifferentialCountTracker";
 
 // Helper functions for parameter keys and expression evaluation
 const getParamKey = (name) => {
@@ -630,6 +631,15 @@ export default function ResultEntry({ open, onClose, selectedReg, onSaveSuccess,
     if (!resultRegDetails?.id) return;
     if (!canWrite) return;
 
+    // --- Differential Count 100% Validation (Only on Final Save & Complete, not Draft / Auto-save) ---
+    if (!isDraft) {
+      const dlcError = validateDifferentialOnSave(resultTests, resultValues);
+      if (dlcError) {
+        showToast(dlcError, "error");
+        return;
+      }
+    }
+
     if (isDraft) {
       if (isSilent) {
         setAutoSaveStatus("saving");
@@ -1153,25 +1163,42 @@ export default function ResultEntry({ open, onClose, selectedReg, onSaveSuccess,
                                 return computedRows.map(({ param, ref, isHeader, isChild, displaySerial }) => {
                                   if (isHeader) {
                                     return (
-                                      <TableRow key={param.id} sx={{ bgcolor: "rgba(15, 118, 110, 0.06)", borderLeft: "4px solid", borderColor: "primary.main" }}>
+                                      <TableRow
+                                        key={param.id}
+                                        sx={{
+                                          bgcolor: "rgba(15, 118, 110, 0.06)",
+                                          borderLeft: "4px solid",
+                                          borderColor: "primary.main"
+                                        }}
+                                      >
                                         <TableCell sx={{ fontWeight: 800, color: "primary.main", py: 1 }}>
                                           {displaySerial}
                                         </TableCell>
                                         <TableCell colSpan={5} sx={{ fontWeight: 800, color: "primary.main", py: 1 }}>
-                                          <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                                            <Typography variant="subtitle2" sx={{ fontWeight: 800, color: "primary.main" }}>
-                                              {param.name}
-                                            </Typography>
-                                            <Chip
-                                              label="Section Header"
-                                              size="small"
-                                              sx={{
-                                                height: 20,
-                                                fontSize: "0.68rem",
-                                                fontWeight: 700,
-                                                bgcolor: "rgba(15, 118, 110, 0.12)",
-                                                color: "primary.main"
-                                              }}
+                                          <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", pr: 2 }}>
+                                            <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                                              <Typography variant="subtitle2" sx={{ fontWeight: 800, color: "primary.main" }}>
+                                                {param.name}
+                                              </Typography>
+                                              <Chip
+                                                label="Section Header"
+                                                size="small"
+                                                sx={{
+                                                  height: 20,
+                                                  fontSize: "0.68rem",
+                                                  fontWeight: 700,
+                                                  bgcolor: "rgba(15, 118, 110, 0.12)",
+                                                  color: "primary.main"
+                                                }}
+                                              />
+                                            </Box>
+
+                                            {/* Differential Count Total Badge */}
+                                            <DifferentialHeaderBadge
+                                              headerId={param.id}
+                                              headerName={param.name}
+                                              sectionParams={params}
+                                              resultValues={resultValues}
                                             />
                                           </Box>
                                         </TableCell>

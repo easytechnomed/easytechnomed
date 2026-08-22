@@ -21,13 +21,16 @@ import {
   DialogTitle,
   DialogContent,
   DialogActions,
-  Stack
+  Stack,
+  Chip,
+  Tooltip
 } from "@mui/material";
 import {
   Close as CloseIcon,
   Download as DownloadIcon,
   Assignment as AssignmentIcon
 } from "@mui/icons-material";
+import DifferentialHeaderBadge from "./DifferentialCountTracker";
 
 const getReferenceRange = (param, reg) => {
   const isBaby = reg.ageUnit !== "Year" || reg.age < 12;
@@ -200,6 +203,10 @@ export default function ShowResult({ open, onClose, selectedReg }) {
                           let mainCounter = 0;
                           let currentHeaderInfo = null;
                           const headerInfoById = new Map();
+                          const resultValuesMap = (previewData.results || []).reduce((acc, r) => {
+                            acc[r.testParameterId] = r.value;
+                            return acc;
+                          }, {});
 
                           const computedRows = sectionParams.map((param) => {
                             const isHeader = Boolean(param.isHeader);
@@ -251,12 +258,29 @@ export default function ShowResult({ open, onClose, selectedReg }) {
                           return computedRows.map(({ param, isHeader, isChild, displaySerial }, idx) => {
                             if (isHeader) {
                               return (
-                                <TableRow key={`h-${idx}`} sx={{ bgcolor: "rgba(15, 118, 110, 0.06)", borderLeft: "4px solid", borderColor: "primary.main" }}>
+                                <TableRow
+                                  key={`h-${idx}`}
+                                  sx={{
+                                    bgcolor: "rgba(15, 118, 110, 0.06)",
+                                    borderLeft: "4px solid",
+                                    borderColor: "primary.main"
+                                  }}
+                                >
                                   <TableCell sx={{ fontWeight: 800, color: "primary.main", py: 1 }}>
                                     {displaySerial}
                                   </TableCell>
                                   <TableCell colSpan={4} sx={{ fontWeight: 800, color: "primary.main", py: 1 }}>
-                                    {param.name}
+                                    <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", pr: 2 }}>
+                                      <Typography variant="subtitle2" sx={{ fontWeight: 800, color: "primary.main" }}>
+                                        {param.name}
+                                      </Typography>
+                                      <DifferentialHeaderBadge
+                                        headerId={param.id}
+                                        headerName={param.name}
+                                        sectionParams={sectionParams}
+                                        resultValues={resultValuesMap}
+                                      />
+                                    </Box>
                                   </TableCell>
                                 </TableRow>
                               );
