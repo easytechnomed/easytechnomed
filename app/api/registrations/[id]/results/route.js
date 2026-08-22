@@ -9,7 +9,7 @@ export async function POST(req, { params }) {
     const { id } = await params;
     const registrationId = parseInt(id);
     const body = await req.json().catch(() => ({}));
-    const { resultsData = [], reportNotes, isDraft = false, status } = body;
+    const { resultsData = [], reportNotes, status } = body;
 
     if (isNaN(registrationId)) {
       return NextResponse.json({ success: false, error: "Invalid registration ID" }, { status: 400 });
@@ -23,82 +23,74 @@ export async function POST(req, { params }) {
       return NextResponse.json({ success: false, message: "Registration not found or unauthorized." }, { status: 404 });
     }
 
-    let finalStatus = "Completed";
+    const validResults = (resultsData || []).filter(
+      (r) => r && r.testParameterId && !isNaN(parseInt(r.testParameterId)) && parseInt(r.testParameterId) > 0
+    );
 
-    await prisma.$transaction(async (tx) => {
-      // 1. Fetch testParameter configurations and existing patient results
-      const testParamIds = resultsData.map(r => r.testParameterId);
-      const [testParameters, existingPatientResults] = await Promise.all([
-        tx.testParameter.findMany({
-          where: { id: { in: testParamIds } },
-          include: { parameter: true }
-        }),
-        tx.patientResult.findMany({
-          where: { registrationId },
-          select: { id: true, testParameterId: true }
-        })
-      ]);
+    // 1. Fetch test parameter configurations to evaluate thresholds and flags
+    const testParamIds = validResults.map((r) => parseInt(r.testParameterId));
+    const testParameters = await prisma.testParameter.findMany({
+      where: { id: { in: testParamIds } },
+      include: { parameter: true },
+    });
 
-      const resultMap = new Map(existingPatientResults.map(r => [r.testParameterId, r.id]));
-
-      // 2. Perform direct update (by PK ID) or create to prevent MySQL InnoDB gap locks
-      for (const res of resultsData) {
-        const testParam = testParameters.find(tp => tp.id === res.testParameterId);
-        let flag = null;
-        if (testParam && testParam.parameter && res.value !== null && res.value !== undefined && res.value !== "") {
-          const mergedParam = {
-            ...testParam.parameter,
-            valueType: testParam.valueType || testParam.parameter.valueType || "NUMERIC",
-            options: testParam.options || testParam.parameter.options || null,
-          };
-          const thresholds = getRangeAndCriticalThresholds(mergedParam, existing);
-          flag = determineFlag(res.value, thresholds);
-        }
-
-        const existingResultId = resultMap.get(res.testParameterId);
-        if (existingResultId) {
-          await tx.patientResult.update({
-            where: { id: existingResultId },
-            data: {
-              value: String(res.value ?? ""),
-              flag: flag
-            }
-          });
-        } else {
-          const created = await tx.patientResult.create({
-            data: {
-              registrationId,
-              testParameterId: res.testParameterId,
-              value: String(res.value ?? ""),
-              flag: flag
-            }
-          });
-          resultMap.set(res.testParameterId, created.id);
-        }
+    // 2. Prepare batch upsert operations with evaluated flags
+    const operations = validResults.map((res) => {
+      const paramIdInt = parseInt(res.testParameterId);
+      const testParam = testParameters.find((tp) => tp.id === paramIdInt);
+      let flag = null;
+      if (testParam && testParam.parameter && res.value !== null && res.value !== undefined && String(res.value).trim() !== "") {
+        const mergedParam = {
+          ...testParam.parameter,
+          valueType: testParam.valueType || testParam.parameter.valueType || "NUMERIC",
+          options: testParam.options || testParam.parameter.options || null,
+        };
+        const thresholds = getRangeAndCriticalThresholds(mergedParam, existing);
+        flag = determineFlag(res.value, thresholds);
       }
 
-      // 3. Update registration status (keep existing status or "Pending" if draft, else "Completed")
-      finalStatus = isDraft
-        ? (existing.status === "Completed" ? "Completed" : (status || "Pending"))
-        : (status || "Completed");
+      return prisma.patientResult.upsert({
+        where: {
+          registrationId_testParameterId: {
+            registrationId,
+            testParameterId: paramIdInt,
+          },
+        },
+        update: {
+          value: String(res.value ?? ""),
+          flag: flag,
+        },
+        create: {
+          registrationId,
+          testParameterId: paramIdInt,
+          value: String(res.value ?? ""),
+          flag: flag,
+        },
+      });
+    });
 
-      await tx.registration.update({
+    const finalStatus = status || "Completed";
+    operations.push(
+      prisma.registration.update({
         where: { id: registrationId },
         data: {
           remark: reportNotes !== undefined ? (reportNotes || null) : existing.remark,
           status: finalStatus,
         },
-      });
-    }, { maxWait: 20000, timeout: 60000 });
+      })
+    );
 
-    // 4. Run the LIMS formula engine to compute derived values
+    if (operations.length > 0) {
+      await prisma.$transaction(operations);
+    }
+
+    // 3. Run LIMS formula engine to compute derived values
     await runFormulaEngine(registrationId);
 
     return NextResponse.json({
       success: true,
-      isDraft: Boolean(isDraft),
       status: finalStatus,
-      message: isDraft ? "Draft saved successfully." : "Test results saved and completed successfully."
+      message: "Test results saved and completed successfully.",
     });
   } catch (error) {
     console.error("Workspace Registration Results POST Error:", error);

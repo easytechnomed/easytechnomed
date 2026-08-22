@@ -659,18 +659,23 @@ export default function ResultEntry({ open, onClose, selectedReg, onSaveSuccess,
     }
 
     try {
-      const resultsData = Object.keys(resultValues).map((paramId) => ({
-        testParameterId: parseInt(paramId),
-        value: resultValues[paramId]
-      }));
+      const resultsData = Object.keys(resultValues)
+        .filter((paramId) => !isNaN(parseInt(paramId)) && parseInt(paramId) > 0)
+        .map((paramId) => ({
+          testParameterId: parseInt(paramId),
+          value: resultValues[paramId] !== undefined && resultValues[paramId] !== null ? String(resultValues[paramId]) : ""
+        }));
 
-      const res = await fetch(`/api/registrations/${resultRegDetails.id}/results`, {
+      const apiUrl = isDraft
+        ? `/api/registrations/${resultRegDetails.id}/results/draft`
+        : `/api/registrations/${resultRegDetails.id}/results`;
+
+      const res = await fetch(apiUrl, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           resultsData,
           reportNotes,
-          isDraft,
         }),
       }).then((r) => r.json());
 
