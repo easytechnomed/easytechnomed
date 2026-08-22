@@ -98,6 +98,7 @@ export async function GET(req, { params }) {
             include: {
               test: {
                 include: {
+                  department: true,
                   parameters: {
                     where: { isDeleted: false },
                     orderBy: { order: "asc" },
@@ -129,6 +130,7 @@ export async function GET(req, { params }) {
             include: {
               test: {
                 include: {
+                  department: true,
                   parameters: {
                     where: { isDeleted: false },
                     orderBy: { order: "asc" },
@@ -368,46 +370,65 @@ export async function GET(req, { params }) {
       });
     };
 
-    // Initialize first page
-    await addNewPage();
+    // Helper to draw Patient Demographics Box on any page
+    const drawPatientDemographics = (page) => {
+      const topY = pageHeight - headerMargin - 15;
+      const boxHeight = 70;
 
-    // 1. Draw Patient Demographics Box (starts just below header margin)
-    let currentY = pageHeight - headerMargin - 15;
+      page.drawRectangle({
+        x: leftMargin,
+        y: topY - boxHeight,
+        width: contentWidth,
+        height: boxHeight,
+        borderColor: rgb(0.85, 0.88, 0.92), // Slate 200
+        borderWidth: 1,
+        color: rgb(0.97, 0.98, 0.99), // Subtle light blue-grey fill
+      });
 
-    currentPage.drawRectangle({
-      x: leftMargin,
-      y: currentY - 70,
-      width: contentWidth,
-      height: 70,
-      borderColor: rgb(0.85, 0.88, 0.92), // Slate 200
-      borderWidth: 1,
-      color: rgb(0.97, 0.98, 0.99), // Subtle light blue-grey fill
-    });
+      const c1 = leftMargin + 12;
+      const c2 = leftMargin + 270;
 
-    const c1 = leftMargin + 12;
-    const c2 = leftMargin + 270;
+      drawText(page, `Patient Name:`, c1, topY - 20, 9, true);
+      drawText(page, `${reg.title} ${reg.name}`, c1 + 80, topY - 20, 9, false);
 
-    drawText(currentPage, `Patient Name:`, c1, currentY - 20, 9, true);
-    drawText(currentPage, `${reg.title} ${reg.name}`, c1 + 80, currentY - 20, 9, false);
+      drawText(page, `Age / Gender:`, c2, topY - 20, 9, true);
+      drawText(page, `${reg.age.toFixed(2)} ${reg.ageUnit} / ${reg.gender}`, c2 + 80, topY - 20, 9, false);
 
-    drawText(currentPage, `Age / Gender:`, c2, currentY - 20, 9, true);
-    drawText(currentPage, `${reg.age.toFixed(2)} ${reg.ageUnit} / ${reg.gender}`, c2 + 80, currentY - 20, 9, false);
+      drawText(page, `Lab No / ID:`, c1, topY - 40, 9, true);
+      drawText(page, `${reg.labId} (${reg.regNo})`, c1 + 80, topY - 40, 9, false);
 
-    drawText(currentPage, `Lab No / ID:`, c1, currentY - 40, 9, true);
-    drawText(currentPage, `${reg.labId} (${reg.regNo})`, c1 + 80, currentY - 40, 9, false);
+      drawText(page, `Ref. Doctor:`, c1, topY - 60, 9, true);
+      drawText(page, `${reg.refBy?.name || "Self / Walk-in"}`, c1 + 80, topY - 60, 9, false);
 
-    drawText(currentPage, `Ref. Doctor:`, c1, currentY - 60, 9, true);
-    drawText(currentPage, `${reg.refBy?.name || "Self / Walk-in"}`, c1 + 80, currentY - 60, 9, false);
+      drawText(page, `Registered On:`, c2, topY - 40, 9, true);
+      drawText(page, `${formatDate(reg.date)}`, c2 + 80, topY - 40, 9, false);
 
-    drawText(currentPage, `Registered On:`, c2, currentY - 40, 9, true);
-    drawText(currentPage, `${formatDate(reg.date)}`, c2 + 80, currentY - 40, 9, false);
+      drawText(page, `Report Status:`, c2, topY - 60, 9, true);
+      drawText(page, `${reg.status}`, c2 + 80, topY - 60, 9, true, reg.status === "Completed" ? rgb(0.06, 0.46, 0.23) : rgb(0.72, 0.44, 0.05));
 
-    drawText(currentPage, `Report Status:`, c2, currentY - 60, 9, true);
-    drawText(currentPage, `${reg.status}`, c2 + 80, currentY - 60, 9, true, reg.status === "Completed" ? rgb(0.06, 0.46, 0.23) : rgb(0.72, 0.44, 0.05));
+      return topY - boxHeight - 12;
+    };
 
-    currentY = currentY - 95;
+    // Helper to draw Department Header Banner
+    const drawDepartmentHeader = (page, y, departmentName, isContinued = false) => {
+      const barHeight = 20;
+      page.drawRectangle({
+        x: leftMargin,
+        y: y - barHeight,
+        width: contentWidth,
+        height: barHeight,
+        color: rgb(0.06, 0.46, 0.43),
+      });
 
-    // 2. Draw Clinical Parameters Table
+      const titleText = isContinued
+        ? `DEPARTMENT: ${String(departmentName || "GENERAL PATHOLOGY").toUpperCase()} (Continued)`
+        : `DEPARTMENT: ${String(departmentName || "GENERAL PATHOLOGY").toUpperCase()}`;
+
+      drawText(page, titleText, leftMargin + 10, y - 14, 9.5, true, rgb(1, 1, 1));
+      return y - barHeight - 8;
+    };
+
+    // Helper to draw Table Header
     const drawTableHeader = (page, y) => {
       // Table Header Row background bar
       page.drawRectangle({
@@ -431,10 +452,8 @@ export async function GET(req, { params }) {
         color: rgb(0.75, 0.78, 0.82),
       });
 
-      return y - 22;
+      return y - 24;
     };
-
-    let tableActiveY = drawTableHeader(currentPage, currentY);
 
     // Map result values and interpretations for easy access
     const resultsMap = {};
@@ -446,265 +465,323 @@ export async function GET(req, { params }) {
       interpretationsMap[r.testParameterId] = r.interpretation;
     });
 
-    for (const regTest of reg.tests) {
-      const test = regTest.test;
-      const params = test.parameters || [];
+    // Group tests by department
+    const departmentGroups = [];
+    const deptMap = new Map();
 
-      // Test Heading
-      if (tableActiveY < footerMargin + 50) {
-        await addNewPage();
-        tableActiveY = drawTableHeader(currentPage, pageHeight - headerMargin - 15);
+    if (reg.tests && reg.tests.length > 0) {
+      for (const regTest of reg.tests) {
+        const dept = regTest.test?.department;
+        const deptId = dept?.id || "general";
+        const deptName = dept?.name || "General Pathology";
+
+        if (!deptMap.has(deptId)) {
+          const group = {
+            id: deptId,
+            name: deptName,
+            tests: [],
+          };
+          deptMap.set(deptId, group);
+          departmentGroups.push(group);
+        }
+        deptMap.get(deptId).tests.push(regTest);
       }
+    }
 
-      // Draw Test Name group header
-      currentPage.drawRectangle({
-        x: leftMargin,
-        y: tableActiveY - 20,
-        width: contentWidth,
-        height: 18,
-        color: rgb(0.96, 0.97, 0.98),
-      });
-      drawText(currentPage, `${test.name} (${test.code})`, leftMargin + 10, tableActiveY - 13, 9, true, rgb(0.06, 0.46, 0.43));
-      tableActiveY -= 20;
+    let tableActiveY = pageHeight - headerMargin - 15;
 
-      // Group parameters by section
-      const sectionsMap = {};
-      const sectionOrder = [];
-      params.forEach(param => {
-        const sec = param.section || "Default";
-        if (!sectionsMap[sec]) {
-          sectionsMap[sec] = [];
-          sectionOrder.push(sec);
-        }
-        sectionsMap[sec].push(param);
-      });
+    if (departmentGroups.length === 0) {
+      await addNewPage();
+      tableActiveY = drawPatientDemographics(currentPage);
+    }
 
-      for (const secName of sectionOrder) {
-        const sectionParams = sectionsMap[secName];
+    // Render reports grouped by Department, each department starting on a new page
+    for (let dIdx = 0; dIdx < departmentGroups.length; dIdx++) {
+      const deptGroup = departmentGroups[dIdx];
 
-        if (secName !== "Default") {
-          // Check page wrap for section header
-          if (tableActiveY < footerMargin + 35) {
-            await addNewPage();
-            tableActiveY = drawTableHeader(currentPage, pageHeight - headerMargin - 15);
-          }
+      // Each department starts on a new page!
+      await addNewPage();
+      let currentY = drawPatientDemographics(currentPage);
+      currentY = drawDepartmentHeader(currentPage, currentY, deptGroup.name, false);
+      tableActiveY = drawTableHeader(currentPage, currentY);
 
-          // Draw Section Header divider line
-          currentPage.drawLine({
-            start: { x: leftMargin, y: tableActiveY },
-            end: { x: pageWidth - leftMargin, y: tableActiveY },
-            thickness: 0.3,
-            color: rgb(0.9, 0.92, 0.94),
-          });
-          drawText(currentPage, secName.toUpperCase(), leftMargin + 10, tableActiveY - 14, 8, true, rgb(0.3, 0.35, 0.4));
-          tableActiveY -= 18;
+      for (const regTest of deptGroup.tests) {
+        const test = regTest.test;
+        const params = test.parameters || [];
+
+        // Test Heading
+        if (tableActiveY < footerMargin + 50) {
+          await addNewPage();
+          let pageTopY = drawPatientDemographics(currentPage);
+          pageTopY = drawDepartmentHeader(currentPage, pageTopY, deptGroup.name, true);
+          tableActiveY = drawTableHeader(currentPage, pageTopY);
         }
 
-        // ── Build render groups: prefer explicit parentId, fallback to positional ─
-        const renderGroups = [];
-        const hasParentIdData = sectionParams.some(p => p.parentId != null);
+        // Draw Test Name group header
+        currentPage.drawRectangle({
+          x: leftMargin,
+          y: tableActiveY - 20,
+          width: contentWidth,
+          height: 18,
+          color: rgb(0.96, 0.97, 0.98),
+        });
+        drawText(currentPage, `${test.name} (${test.code})`, leftMargin + 10, tableActiveY - 13, 9, true, rgb(0.06, 0.46, 0.43));
+        tableActiveY -= 20;
 
-        if (hasParentIdData) {
-          // ── Explicit parentId grouping ──────────────────────────────────────
-          const childrenByParentId = {};
-          sectionParams.forEach(p => {
-            if (p.parentId != null) {
-              if (!childrenByParentId[p.parentId]) childrenByParentId[p.parentId] = [];
-              childrenByParentId[p.parentId].push(p);
-            }
-          });
-          const childParamIds = new Set(
-            sectionParams.filter(p => p.parentId != null).map(p => p.id)
-          );
-
-          // Walk sectionParams in order; skip child params (they're in their parent's group)
-          for (const p of sectionParams) {
-            if (childParamIds.has(p.id)) continue;
-            const pRef = getReferenceRange(p, reg);
-            const pIsHeader = p.isHeader || (!p.unit && (!pRef?.rangeStr || pRef.rangeStr === "" || pRef.rangeStr === "-NA-"));
-            if (pIsHeader) {
-              renderGroups.push({ type: "group", header: p, children: childrenByParentId[p.id] || [] });
-            } else {
-              // parentId is null AND not a child → true standalone
-              renderGroups.push({ type: "standalone", param: p });
-            }
+        // Group parameters by section
+        const sectionsMap = {};
+        const sectionOrder = [];
+        params.forEach(param => {
+          const sec = param.section || "Default";
+          if (!sectionsMap[sec]) {
+            sectionsMap[sec] = [];
+            sectionOrder.push(sec);
           }
-        } else {
-          // ── Positional grouping (backward compat for old data) ───────────────
-          let gi = 0;
-          while (gi < sectionParams.length) {
-            const p = sectionParams[gi];
-            const pRef = getReferenceRange(p, reg);
-            const pIsHeader = p.isHeader || (!p.unit && (!pRef || !pRef.rangeStr || pRef.rangeStr === "" || pRef.rangeStr === "-NA-"));
-            if (pIsHeader) {
-              const children = [];
-              let ci = gi + 1;
-              while (ci < sectionParams.length) {
-                const cp = sectionParams[ci];
-                const cpRef = getReferenceRange(cp, reg);
-                const cpIsHeader = cp.isHeader || (!cp.unit && (!cpRef || !cpRef.rangeStr || cpRef.rangeStr === "" || cpRef.rangeStr === "-NA-"));
-                if (cpIsHeader) break;
-                children.push(cp);
-                ci++;
-              }
-              renderGroups.push({ type: "group", header: p, children });
-              gi = ci;
-            } else {
-              renderGroups.push({ type: "standalone", param: p });
-              gi++;
-            }
-          }
-        }
-        // ───────────────────────────────────────────────────────────────────────
+          sectionsMap[sec].push(param);
+        });
 
-        // Helper to draw a single data row (value + unit + range)
-        const drawParamRow = async (param, indented, serialNo = "") => {
-          const rawVal = resultsMap[param.id];
-          const val = rawVal ?? "";
-          const flag = flagsMap[param.id];
-          const interpretation = interpretationsMap[param.id];
-          const ref = getReferenceRange(param, reg);
+        for (const secName of sectionOrder) {
+          const sectionParams = sectionsMap[secName];
 
-          // Skip rows with no result
-          if (rawVal === null || rawVal === undefined || val === "" || val === "-") return;
-
-          // Page-wrap check
-          if (tableActiveY < footerMargin + 35) {
-            await addNewPage();
-            tableActiveY = drawTableHeader(currentPage, pageHeight - headerMargin - 15);
-            currentPage.drawRectangle({ x: leftMargin, y: tableActiveY - 20, width: contentWidth, height: 18, color: rgb(0.96, 0.97, 0.98) });
-            drawText(currentPage, `${test.name} (${test.code}) - Continued`, leftMargin + 10, tableActiveY - 13, 9, true, rgb(0.06, 0.46, 0.43));
-            tableActiveY -= 20;
-          }
-
-          currentPage.drawLine({ start: { x: leftMargin, y: tableActiveY }, end: { x: pageWidth - leftMargin, y: tableActiveY }, thickness: 0.3, color: rgb(0.9, 0.92, 0.94) });
-
-          const isAbnormal = flag ? flag !== "Normal" : isOutOfRange(val, ref.min, ref.max, ref.rangeStr);
-          const resultColor = isAbnormal ? rgb(0.85, 0.12, 0.12) : rgb(0.09, 0.12, 0.18);
-
-          let formattedVal = val;
-          const isNumeric = (param.valueType || "NUMERIC") === "NUMERIC";
-          if (val !== "" && isNumeric && /^-?\d+(\.\d+)?$/.test(String(val).trim())) {
-            const num = parseFloat(val);
-            if (!isNaN(num)) formattedVal = num.toFixed(param.decimalPlace ?? 2);
-          }
-
-          let displayVal = formattedVal;
-          if (flag && flag !== "Normal" && val !== "") {
-            const abbrs = { "Low": "L", "High": "H", "Critical Low": "CL*", "Critical High": "CH*", "Borderline Low": "BL", "Borderline High": "BH" };
-            if (abbrs[flag]) displayVal = `${formattedVal} (${abbrs[flag]})`;
-          }
-
-          const displayName = indented ? `  -  ${param.name}` : param.name;
-          const indentX = indented ? 52 : 42;
-
-          if (serialNo) {
-            drawText(currentPage, String(serialNo), leftMargin + 8, tableActiveY - 14, 8.5, !indented, indented ? rgb(0.35, 0.4, 0.45) : rgb(0.09, 0.12, 0.18));
-          }
-          drawText(currentPage, displayName, leftMargin + indentX, tableActiveY - 14, 9, false);
-          drawText(currentPage, displayVal || "-", leftMargin + 215, tableActiveY - 14, 9, isAbnormal, resultColor);
-          drawText(currentPage, param.unit || "-", leftMargin + 310, tableActiveY - 14, 9, false);
-          drawText(currentPage, ref.rangeStr || "", leftMargin + 380, tableActiveY - 14, 9, false);
-          tableActiveY -= 20;
-
-          if (interpretation) {
-            if (tableActiveY < footerMargin + 25) { await addNewPage(); tableActiveY = drawTableHeader(currentPage, pageHeight - headerMargin - 15); }
-            drawText(currentPage, `* Note: ${interpretation}`, leftMargin + (indented ? 55 : 42), tableActiveY - 12, 7.5, false, rgb(0.4, 0.45, 0.5));
-            tableActiveY -= 15;
-          }
-        };
-
-        let mainCounter = 0;
-
-        for (const group of renderGroups) {
-          if (group.type === "standalone") {
-            // Check if standalone has a result before incrementing mainCounter
-            const v = resultsMap[group.param.id];
-            if (v !== null && v !== undefined && v !== "" && v !== "-") {
-              mainCounter++;
-              await drawParamRow(group.param, false, `${mainCounter}`);
-            }
-
-          } else {
-            // Header group — only draw if at least one child has a result
-            const { header, children } = group;
-            const activeChildren = children.filter(c => {
-              const v = resultsMap[c.id];
-              return v !== null && v !== undefined && v !== "" && v !== "-";
-            });
-            if (activeChildren.length === 0) continue;
-
-            mainCounter++;
-            const headerSerial = `${mainCounter}.`;
-
-            // Draw header row
+          if (secName !== "Default") {
+            // Check page wrap for section header
             if (tableActiveY < footerMargin + 35) {
               await addNewPage();
-              tableActiveY = drawTableHeader(currentPage, pageHeight - headerMargin - 15);
+              let pageTopY = drawPatientDemographics(currentPage);
+              pageTopY = drawDepartmentHeader(currentPage, pageTopY, deptGroup.name, true);
+              tableActiveY = drawTableHeader(currentPage, pageTopY);
+            }
+
+            // Draw Section Header divider line
+            currentPage.drawLine({
+              start: { x: leftMargin, y: tableActiveY },
+              end: { x: pageWidth - leftMargin, y: tableActiveY },
+              thickness: 0.3,
+              color: rgb(0.9, 0.92, 0.94),
+            });
+            drawText(currentPage, secName.toUpperCase(), leftMargin + 10, tableActiveY - 14, 8, true, rgb(0.3, 0.35, 0.4));
+            tableActiveY -= 18;
+          }
+
+          // ── Build render groups: prefer explicit parentId, fallback to positional ─
+          const renderGroups = [];
+          const hasParentIdData = sectionParams.some(p => p.parentId != null);
+
+          if (hasParentIdData) {
+            // ── Explicit parentId grouping ──────────────────────────────────────
+            const childrenByParentId = {};
+            sectionParams.forEach(p => {
+              if (p.parentId != null) {
+                if (!childrenByParentId[p.parentId]) childrenByParentId[p.parentId] = [];
+                childrenByParentId[p.parentId].push(p);
+              }
+            });
+            const childParamIds = new Set(
+              sectionParams.filter(p => p.parentId != null).map(p => p.id)
+            );
+
+            // Walk sectionParams in order; skip child params (they're in their parent's group)
+            for (const p of sectionParams) {
+              if (childParamIds.has(p.id)) continue;
+              const pRef = getReferenceRange(p, reg);
+              const pIsHeader = p.isHeader || (!p.unit && (!pRef?.rangeStr || pRef.rangeStr === "" || pRef.rangeStr === "-NA-"));
+              if (pIsHeader) {
+                renderGroups.push({ type: "group", header: p, children: childrenByParentId[p.id] || [] });
+              } else {
+                // parentId is null AND not a child → true standalone
+                renderGroups.push({ type: "standalone", param: p });
+              }
+            }
+          } else {
+            // ── Positional grouping (backward compat for old data) ───────────────
+            let gi = 0;
+            while (gi < sectionParams.length) {
+              const p = sectionParams[gi];
+              const pRef = getReferenceRange(p, reg);
+              const pIsHeader = p.isHeader || (!p.unit && (!pRef || !pRef.rangeStr || pRef.rangeStr === "" || pRef.rangeStr === "-NA-"));
+              if (pIsHeader) {
+                const children = [];
+                let ci = gi + 1;
+                while (ci < sectionParams.length) {
+                  const cp = sectionParams[ci];
+                  const cpRef = getReferenceRange(cp, reg);
+                  const cpIsHeader = cp.isHeader || (!cp.unit && (!cpRef || !cpRef.rangeStr || cpRef.rangeStr === "" || cpRef.rangeStr === "-NA-"));
+                  if (cpIsHeader) break;
+                  children.push(cp);
+                  ci++;
+                }
+                renderGroups.push({ type: "group", header: p, children });
+                gi = ci;
+              } else {
+                renderGroups.push({ type: "standalone", param: p });
+                gi++;
+              }
+            }
+          }
+          // ───────────────────────────────────────────────────────────────────────
+
+          // Helper to draw a single data row (value + unit + range)
+          const drawParamRow = async (param, indented, serialNo = "") => {
+            const rawVal = resultsMap[param.id];
+            const val = rawVal ?? "";
+            const flag = flagsMap[param.id];
+            const interpretation = interpretationsMap[param.id];
+            const ref = getReferenceRange(param, reg);
+
+            // Skip rows with no result
+            if (rawVal === null || rawVal === undefined || val === "" || val === "-") return;
+
+            // Page-wrap check
+            if (tableActiveY < footerMargin + 35) {
+              await addNewPage();
+              let pageTopY = drawPatientDemographics(currentPage);
+              pageTopY = drawDepartmentHeader(currentPage, pageTopY, deptGroup.name, true);
+              tableActiveY = drawTableHeader(currentPage, pageTopY);
               currentPage.drawRectangle({ x: leftMargin, y: tableActiveY - 20, width: contentWidth, height: 18, color: rgb(0.96, 0.97, 0.98) });
               drawText(currentPage, `${test.name} (${test.code}) - Continued`, leftMargin + 10, tableActiveY - 13, 9, true, rgb(0.06, 0.46, 0.43));
               tableActiveY -= 20;
             }
+
             currentPage.drawLine({ start: { x: leftMargin, y: tableActiveY }, end: { x: pageWidth - leftMargin, y: tableActiveY }, thickness: 0.3, color: rgb(0.9, 0.92, 0.94) });
-            drawText(currentPage, headerSerial, leftMargin + 8, tableActiveY - 14, 9, true, rgb(0.06, 0.46, 0.43));
-            drawText(currentPage, header.name, leftMargin + 42, tableActiveY - 14, 9, true, rgb(0.06, 0.46, 0.43));
+
+            const isAbnormal = flag ? flag !== "Normal" : isOutOfRange(val, ref.min, ref.max, ref.rangeStr);
+            const resultColor = isAbnormal ? rgb(0.85, 0.12, 0.12) : rgb(0.09, 0.12, 0.18);
+
+            let formattedVal = val;
+            const isNumeric = (param.valueType || "NUMERIC") === "NUMERIC";
+            if (val !== "" && isNumeric && /^-?\d+(\.\d+)?$/.test(String(val).trim())) {
+              const num = parseFloat(val);
+              if (!isNaN(num)) formattedVal = num.toFixed(param.decimalPlace ?? 2);
+            }
+
+            let displayVal = formattedVal;
+            if (flag && flag !== "Normal" && val !== "") {
+              const abbrs = { "Low": "L", "High": "H", "Critical Low": "CL*", "Critical High": "CH*", "Borderline Low": "BL", "Borderline High": "BH" };
+              if (abbrs[flag]) displayVal = `${formattedVal} (${abbrs[flag]})`;
+            }
+
+            const displayName = indented ? `  -  ${param.name}` : param.name;
+            const indentX = indented ? 52 : 42;
+
+            if (serialNo) {
+              drawText(currentPage, String(serialNo), leftMargin + 8, tableActiveY - 14, 8.5, !indented, indented ? rgb(0.35, 0.4, 0.45) : rgb(0.09, 0.12, 0.18));
+            }
+            drawText(currentPage, displayName, leftMargin + indentX, tableActiveY - 14, 9, false);
+            drawText(currentPage, displayVal || "-", leftMargin + 215, tableActiveY - 14, 9, isAbnormal, resultColor);
+            drawText(currentPage, param.unit || "-", leftMargin + 310, tableActiveY - 14, 9, false);
+            drawText(currentPage, ref.rangeStr || "", leftMargin + 380, tableActiveY - 14, 9, false);
             tableActiveY -= 20;
 
-            // Draw children (indented) with sub-numbering 1.1, 1.2...
-            let childCounter = 0;
-            for (const child of activeChildren) {
-              childCounter++;
-              const childSerial = `${mainCounter}.${childCounter}`;
+            if (interpretation) {
+              if (tableActiveY < footerMargin + 25) {
+                await addNewPage();
+                let pageTopY = drawPatientDemographics(currentPage);
+                pageTopY = drawDepartmentHeader(currentPage, pageTopY, deptGroup.name, true);
+                tableActiveY = drawTableHeader(currentPage, pageTopY);
+              }
+              drawText(currentPage, `* Note: ${interpretation}`, leftMargin + (indented ? 55 : 42), tableActiveY - 12, 7.5, false, rgb(0.4, 0.45, 0.5));
+              tableActiveY -= 15;
+            }
+          };
 
-              // If we're about to page-break inside a group, re-draw the parent header for context
+          let mainCounter = 0;
+
+          for (const group of renderGroups) {
+            if (group.type === "standalone") {
+              // Check if standalone has a result before incrementing mainCounter
+              const v = resultsMap[group.param.id];
+              if (v !== null && v !== undefined && v !== "" && v !== "-") {
+                mainCounter++;
+                await drawParamRow(group.param, false, `${mainCounter}`);
+              }
+
+            } else {
+              // Header group — only draw if at least one child has a result
+              const { header, children } = group;
+              const activeChildren = children.filter(c => {
+                const v = resultsMap[c.id];
+                return v !== null && v !== undefined && v !== "" && v !== "-";
+              });
+              if (activeChildren.length === 0) continue;
+
+              mainCounter++;
+              const headerSerial = `${mainCounter}.`;
+
+              // Draw header row
               if (tableActiveY < footerMargin + 35) {
                 await addNewPage();
-                tableActiveY = drawTableHeader(currentPage, pageHeight - headerMargin - 15);
+                let pageTopY = drawPatientDemographics(currentPage);
+                pageTopY = drawDepartmentHeader(currentPage, pageTopY, deptGroup.name, true);
+                tableActiveY = drawTableHeader(currentPage, pageTopY);
                 currentPage.drawRectangle({ x: leftMargin, y: tableActiveY - 20, width: contentWidth, height: 18, color: rgb(0.96, 0.97, 0.98) });
                 drawText(currentPage, `${test.name} (${test.code}) - Continued`, leftMargin + 10, tableActiveY - 13, 9, true, rgb(0.06, 0.46, 0.43));
                 tableActiveY -= 20;
-                currentPage.drawLine({ start: { x: leftMargin, y: tableActiveY }, end: { x: pageWidth - leftMargin, y: tableActiveY }, thickness: 0.3, color: rgb(0.9, 0.92, 0.94) });
-                drawText(currentPage, headerSerial, leftMargin + 8, tableActiveY - 14, 9, true, rgb(0.06, 0.46, 0.43));
-                drawText(currentPage, `${header.name} (cont.)`, leftMargin + 42, tableActiveY - 14, 9, true, rgb(0.06, 0.46, 0.43));
-                tableActiveY -= 20;
               }
-              await drawParamRow(child, true, childSerial);
+              currentPage.drawLine({ start: { x: leftMargin, y: tableActiveY }, end: { x: pageWidth - leftMargin, y: tableActiveY }, thickness: 0.3, color: rgb(0.9, 0.92, 0.94) });
+              drawText(currentPage, headerSerial, leftMargin + 8, tableActiveY - 14, 9, true, rgb(0.06, 0.46, 0.43));
+              drawText(currentPage, header.name, leftMargin + 42, tableActiveY - 14, 9, true, rgb(0.06, 0.46, 0.43));
+              tableActiveY -= 20;
+
+              // Draw children (indented) with sub-numbering 1.1, 1.2...
+              let childCounter = 0;
+              for (const child of activeChildren) {
+                childCounter++;
+                const childSerial = `${mainCounter}.${childCounter}`;
+
+                // If we're about to page-break inside a group, re-draw the parent header for context
+                if (tableActiveY < footerMargin + 35) {
+                  await addNewPage();
+                  let pageTopY = drawPatientDemographics(currentPage);
+                  pageTopY = drawDepartmentHeader(currentPage, pageTopY, deptGroup.name, true);
+                  tableActiveY = drawTableHeader(currentPage, pageTopY);
+                  currentPage.drawRectangle({ x: leftMargin, y: tableActiveY - 20, width: contentWidth, height: 18, color: rgb(0.96, 0.97, 0.98) });
+                  drawText(currentPage, `${test.name} (${test.code}) - Continued`, leftMargin + 10, tableActiveY - 13, 9, true, rgb(0.06, 0.46, 0.43));
+                  tableActiveY -= 20;
+                  currentPage.drawLine({ start: { x: leftMargin, y: tableActiveY }, end: { x: pageWidth - leftMargin, y: tableActiveY }, thickness: 0.3, color: rgb(0.9, 0.92, 0.94) });
+                  drawText(currentPage, headerSerial, leftMargin + 8, tableActiveY - 14, 9, true, rgb(0.06, 0.46, 0.43));
+                  drawText(currentPage, `${header.name} (cont.)`, leftMargin + 42, tableActiveY - 14, 9, true, rgb(0.06, 0.46, 0.43));
+                  tableActiveY -= 20;
+                }
+                await drawParamRow(child, true, childSerial);
+              }
             }
           }
         }
-      }
 
-      // Draw Test level Clinical Interpretation and Comments
-      if (regTest.interpretation) {
-        if (tableActiveY < footerMargin + 55) {
-          await addNewPage();
-          tableActiveY = drawTableHeader(currentPage, pageHeight - headerMargin - 15);
+        // Draw Test level Clinical Interpretation and Comments
+        if (regTest.interpretation) {
+          if (tableActiveY < footerMargin + 55) {
+            await addNewPage();
+            let pageTopY = drawPatientDemographics(currentPage);
+            pageTopY = drawDepartmentHeader(currentPage, pageTopY, deptGroup.name, true);
+            tableActiveY = drawTableHeader(currentPage, pageTopY);
+          }
+
+          // Draw comment box
+          currentPage.drawRectangle({
+            x: leftMargin,
+            y: tableActiveY - 35,
+            width: contentWidth,
+            height: 30,
+            color: rgb(0.98, 0.98, 0.98),
+            borderColor: rgb(0.9, 0.92, 0.94),
+            borderWidth: 0.5
+          });
+
+          drawText(currentPage, "Clinical Interpretation & Comments:", leftMargin + 10, tableActiveY - 11, 8, true, rgb(0.06, 0.46, 0.43));
+          drawText(currentPage, regTest.interpretation, leftMargin + 10, tableActiveY - 23, 7.5, false, rgb(0.2, 0.25, 0.3));
+          tableActiveY -= 45;
         }
 
-        // Draw comment box
-        currentPage.drawRectangle({
-          x: leftMargin,
-          y: tableActiveY - 35,
-          width: contentWidth,
-          height: 30,
-          color: rgb(0.98, 0.98, 0.98),
-          borderColor: rgb(0.9, 0.92, 0.94),
-          borderWidth: 0.5
-        });
-
-        drawText(currentPage, "Clinical Interpretation & Comments:", leftMargin + 10, tableActiveY - 11, 8, true, rgb(0.06, 0.46, 0.43));
-        drawText(currentPage, regTest.interpretation, leftMargin + 10, tableActiveY - 23, 7.5, false, rgb(0.2, 0.25, 0.3));
-        tableActiveY -= 45;
+        // Bottom spacer after test group
+        tableActiveY -= 10;
       }
-
-      // Bottom spacer after test group
-      tableActiveY -= 10;
     }
 
     // 3. Draw Remarks & Pathologist Signatures
     if (tableActiveY < footerMargin + 120) {
       await addNewPage();
-      tableActiveY = pageHeight - headerMargin - 15;
+      tableActiveY = drawPatientDemographics(currentPage);
     }
 
     // Draw Report Remarks / Notes
@@ -726,7 +803,7 @@ export async function GET(req, { params }) {
     // Double check spacing for signatures
     if (tableActiveY < footerMargin + 80) {
       await addNewPage();
-      tableActiveY = pageHeight - headerMargin - 15;
+      tableActiveY = drawPatientDemographics(currentPage);
     }
 
     // Draw Pathologist Signatures and QR Code
