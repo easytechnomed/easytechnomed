@@ -542,7 +542,7 @@ export async function GET(req, { params }) {
           height: 18,
           color: rgb(0.96, 0.97, 0.98),
         });
-        drawText(currentPage, `${test.name} (${test.code})`, leftMargin + 10, tableActiveY - 13, 9, true, rgb(0.06, 0.46, 0.43));
+        drawText(currentPage, `${test.name}`, leftMargin + 10, tableActiveY - 13, 9, true, rgb(0.06, 0.46, 0.43));
         tableActiveY -= 20;
 
         // Group parameters by section
@@ -655,7 +655,7 @@ export async function GET(req, { params }) {
               pageTopY = drawDepartmentHeader(currentPage, pageTopY, deptGroup.name, true);
               tableActiveY = drawTableHeader(currentPage, pageTopY);
               currentPage.drawRectangle({ x: leftMargin, y: tableActiveY - 20, width: contentWidth, height: 18, color: rgb(0.96, 0.97, 0.98) });
-              drawText(currentPage, `${test.name} (${test.code}) - Continued`, leftMargin + 10, tableActiveY - 13, 9, true, rgb(0.06, 0.46, 0.43));
+              drawText(currentPage, `${test.name} - Continued`, leftMargin + 10, tableActiveY - 13, 9, true, rgb(0.06, 0.46, 0.43));
               tableActiveY -= 20;
             }
 
@@ -731,7 +731,7 @@ export async function GET(req, { params }) {
                 pageTopY = drawDepartmentHeader(currentPage, pageTopY, deptGroup.name, true);
                 tableActiveY = drawTableHeader(currentPage, pageTopY);
                 currentPage.drawRectangle({ x: leftMargin, y: tableActiveY - 20, width: contentWidth, height: 18, color: rgb(0.96, 0.97, 0.98) });
-                drawText(currentPage, `${test.name} (${test.code}) - Continued`, leftMargin + 10, tableActiveY - 13, 9, true, rgb(0.06, 0.46, 0.43));
+                drawText(currentPage, `${test.name} - Continued`, leftMargin + 10, tableActiveY - 13, 9, true, rgb(0.06, 0.46, 0.43));
                 tableActiveY -= 20;
               }
               currentPage.drawLine({ start: { x: leftMargin, y: tableActiveY }, end: { x: pageWidth - leftMargin, y: tableActiveY }, thickness: 0.3, color: rgb(0.9, 0.92, 0.94) });
@@ -752,7 +752,7 @@ export async function GET(req, { params }) {
                   pageTopY = drawDepartmentHeader(currentPage, pageTopY, deptGroup.name, true);
                   tableActiveY = drawTableHeader(currentPage, pageTopY);
                   currentPage.drawRectangle({ x: leftMargin, y: tableActiveY - 20, width: contentWidth, height: 18, color: rgb(0.96, 0.97, 0.98) });
-                  drawText(currentPage, `${test.name} (${test.code}) - Continued`, leftMargin + 10, tableActiveY - 13, 9, true, rgb(0.06, 0.46, 0.43));
+                  drawText(currentPage, `${test.name} - Continued`, leftMargin + 10, tableActiveY - 13, 9, true, rgb(0.06, 0.46, 0.43));
                   tableActiveY -= 20;
                   currentPage.drawLine({ start: { x: leftMargin, y: tableActiveY }, end: { x: pageWidth - leftMargin, y: tableActiveY }, thickness: 0.3, color: rgb(0.9, 0.92, 0.94) });
                   drawText(currentPage, headerSerial, leftMargin + 8, tableActiveY - 14, 9, true, rgb(0.06, 0.46, 0.43));

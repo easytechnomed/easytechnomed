@@ -57,6 +57,7 @@ export async function GET(req, { params }) {
           include: {
             test: {
               include: {
+                department: true,
                 parameters: {
                   where: { isDeleted: false },
                   orderBy: { order: "asc" },

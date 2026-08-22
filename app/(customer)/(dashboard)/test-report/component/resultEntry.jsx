@@ -38,7 +38,11 @@ import {
   Delete as DeleteIcon,
   Warning as WarningIcon,
   Calculate as CalculateIcon,
-  Print as PrintIcon
+  Print as PrintIcon,
+  CloudDone as CloudDoneIcon,
+  CloudQueue as CloudQueueIcon,
+  CloudOff as CloudOffIcon,
+  Drafts as DraftsIcon
 } from "@mui/icons-material";
 
 // Helper functions for parameter keys and expression evaluation
@@ -505,7 +509,15 @@ export default function ResultEntry({ open, onClose, selectedReg, onSaveSuccess,
   const [manualOverrides, setManualOverrides] = useState(new Set());
   const [reportNotes, setReportNotes] = useState("");
   const [resultSaving, setResultSaving] = useState(false);
+  const [isDraftSaving, setIsDraftSaving] = useState(false);
   const [isSaved, setIsSaved] = useState(false);
+  const [selectedDepartment, setSelectedDepartment] = useState("all");
+
+  // Auto-Save States (Always ON like Google Forms)
+  const [autoSaveStatus, setAutoSaveStatus] = useState("idle"); // "idle" | "saving" | "saved" | "unsaved" | "error"
+  const [lastSavedTime, setLastSavedTime] = useState("");
+  const debounceTimerRef = React.useRef(null);
+  const isInitialLoadRef = React.useRef(true);
 
   // Configurator States
   const [configDialogOpen, setConfigDialogOpen] = useState(false);
@@ -518,6 +530,40 @@ export default function ResultEntry({ open, onClose, selectedReg, onSaveSuccess,
   const showToast = (message, severity = "success") => {
     setToast({ open: true, message, severity });
   };
+
+  const availableDepartments = React.useMemo(() => {
+    const map = new Map();
+    resultTests.forEach((t) => {
+      const deptName = t.department?.name || "General Pathology";
+      const deptId = t.department?.id ? String(t.department.id) : (t.departmentId ? String(t.departmentId) : deptName);
+      if (!map.has(deptId)) {
+        map.set(deptId, { id: deptId, name: deptName });
+      }
+    });
+
+    const getPriority = (name) => {
+      const norm = String(name || "").toUpperCase().trim();
+      if (norm.includes("HAEMATOLOGY") || norm.includes("HEMATOLOGY")) return 1;
+      if (norm.includes("BIOCHEMISTRY")) return 2;
+      return 3;
+    };
+
+    return Array.from(map.values()).sort((a, b) => {
+      const pA = getPriority(a.name);
+      const pB = getPriority(b.name);
+      if (pA !== pB) return pA - pB;
+      return a.name.localeCompare(b.name);
+    });
+  }, [resultTests]);
+
+  const filteredTests = React.useMemo(() => {
+    if (selectedDepartment === "all") return resultTests;
+    return resultTests.filter((t) => {
+      const deptName = t.department?.name || "General Pathology";
+      const deptId = t.department?.id ? String(t.department.id) : (t.departmentId ? String(t.departmentId) : deptName);
+      return deptId === selectedDepartment || deptName === selectedDepartment;
+    });
+  }, [resultTests, selectedDepartment]);
 
   const loadParameters = async () => {
     setLoading(true);
@@ -555,6 +601,7 @@ export default function ResultEntry({ open, onClose, selectedReg, onSaveSuccess,
         setResultValues(values);
         setManualOverrides(overrides);
         setReportNotes(res.registration.remark || "");
+        setAutoSaveStatus("idle");
       } else {
         showToast(res.message || "Failed to load parameters", "error");
       }
@@ -568,11 +615,111 @@ export default function ResultEntry({ open, onClose, selectedReg, onSaveSuccess,
   useEffect(() => {
     if (open && selectedReg) {
       setIsSaved(false);
+      setSelectedDepartment("all");
+      setAutoSaveStatus("idle");
+      setLastSavedTime("");
+      isInitialLoadRef.current = true;
       // eslint-disable-next-line react-hooks/set-state-in-effect
       loadParameters();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, selectedReg]);
+
+  // General save API for both manual and background auto-save
+  const saveResultsApi = async (isDraft = true, isSilent = false) => {
+    if (!resultRegDetails?.id) return;
+    if (!canWrite) return;
+
+    if (isDraft) {
+      if (isSilent) {
+        setAutoSaveStatus("saving");
+      } else {
+        setIsDraftSaving(true);
+      }
+    } else {
+      setResultSaving(true);
+    }
+
+    try {
+      const resultsData = Object.keys(resultValues).map((paramId) => ({
+        testParameterId: parseInt(paramId),
+        value: resultValues[paramId]
+      }));
+
+      const res = await fetch(`/api/registrations/${resultRegDetails.id}/results`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          resultsData,
+          reportNotes,
+          isDraft,
+        }),
+      }).then((r) => r.json());
+
+      if (res.success) {
+        const now = new Date();
+        const timeStr = now.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" });
+        setLastSavedTime(timeStr);
+        setAutoSaveStatus("saved");
+
+        if (!isDraft) {
+          showToast(res.message || "Results saved and completed successfully", "success");
+          setIsSaved(true);
+          if (onSaveSuccess) onSaveSuccess();
+        } else if (!isSilent) {
+          showToast("Draft saved successfully", "success");
+          if (onSaveSuccess) onSaveSuccess();
+        }
+      } else {
+        if (isSilent) {
+          setAutoSaveStatus("error");
+        } else {
+          showToast(res.message || "Failed to save results", "error");
+        }
+      }
+    } catch (err) {
+      console.error("Save results error:", err);
+      if (isSilent) {
+        setAutoSaveStatus("error");
+      } else {
+        showToast(err.message || "Failed to save results", "error");
+      }
+    } finally {
+      setIsDraftSaving(false);
+      setResultSaving(false);
+    }
+  };
+
+  // Debounced Auto-save (Always ON like Google Forms)
+  useEffect(() => {
+    if (loading) {
+      isInitialLoadRef.current = true;
+      return;
+    }
+
+    if (isInitialLoadRef.current) {
+      isInitialLoadRef.current = false;
+      return;
+    }
+
+    if (!canWrite || !open || !resultRegDetails?.id) return;
+
+    setAutoSaveStatus("unsaved");
+
+    if (debounceTimerRef.current) {
+      clearTimeout(debounceTimerRef.current);
+    }
+
+    debounceTimerRef.current = setTimeout(() => {
+      saveResultsApi(true, true);
+    }, 1200);
+
+    return () => {
+      if (debounceTimerRef.current) {
+        clearTimeout(debounceTimerRef.current);
+      }
+    };
+  }, [resultValues, reportNotes]);
 
   const handleResultValueChange = (paramId, val, triggerCalc = false) => {
     const newOverrides = new Set(manualOverrides);
@@ -622,34 +769,6 @@ export default function ResultEntry({ open, onClose, selectedReg, onSaveSuccess,
           remarks.focus();
         }
       }
-    }
-  };
-
-  const handleSaveResults = async () => {
-    setResultSaving(true);
-    try {
-      const resultsData = Object.keys(resultValues).map((paramId) => ({
-        testParameterId: parseInt(paramId),
-        value: resultValues[paramId]
-      }));
-
-      const res = await fetch(`/api/registrations/${resultRegDetails.id}/results`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ resultsData, reportNotes }),
-      }).then((r) => r.json());
-
-      if (res.success) {
-        showToast(res.message || "Results saved successfully", "success");
-        setIsSaved(true);
-        if (onSaveSuccess) onSaveSuccess();
-      } else {
-        showToast(res.message, "error");
-      }
-    } catch (err) {
-      showToast(err.message || "Failed to save results", "error");
-    } finally {
-      setResultSaving(false);
     }
   };
 
@@ -758,9 +877,56 @@ export default function ResultEntry({ open, onClose, selectedReg, onSaveSuccess,
         PaperProps={{ sx: { borderRadius: 2 } }}
       >
         <DialogTitle sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", bgcolor: "primary.main", color: "primary.contrastText", py: 1.5 }}>
-          <Typography variant="subtitle1" sx={{ fontWeight: 800 }}>
-            🧪 Test Result of Patient : {resultRegDetails ? `${resultRegDetails.name} / Age: ${resultRegDetails.age.toFixed(2)} ${resultRegDetails.ageUnit} / ${resultRegDetails.gender} / Reg No: ${resultRegDetails.regNo}` : "Loading..."}
-          </Typography>
+          <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, flexWrap: "wrap" }}>
+            <Typography variant="subtitle1" sx={{ fontWeight: 800 }}>
+              🧪 Test Result of Patient : {resultRegDetails ? `${resultRegDetails.name} / Age: ${resultRegDetails.age.toFixed(2)} ${resultRegDetails.ageUnit} / ${resultRegDetails.gender} / Reg No: ${resultRegDetails.regNo}` : "Loading..."}
+            </Typography>
+
+            {/* Auto-Save Google Form Style Status Badge */}
+            <Box sx={{ display: "flex", alignItems: "center", gap: 0.6, bgcolor: "rgba(255,255,255,0.18)", px: 1, py: 0.3, borderRadius: 1 }}>
+              {autoSaveStatus === "saving" && (
+                <>
+                  <CircularProgress size={12} sx={{ color: "white" }} />
+                  <Typography variant="caption" sx={{ color: "white", fontWeight: 700, fontSize: "0.72rem" }}>
+                    Saving draft...
+                  </Typography>
+                </>
+              )}
+              {autoSaveStatus === "saved" && (
+                <>
+                  <CloudDoneIcon sx={{ fontSize: 15, color: "#86efac" }} />
+                  <Typography variant="caption" sx={{ color: "white", fontWeight: 700, fontSize: "0.72rem" }}>
+                    {lastSavedTime ? `Draft saved (${lastSavedTime})` : "All changes saved in draft"}
+                  </Typography>
+                </>
+              )}
+              {autoSaveStatus === "unsaved" && (
+                <>
+                  <CloudQueueIcon sx={{ fontSize: 15, color: "#fef08a" }} />
+                  <Typography variant="caption" sx={{ color: "white", fontWeight: 700, fontSize: "0.72rem" }}>
+                    Saving changes...
+                  </Typography>
+                </>
+              )}
+              {autoSaveStatus === "error" && (
+                <>
+                  <CloudOffIcon sx={{ fontSize: 15, color: "#fca5a5" }} />
+                  <Typography variant="caption" sx={{ color: "#fca5a5", fontWeight: 700, fontSize: "0.72rem" }}>
+                    Auto-save offline
+                  </Typography>
+                </>
+              )}
+              {autoSaveStatus === "idle" && (
+                <>
+                  <CloudDoneIcon sx={{ fontSize: 15, color: "#86efac" }} />
+                  <Typography variant="caption" sx={{ color: "white", fontWeight: 700, fontSize: "0.72rem" }}>
+                    Auto-save is ON
+                  </Typography>
+                </>
+              )}
+            </Box>
+          </Box>
+
           <IconButton onClick={onClose} size="small" sx={{ color: "primary.contrastText" }}>
             <CloseIcon />
           </IconButton>
@@ -773,329 +939,418 @@ export default function ResultEntry({ open, onClose, selectedReg, onSaveSuccess,
           ) : resultRegDetails ? (
             <>
               {/* Header info */}
-              <Box sx={{ mb: 3, p: 2, bgcolor: "grey.50", borderRadius: 1 }}>
-                <Grid container spacing={2}>
-                  <Grid item xs={3}>
+              <Box sx={{ mb: 2.5, p: 2, bgcolor: "grey.50", borderRadius: 1.5, border: "1px solid", borderColor: "grey.200" }}>
+                <Grid container spacing={2} alignItems="center">
+                  <Grid item xs={12} sm={3}>
                     <Typography variant="caption" color="text.secondary">Barcode</Typography>
                     <Typography variant="body2" sx={{ fontWeight: 700 }}>{resultRegDetails.barcode?.replace(/^,\s*/, "") || "-"}</Typography>
                   </Grid>
-                  <Grid item xs={3}>
+                  <Grid item xs={12} sm={3}>
                     <Typography variant="caption" color="text.secondary">Mobile No</Typography>
                     <Typography variant="body2" sx={{ fontWeight: 700 }}>{resultRegDetails.mobileNo}</Typography>
                   </Grid>
-                  <Grid item xs={3}>
-                    <Typography variant="caption" color="text.secondary">Department</Typography>
-                    <Typography variant="body2" sx={{ fontWeight: 700 }}>All Departments</Typography>
+                  <Grid item xs={12} sm={3}>
+                    <Typography variant="caption" color="text.secondary">Filter by Department</Typography>
+                    <TextField
+                      select
+                      size="small"
+                      fullWidth
+                      value={selectedDepartment}
+                      onChange={(e) => setSelectedDepartment(e.target.value)}
+                      sx={{
+                        bgcolor: "white",
+                        mt: 0.3,
+                        "& .MuiSelect-select": { py: 0.5, fontSize: "0.85rem", fontWeight: 700 }
+                      }}
+                    >
+                      <MenuItem value="all">
+                        <em>All Departments ({resultTests.length})</em>
+                      </MenuItem>
+                      {availableDepartments.map((dept) => {
+                        const count = resultTests.filter(t => {
+                          const dName = t.department?.name || "General Pathology";
+                          const dId = t.department?.id ? String(t.department.id) : (t.departmentId ? String(t.departmentId) : dName);
+                          return dId === dept.id || dName === dept.name;
+                        }).length;
+                        return (
+                          <MenuItem key={dept.id} value={dept.id}>
+                            {dept.name} ({count})
+                          </MenuItem>
+                        );
+                      })}
+                    </TextField>
                   </Grid>
-                  <Grid item xs={3}>
+                  <Grid item xs={12} sm={3}>
                     <Typography variant="caption" color="text.secondary">Referred By</Typography>
-                    <Typography variant="body2" sx={{ fontWeight: 700 }}>Self</Typography>
+                    <Typography variant="body2" sx={{ fontWeight: 700 }}>{resultRegDetails.refBy?.name || "Self"}</Typography>
                   </Grid>
                 </Grid>
               </Box>
 
-              {/* Loop through each test and render its parameters */}
-              {resultTests.map((test) => {
-                const params = test.parameters || [];
-                return (
-                  <Box key={test.id} sx={{ mb: 4 }}>
-                    <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 1, px: 1 }}>
-                      <Typography variant="subtitle2" sx={{ fontWeight: 800, color: "primary.main", borderLeft: "4px solid", pl: 1, borderColor: "primary.main" }}>
-                        {test.name} ({test.code})
-                      </Typography>
-                      <Button
+              {/* Quick Department Filter Chips */}
+              {/* {availableDepartments.length > 1 && (
+                <Box sx={{ display: "flex", gap: 1, mb: 2.5, flexWrap: "wrap", alignItems: "center" }}>
+                  <Typography variant="caption" sx={{ fontWeight: 700, color: "text.secondary", mr: 0.5 }}>
+                    Department:
+                  </Typography>
+                  <Chip
+                    label={`All (${resultTests.length})`}
+                    size="small"
+                    clickable
+                    color={selectedDepartment === "all" ? "primary" : "default"}
+                    variant={selectedDepartment === "all" ? "filled" : "outlined"}
+                    onClick={() => setSelectedDepartment("all")}
+                    sx={{ fontWeight: selectedDepartment === "all" ? 700 : 500 }}
+                  />
+                  {availableDepartments.map((dept) => {
+                    const isSelected = selectedDepartment === dept.id;
+                    const count = resultTests.filter(t => {
+                      const dName = t.department?.name || "General Pathology";
+                      const dId = t.department?.id ? String(t.department.id) : (t.departmentId ? String(t.departmentId) : dName);
+                      return dId === dept.id || dName === dept.name;
+                    }).length;
+                    return (
+                      <Chip
+                        key={dept.id}
+                        label={`${dept.name} (${count})`}
                         size="small"
-                        variant="outlined"
-                        startIcon={<SettingsIcon />}
-                        onClick={() => handleOpenConfigurator(test)}
-                        sx={{ textTransform: "none", py: 0.3 }}
-                      >
-                        Configure Parameters
-                      </Button>
-                    </Box>
-                    <Divider sx={{ mb: 1.5 }} />
+                        clickable
+                        color={isSelected ? "primary" : "default"}
+                        variant={isSelected ? "filled" : "outlined"}
+                        onClick={() => setSelectedDepartment(dept.id)}
+                        sx={{ fontWeight: isSelected ? 700 : 500 }}
+                      />
+                    );
+                  })}
+                </Box>
+              )} */}
 
-                    {params.length === 0 ? (
-                      <Box sx={{ p: 3, border: "1px dashed", borderColor: "grey.300", borderRadius: 1, textAlign: "center" }}>
-                        <Typography variant="body2" color="text.secondary" sx={{ mb: 1.5 }}>
-                          No parameters configured for this test yet.
-                        </Typography>
-                        <Button size="small" variant="contained" onClick={() => handleOpenConfigurator(test)}>
-                          Add/Configure Parameters
+              {/* Loop through filtered tests and render their parameters */}
+              {filteredTests.length === 0 ? (
+                <Box sx={{ p: 4, textAlign: "center", bgcolor: "grey.50", borderRadius: 2, border: "1px dashed", borderColor: "grey.300" }}>
+                  <Typography variant="body2" color="text.secondary">
+                    No tests found for the selected department.
+                  </Typography>
+                </Box>
+              ) : (
+                filteredTests.map((test) => {
+                  const params = test.parameters || [];
+                  const testDeptName = test.department?.name || (test.departmentId ? `Dept #${test.departmentId}` : null);
+                  return (
+                    <Box key={test.id} sx={{ mb: 4 }}>
+                      <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 1, px: 1 }}>
+                        <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                          <Typography variant="subtitle2" sx={{ fontWeight: 800, color: "primary.main", borderLeft: "4px solid", pl: 1, borderColor: "primary.main" }}>
+                            {test.name} ({test.code})
+                          </Typography>
+                          {testDeptName && (
+                            <Chip
+                              label={testDeptName}
+                              size="small"
+                              sx={{
+                                height: 20,
+                                fontSize: "0.7rem",
+                                fontWeight: 700,
+                                bgcolor: "rgba(15, 118, 110, 0.08)",
+                                color: "primary.main",
+                                border: "1px solid rgba(15, 118, 110, 0.2)"
+                              }}
+                            />
+                          )}
+                        </Box>
+                        <Button
+                          size="small"
+                          variant="outlined"
+                          startIcon={<SettingsIcon />}
+                          onClick={() => handleOpenConfigurator(test)}
+                          sx={{ textTransform: "none", py: 0.3 }}
+                        >
+                          Configure Parameters
                         </Button>
                       </Box>
-                    ) : (
-                      <TableContainer component={Paper} variant="outlined" sx={{ mb: 2 }}>
-                        <Table size="small">
-                          <TableHead sx={{ bgcolor: "grey.100" }}>
-                            <TableRow>
-                              <TableCell sx={{ fontWeight: 700, width: 60 }}>S/No</TableCell>
-                              <TableCell sx={{ fontWeight: 700 }}>Test Parameter</TableCell>
-                              <TableCell sx={{ fontWeight: 700 }}>Normal Value</TableCell>
-                              <TableCell sx={{ fontWeight: 700 }}>Unit</TableCell>
-                              <TableCell sx={{ fontWeight: 700, width: 250 }}>Result</TableCell>
-                              <TableCell sx={{ fontWeight: 700, width: 80 }}>Order</TableCell>
-                            </TableRow>
-                          </TableHead>
-                          <TableBody>
-                            {(() => {
-                              let mainCounter = 0;
-                              let currentHeaderInfo = null;
-                              const headerInfoById = new Map();
+                      <Divider sx={{ mb: 1.5 }} />
 
-                              const computedRows = params.map((param) => {
-                                const ref = getReferenceRange(param, resultRegDetails);
-                                const isHeader = Boolean(param.isHeader) || (param.isHeader === undefined && !param.unit && (!ref || !ref.rangeStr || ref.rangeStr === "" || ref.rangeStr === "-NA-"));
+                      {params.length === 0 ? (
+                        <Box sx={{ p: 3, border: "1px dashed", borderColor: "grey.300", borderRadius: 1, textAlign: "center" }}>
+                          <Typography variant="body2" color="text.secondary" sx={{ mb: 1.5 }}>
+                            No parameters configured for this test yet.
+                          </Typography>
+                          <Button size="small" variant="contained" onClick={() => handleOpenConfigurator(test)}>
+                            Add/Configure Parameters
+                          </Button>
+                        </Box>
+                      ) : (
+                        <TableContainer component={Paper} variant="outlined" sx={{ mb: 2 }}>
+                          <Table size="small">
+                            <TableHead sx={{ bgcolor: "grey.100" }}>
+                              <TableRow>
+                                <TableCell sx={{ fontWeight: 700, width: 60 }}>S/No</TableCell>
+                                <TableCell sx={{ fontWeight: 700 }}>Test Parameter</TableCell>
+                                <TableCell sx={{ fontWeight: 700 }}>Normal Value</TableCell>
+                                <TableCell sx={{ fontWeight: 700 }}>Unit</TableCell>
+                                <TableCell sx={{ fontWeight: 700, width: 250 }}>Result</TableCell>
+                                <TableCell sx={{ fontWeight: 700, width: 80 }}>Order</TableCell>
+                              </TableRow>
+                            </TableHead>
+                            <TableBody>
+                              {(() => {
+                                let mainCounter = 0;
+                                let currentHeaderInfo = null;
+                                const headerInfoById = new Map();
 
-                                if (isHeader) {
-                                  mainCounter++;
-                                  const headerInfo = {
-                                    mainNumber: mainCounter,
-                                    name: param.name,
-                                    childCounter: 0
-                                  };
-                                  headerInfoById.set(param.id, headerInfo);
-                                  currentHeaderInfo = headerInfo;
-                                  return {
-                                    param,
-                                    ref,
-                                    isHeader: true,
-                                    isChild: false,
-                                    displaySerial: `${mainCounter}.`
-                                  };
-                                }
+                                const computedRows = params.map((param) => {
+                                  const ref = getReferenceRange(param, resultRegDetails);
+                                  const isHeader = Boolean(param.isHeader) || (param.isHeader === undefined && !param.unit && (!ref || !ref.rangeStr || ref.rangeStr === "" || ref.rangeStr === "-NA-"));
 
-                                // Check if this parameter is a child
-                                let parentInfo = null;
-                                if (param.parentId != null && headerInfoById.has(param.parentId)) {
-                                  parentInfo = headerInfoById.get(param.parentId);
-                                } else if (param.parentId === undefined && currentHeaderInfo != null) {
-                                  parentInfo = currentHeaderInfo;
-                                }
+                                  if (isHeader) {
+                                    mainCounter++;
+                                    const headerInfo = {
+                                      mainNumber: mainCounter,
+                                      name: param.name,
+                                      childCounter: 0
+                                    };
+                                    headerInfoById.set(param.id, headerInfo);
+                                    currentHeaderInfo = headerInfo;
+                                    return {
+                                      param,
+                                      ref,
+                                      isHeader: true,
+                                      isChild: false,
+                                      displaySerial: `${mainCounter}.`
+                                    };
+                                  }
 
-                                if (parentInfo) {
-                                  parentInfo.childCounter++;
-                                  return {
-                                    param,
-                                    ref,
-                                    isHeader: false,
-                                    isChild: true,
-                                    displaySerial: `${parentInfo.mainNumber}.${parentInfo.childCounter}`
-                                  };
-                                } else {
-                                  mainCounter++;
-                                  currentHeaderInfo = null;
-                                  return {
-                                    param,
-                                    ref,
-                                    isHeader: false,
-                                    isChild: false,
-                                    displaySerial: `${mainCounter}`
-                                  };
-                                }
-                              });
+                                  // Check if this parameter is a child
+                                  let parentInfo = null;
+                                  if (param.parentId != null && headerInfoById.has(param.parentId)) {
+                                    parentInfo = headerInfoById.get(param.parentId);
+                                  } else if (param.parentId === undefined && currentHeaderInfo != null) {
+                                    parentInfo = currentHeaderInfo;
+                                  }
 
-                              return computedRows.map(({ param, ref, isHeader, isChild, displaySerial }) => {
-                                if (isHeader) {
-                                  return (
-                                    <TableRow key={param.id} sx={{ bgcolor: "rgba(15, 118, 110, 0.06)", borderLeft: "4px solid", borderColor: "primary.main" }}>
-                                      <TableCell sx={{ fontWeight: 800, color: "primary.main", py: 1 }}>
-                                        {displaySerial}
-                                      </TableCell>
-                                      <TableCell colSpan={5} sx={{ fontWeight: 800, color: "primary.main", py: 1 }}>
-                                        <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                                          <Typography variant="subtitle2" sx={{ fontWeight: 800, color: "primary.main" }}>
-                                            {param.name}
-                                          </Typography>
-                                          <Chip
-                                            label="Section Header"
-                                            size="small"
-                                            sx={{
-                                              height: 20,
-                                              fontSize: "0.68rem",
-                                              fontWeight: 700,
-                                              bgcolor: "rgba(15, 118, 110, 0.12)",
-                                              color: "primary.main"
-                                            }}
-                                          />
-                                        </Box>
-                                      </TableCell>
-                                    </TableRow>
-                                  );
-                                }
+                                  if (parentInfo) {
+                                    parentInfo.childCounter++;
+                                    return {
+                                      param,
+                                      ref,
+                                      isHeader: false,
+                                      isChild: true,
+                                      displaySerial: `${parentInfo.mainNumber}.${parentInfo.childCounter}`
+                                    };
+                                  } else {
+                                    mainCounter++;
+                                    currentHeaderInfo = null;
+                                    return {
+                                      param,
+                                      ref,
+                                      isHeader: false,
+                                      isChild: false,
+                                      displaySerial: `${mainCounter}`
+                                    };
+                                  }
+                                });
 
-                                const val = resultValues[param.id] || "";
-                                const isAbnormal = isOutOfRange(val, ref.min, ref.max, param, ref.rangeStr);
+                                return computedRows.map(({ param, ref, isHeader, isChild, displaySerial }) => {
+                                  if (isHeader) {
+                                    return (
+                                      <TableRow key={param.id} sx={{ bgcolor: "rgba(15, 118, 110, 0.06)", borderLeft: "4px solid", borderColor: "primary.main" }}>
+                                        <TableCell sx={{ fontWeight: 800, color: "primary.main", py: 1 }}>
+                                          {displaySerial}
+                                        </TableCell>
+                                        <TableCell colSpan={5} sx={{ fontWeight: 800, color: "primary.main", py: 1 }}>
+                                          <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                                            <Typography variant="subtitle2" sx={{ fontWeight: 800, color: "primary.main" }}>
+                                              {param.name}
+                                            </Typography>
+                                            <Chip
+                                              label="Section Header"
+                                              size="small"
+                                              sx={{
+                                                height: 20,
+                                                fontSize: "0.68rem",
+                                                fontWeight: 700,
+                                                bgcolor: "rgba(15, 118, 110, 0.12)",
+                                                color: "primary.main"
+                                              }}
+                                            />
+                                          </Box>
+                                        </TableCell>
+                                      </TableRow>
+                                    );
+                                  }
 
-                                const normalValLower = (ref.rangeStr || "").toLowerCase();
-                                const isParamOptionType = param.valueType === "OPTIONS";
-                                const isParamTextType = param.valueType === "TEXT";
+                                  const val = resultValues[param.id] || "";
+                                  const isAbnormal = isOutOfRange(val, ref.min, ref.max, param, ref.rangeStr);
 
-                                let dropdownOptions = [];
-                                if (param.options) {
-                                  dropdownOptions = param.options
-                                    .split(",")
-                                    .map(o => o.trim())
-                                    .filter(Boolean);
-                                } else if (isParamOptionType) {
-                                  if (normalValLower.includes("reactive")) {
+                                  const normalValLower = (ref.rangeStr || "").toLowerCase();
+                                  const isParamOptionType = param.valueType === "OPTIONS";
+                                  const isParamTextType = param.valueType === "TEXT";
+
+                                  let dropdownOptions = [];
+                                  if (param.options) {
+                                    dropdownOptions = param.options
+                                      .split(",")
+                                      .map(o => o.trim())
+                                      .filter(Boolean);
+                                  } else if (isParamOptionType) {
+                                    if (normalValLower.includes("reactive")) {
+                                      dropdownOptions = ["Non-Reactive", "Reactive"];
+                                    } else if (normalValLower.includes("absent") || normalValLower.includes("present")) {
+                                      dropdownOptions = ["Absent", "Present"];
+                                    } else if (normalValLower.includes("detected")) {
+                                      dropdownOptions = ["Not Detected", "Detected"];
+                                    } else {
+                                      dropdownOptions = ["Negative", "Positive"];
+                                    }
+                                  } else if (normalValLower.includes("negative") || normalValLower.includes("positive")) {
+                                    dropdownOptions = ["Negative", "Positive"];
+                                  } else if (normalValLower.includes("reactive")) {
                                     dropdownOptions = ["Non-Reactive", "Reactive"];
                                   } else if (normalValLower.includes("absent") || normalValLower.includes("present")) {
                                     dropdownOptions = ["Absent", "Present"];
-                                  } else if (normalValLower.includes("detected")) {
-                                    dropdownOptions = ["Not Detected", "Detected"];
-                                  } else {
-                                    dropdownOptions = ["Negative", "Positive"];
                                   }
-                                } else if (normalValLower.includes("negative") || normalValLower.includes("positive")) {
-                                  dropdownOptions = ["Negative", "Positive"];
-                                } else if (normalValLower.includes("reactive")) {
-                                  dropdownOptions = ["Non-Reactive", "Reactive"];
-                                } else if (normalValLower.includes("absent") || normalValLower.includes("present")) {
-                                  dropdownOptions = ["Absent", "Present"];
-                                }
 
-                                if (val && !dropdownOptions.includes(val) && dropdownOptions.length > 0) {
-                                  dropdownOptions.push(val);
-                                }
+                                  if (val && !dropdownOptions.includes(val) && dropdownOptions.length > 0) {
+                                    dropdownOptions.push(val);
+                                  }
 
-                                const hasOptions = dropdownOptions.length > 0;
+                                  const hasOptions = dropdownOptions.length > 0;
 
-                                // Check if parameter has an active math formula
-                                const testFormulas = resultTests.flatMap(t => t.formulas || []);
-                                const paramFormula = testFormulas.find(f => f.outputParameterId === param.parameterId);
-                                const hasFormula = !!paramFormula;
-                                const isOverridden = manualOverrides.has(param.id) || manualOverrides.has(String(param.id));
+                                  // Check if parameter has an active math formula
+                                  const testFormulas = resultTests.flatMap(t => t.formulas || []);
+                                  const paramFormula = testFormulas.find(f => f.outputParameterId === param.parameterId);
+                                  const hasFormula = !!paramFormula;
+                                  const isOverridden = manualOverrides.has(param.id) || manualOverrides.has(String(param.id));
 
-                                return (
-                                  <TableRow key={param.id} hover>
-                                    <TableCell sx={{ color: isChild ? "text.secondary" : "text.primary", fontWeight: isChild ? 600 : 700 }}>
-                                      {displaySerial}
-                                    </TableCell>
-                                    <TableCell sx={{ fontWeight: 600, pl: isChild ? 3.5 : 2 }}>
-                                      <Box sx={{ display: "flex", alignItems: "center", gap: 0.8 }}>
-                                        {isChild && (
-                                          <Typography variant="caption" sx={{ color: "text.disabled", fontWeight: 700 }}>↳</Typography>
-                                        )}
-                                        <Typography variant="body2" sx={{ fontWeight: 600 }}>
-                                          {param.name}
-                                        </Typography>
-                                      </Box>
-                                    </TableCell>
-                                    <TableCell sx={{ fontSize: "0.85rem" }}>
-                                      {ref.rangeStr || ""}
-                                    </TableCell>
-                                    <TableCell sx={{ color: "text.secondary" }}>{param.unit || "-"}</TableCell>
-                                    <TableCell sx={{ minWidth: 220 }}>
-                                      {/* Quick Select Buttons for Qualitative Options */}
-                                      {hasOptions && (
-                                        <Box sx={{ display: "flex", gap: 0.5, flexWrap: "wrap", mb: 0.75 }}>
-                                          {dropdownOptions.map((opt) => {
-                                            const isSelected = (val || "").trim().toLowerCase() === opt.trim().toLowerCase();
-                                            const isOptAbnormal = isQualitativeAbnormal(opt, ref.rangeStr);
-                                            return (
-                                              <Chip
-                                                key={opt}
-                                                label={opt}
-                                                size="small"
-                                                clickable
-                                                onClick={() => handleResultValueChange(param.id, opt, true)}
-                                                sx={{
-                                                  height: 24,
-                                                  fontSize: "0.75rem",
-                                                  fontWeight: 700,
-                                                  cursor: "pointer",
-                                                  bgcolor: isSelected
-                                                    ? (isOptAbnormal ? "rgba(239, 68, 68, 0.2)" : "rgba(16, 185, 129, 0.2)")
-                                                    : "rgba(0, 0, 0, 0.05)",
-                                                  color: isSelected
-                                                    ? (isOptAbnormal ? "#dc2626" : "#059669")
-                                                    : "text.primary",
-                                                  border: isSelected
-                                                    ? `1.5px solid ${isOptAbnormal ? "#dc2626" : "#059669"}`
-                                                    : "1px solid rgba(0, 0, 0, 0.12)",
-                                                  "&:hover": {
-                                                    bgcolor: isSelected
-                                                      ? (isOptAbnormal ? "rgba(239, 68, 68, 0.3)" : "rgba(16, 185, 129, 0.3)")
-                                                      : "rgba(0, 0, 0, 0.1)"
-                                                  }
-                                                }}
-                                              />
-                                            );
-                                          })}
+                                  return (
+                                    <TableRow key={param.id} hover>
+                                      <TableCell sx={{ color: isChild ? "text.secondary" : "text.primary", fontWeight: isChild ? 600 : 700 }}>
+                                        {displaySerial}
+                                      </TableCell>
+                                      <TableCell sx={{ fontWeight: 600, pl: isChild ? 3.5 : 2 }}>
+                                        <Box sx={{ display: "flex", alignItems: "center", gap: 0.8 }}>
+                                          {isChild && (
+                                            <Typography variant="caption" sx={{ color: "text.disabled", fontWeight: 700 }}>↳</Typography>
+                                          )}
+                                          <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                                            {param.name}
+                                          </Typography>
                                         </Box>
-                                      )}
+                                      </TableCell>
+                                      <TableCell sx={{ fontSize: "0.85rem" }}>
+                                        {ref.rangeStr || ""}
+                                      </TableCell>
+                                      <TableCell sx={{ color: "text.secondary" }}>{param.unit || "-"}</TableCell>
+                                      <TableCell sx={{ minWidth: 220 }}>
+                                        {/* Quick Select Buttons for Qualitative Options */}
+                                        {hasOptions && (
+                                          <Box sx={{ display: "flex", gap: 0.5, flexWrap: "wrap", mb: 0.75 }}>
+                                            {dropdownOptions.map((opt) => {
+                                              const isSelected = (val || "").trim().toLowerCase() === opt.trim().toLowerCase();
+                                              const isOptAbnormal = isQualitativeAbnormal(opt, ref.rangeStr);
+                                              return (
+                                                <Chip
+                                                  key={opt}
+                                                  label={opt}
+                                                  size="small"
+                                                  clickable
+                                                  onClick={() => handleResultValueChange(param.id, opt, true)}
+                                                  sx={{
+                                                    height: 24,
+                                                    fontSize: "0.75rem",
+                                                    fontWeight: 700,
+                                                    cursor: "pointer",
+                                                    bgcolor: isSelected
+                                                      ? (isOptAbnormal ? "rgba(239, 68, 68, 0.2)" : "rgba(16, 185, 129, 0.2)")
+                                                      : "rgba(0, 0, 0, 0.05)",
+                                                    color: isSelected
+                                                      ? (isOptAbnormal ? "#dc2626" : "#059669")
+                                                      : "text.primary",
+                                                    border: isSelected
+                                                      ? `1.5px solid ${isOptAbnormal ? "#dc2626" : "#059669"}`
+                                                      : "1px solid rgba(0, 0, 0, 0.12)",
+                                                    "&:hover": {
+                                                      bgcolor: isSelected
+                                                        ? (isOptAbnormal ? "rgba(239, 68, 68, 0.3)" : "rgba(16, 185, 129, 0.3)")
+                                                        : "rgba(0, 0, 0, 0.1)"
+                                                    }
+                                                  }}
+                                                />
+                                              );
+                                            })}
+                                          </Box>
+                                        )}
 
-                                      <TextField
-                                        className="result-input-field"
-                                        select={hasOptions}
-                                        size="small"
-                                        fullWidth
-                                        disabled={!param.editable}
-                                        value={val}
-                                        onChange={(e) => handleResultValueChange(param.id, e.target.value, hasOptions)}
-                                        onBlur={() => handleResultValueBlur(param.id)}
-                                        onKeyDown={handleKeyDown}
-                                        error={isAbnormal}
-                                        placeholder={isParamTextType ? "Enter observation note..." : "Enter result..."}
-                                        sx={{
-                                          "& .MuiInputBase-root": {
-                                            bgcolor: isAbnormal ? "rgba(239, 68, 68, 0.12)" : "inherit",
-                                            borderColor: isAbnormal ? "#ef4444" : undefined
-                                          },
-                                          "& .MuiInputBase-input": {
-                                            py: 0.5,
-                                            fontSize: "0.85rem",
-                                            fontWeight: isAbnormal ? 700 : (hasFormula && !isOverridden ? 700 : 500),
-                                            color: isAbnormal ? "#b91c1c" : "inherit"
-                                          }
-                                        }}
-                                        slotProps={{
-                                          input: {
-                                            endAdornment: (isAbnormal || hasFormula) && (
-                                              <InputAdornment position="end">
-                                                {hasFormula && (
-                                                  <Tooltip title={isOverridden ? "Formula overridden (manual entry)" : `Calculated by formula: ${paramFormula.formula}`}>
-                                                    <IconButton size="small" tabIndex={-1} sx={{ p: 0.25, mr: isAbnormal ? 0.5 : 0 }}>
-                                                      <CalculateIcon
-                                                        color={isOverridden ? "action" : "primary"}
-                                                        sx={{ fontSize: "1.1rem", opacity: isOverridden ? 0.5 : 0.8 }}
-                                                      />
-                                                    </IconButton>
-                                                  </Tooltip>
-                                                )}
-                                                {isAbnormal && (
-                                                  <Tooltip title="Out of normal reference range!">
-                                                    <WarningIcon color="error" fontSize="small" sx={{ mr: 0.5 }} />
-                                                  </Tooltip>
-                                                )}
-                                              </InputAdornment>
-                                            )
-                                          }
-                                        }}
-                                      >
-                                        {hasOptions ? (
-                                          [
-                                            <MenuItem key="empty" value=""><em>Select option</em></MenuItem>,
-                                            ...dropdownOptions.map(opt => (
-                                              <MenuItem key={opt} value={opt}>{opt}</MenuItem>
-                                            ))
-                                          ]
-                                        ) : null}
-                                      </TextField>
-                                    </TableCell>
-                                    <TableCell>{param.order}</TableCell>
-                                  </TableRow>
-                                );
-                              });
-                            })()}
-                          </TableBody>
-                        </Table>
-                      </TableContainer>
-                    )}
-                  </Box>
-                );
-              })}
+                                        <TextField
+                                          className="result-input-field"
+                                          select={hasOptions}
+                                          size="small"
+                                          fullWidth
+                                          disabled={!param.editable}
+                                          value={val}
+                                          onChange={(e) => handleResultValueChange(param.id, e.target.value, hasOptions)}
+                                          onBlur={() => handleResultValueBlur(param.id)}
+                                          onKeyDown={handleKeyDown}
+                                          error={isAbnormal}
+                                          placeholder={isParamTextType ? "Enter observation note..." : "Enter result..."}
+                                          sx={{
+                                            "& .MuiInputBase-root": {
+                                              bgcolor: isAbnormal ? "rgba(239, 68, 68, 0.12)" : "inherit",
+                                              borderColor: isAbnormal ? "#ef4444" : undefined
+                                            },
+                                            "& .MuiInputBase-input": {
+                                              py: 0.5,
+                                              fontSize: "0.85rem",
+                                              fontWeight: isAbnormal ? 700 : (hasFormula && !isOverridden ? 700 : 500),
+                                              color: isAbnormal ? "#b91c1c" : "inherit"
+                                            }
+                                          }}
+                                          slotProps={{
+                                            input: {
+                                              endAdornment: (isAbnormal || hasFormula) && (
+                                                <InputAdornment position="end">
+                                                  {hasFormula && (
+                                                    <Tooltip title={isOverridden ? "Formula overridden (manual entry)" : `Calculated by formula: ${paramFormula.formula}`}>
+                                                      <IconButton size="small" tabIndex={-1} sx={{ p: 0.25, mr: isAbnormal ? 0.5 : 0 }}>
+                                                        <CalculateIcon
+                                                          color={isOverridden ? "action" : "primary"}
+                                                          sx={{ fontSize: "1.1rem", opacity: isOverridden ? 0.5 : 0.8 }}
+                                                        />
+                                                      </IconButton>
+                                                    </Tooltip>
+                                                  )}
+                                                  {isAbnormal && (
+                                                    <Tooltip title="Out of normal reference range!">
+                                                      <WarningIcon color="error" fontSize="small" sx={{ mr: 0.5 }} />
+                                                    </Tooltip>
+                                                  )}
+                                                </InputAdornment>
+                                              )
+                                            }
+                                          }}
+                                        >
+                                          {hasOptions ? (
+                                            [
+                                              <MenuItem key="empty" value=""><em>Select option</em></MenuItem>,
+                                              ...dropdownOptions.map(opt => (
+                                                <MenuItem key={opt} value={opt}>{opt}</MenuItem>
+                                              ))
+                                            ]
+                                          ) : null}
+                                        </TextField>
+                                      </TableCell>
+                                      <TableCell>{param.order}</TableCell>
+                                    </TableRow>
+                                  );
+                                });
+                              })()}
+                            </TableBody>
+                          </Table>
+                        </TableContainer>
+                      )}
+                    </Box>
+                  );
+                }))}
 
               {/* Note/Remark editor */}
               <Box sx={{ mt: 3 }}>
@@ -1118,7 +1373,7 @@ export default function ResultEntry({ open, onClose, selectedReg, onSaveSuccess,
             </Typography>
           )}
         </DialogContent>
-        <DialogActions sx={{ px: 3, pb: 2 }}>
+        <DialogActions sx={{ px: 3, py: 1.5, bgcolor: "grey.50", borderTop: "1px solid", borderColor: "divider", gap: 1 }}>
           {isSaved && (
             <Button
               onClick={() => {
@@ -1135,16 +1390,70 @@ export default function ResultEntry({ open, onClose, selectedReg, onSaveSuccess,
               Print Report
             </Button>
           )}
+
+          {/* Auto-save status badge in footer */}
+          <Chip
+            icon={
+              autoSaveStatus === "saving" ? (
+                <CircularProgress size={12} color="inherit" />
+              ) : autoSaveStatus === "error" ? (
+                <CloudOffIcon sx={{ fontSize: 14 }} />
+              ) : (
+                <CloudDoneIcon sx={{ fontSize: 14, color: "#0f766e !important" }} />
+              )
+            }
+            label={
+              autoSaveStatus === "saving"
+                ? "Auto-saving..."
+                : autoSaveStatus === "error"
+                ? "Offline (Auto-save pending)"
+                : lastSavedTime
+                ? `Auto-saved (${lastSavedTime})`
+                : "Auto-save is ON"
+            }
+            size="small"
+            variant="outlined"
+            sx={{
+              borderColor: "rgba(15, 118, 110, 0.3)",
+              color: "primary.main",
+              fontWeight: 600,
+              fontSize: "0.75rem",
+              bgcolor: "white"
+            }}
+          />
+
           <Box sx={{ flexGrow: 1 }} />
-          <Button onClick={onClose} variant="outlined" size="small">Cancel</Button>
+          <Button onClick={onClose} variant="outlined" size="small">
+            Cancel
+          </Button>
+
+          {/* Save as Draft Button */}
           <Tooltip title={!canWrite ? "You do not have permission to enter results" : ""}>
             <span>
               <Button
-                onClick={handleSaveResults}
+                onClick={() => saveResultsApi(true, false)}
+                variant="outlined"
+                color="primary"
+                size="small"
+                startIcon={isDraftSaving ? <CircularProgress size={16} color="inherit" /> : <DraftsIcon />}
+                disabled={isDraftSaving || resultSaving || !canWrite || loading}
+                sx={{ fontWeight: 700 }}
+              >
+                Save as Draft
+              </Button>
+            </span>
+          </Tooltip>
+
+          {/* Save Results & Complete Button */}
+          <Tooltip title={!canWrite ? "You do not have permission to enter results" : ""}>
+            <span>
+              <Button
+                onClick={() => saveResultsApi(false, false)}
                 variant="contained"
                 size="small"
                 startIcon={resultSaving ? <CircularProgress size={16} color="inherit" /> : <SaveIcon />}
-                disabled={resultSaving || !canWrite || loading}
+                disabled={resultSaving || isDraftSaving || !canWrite || loading}
+                sx={{ fontWeight: 700 }}
               >
                 Save Results & Complete
               </Button>
