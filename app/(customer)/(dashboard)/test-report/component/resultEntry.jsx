@@ -48,6 +48,7 @@ import {
   AutoAwesome as AutoAwesomeIcon
 } from "@mui/icons-material";
 import DifferentialHeaderBadge, { validateDifferentialOnSave } from "./DifferentialCountTracker";
+import ResultEntryMobile from "./resultEntryMobile";
 import {
   addValueToValuesMap,
   evaluateExpression,
@@ -520,23 +521,64 @@ export default function ResultEntry({ open, onClose, selectedReg, onSaveSuccess,
 
   if (!open) return null;
 
+  if (isMobile) {
+    return (
+      <ResultEntryMobile
+        open={open}
+        onClose={onClose}
+        loading={loading}
+        resultRegDetails={resultRegDetails}
+        resultTests={resultTests}
+        filteredTests={filteredTests}
+        availableDepartments={availableDepartments}
+        selectedDepartment={selectedDepartment}
+        setSelectedDepartment={setSelectedDepartment}
+        resultValues={resultValues}
+        manualOverrides={manualOverrides}
+        setManualOverrides={setManualOverrides}
+        reportNotes={reportNotes}
+        setReportNotes={setReportNotes}
+        autoSaveStatus={autoSaveStatus}
+        lastSavedTime={lastSavedTime}
+        isDraftSaving={isDraftSaving}
+        resultSaving={resultSaving}
+        isSaved={isSaved}
+        canWrite={canWrite}
+        handleResultValueChange={handleResultValueChange}
+        handleResultValueBlur={handleResultValueBlur}
+        handleKeyDown={handleKeyDown}
+        handleGenerateAiSummary={handleGenerateAiSummary}
+        aiGenerating={aiGenerating}
+        saveResultsApi={saveResultsApi}
+        handlePrintReport={handlePrintReport}
+        handleOpenConfigurator={handleOpenConfigurator}
+        toast={toast}
+        setToast={setToast}
+        configDialogOpen={configDialogOpen}
+        setConfigDialogOpen={setConfigDialogOpen}
+        configTest={configTest}
+        configParams={configParams}
+        handleAddConfigParam={handleAddConfigParam}
+        handleRemoveConfigParam={handleRemoveConfigParam}
+        handleConfigParamChange={handleConfigParamChange}
+        handleSaveConfigParameters={handleSaveConfigParameters}
+      />
+    );
+  }
+
   return (
     <>
       <Dialog
         open={open}
         onClose={onClose}
-        fullScreen={isMobile}
         maxWidth="lg"
         fullWidth
         PaperProps={{
           sx: {
-            borderRadius: isMobile ? 0 : 2,
-            m: isMobile ? 0 : 2,
-            p: 0,
-            width: isMobile ? "100vw" : "100%",
-            height: isMobile ? "100vh" : "auto",
-            maxHeight: isMobile ? "100vh" : "calc(100vh - 64px)",
-            boxShadow: isMobile ? "none" : undefined,
+            borderRadius: 2,
+            m: 2,
+            width: "100%",
+            maxHeight: "calc(100vh - 64px)",
           },
         }}
       >
