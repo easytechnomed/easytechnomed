@@ -603,6 +603,30 @@ export async function GET(req, { params }) {
       return (a.name || "").localeCompare(b.name || "");
     });
 
+    // Helper to identify CBC test
+    const isCbcTest = (testName, testCode) => {
+      const name = String(testName || "").toUpperCase().trim();
+      const code = String(testCode || "").toUpperCase().trim();
+      if (code === "CBC" || code.startsWith("CBC")) return true;
+      if (name.includes("CBC")) return true;
+      if (name.includes("COMPLETE BLOOD COUNT")) return true;
+      if (name.includes("COMPLETE BLOOD PICTURE")) return true;
+      if (name.includes("COMPLETE HEMOGRAM") || name.includes("COMPLETE HAEMOGRAM")) return true;
+      if (name.includes("HAEMOGRAM") || name.includes("HEMOGRAM")) return true;
+      return false;
+    };
+
+    // Sort tests within each department so CBC is always on top
+    departmentGroups.forEach((group) => {
+      group.tests.sort((a, b) => {
+        const aIsCbc = isCbcTest(a.test?.name, a.test?.code);
+        const bIsCbc = isCbcTest(b.test?.name, b.test?.code);
+        if (aIsCbc && !bIsCbc) return -1;
+        if (!aIsCbc && bIsCbc) return 1;
+        return 0;
+      });
+    });
+
     let tableActiveY = pageHeight - headerMargin - 15;
 
     if (departmentGroups.length === 0) {
@@ -783,7 +807,8 @@ export async function GET(req, { params }) {
             }
             drawText(currentPage, displayName, leftMargin + indentX, tableActiveY - 14, 9, false);
             drawText(currentPage, displayVal || "-", leftMargin + 215, tableActiveY - 14, 9, isAbnormal, resultColor);
-            drawText(currentPage, param.unit || "-", leftMargin + 310, tableActiveY - 14, 9, false);
+            const unitText = (param.unit && param.unit !== "-" && param.unit !== "null" && param.unit !== "undefined") ? String(param.unit).trim() : "";
+            drawText(currentPage, unitText, leftMargin + 310, tableActiveY - 14, 9, false);
             drawText(currentPage, ref.rangeStr || "", leftMargin + 380, tableActiveY - 14, 9, false);
             tableActiveY -= 20;
 
@@ -979,6 +1004,7 @@ export async function GET(req, { params }) {
     const hasSig1 = !!(configAdmin?.authorizedSignatoryName1 && configAdmin.authorizedSignatoryName1.trim());
     const hasSig2 = !!(configAdmin?.authorizedSignatoryName2 && configAdmin.authorizedSignatoryName2.trim());
 
+    // Left: Authorized Signatory 1
     if (hasSig1) {
       currentPage.drawLine({
         start: { x: leftMargin + 15, y: sigY + 12 },
@@ -992,28 +1018,42 @@ export async function GET(req, { params }) {
       }
     }
 
+    // Center: QR Code & Verification Label
+    if (qrImage) {
+      const qrSize = 60;
+      const qrX = (pageWidth - qrSize) / 2;
+      currentPage.drawImage(qrImage, {
+        x: qrX,
+        y: sigY - 15,
+        width: qrSize,
+        height: qrSize,
+      });
+      const verifyText = "Scan to Verify";
+      const verifyTextWidth = font.widthOfTextAtSize(verifyText, 7.5);
+      drawText(
+        currentPage,
+        verifyText,
+        (pageWidth - verifyTextWidth) / 2,
+        sigY - 25,
+        7.5,
+        false,
+        rgb(0.4, 0.45, 0.5)
+      );
+    }
+
+    // Right: Authorized Signatory 2
     if (hasSig2) {
+      const sig2X = pageWidth - leftMargin - 155;
       currentPage.drawLine({
-        start: { x: 240, y: sigY + 12 },
-        end: { x: 380, y: sigY + 12 },
+        start: { x: sig2X, y: sigY + 12 },
+        end: { x: sig2X + 140, y: sigY + 12 },
         thickness: 0.5,
         color: rgb(0.6, 0.6, 0.6),
       });
-      drawText(currentPage, configAdmin.authorizedSignatoryName2, 240, sigY, 9, true);
+      drawText(currentPage, configAdmin.authorizedSignatoryName2, sig2X, sigY, 9, true);
       if (configAdmin.authorizedSignatoryDegree2) {
-        drawText(currentPage, configAdmin.authorizedSignatoryDegree2, 240, sigY - 12, 8, false, rgb(0.4, 0.45, 0.5));
+        drawText(currentPage, configAdmin.authorizedSignatoryDegree2, sig2X, sigY - 12, 8, false, rgb(0.4, 0.45, 0.5));
       }
-    }
-
-    // QR Code (Far Right)
-    if (qrImage) {
-      currentPage.drawImage(qrImage, {
-        x: pageWidth - leftMargin - 65,
-        y: sigY - 15,
-        width: 60,
-        height: 60,
-      });
-      drawText(currentPage, "Scan to Verify", pageWidth - leftMargin - 65, sigY - 25, 7.5, false, rgb(0.4, 0.45, 0.5));
     }
 
     // Serialize PDF to bytes
