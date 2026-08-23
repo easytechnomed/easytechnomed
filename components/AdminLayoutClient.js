@@ -321,8 +321,8 @@ export default function AdminLayoutClient({ admin, children }) {
       subItems: [
         { text: "Profile Setting", path: "/settings?tab=profile", required: ["SETTINGS_READ", "SETTINGS_WRITE"] },
         { text: "Address Setting", path: "/settings/address", required: ["SETTINGS_READ", "SETTINGS_WRITE"] },
-        { text: "Test & Parameter", path: "/settings?tab=tests", required: ["TEST_READ", "TEST_WRITE"] },
-        { text: "PDF Frame Setting", path: "/settings?tab=pdf", required: ["SETTINGS_READ", "SETTINGS_WRITE"] },
+        { text: "Test & Parameter", path: "/settings/tests", required: ["TEST_READ", "TEST_WRITE"] },
+        { text: "PDF Frame Setting", path: "/settings/pdf", required: ["SETTINGS_READ", "SETTINGS_WRITE"] },
       ]
     },
   ];

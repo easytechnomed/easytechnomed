@@ -1,8 +1,15 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
-import { PDFDocument, rgb, StandardFonts } from "pdf-lib";
+import { PDFDocument, rgb } from "pdf-lib";
 import { cookies } from "next/headers";
 import { verifyToken } from "@/lib/auth";
+import {
+  hexToRgb,
+  getFontFamilyDefinitions,
+  computeColumnLayout,
+  DEFAULT_COLUMNS,
+  DEFAULT_PDF_SETTINGS
+} from "@/lib/pdfTheme";
 
 const isQualitativeAbnormal = (valStr, refRangeStr = "") => {
   if (!valStr || typeof valStr !== "string") return false;
@@ -269,7 +276,14 @@ export async function GET(req, { params }) {
       });
     }
 
-    // Retrieve active PDF configuration settings from the admin in the same workspace
+    // Retrieve active PDF configuration from WorkspacePdf (with fallback to admin)
+    let workspacePdf = null;
+    if (reg.workspaceId) {
+      workspacePdf = await prisma.workspacePdf.findUnique({
+        where: { workspaceId: reg.workspaceId },
+      });
+    }
+
     const configAdmin = await prisma.admin.findFirst({
       where: { workspaceId: reg.workspaceId },
       select: {
@@ -287,34 +301,72 @@ export async function GET(req, { params }) {
     const withFrameParam = searchParams.get("withFrame");
 
     // Determine whether to use frame
-    let useFrame = configAdmin?.useFrameDefault ?? true;
+    let useFrame = workspacePdf?.useFrameDefault ?? configAdmin?.useFrameDefault ?? true;
     if (withFrameParam !== null) {
       useFrame = withFrameParam === "true";
     }
 
-    const framePdfUrl = configAdmin?.framePdfUrl;
-    const headerMargin = configAdmin?.headerMargin ?? 140;
-    const footerMargin = configAdmin?.footerMargin ?? 100;
+    const framePdfUrl = workspacePdf?.framePdfUrl || configAdmin?.framePdfUrl;
+    const headerMargin = workspacePdf?.headerMargin ?? configAdmin?.headerMargin ?? 140;
+    const footerMargin = workspacePdf?.footerMargin ?? configAdmin?.footerMargin ?? 100;
+    const leftMargin = workspacePdf?.leftMargin ?? 45;
+    const rightMargin = workspacePdf?.rightMargin ?? 45;
+
+    // Colors
+    const primaryColor = hexToRgb(workspacePdf?.primaryColor || "#0f766e", { r: 0.06, g: 0.46, b: 0.43 });
+    const headerBgColor = hexToRgb(workspacePdf?.headerBgColor || "#e2e8f0", { r: 0.88, g: 0.91, b: 0.94 });
+    const headerTextColor = hexToRgb(workspacePdf?.headerTextColor || "#1e293b", { r: 0.12, g: 0.16, b: 0.23 });
+    const textColor = hexToRgb(workspacePdf?.textColor || "#0f172a", { r: 0.09, g: 0.12, b: 0.18 });
+    const mutedTextColor = hexToRgb(workspacePdf?.textColor || "#0f172a", { r: 0.35, g: 0.4, b: 0.45 });
+    const patientCardBgColor = hexToRgb(workspacePdf?.patientCardBgColor || "#f8fafc", { r: 0.97, g: 0.98, b: 0.99 });
+    const patientCardBorderColor = hexToRgb(workspacePdf?.patientCardBorderColor || "#e2e8f0", { r: 0.85, g: 0.88, b: 0.92 });
+    const tableRowBorderColor = hexToRgb(workspacePdf?.tableRowBorderColor || "#e2e8f0", { r: 0.88, g: 0.91, b: 0.94 });
+    const departmentTextColor = hexToRgb(workspacePdf?.departmentTextColor || "#ffffff", { r: 1, g: 1, b: 1 });
+
+    // Typography
+    const fontFamily = workspacePdf?.fontFamily || "Helvetica";
+    const headerFontSize = workspacePdf?.headerFontSize ?? 9.0;
+    const parameterFontSize = workspacePdf?.parameterFontSize ?? 8.5;
+    const patientInfoFontSize = workspacePdf?.patientInfoFontSize ?? 9.0;
+    const departmentFontSize = workspacePdf?.departmentFontSize ?? 9.5;
+    const remarkFontSize = workspacePdf?.remarkFontSize ?? 8.5;
+
+    // Column Configuration
+    const columnOrderRaw = workspacePdf?.columnOrder || JSON.stringify(DEFAULT_COLUMNS);
+
+    // Signatories & Toggles
+    const authorizedSignatoryName1 = workspacePdf?.authorizedSignatoryName1 || configAdmin?.authorizedSignatoryName1 || "";
+    const authorizedSignatoryDegree1 = workspacePdf?.authorizedSignatoryDegree1 || configAdmin?.authorizedSignatoryDegree1 || "";
+    const authorizedSignatoryName2 = workspacePdf?.authorizedSignatoryName2 || configAdmin?.authorizedSignatoryName2 || "";
+    const authorizedSignatoryDegree2 = workspacePdf?.authorizedSignatoryDegree2 || configAdmin?.authorizedSignatoryDegree2 || "";
+
+    const showSignatures = workspacePdf?.showSignatures ?? true;
+    const showQrCode = workspacePdf?.showQrCode ?? true;
+    const showDepartmentBanner = workspacePdf?.showDepartmentBanner ?? true;
+    const showPatientBox = workspacePdf?.showPatientBox ?? true;
 
     // Create a new PDF document
     const pdfDoc = await PDFDocument.create();
-    const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
-    const fontBold = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
-    const fontOblique = await pdfDoc.embedFont(StandardFonts.HelveticaOblique);
+    const fontDefs = getFontFamilyDefinitions(fontFamily);
+    const font = await pdfDoc.embedFont(fontDefs.regular);
+    const fontBold = await pdfDoc.embedFont(fontDefs.bold);
+    const fontOblique = await pdfDoc.embedFont(fontDefs.oblique);
 
     // Fetch and embed QR Code image
     let qrImage = null;
-    try {
-      const cleanBarcode = reg.barcode ? reg.barcode.replace(/^,\s*/, "").split(" ")[0] : null;
-      const qrData = `${req.nextUrl.origin}/api/print-report/${cleanBarcode || reg.id}?withFrame=true`;
-      const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(qrData)}`;
-      const qrRes = await fetch(qrUrl);
-      if (qrRes.ok) {
-        const qrBytes = await qrRes.arrayBuffer();
-        qrImage = await pdfDoc.embedPng(qrBytes);
+    if (showQrCode) {
+      try {
+        const cleanBarcode = reg.barcode ? reg.barcode.replace(/^,\s*/, "").split(" ")[0] : null;
+        const qrData = `${req.nextUrl.origin}/api/print-report/${cleanBarcode || reg.id}?withFrame=true`;
+        const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(qrData)}`;
+        const qrRes = await fetch(qrUrl);
+        if (qrRes.ok) {
+          const qrBytes = await qrRes.arrayBuffer();
+          qrImage = await pdfDoc.embedPng(qrBytes);
+        }
+      } catch (err) {
+        console.error("Failed to fetch/embed QR code:", err);
       }
-    } catch (err) {
-      console.error("Failed to fetch/embed QR code:", err);
     }
 
     // Load frame template if needed
@@ -331,8 +383,7 @@ export async function GET(req, { params }) {
 
     const pageWidth = 595.27; // A4 Width
     const pageHeight = 842.89; // A4 Height
-    const leftMargin = 45;
-    const contentWidth = pageWidth - leftMargin * 2;
+    const contentWidth = pageWidth - leftMargin - rightMargin;
 
     let currentPage = null;
     let pageCount = 0;
@@ -362,25 +413,26 @@ export async function GET(req, { params }) {
       });
       page.drawLine({
         start: { x: leftMargin, y: 55 },
-        end: { x: pageWidth - leftMargin, y: 55 },
+        end: { x: pageWidth - rightMargin, y: 55 },
         thickness: 0.5,
         color: rgb(0.8, 0.8, 0.8),
       });
     };
 
     // Helper to draw text
-    const drawText = (page, text, x, y, size = 9, isBold = false, color = rgb(0.09, 0.12, 0.18)) => {
+    const drawText = (page, text, x, y, size = 9, isBold = false, color = textColor, customFont = null) => {
       let cleanText = String(text || "")
         .replace(/[μµ]/g, "u")
         .replace(/–/g, "-")
         .replace(/—/g, "-")
         .replace(/[“”]/g, '"')
         .replace(/[‘’]/g, "'");
+      const chosenFont = customFont || (isBold ? fontBold : font);
       page.drawText(cleanText, {
         x,
         y,
         size,
-        font: isBold ? fontBold : font,
+        font: chosenFont,
         color,
       });
     };
@@ -468,8 +520,15 @@ export async function GET(req, { params }) {
       return formattedLines;
     };
 
+    // Calculate dynamic column layout
+    const columnsLayout = computeColumnLayout(columnOrderRaw, leftMargin, contentWidth);
+
     // Helper to draw Patient Demographics Box on any page
     const drawPatientDemographics = (page) => {
+      if (!showPatientBox) {
+        return pageHeight - headerMargin - 15;
+      }
+
       const topY = pageHeight - headerMargin - 15;
       const boxHeight = 70;
 
@@ -478,79 +537,89 @@ export async function GET(req, { params }) {
         y: topY - boxHeight,
         width: contentWidth,
         height: boxHeight,
-        borderColor: rgb(0.85, 0.88, 0.92), // Slate 200
+        borderColor: patientCardBorderColor,
         borderWidth: 1,
-        color: rgb(0.97, 0.98, 0.99), // Subtle light blue-grey fill
+        color: patientCardBgColor,
       });
 
-      const c1 = leftMargin + 12;
-      const c2 = leftMargin + 270;
+      const col1X = leftMargin + 12;
+      const col2X = leftMargin + (contentWidth / 2) + 10;
+      const labelW = 75;
 
-      drawText(page, `Patient Name:`, c1, topY - 20, 9, true);
-      drawText(page, `${reg.title} ${reg.name}`, c1 + 80, topY - 20, 9, false);
+      drawText(page, `Patient Name:`, col1X, topY - 20, patientInfoFontSize, true, textColor);
+      drawText(page, `${reg.title} ${reg.name}`, col1X + labelW, topY - 20, patientInfoFontSize, false, textColor);
 
-      drawText(page, `Age / Gender:`, c2, topY - 20, 9, true);
-      drawText(page, `${reg.age.toFixed(2)} ${reg.ageUnit} / ${reg.gender}`, c2 + 80, topY - 20, 9, false);
+      drawText(page, `Age / Gender:`, col2X, topY - 20, patientInfoFontSize, true, textColor);
+      drawText(page, `${reg.age.toFixed(2)} ${reg.ageUnit} / ${reg.gender}`, col2X + labelW, topY - 20, patientInfoFontSize, false, textColor);
 
-      drawText(page, `Lab No / ID:`, c1, topY - 40, 9, true);
-      drawText(page, `${reg.labId} (${reg.regNo})`, c1 + 80, topY - 40, 9, false);
+      drawText(page, `Lab No / ID:`, col1X, topY - 40, patientInfoFontSize, true, textColor);
+      drawText(page, `${reg.labId} (${reg.regNo})`, col1X + labelW, topY - 40, patientInfoFontSize, false, textColor);
 
-      drawText(page, `Ref. Doctor:`, c1, topY - 60, 9, true);
-      drawText(page, `${reg.refBy?.name || "Self / Walk-in"}`, c1 + 80, topY - 60, 9, false);
+      drawText(page, `Ref. Doctor:`, col1X, topY - 60, patientInfoFontSize, true, textColor);
+      drawText(page, `${reg.refBy?.name || "Self / Walk-in"}`, col1X + labelW, topY - 60, patientInfoFontSize, false, textColor);
 
-      drawText(page, `Registered On:`, c2, topY - 40, 9, true);
-      drawText(page, `${formatDate(reg.date)}`, c2 + 80, topY - 40, 9, false);
+      drawText(page, `Registered On:`, col2X, topY - 40, patientInfoFontSize, true, textColor);
+      drawText(page, `${formatDate(reg.date)}`, col2X + labelW, topY - 40, patientInfoFontSize, false, textColor);
 
-      drawText(page, `Report Status:`, c2, topY - 60, 9, true);
-      drawText(page, `${reg.status}`, c2 + 80, topY - 60, 9, true, reg.status === "Completed" ? rgb(0.06, 0.46, 0.23) : rgb(0.72, 0.44, 0.05));
+      drawText(page, `Report Status:`, col2X, topY - 60, patientInfoFontSize, true, textColor);
+      drawText(page, `${reg.status}`, col2X + labelW, topY - 60, patientInfoFontSize, true, reg.status === "Completed" ? rgb(0.06, 0.46, 0.23) : rgb(0.72, 0.44, 0.05));
 
       return topY - boxHeight - 12;
     };
 
     // Helper to draw Department Header Banner
     const drawDepartmentHeader = (page, y, departmentName, isContinued = false) => {
+      if (!showDepartmentBanner) {
+        return y;
+      }
+
       const barHeight = 20;
       page.drawRectangle({
         x: leftMargin,
         y: y - barHeight,
         width: contentWidth,
         height: barHeight,
-        color: rgb(0.06, 0.46, 0.43),
+        color: primaryColor,
       });
 
       const titleText = isContinued
         ? `DEPARTMENT: ${String(departmentName || "GENERAL PATHOLOGY").toUpperCase()} (Continued)`
         : `DEPARTMENT: ${String(departmentName || "GENERAL PATHOLOGY").toUpperCase()}`;
 
-      drawText(page, titleText, leftMargin + 10, y - 14, 9.5, true, rgb(1, 1, 1));
+      drawText(page, titleText, leftMargin + 10, y - 14, departmentFontSize, true, departmentTextColor);
       return y - barHeight - 8;
     };
 
     // Helper to draw Table Header
     const drawTableHeader = (page, y) => {
-      // Table Header Row background bar
+      const thHeight = 20;
       page.drawRectangle({
         x: leftMargin,
-        y: y - 20,
+        y: y - thHeight,
         width: contentWidth,
-        height: 20,
-        color: rgb(0.92, 0.94, 0.96),
+        height: thHeight,
+        color: headerBgColor,
       });
 
-      drawText(page, "S/No", leftMargin + 8, y - 14, 9, true);
-      drawText(page, "Test Parameter", leftMargin + 42, y - 14, 9, true);
-      drawText(page, "Observed Value", leftMargin + 215, y - 14, 9, true);
-      drawText(page, "Unit", leftMargin + 310, y - 14, 9, true);
-      drawText(page, "Normal Reference Range", leftMargin + 380, y - 14, 9, true);
+      for (const col of columnsLayout) {
+        let textX = col.x + 4;
+        const textWidth = fontBold.widthOfTextAtSize(col.label, headerFontSize);
+        if (col.align === "center") {
+          textX = col.x + (col.width - textWidth) / 2;
+        } else if (col.align === "right") {
+          textX = col.x + col.width - textWidth - 4;
+        }
+        drawText(page, col.label, Math.max(col.x + 2, textX), y - 14, headerFontSize, true, headerTextColor);
+      }
 
       page.drawLine({
-        start: { x: leftMargin, y: y - 21 },
-        end: { x: pageWidth - leftMargin, y: y - 21 },
+        start: { x: leftMargin, y: y - thHeight - 1 },
+        end: { x: pageWidth - rightMargin, y: y - thHeight - 1 },
         thickness: 0.8,
-        color: rgb(0.75, 0.78, 0.82),
+        color: tableRowBorderColor,
       });
 
-      return y - 24;
+      return y - thHeight - 4;
     };
 
     // Map result values and interpretations for easy access
@@ -664,7 +733,7 @@ export async function GET(req, { params }) {
           height: 18,
           color: rgb(0.96, 0.97, 0.98),
         });
-        drawText(currentPage, `${test.name}`, leftMargin + 10, tableActiveY - 13, 9, true, rgb(0.06, 0.46, 0.43));
+        drawText(currentPage, `${test.name}`, leftMargin + 10, tableActiveY - 13, parameterFontSize + 0.5, true, primaryColor);
         tableActiveY -= 20;
 
         // Group parameters by section
@@ -694,20 +763,19 @@ export async function GET(req, { params }) {
             // Draw Section Header divider line
             currentPage.drawLine({
               start: { x: leftMargin, y: tableActiveY },
-              end: { x: pageWidth - leftMargin, y: tableActiveY },
+              end: { x: pageWidth - rightMargin, y: tableActiveY },
               thickness: 0.3,
-              color: rgb(0.9, 0.92, 0.94),
+              color: tableRowBorderColor,
             });
-            drawText(currentPage, secName.toUpperCase(), leftMargin + 10, tableActiveY - 14, 8, true, rgb(0.3, 0.35, 0.4));
+            drawText(currentPage, secName.toUpperCase(), leftMargin + 10, tableActiveY - 14, parameterFontSize - 0.5, true, mutedTextColor);
             tableActiveY -= 18;
           }
 
-          // ── Build render groups: prefer explicit parentId, fallback to positional ─
+          // Build render groups: prefer explicit parentId, fallback to positional
           const renderGroups = [];
           const hasParentIdData = sectionParams.some(p => p.parentId != null);
 
           if (hasParentIdData) {
-            // ── Explicit parentId grouping ──────────────────────────────────────
             const childrenByParentId = {};
             sectionParams.forEach(p => {
               if (p.parentId != null) {
@@ -719,7 +787,6 @@ export async function GET(req, { params }) {
               sectionParams.filter(p => p.parentId != null).map(p => p.id)
             );
 
-            // Walk sectionParams in order; skip child params (they're in their parent's group)
             for (const p of sectionParams) {
               if (childParamIds.has(p.id)) continue;
               const pRef = getReferenceRange(p, reg);
@@ -727,12 +794,10 @@ export async function GET(req, { params }) {
               if (pIsHeader) {
                 renderGroups.push({ type: "group", header: p, children: childrenByParentId[p.id] || [] });
               } else {
-                // parentId is null AND not a child → true standalone
                 renderGroups.push({ type: "standalone", param: p });
               }
             }
           } else {
-            // ── Positional grouping (backward compat for old data) ───────────────
             let gi = 0;
             while (gi < sectionParams.length) {
               const p = sectionParams[gi];
@@ -757,9 +822,8 @@ export async function GET(req, { params }) {
               }
             }
           }
-          // ───────────────────────────────────────────────────────────────────────
 
-          // Helper to draw a single data row (value + unit + range)
+          // Helper to draw a single data row with dynamic columns
           const drawParamRow = async (param, indented, serialNo = "") => {
             const rawVal = resultsMap[param.id];
             const val = rawVal ?? "";
@@ -777,14 +841,19 @@ export async function GET(req, { params }) {
               pageTopY = drawDepartmentHeader(currentPage, pageTopY, deptGroup.name, true);
               tableActiveY = drawTableHeader(currentPage, pageTopY);
               currentPage.drawRectangle({ x: leftMargin, y: tableActiveY - 20, width: contentWidth, height: 18, color: rgb(0.96, 0.97, 0.98) });
-              drawText(currentPage, `${test.name} - Continued`, leftMargin + 10, tableActiveY - 13, 9, true, rgb(0.06, 0.46, 0.43));
+              drawText(currentPage, `${test.name} - Continued`, leftMargin + 10, tableActiveY - 13, parameterFontSize + 0.5, true, primaryColor);
               tableActiveY -= 20;
             }
 
-            currentPage.drawLine({ start: { x: leftMargin, y: tableActiveY }, end: { x: pageWidth - leftMargin, y: tableActiveY }, thickness: 0.3, color: rgb(0.9, 0.92, 0.94) });
+            currentPage.drawLine({
+              start: { x: leftMargin, y: tableActiveY },
+              end: { x: pageWidth - rightMargin, y: tableActiveY },
+              thickness: 0.3,
+              color: tableRowBorderColor,
+            });
 
             const isAbnormal = flag ? flag !== "Normal" : isOutOfRange(val, ref.min, ref.max, ref.rangeStr);
-            const resultColor = isAbnormal ? rgb(0.85, 0.12, 0.12) : rgb(0.09, 0.12, 0.18);
+            const resultColor = isAbnormal ? rgb(0.85, 0.12, 0.12) : textColor;
 
             let formattedVal = val;
             const isNumeric = (param.valueType || "NUMERIC") === "NUMERIC";
@@ -800,16 +869,49 @@ export async function GET(req, { params }) {
             }
 
             const displayName = indented ? `  -  ${param.name}` : param.name;
-            const indentX = indented ? 52 : 42;
-
-            if (serialNo) {
-              drawText(currentPage, String(serialNo), leftMargin + 8, tableActiveY - 14, 8.5, !indented, indented ? rgb(0.35, 0.4, 0.45) : rgb(0.09, 0.12, 0.18));
-            }
-            drawText(currentPage, displayName, leftMargin + indentX, tableActiveY - 14, 9, false);
-            drawText(currentPage, displayVal || "-", leftMargin + 215, tableActiveY - 14, 9, isAbnormal, resultColor);
             const unitText = (param.unit && param.unit !== "-" && param.unit !== "null" && param.unit !== "undefined") ? String(param.unit).trim() : "";
-            drawText(currentPage, unitText, leftMargin + 310, tableActiveY - 14, 9, false);
-            drawText(currentPage, ref.rangeStr || "", leftMargin + 380, tableActiveY - 14, 9, false);
+
+            // Render each dynamic column
+            for (const col of columnsLayout) {
+              let cellText = "";
+              let isBoldCell = false;
+              let cellColor = textColor;
+              let xIndent = 0;
+
+              if (col.id === "sNo") {
+                cellText = serialNo ? String(serialNo) : "";
+                cellColor = indented ? mutedTextColor : textColor;
+                isBoldCell = !indented;
+              } else if (col.id === "parameter") {
+                cellText = displayName;
+                cellColor = textColor;
+                isBoldCell = false;
+                if (indented) xIndent = 6;
+              } else if (col.id === "value") {
+                cellText = displayVal || "-";
+                cellColor = resultColor;
+                isBoldCell = isAbnormal;
+              } else if (col.id === "unit") {
+                cellText = unitText;
+                cellColor = mutedTextColor;
+              } else if (col.id === "range") {
+                cellText = ref.rangeStr || "";
+                cellColor = textColor;
+              }
+
+              const activeFont = isBoldCell ? fontBold : font;
+              let textX = col.x + 4 + xIndent;
+              const textWidth = activeFont.widthOfTextAtSize(cellText, parameterFontSize);
+
+              if (col.align === "center") {
+                textX = col.x + (col.width - textWidth) / 2;
+              } else if (col.align === "right") {
+                textX = col.x + col.width - textWidth - 4;
+              }
+
+              drawText(currentPage, cellText, textX, tableActiveY - 14, parameterFontSize, isBoldCell, cellColor);
+            }
+
             tableActiveY -= 20;
 
             if (interpretation) {
@@ -819,7 +921,8 @@ export async function GET(req, { params }) {
                 pageTopY = drawDepartmentHeader(currentPage, pageTopY, deptGroup.name, true);
                 tableActiveY = drawTableHeader(currentPage, pageTopY);
               }
-              drawText(currentPage, `* Note: ${interpretation}`, leftMargin + (indented ? 55 : 42), tableActiveY - 12, 7.5, false, rgb(0.4, 0.45, 0.5));
+              const paramCol = columnsLayout.find(c => c.id === "parameter") || columnsLayout[0];
+              drawText(currentPage, `* Note: ${interpretation}`, paramCol.x + (indented ? 12 : 4), tableActiveY - 12, 7.5, false, mutedTextColor);
               tableActiveY -= 15;
             }
           };
@@ -828,15 +931,12 @@ export async function GET(req, { params }) {
 
           for (const group of renderGroups) {
             if (group.type === "standalone") {
-              // Check if standalone has a result before incrementing mainCounter
               const v = resultsMap[group.param.id];
               if (v !== null && v !== undefined && v !== "" && v !== "-") {
                 mainCounter++;
                 await drawParamRow(group.param, false, `${mainCounter}`);
               }
-
             } else {
-              // Header group — only draw if at least one child has a result
               const { header, children } = group;
               const activeChildren = children.filter(c => {
                 const v = resultsMap[c.id];
@@ -854,12 +954,23 @@ export async function GET(req, { params }) {
                 pageTopY = drawDepartmentHeader(currentPage, pageTopY, deptGroup.name, true);
                 tableActiveY = drawTableHeader(currentPage, pageTopY);
                 currentPage.drawRectangle({ x: leftMargin, y: tableActiveY - 20, width: contentWidth, height: 18, color: rgb(0.96, 0.97, 0.98) });
-                drawText(currentPage, `${test.name} - Continued`, leftMargin + 10, tableActiveY - 13, 9, true, rgb(0.06, 0.46, 0.43));
+                drawText(currentPage, `${test.name} - Continued`, leftMargin + 10, tableActiveY - 13, parameterFontSize + 0.5, true, primaryColor);
                 tableActiveY -= 20;
               }
-              currentPage.drawLine({ start: { x: leftMargin, y: tableActiveY }, end: { x: pageWidth - leftMargin, y: tableActiveY }, thickness: 0.3, color: rgb(0.9, 0.92, 0.94) });
-              drawText(currentPage, headerSerial, leftMargin + 8, tableActiveY - 14, 9, true, rgb(0.06, 0.46, 0.43));
-              drawText(currentPage, header.name, leftMargin + 42, tableActiveY - 14, 9, true, rgb(0.06, 0.46, 0.43));
+              currentPage.drawLine({
+                start: { x: leftMargin, y: tableActiveY },
+                end: { x: pageWidth - rightMargin, y: tableActiveY },
+                thickness: 0.3,
+                color: tableRowBorderColor,
+              });
+
+              const sNoCol = columnsLayout.find(c => c.id === "sNo");
+              const paramCol = columnsLayout.find(c => c.id === "parameter") || columnsLayout[0];
+
+              if (sNoCol) {
+                drawText(currentPage, headerSerial, sNoCol.x + 4, tableActiveY - 14, parameterFontSize, true, primaryColor);
+              }
+              drawText(currentPage, header.name, paramCol.x + 4, tableActiveY - 14, parameterFontSize, true, primaryColor);
               tableActiveY -= 20;
 
               // Draw children (indented) with sub-numbering 1.1, 1.2...
@@ -868,18 +979,24 @@ export async function GET(req, { params }) {
                 childCounter++;
                 const childSerial = `${mainCounter}.${childCounter}`;
 
-                // If we're about to page-break inside a group, re-draw the parent header for context
                 if (tableActiveY < footerMargin + 35) {
                   await addNewPage();
                   let pageTopY = drawPatientDemographics(currentPage);
                   pageTopY = drawDepartmentHeader(currentPage, pageTopY, deptGroup.name, true);
                   tableActiveY = drawTableHeader(currentPage, pageTopY);
                   currentPage.drawRectangle({ x: leftMargin, y: tableActiveY - 20, width: contentWidth, height: 18, color: rgb(0.96, 0.97, 0.98) });
-                  drawText(currentPage, `${test.name} - Continued`, leftMargin + 10, tableActiveY - 13, 9, true, rgb(0.06, 0.46, 0.43));
+                  drawText(currentPage, `${test.name} - Continued`, leftMargin + 10, tableActiveY - 13, parameterFontSize + 0.5, true, primaryColor);
                   tableActiveY -= 20;
-                  currentPage.drawLine({ start: { x: leftMargin, y: tableActiveY }, end: { x: pageWidth - leftMargin, y: tableActiveY }, thickness: 0.3, color: rgb(0.9, 0.92, 0.94) });
-                  drawText(currentPage, headerSerial, leftMargin + 8, tableActiveY - 14, 9, true, rgb(0.06, 0.46, 0.43));
-                  drawText(currentPage, `${header.name} (cont.)`, leftMargin + 42, tableActiveY - 14, 9, true, rgb(0.06, 0.46, 0.43));
+                  currentPage.drawLine({
+                    start: { x: leftMargin, y: tableActiveY },
+                    end: { x: pageWidth - rightMargin, y: tableActiveY },
+                    thickness: 0.3,
+                    color: tableRowBorderColor,
+                  });
+                  if (sNoCol) {
+                    drawText(currentPage, headerSerial, sNoCol.x + 4, tableActiveY - 14, parameterFontSize, true, primaryColor);
+                  }
+                  drawText(currentPage, `${header.name} (cont.)`, paramCol.x + 4, tableActiveY - 14, parameterFontSize, true, primaryColor);
                   tableActiveY -= 20;
                 }
                 await drawParamRow(child, true, childSerial);
@@ -903,13 +1020,13 @@ export async function GET(req, { params }) {
             y: tableActiveY - 35,
             width: contentWidth,
             height: 30,
-            color: rgb(0.98, 0.98, 0.98),
-            borderColor: rgb(0.9, 0.92, 0.94),
+            color: patientCardBgColor,
+            borderColor: patientCardBorderColor,
             borderWidth: 0.5
           });
 
-          drawText(currentPage, "Clinical Interpretation & Comments:", leftMargin + 10, tableActiveY - 11, 8, true, rgb(0.06, 0.46, 0.43));
-          drawText(currentPage, regTest.interpretation, leftMargin + 10, tableActiveY - 23, 7.5, false, rgb(0.2, 0.25, 0.3));
+          drawText(currentPage, "Clinical Interpretation & Comments:", leftMargin + 10, tableActiveY - 11, remarkFontSize - 0.5, true, primaryColor);
+          drawText(currentPage, regTest.interpretation, leftMargin + 10, tableActiveY - 23, remarkFontSize - 1, false, textColor);
           tableActiveY -= 45;
         }
 
@@ -926,7 +1043,6 @@ export async function GET(req, { params }) {
 
     // Draw Report Remarks / Summary Note Box with Markdown & Text Wrapping
     if (reg.remark && reg.remark.trim()) {
-      const remarkFontSize = 8;
       const lineHeight = 11.5;
       const boxPaddingX = 10;
       const boxPaddingY = 8;
@@ -954,9 +1070,9 @@ export async function GET(req, { params }) {
         y: boxBottomY,
         width: contentWidth,
         height: totalBoxHeight,
-        borderColor: rgb(0.85, 0.88, 0.94),
+        borderColor: patientCardBorderColor,
         borderWidth: 0.5,
-        color: rgb(0.985, 0.99, 1),
+        color: patientCardBgColor,
       });
 
       // Draw Title
@@ -966,9 +1082,9 @@ export async function GET(req, { params }) {
         "Report Remarks / Summary Note:",
         leftMargin + boxPaddingX,
         textCursorY,
-        8.5,
+        remarkFontSize,
         true,
-        rgb(0.15, 0.2, 0.3)
+        primaryColor
       );
 
       textCursorY -= lineHeight + 2;
@@ -982,7 +1098,7 @@ export async function GET(req, { params }) {
             y: textCursorY,
             size: remarkFontSize,
             font: segment.isBold ? fontBold : font,
-            color: rgb(0.2, 0.25, 0.35),
+            color: textColor,
           });
           textCursorX += segment.width;
         }
@@ -999,60 +1115,62 @@ export async function GET(req, { params }) {
     }
 
     // Draw Pathologist Signatures and QR Code
-    const sigY = tableActiveY - 50;
+    if (showSignatures) {
+      const sigY = tableActiveY - 50;
 
-    const hasSig1 = !!(configAdmin?.authorizedSignatoryName1 && configAdmin.authorizedSignatoryName1.trim());
-    const hasSig2 = !!(configAdmin?.authorizedSignatoryName2 && configAdmin.authorizedSignatoryName2.trim());
+      const hasSig1 = !!(authorizedSignatoryName1 && authorizedSignatoryName1.trim());
+      const hasSig2 = !!(authorizedSignatoryName2 && authorizedSignatoryName2.trim());
 
-    // Left: Authorized Signatory 1
-    if (hasSig1) {
-      currentPage.drawLine({
-        start: { x: leftMargin + 15, y: sigY + 12 },
-        end: { x: leftMargin + 155, y: sigY + 12 },
-        thickness: 0.5,
-        color: rgb(0.6, 0.6, 0.6),
-      });
-      drawText(currentPage, configAdmin.authorizedSignatoryName1, leftMargin + 15, sigY, 9, true);
-      if (configAdmin.authorizedSignatoryDegree1) {
-        drawText(currentPage, configAdmin.authorizedSignatoryDegree1, leftMargin + 15, sigY - 12, 8, false, rgb(0.4, 0.45, 0.5));
+      // Left: Authorized Signatory 1
+      if (hasSig1) {
+        currentPage.drawLine({
+          start: { x: leftMargin + 15, y: sigY + 12 },
+          end: { x: leftMargin + 155, y: sigY + 12 },
+          thickness: 0.5,
+          color: rgb(0.6, 0.6, 0.6),
+        });
+        drawText(currentPage, authorizedSignatoryName1, leftMargin + 15, sigY, parameterFontSize + 0.5, true, textColor);
+        if (authorizedSignatoryDegree1) {
+          drawText(currentPage, authorizedSignatoryDegree1, leftMargin + 15, sigY - 12, parameterFontSize - 0.5, false, mutedTextColor);
+        }
       }
-    }
 
-    // Center: QR Code & Verification Label
-    if (qrImage) {
-      const qrSize = 60;
-      const qrX = (pageWidth - qrSize) / 2;
-      currentPage.drawImage(qrImage, {
-        x: qrX,
-        y: sigY - 15,
-        width: qrSize,
-        height: qrSize,
-      });
-      const verifyText = "Scan to Verify";
-      const verifyTextWidth = font.widthOfTextAtSize(verifyText, 7.5);
-      drawText(
-        currentPage,
-        verifyText,
-        (pageWidth - verifyTextWidth) / 2,
-        sigY - 25,
-        7.5,
-        false,
-        rgb(0.4, 0.45, 0.5)
-      );
-    }
+      // Center: QR Code & Verification Label
+      if (showQrCode && qrImage) {
+        const qrSize = 55;
+        const qrX = (pageWidth - qrSize) / 2;
+        currentPage.drawImage(qrImage, {
+          x: qrX,
+          y: sigY - 15,
+          width: qrSize,
+          height: qrSize,
+        });
+        const verifyText = "Scan to Verify";
+        const verifyTextWidth = font.widthOfTextAtSize(verifyText, 7.5);
+        drawText(
+          currentPage,
+          verifyText,
+          (pageWidth - verifyTextWidth) / 2,
+          sigY - 25,
+          7.5,
+          false,
+          mutedTextColor
+        );
+      }
 
-    // Right: Authorized Signatory 2
-    if (hasSig2) {
-      const sig2X = pageWidth - leftMargin - 155;
-      currentPage.drawLine({
-        start: { x: sig2X, y: sigY + 12 },
-        end: { x: sig2X + 140, y: sigY + 12 },
-        thickness: 0.5,
-        color: rgb(0.6, 0.6, 0.6),
-      });
-      drawText(currentPage, configAdmin.authorizedSignatoryName2, sig2X, sigY, 9, true);
-      if (configAdmin.authorizedSignatoryDegree2) {
-        drawText(currentPage, configAdmin.authorizedSignatoryDegree2, sig2X, sigY - 12, 8, false, rgb(0.4, 0.45, 0.5));
+      // Right: Authorized Signatory 2
+      if (hasSig2) {
+        const sig2X = pageWidth - rightMargin - 155;
+        currentPage.drawLine({
+          start: { x: sig2X, y: sigY + 12 },
+          end: { x: sig2X + 140, y: sigY + 12 },
+          thickness: 0.5,
+          color: rgb(0.6, 0.6, 0.6),
+        });
+        drawText(currentPage, authorizedSignatoryName2, sig2X, sigY, parameterFontSize + 0.5, true, textColor);
+        if (authorizedSignatoryDegree2) {
+          drawText(currentPage, authorizedSignatoryDegree2, sig2X, sigY - 12, parameterFontSize - 0.5, false, mutedTextColor);
+        }
       }
     }
 

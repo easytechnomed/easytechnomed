@@ -26,6 +26,7 @@ model Workspace {
   testParameters TestParameter[]
   testFormulas   TestFormula[]
   interpretationRules InterpretationRule[]
+  pdfSetting     WorkspacePdf?
 }
 
 model SuperAdmin {
@@ -534,3 +535,52 @@ model DoctorIncentive {
 
   @@index([doctorId])
 }
+
+model WorkspacePdf {
+  id                         Int        @id @default(autoincrement())
+  workspaceId                Int        @unique
+  workspace                  Workspace  @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  
+  // Letterhead Frame & Page Margins
+  framePdfUrl                String?    @db.VarChar(500)
+  useFrameDefault            Boolean    @default(true)
+  headerMargin               Int        @default(140)
+  footerMargin               Int        @default(100)
+  leftMargin                 Int        @default(45)
+  rightMargin                Int        @default(45)
+  
+  // Colors (Hex format)
+  primaryColor               String     @default("#0f766e")
+  headerBgColor              String     @default("#e2e8f0")
+  headerTextColor            String     @default("#1e293b")
+  textColor                  String     @default("#0f172a")
+  patientCardBgColor         String     @default("#f8fafc")
+  patientCardBorderColor     String     @default("#e2e8f0")
+  tableRowBorderColor        String     @default("#e2e8f0")
+  departmentTextColor        String     @default("#ffffff")
+  
+  // Typography
+  fontFamily                 String     @default("Helvetica")
+  headerFontSize             Float      @default(9.0)
+  parameterFontSize          Float      @default(8.5)
+  patientInfoFontSize        Float      @default(9.0)
+  departmentFontSize         Float      @default(9.5)
+  remarkFontSize             Float      @default(8.5)
+  
+  // Column Configuration (JSON string)
+  columnOrder                String?    @db.Text
+  
+  // Signatories & Display Controls
+  authorizedSignatoryName1   String?
+  authorizedSignatoryDegree1 String?
+  authorizedSignatoryName2   String?
+  authorizedSignatoryDegree2 String?
+  showSignatures             Boolean    @default(true)
+  showQrCode                 Boolean    @default(true)
+  showDepartmentBanner       Boolean    @default(true)
+  showPatientBox             Boolean    @default(true)
+  
+  createdAt                  DateTime   @default(now())
+  updatedAt                  DateTime   @updatedAt
+}
+
