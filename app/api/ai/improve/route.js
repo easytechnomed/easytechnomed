@@ -4,7 +4,7 @@ const DISCORD_WEBHOOK_URL = "https://discord.com/api/webhooks/152474786145396747
 
 // Helper function to call Gemini API with model fallback
 async function callGemini(apiKey, text) {
-  const models = ["gemini-2.0-flash-lite-preview-02-05", "gemini-1.5-flash"];
+  const models = ["gemini-3.1-flash-lite", "gemini-3.5-flash-lite"];
   let lastError = null;
 
   for (const model of models) {
