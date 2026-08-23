@@ -165,7 +165,8 @@ export default function ResultEntry({ open, onClose, selectedReg, onSaveSuccess,
             }
           }
         });
-        setResultValues(values);
+        const initialCalculated = calculateAllDependents(values, tests, null, overrides, res.registration);
+        setResultValues(initialCalculated);
         setManualOverrides(overrides);
         setReportNotes(res.registration.remark || "");
         setAutoSaveStatus("idle");
@@ -392,7 +393,7 @@ export default function ResultEntry({ open, onClose, selectedReg, onSaveSuccess,
     };
 
     if (triggerCalc) {
-      const finalValues = calculateAllDependents(updatedValues, resultTests, paramId, newOverrides);
+      const finalValues = calculateAllDependents(updatedValues, resultTests, paramId, newOverrides, resultRegDetails);
       setResultValues(finalValues);
     } else {
       setResultValues(updatedValues);
@@ -400,7 +401,7 @@ export default function ResultEntry({ open, onClose, selectedReg, onSaveSuccess,
   };
 
   const handleResultValueBlur = (paramId) => {
-    const finalValues = calculateAllDependents(resultValues, resultTests, paramId, manualOverrides);
+    const finalValues = calculateAllDependents(resultValues, resultTests, paramId, manualOverrides, resultRegDetails);
     setResultValues(finalValues);
   };
 

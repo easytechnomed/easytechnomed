@@ -491,7 +491,7 @@ model TestFormula {
   testId            Int
   outputParameterId Int
   formula           String          @db.Text
-  description       String?
+  description       String?         @db.Text
   name              String?
   version           Int             @default(1)
   isActive          Boolean         @default(true)

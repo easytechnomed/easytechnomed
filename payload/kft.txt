@@ -123,8 +123,8 @@
       "valueType": "NUMERIC",
       "unit": "mL/min/1.73m²",
       "options": null,
-      "isCalculated": false,
-      "formula": null,
+      "isCalculated": true,
+      "formula": "IF([gender] == 'Female' || [is_female] == 1, 142 * (MIN([CREAT] / 0.7, 1) ^ -0.241) * (MAX([CREAT] / 0.7, 1) ^ -1.200) * (0.9938 ^ [age]) * 1.012, 142 * (MIN([CREAT] / 0.9, 1) ^ -0.302) * (MAX([CREAT] / 0.9, 1) ^ -1.200) * (0.9938 ^ [age]))",
       "minValMale": 90,
       "maxValMale": null,
       "normalRangeMale": "> 90",
@@ -215,6 +215,12 @@
       "outputParameter": "BUN:CREATININE RATIO",
       "formula": "BUN / CREAT",
       "description": "BUN to Creatinine ratio calculated as BUN / CREAT."
+    },
+    {
+      "outputCode": "EGFR",
+      "outputParameter": "GFR (Glomerular Filtration Rate)",
+      "formula": "IF([gender] == 'Female' || [is_female] == 1, 142 * (MIN([CREAT] / 0.7, 1) ^ -0.241) * (MAX([CREAT] / 0.7, 1) ^ -1.200) * (0.9938 ^ [age]) * 1.012, 142 * (MIN([CREAT] / 0.9, 1) ^ -0.302) * (MAX([CREAT] / 0.9, 1) ^ -1.200) * (0.9938 ^ [age]))",
+      "description": "CKD-EPI (2021) eGFR calculation based on Serum Creatinine, Age, and Gender: Female: 142 * min(CREAT/0.7, 1)^-0.241 * max(CREAT/0.7, 1)^-1.200 * 0.9938^age * 1.012; Male: 142 * min(CREAT/0.9, 1)^-0.302 * max(CREAT/0.9, 1)^-1.200 * 0.9938^age."
     }
   ]
 }
