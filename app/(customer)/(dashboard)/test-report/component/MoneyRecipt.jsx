@@ -95,30 +95,92 @@ export default function MoneyRecipt({ open, onClose, selectedReg, onSaveSuccess,
   }, [open, selectedReg]);
 
   const handleDiscountAmountChange = (val) => {
-    const amt = parseFloat(val) || 0;
+    const total = parseFloat(selectedRegistration?.totalAmount || 0) + parseFloat(selectedRegistration?.collectionCharge || 0);
+    let amt = val === "" ? "" : parseFloat(val);
+    if (amt !== "" && !isNaN(amt)) {
+      if (amt < 0) amt = 0;
+      if (amt > total) amt = total;
+    } else {
+      amt = 0;
+    }
     setDiscountInput(amt);
-    const total = parseFloat(selectedRegistration?.totalAmount || 0);
     if (total > 0) {
-      setDiscountPercentInput(Math.round((amt / total) * 10000) / 100);
+      setDiscountPercentInput(Math.round((parseFloat(amt || 0) / total) * 10000) / 100);
+    }
+    const alreadyPaid = parseFloat(selectedRegistration?.receivedAmount || 0);
+    const maxAllowed = Math.max(0, total - (parseFloat(amt) || 0) - alreadyPaid);
+    if (parseFloat(receivedInput) > maxAllowed) {
+      setReceivedInput(maxAllowed);
     }
   };
 
   const handleDiscountPercentChange = (val) => {
-    const pct = parseFloat(val) || 0;
+    let pct = val === "" ? "" : parseFloat(val);
+    if (pct !== "" && !isNaN(pct)) {
+      if (pct < 0) pct = 0;
+      if (pct > 100) pct = 100;
+    } else {
+      pct = 0;
+    }
     setDiscountPercentInput(pct);
-    const total = parseFloat(selectedRegistration?.totalAmount || 0);
-    setDiscountInput(Math.round(total * (pct / 100) * 100) / 100);
+    const total = parseFloat(selectedRegistration?.totalAmount || 0) + parseFloat(selectedRegistration?.collectionCharge || 0);
+    const amt = Math.round(total * ((parseFloat(pct) || 0) / 100) * 100) / 100;
+    setDiscountInput(amt);
+    const alreadyPaid = parseFloat(selectedRegistration?.receivedAmount || 0);
+    const maxAllowed = Math.max(0, total - amt - alreadyPaid);
+    if (parseFloat(receivedInput) > maxAllowed) {
+      setReceivedInput(maxAllowed);
+    }
+  };
+
+  const handleReceivedAmountChange = (val) => {
+    if (val === "") {
+      setReceivedInput("");
+      return;
+    }
+    let amt = parseFloat(val);
+    if (isNaN(amt)) amt = 0;
+    if (amt < 0) amt = 0;
+
+    const totalBill = parseFloat(selectedRegistration?.totalAmount || 0) + parseFloat(selectedRegistration?.collectionCharge || 0);
+    const currentDiscount = parseFloat(discountInput) || 0;
+    const netBill = Math.max(0, totalBill - currentDiscount);
+    const alreadyPaid = parseFloat(selectedRegistration?.receivedAmount || 0);
+    const maxAllowed = Math.max(0, netBill - alreadyPaid);
+
+    if (amt > maxAllowed) {
+      amt = maxAllowed;
+      showToast(`Received amount cannot exceed net due amount (₹${maxAllowed.toFixed(2)})`, "warning");
+    }
+    setReceivedInput(amt);
   };
 
   const handleSavePayment = async () => {
     if (!selectedRegistration) return;
+
+    const totalBill = parseFloat(selectedRegistration.totalAmount || 0) + parseFloat(selectedRegistration.collectionCharge || 0);
+    const currentDiscount = parseFloat(discountInput) || 0;
+    const netBill = Math.max(0, totalBill - currentDiscount);
+    const alreadyPaid = parseFloat(selectedRegistration.receivedAmount || 0);
+    const maxAllowed = Math.max(0, netBill - alreadyPaid);
+    const enteredReceived = parseFloat(receivedInput) || 0;
+
+    if (enteredReceived > maxAllowed + 0.01) {
+      showToast(`Received amount cannot exceed remaining net due amount of ₹${maxAllowed.toFixed(2)}.`, "error");
+      return;
+    }
+    if (enteredReceived < 0) {
+      showToast("Received amount cannot be negative.", "error");
+      return;
+    }
+
     setSavingPayment(true);
     try {
       const res = await fetch(`/api/registrations/${selectedRegistration.id}/payment`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          received: parseFloat(receivedInput) || 0,
+          received: enteredReceived,
           discountPercent: parseFloat(discountPercentInput) || 0,
           discountAmount: parseFloat(discountInput) || 0,
           paymentMode: paymentModeInput,
@@ -134,7 +196,7 @@ export default function MoneyRecipt({ open, onClose, selectedReg, onSaveSuccess,
           if (onSaveSuccess) onSaveSuccess();
         }, 1000);
       } else {
-        showToast(res.error || "Failed to record payment.", "error");
+        showToast(res.error || res.message || "Failed to record payment.", "error");
       }
     } catch (err) {
       console.error(err);
@@ -181,36 +243,37 @@ export default function MoneyRecipt({ open, onClose, selectedReg, onSaveSuccess,
               <Grid container spacing={3}>
 
                 {/* Left Column - Patient & Previous Payments */}
-                <Grid item xs={12} md={6}>
+                <Grid size={{ xs: 12, md: 6 }}>
                   <Card variant="outlined" sx={{ mb: 3, borderRadius: 2, bgcolor: "grey.50" }}>
                     <CardContent sx={{ p: 2 }}>
                       <Typography variant="subtitle2" sx={{ fontWeight: 700, mb: 2, color: "primary.main" }}>
                         Patient Details
                       </Typography>
                       <Grid container spacing={1.5}>
-                        <Grid item xs={6}>
-                          <Typography variant="caption" color="text.secondary" sx={{ display: "block" }}>Reg. No</Typography>
-                          <Typography variant="body2" sx={{ fontWeight: 600 }}>{selectedRegistration.regNo}</Typography>
+                        <Grid size={{ xs: 4 }}>
+                          <Typography variant="caption" color="text.secondary" sx={{ display: "block", fontSize: "0.72rem" }}>Reg. No</Typography>
+                          <Typography variant="body2" sx={{ fontWeight: 600, fontSize: "0.78rem", wordBreak: "break-word" }}>{selectedRegistration.regNo}</Typography>
                         </Grid>
-                        <Grid item xs={6}>
-                          <Typography variant="caption" color="text.secondary" sx={{ display: "block" }}>Lab ID</Typography>
-                          <Typography variant="body2" sx={{ fontWeight: 600 }}>{selectedRegistration.labId}</Typography>
+                        <Grid size={{ xs: 4 }}>
+                          <Typography variant="caption" color="text.secondary" sx={{ display: "block", fontSize: "0.72rem" }}>Lab ID</Typography>
+                          <Typography variant="body2" sx={{ fontWeight: 600, fontSize: "0.78rem" }}>{selectedRegistration.labId}</Typography>
                         </Grid>
-                        <Grid item xs={12}>
-                          <Typography variant="caption" color="text.secondary" sx={{ display: "block" }}>Patient Name</Typography>
-                          <Typography variant="body2" sx={{ fontWeight: 600 }}>{selectedRegistration.title} {selectedRegistration.name}</Typography>
+                        <Grid size={{ xs: 4 }}>
+                          <Typography variant="caption" color="text.secondary" sx={{ display: "block", fontSize: "0.72rem" }}>Patient Name</Typography>
+                          <Typography variant="body2" sx={{ fontWeight: 600, fontSize: "0.78rem", wordBreak: "break-word" }}>{selectedRegistration.title} {selectedRegistration.name}</Typography>
                         </Grid>
-                        <Grid item xs={6}>
-                          <Typography variant="caption" color="text.secondary" sx={{ display: "block" }}>Age / Gender</Typography>
-                          <Typography variant="body2">{selectedRegistration.age} {selectedRegistration.ageUnit} / {selectedRegistration.gender}</Typography>
+
+                        <Grid size={{ xs: 4 }}>
+                          <Typography variant="caption" color="text.secondary" sx={{ display: "block", fontSize: "0.72rem" }}>Age / Gender</Typography>
+                          <Typography variant="body2" sx={{ fontSize: "0.78rem" }}>{selectedRegistration.age} {selectedRegistration.ageUnit} / {selectedRegistration.gender}</Typography>
                         </Grid>
-                        <Grid item xs={6}>
-                          <Typography variant="caption" color="text.secondary" sx={{ display: "block" }}>Date</Typography>
-                          <Typography variant="body2">{new Date(selectedRegistration.date).toLocaleDateString()}</Typography>
+                        <Grid size={{ xs: 4 }}>
+                          <Typography variant="caption" color="text.secondary" sx={{ display: "block", fontSize: "0.72rem" }}>Date</Typography>
+                          <Typography variant="body2" sx={{ fontSize: "0.78rem" }}>{new Date(selectedRegistration.date).toLocaleDateString()}</Typography>
                         </Grid>
-                        <Grid item xs={12}>
-                          <Typography variant="caption" color="text.secondary" sx={{ display: "block" }}>Ref By</Typography>
-                          <Typography variant="body2">{selectedRegistration.refBy?.name || "Self"}</Typography>
+                        <Grid size={{ xs: 4 }}>
+                          <Typography variant="caption" color="text.secondary" sx={{ display: "block", fontSize: "0.72rem" }}>Ref By</Typography>
+                          <Typography variant="body2" sx={{ fontSize: "0.78rem", wordBreak: "break-word" }}>{selectedRegistration.refBy?.name || "Self"}</Typography>
                         </Grid>
                       </Grid>
                     </CardContent>
@@ -250,7 +313,7 @@ export default function MoneyRecipt({ open, onClose, selectedReg, onSaveSuccess,
                 </Grid>
 
                 {/* Right Column - Test Listing & Calculator */}
-                <Grid item xs={12} md={6}>
+                <Grid size={{ xs: 12, md: 6 }}>
                   <Typography variant="subtitle2" sx={{ fontWeight: 700, mb: 1, color: "text.primary" }}>
                     Test Details
                   </Typography>
@@ -324,7 +387,15 @@ export default function MoneyRecipt({ open, onClose, selectedReg, onSaveSuccess,
                         size="small"
                         type="number"
                         value={receivedInput}
-                        onChange={(e) => setReceivedInput(parseFloat(e.target.value) || 0)}
+                        onChange={(e) => handleReceivedAmountChange(e.target.value)}
+                        slotProps={{
+                          htmlInput: {
+                            min: 0,
+                            max: Math.max(0, (parseFloat(selectedRegistration.totalAmount || 0) + parseFloat(selectedRegistration.collectionCharge || 0)) - (parseFloat(discountInput) || 0) - parseFloat(selectedRegistration.receivedAmount || 0)),
+                            step: "0.01"
+                          }
+                        }}
+                        helperText={`Max payable: ₹${Math.max(0, (parseFloat(selectedRegistration.totalAmount || 0) + parseFloat(selectedRegistration.collectionCharge || 0)) - (parseFloat(discountInput) || 0) - parseFloat(selectedRegistration.receivedAmount || 0)).toFixed(2)}`}
                         fullWidth
                       />
 

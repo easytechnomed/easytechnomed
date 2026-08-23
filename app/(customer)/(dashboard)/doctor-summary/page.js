@@ -328,19 +328,28 @@ export default function DoctorSummaryPage() {
       return;
     }
 
-    const rows = doctor.registrations.map((reg, idx) => ({
-      "S.No": idx + 1,
-      "Date & Time": formatDateTime(reg.date),
-      "Patient Name": reg.fullName || reg.name || "-",
-      "Age": reg.age ? `${reg.age} ${reg.ageUnit || "Y"}` : "-",
-      "Gender": reg.gender || "-",
-      "Tests Booked": (reg.tests || []).map((t) => t.name).join(", ") || "-",
-      "Net Amount (₹)": Number(reg.netAmount) || 0,
-      "Incentive (%)": `${reg.incentivePercent}%`,
-      "Incentive (₹)": Number(reg.incentiveAmount) || 0,
-      "Received (₹)": Number(reg.receivedAmount) || 0,
-      "Status": reg.status || "Completed",
-    }));
+    const rows = doctor.registrations.map((reg, idx) => {
+      const testNames = (reg.tests || []).map((t) => t.name).join(", ") || "-";
+      const testBreakdown = (reg.tests || [])
+        .map((t) => `${t.name} (Price: ₹${t.price}${t.expense > 0 ? `, Outsource Cost: -₹${t.expense}` : ""} => Base: ₹${(t.netBase || t.price).toFixed(2)} @ ${t.incentivePercent}% => ₹${(t.incentiveAmount || 0).toFixed(2)})`)
+        .join(" | ");
+      const totalOutsource = (reg.tests || []).reduce((sum, t) => sum + (t.expense || 0), 0);
+
+      return {
+        "S.No": idx + 1,
+        "Date & Time": formatDateTime(reg.date),
+        "Patient Name": reg.fullName || reg.name || "-",
+        "Age": reg.age ? `${reg.age} ${reg.ageUnit || "Y"}` : "-",
+        "Gender": reg.gender || "-",
+        "Tests Booked": testNames,
+        "Test-wise Incentive Breakdown": testBreakdown,
+        "Total Outsource Cost (₹)": totalOutsource,
+        "Net Amount (₹)": Number(reg.netAmount) || 0,
+        "Incentive (₹)": Number(reg.incentiveAmount) || 0,
+        "Received (₹)": Number(reg.receivedAmount) || 0,
+        "Status": reg.status || "Completed",
+      };
+    });
 
     // Add total summary row
     rows.push({
@@ -350,9 +359,10 @@ export default function DoctorSummaryPage() {
       "Age": "",
       "Gender": "",
       "Tests Booked": `Total Visits: ${doctor.count}`,
+      "Test-wise Incentive Breakdown": "",
+      "Total Outsource Cost (₹)": "",
       "Net Amount (₹)": Number(doctor.netAmount) || 0,
-      "Incentive (%)": "-",
-      "Incentive (₹)": "-",
+      "Incentive (₹)": Number(doctor.incentiveAmount) || 0,
       "Received (₹)": Number(doctor.collection) || 0,
       "Status": "",
     });
@@ -382,9 +392,11 @@ export default function DoctorSummaryPage() {
       "Doctor Name": doc.name,
       "Code": doc.code,
       "Last Paid Date": doc.lastPaid ? formatDate(doc.lastPaid) : "-",
-      "Incentive Rate (%)": `${doc.incentivePercent}%`,
+      "Default Incentive Rate (%)": `${doc.incentivePercent}%`,
       "Patient Count": doc.count,
       "Total Amount (₹)": Number(doc.amount) || 0,
+      "Discount (₹)": Number(doc.discount) || 0,
+      "Net Amount (₹)": Number(doc.netAmount) || 0,
       "Doctor Incentive (₹)": Number(doc.incentiveAmount) || 0,
       "Collection / Received (₹)": Number(doc.collection) || 0,
     }));
@@ -395,10 +407,12 @@ export default function DoctorSummaryPage() {
       "Doctor Name": "Grand Total",
       "Code": "",
       "Last Paid Date": `From ${formatDate(startDate)} to ${formatDate(endDate)}`,
-      "Incentive Rate (%)": "-",
+      "Default Incentive Rate (%)": "-",
       "Patient Count": totalCount,
       "Total Amount (₹)": totalAmount,
-      "Doctor Incentive (₹)": "-",
+      "Discount (₹)": totalDiscount,
+      "Net Amount (₹)": totalNetAmount,
+      "Doctor Incentive (₹)": totalIncentive,
       "Collection / Received (₹)": totalCollection,
     });
 
@@ -410,6 +424,11 @@ export default function DoctorSummaryPage() {
     let counter = 1;
     summaryData.forEach((doc) => {
       (doc.registrations || []).forEach((reg) => {
+        const totalOutsource = (reg.tests || []).reduce((sum, t) => sum + (t.expense || 0), 0);
+        const testBreakdown = (reg.tests || [])
+          .map((t) => `${t.name} (Price: ₹${t.price}${t.expense > 0 ? `, Outsource: -₹${t.expense}` : ""} => Base: ₹${(t.netBase || t.price).toFixed(2)} @ ${t.incentivePercent}% => ₹${(t.incentiveAmount || 0).toFixed(2)})`)
+          .join(" | ");
+
         allPatientRows.push({
           "S.No": counter++,
           "Doctor Name": doc.name,
@@ -419,8 +438,9 @@ export default function DoctorSummaryPage() {
           "Age": reg.age ? `${reg.age} ${reg.ageUnit || "Y"}` : "-",
           "Gender": reg.gender || "-",
           "Tests Booked": (reg.tests || []).map((t) => t.name).join(", ") || "-",
+          "Test Breakdown": testBreakdown,
+          "Outsource Cost (₹)": totalOutsource,
           "Net Amount (₹)": Number(reg.netAmount) || 0,
-          "Doc Incentive (%)": `${reg.incentivePercent}%`,
           "Doc Incentive (₹)": Number(reg.incentiveAmount) || 0,
           "Received (₹)": Number(reg.receivedAmount) || 0,
           "Status": reg.status || "Completed",
@@ -855,23 +875,54 @@ export default function DoctorSummaryPage() {
                                               {reg.gender ? ` • ${reg.gender}` : ""}
                                             </Typography>
                                           </TableCell>
-                                          <TableCell sx={{ fontSize: "0.78rem", maxWidth: 260 }}>
+                                          <TableCell sx={{ fontSize: "0.78rem", maxWidth: 300 }}>
                                             <Box sx={{ display: "flex", flexWrap: "wrap", gap: 0.5 }}>
                                               {reg.tests && reg.tests.length > 0 ? (
-                                                reg.tests.map((t, tIdx) => (
-                                                  <Chip
-                                                    key={tIdx}
-                                                    label={t.name}
-                                                    size="small"
-                                                    variant="outlined"
-                                                    sx={{
-                                                      fontSize: "0.7rem",
-                                                      height: 19,
-                                                      bgcolor: "#f1f5f9",
-                                                      borderColor: "#cbd5e1",
-                                                    }}
-                                                  />
-                                                ))
+                                                reg.tests.map((t, tIdx) => {
+                                                  const tooltipTitle = (
+                                                    <Box sx={{ p: 0.5, fontSize: "0.75rem" }}>
+                                                      <Typography variant="subtitle2" sx={{ fontWeight: 700, mb: 0.5 }}>{t.name} ({t.code || "Test"})</Typography>
+                                                      <div>Test Price: ₹{Number(t.price).toFixed(2)}</div>
+                                                      {Number(t.expense) > 0 && <div style={{ color: "#fca5a5" }}>Outsource Cost: -₹{Number(t.expense).toFixed(2)}</div>}
+                                                      <div>Net Base: ₹{(t.netBase !== undefined ? Number(t.netBase) : Number(t.price)).toFixed(2)}</div>
+                                                      <div>Incentive: {t.incentivePercent}% {t.isSpecialRate ? "(Special Test Rate)" : "(Doctor Default Rate)"}</div>
+                                                      <div style={{ fontWeight: 700, color: "#86efac", marginTop: "4px" }}>Doc Share: ₹{(Number(t.incentiveAmount) || 0).toFixed(2)}</div>
+                                                    </Box>
+                                                  );
+
+                                                  let chipBg = "#f1f5f9";
+                                                  let chipBorder = "#cbd5e1";
+                                                  let chipColor = "inherit";
+
+                                                  if (t.isSpecialRate) {
+                                                    chipBg = "#e0e7ff";
+                                                    chipBorder = "#a5b4fc";
+                                                    chipColor = "#3730a3";
+                                                  } else if (Number(t.expense) > 0) {
+                                                    chipBg = "#fef3c7";
+                                                    chipBorder = "#fde68a";
+                                                    chipColor = "#92400e";
+                                                  }
+
+                                                  return (
+                                                    <Tooltip key={tIdx} title={tooltipTitle} arrow>
+                                                      <Chip
+                                                        label={`${t.name}${Number(t.expense) > 0 ? ` (Out: -₹${Number(t.expense)})` : ""}${t.isSpecialRate ? ` (${t.incentivePercent}% Sp)` : ""}`}
+                                                        size="small"
+                                                        variant="outlined"
+                                                        sx={{
+                                                          fontSize: "0.7rem",
+                                                          height: 20,
+                                                          bgcolor: chipBg,
+                                                          borderColor: chipBorder,
+                                                          color: chipColor,
+                                                          fontWeight: t.isSpecialRate || Number(t.expense) > 0 ? 600 : 400,
+                                                          cursor: "pointer",
+                                                        }}
+                                                      />
+                                                    </Tooltip>
+                                                  );
+                                                })
                                               ) : (
                                                 <Typography variant="caption" sx={{ color: "text.secondary" }}>
                                                   No tests
@@ -882,10 +933,10 @@ export default function DoctorSummaryPage() {
                                           <TableCell align="right" sx={{ fontSize: "0.78rem", fontWeight: 600 }}>
                                             ₹{reg.netAmount.toFixed(2)}
                                           </TableCell>
-                                          <TableCell align="right" sx={{ fontSize: "0.78rem", color: "primary.dark", fontWeight: 600 }}>
+                                          <TableCell align="right" sx={{ fontSize: "0.78rem", color: "primary.dark", fontWeight: 700 }}>
                                             ₹{reg.incentiveAmount.toFixed(2)}
                                             <Typography variant="caption" sx={{ display: "block", color: "text.secondary", fontSize: "0.68rem" }}>
-                                              ({reg.incentivePercent}%)
+                                              {reg.hasSpecialTests || reg.hasOutsourcedTests ? "(Itemized Calc)" : `(${reg.incentivePercent}%)`}
                                             </Typography>
                                           </TableCell>
                                           <TableCell align="right" sx={{ fontSize: "0.78rem", whiteSpace: "nowrap", color: "success.main", fontWeight: 600 }}>

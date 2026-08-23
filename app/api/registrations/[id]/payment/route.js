@@ -23,6 +23,24 @@ export async function POST(req, { params }) {
       return NextResponse.json({ success: false, message: "Registration not found or unauthorized." }, { status: 404 });
     }
 
+    const totalBill = parseFloat(existing.totalAmount || 0) + parseFloat(existing.collectionCharge || 0);
+    const discAmtVal = parseFloat(discountAmount || 0);
+    const netBill = Math.max(0, totalBill - discAmtVal);
+    const currentReceived = parseFloat(existing.receivedAmount || 0);
+    const maxAllowed = Math.max(0, netBill - currentReceived);
+    const newReceivedChunk = received ? parseFloat(received) : 0;
+
+    if (newReceivedChunk < 0) {
+      return NextResponse.json({ success: false, message: "Received amount cannot be negative." }, { status: 400 });
+    }
+
+    if (newReceivedChunk > maxAllowed + 0.01) {
+      return NextResponse.json({
+        success: false,
+        message: `Received amount (₹${newReceivedChunk}) cannot exceed remaining net due amount (₹${maxAllowed.toFixed(2)}).`
+      }, { status: 400 });
+    }
+
     const result = await prisma.$transaction(async (tx) => {
       // 1. Create a payment chunk if received amount is positive
       if (received && parseFloat(received) > 0) {

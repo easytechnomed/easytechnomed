@@ -91,12 +91,16 @@ export default function TestsClient() {
   const [newTestName, setNewTestName] = useState("");
   const [newTestCode, setNewTestCode] = useState("");
   const [newTestPrice, setNewTestPrice] = useState("");
+  const [newOutsourceCost, setNewOutsourceCost] = useState("0");
+  const [newSpecialIncentive, setNewSpecialIncentive] = useState("");
   const [isAddingTest, setIsAddingTest] = useState(false);
 
   const [openEditPriceDialog, setOpenEditPriceDialog] = useState(false);
   const [editingTest, setEditingTest] = useState(null);
   const [editingPrice, setEditingPrice] = useState("");
   const [editingName, setEditingName] = useState("");
+  const [editingOutsourceCost, setEditingOutsourceCost] = useState("0");
+  const [editingSpecialIncentive, setEditingSpecialIncentive] = useState("");
   const [isUpdatingPrice, setIsUpdatingPrice] = useState(false);
 
   // Test parameter states
@@ -120,7 +124,7 @@ export default function TestsClient() {
       .then((res) => {
         if (res.success) setParameterDictionary(res.parameters || []);
       })
-      .catch(() => {});
+      .catch(() => { });
 
     // Fetch tests catalog
     fetch("/api/tests?limit=1000")
@@ -128,7 +132,7 @@ export default function TestsClient() {
       .then((res) => {
         if (res.success) setTestCatalog(res.tests || []);
       })
-      .catch(() => {});
+      .catch(() => { });
   }, []);
 
   const autocompleteOptions = React.useMemo(() => [
@@ -207,6 +211,8 @@ export default function TestsClient() {
           name: newTestName.trim(),
           code: newTestCode.trim() || null,
           price: parseFloat(newTestPrice),
+          outsourceCost: newOutsourceCost !== "" ? parseFloat(newOutsourceCost) || 0 : 0,
+          specialIncentivePercent: newSpecialIncentive !== "" && !isNaN(parseFloat(newSpecialIncentive)) ? parseFloat(newSpecialIncentive) : null,
         }),
       }).then((r) => r.json());
 
@@ -217,6 +223,8 @@ export default function TestsClient() {
         setNewTestName("");
         setNewTestCode("");
         setNewTestPrice("");
+        setNewOutsourceCost("0");
+        setNewSpecialIncentive("");
 
         // Open parameters config immediately as the next step
         const parsedTest = res.test;
@@ -270,6 +278,8 @@ export default function TestsClient() {
           testId: editingTest.id,
           price: parseFloat(editingPrice),
           name: editingName.trim(),
+          outsourceCost: editingOutsourceCost !== "" ? parseFloat(editingOutsourceCost) || 0 : 0,
+          specialIncentivePercent: editingSpecialIncentive !== "" && !isNaN(parseFloat(editingSpecialIncentive)) ? parseFloat(editingSpecialIncentive) : null,
         }),
       }).then((r) => r.json());
 
@@ -280,6 +290,8 @@ export default function TestsClient() {
         setEditingTest(null);
         setEditingPrice("");
         setEditingName("");
+        setEditingOutsourceCost("0");
+        setEditingSpecialIncentive("");
       } else {
         showToast(res.message || "Failed to update test details.", "error");
       }
@@ -673,13 +685,14 @@ export default function TestsClient() {
           ) : (
             <>
               <TableContainer component={Paper} variant="outlined" sx={{ maxHeight: 500 }}>
-                <Table size="small" stickyHeader sx={{ minWidth: 650 }}>
+                <Table size="small" stickyHeader sx={{ minWidth: 750 }}>
                   <TableHead>
                     <TableRow>
                       <TableCell sx={{ fontWeight: 700, bgcolor: "grey.50" }}>Test Code</TableCell>
                       <TableCell sx={{ fontWeight: 700, bgcolor: "grey.50" }}>Test Name</TableCell>
-                      <TableCell sx={{ fontWeight: 700, bgcolor: "grey.50" }} align="right">Default Price (₹)</TableCell>
                       <TableCell sx={{ fontWeight: 700, bgcolor: "grey.50" }} align="right">Your Price (₹)</TableCell>
+                      <TableCell sx={{ fontWeight: 700, bgcolor: "grey.50" }} align="right">Outsource Cost (₹)</TableCell>
+                      <TableCell sx={{ fontWeight: 700, bgcolor: "grey.50" }} align="center">Special Doc %</TableCell>
                       <TableCell sx={{ fontWeight: 700, bgcolor: "grey.50" }} align="center">Scope</TableCell>
                       <TableCell sx={{ fontWeight: 700, bgcolor: "grey.50" }} align="center">Action</TableCell>
                     </TableRow>
@@ -687,7 +700,7 @@ export default function TestsClient() {
                   <TableBody>
                     {filteredTests.length === 0 ? (
                       <TableRow>
-                        <TableCell colSpan={6} align="center" sx={{ py: 6, color: "text.secondary" }}>
+                        <TableCell colSpan={7} align="center" sx={{ py: 6, color: "text.secondary" }}>
                           No tests found matching search filter.
                         </TableCell>
                       </TableRow>
@@ -696,9 +709,22 @@ export default function TestsClient() {
                         <TableRow key={test.id} hover>
                           <TableCell sx={{ fontMono: "true", fontSize: "0.75rem", fontWeight: 600 }}>{test.code}</TableCell>
                           <TableCell sx={{ fontWeight: 500 }}>{test.name}</TableCell>
-                          <TableCell align="right" sx={{ color: "text.secondary" }}>₹{Number(test.globalPrice).toFixed(2)}</TableCell>
                           <TableCell align="right" sx={{ fontWeight: 700, color: test.isCustomized ? "success.main" : "text.primary" }}>
                             ₹{Number(test.price).toFixed(2)}
+                          </TableCell>
+                          <TableCell align="right" sx={{ color: Number(test.outsourceCost) > 0 ? "warning.dark" : "text.secondary", fontWeight: Number(test.outsourceCost) > 0 ? 600 : 400 }}>
+                            {Number(test.outsourceCost) > 0 ? `₹${Number(test.outsourceCost).toFixed(2)}` : "₹0.00"}
+                          </TableCell>
+                          <TableCell align="center">
+                            {test.specialIncentivePercent !== null && test.specialIncentivePercent !== undefined && Number(test.specialIncentivePercent) > 0 ? (
+                              <Typography variant="caption" sx={{ bgcolor: "primary.50", color: "primary.main", border: "1px solid", borderColor: "primary.200", px: 1, py: 0.2, borderRadius: 1, fontWeight: 700 }}>
+                                {Number(test.specialIncentivePercent)}% (Special)
+                              </Typography>
+                            ) : (
+                              <Typography variant="caption" sx={{ color: "text.secondary" }}>
+                                Doc Default
+                              </Typography>
+                            )}
                           </TableCell>
                           <TableCell align="center">
                             {test.isCustomized ? (
@@ -722,6 +748,8 @@ export default function TestsClient() {
                                       setEditingTest(test);
                                       setEditingPrice(String(test.price));
                                       setEditingName(test.name);
+                                      setEditingOutsourceCost(test.outsourceCost !== null && test.outsourceCost !== undefined ? String(test.outsourceCost) : "0");
+                                      setEditingSpecialIncentive(test.specialIncentivePercent !== null && test.specialIncentivePercent !== undefined ? String(test.specialIncentivePercent) : "");
                                       setOpenEditPriceDialog(true);
                                     }}
                                     disabled={!canWriteTests}
@@ -802,6 +830,27 @@ export default function TestsClient() {
               required
               InputProps={{ inputProps: { min: 0, step: "0.01" } }}
             />
+            <TextField
+              label="Outsource / Lab Cost (₹)"
+              type="number"
+              fullWidth
+              size="small"
+              value={newOutsourceCost}
+              onChange={(e) => setNewOutsourceCost(e.target.value)}
+              helperText="Cost deducted before calculating doctor incentive (if sent outside)"
+              InputProps={{ inputProps: { min: 0, step: "0.01" } }}
+            />
+            <TextField
+              label="Special Doctor Incentive (%)"
+              type="number"
+              fullWidth
+              size="small"
+              value={newSpecialIncentive}
+              onChange={(e) => setNewSpecialIncentive(e.target.value)}
+              placeholder="Leave empty to use doctor's default %"
+              helperText="Overrides doctor default incentive for this specific test"
+              InputProps={{ inputProps: { min: 0, max: 100, step: "0.01" } }}
+            />
           </Box>
         </DialogContent>
         <DialogActions sx={{ px: 3, pb: 2 }}>
@@ -846,6 +895,27 @@ export default function TestsClient() {
               required
               InputProps={{ inputProps: { min: 0, step: "0.01" } }}
             />
+            <TextField
+              label="Outsource / Lab Cost (₹)"
+              type="number"
+              fullWidth
+              size="small"
+              value={editingOutsourceCost}
+              onChange={(e) => setEditingOutsourceCost(e.target.value)}
+              helperText="Cost deducted before calculating doctor incentive (if sent outside)"
+              InputProps={{ inputProps: { min: 0, step: "0.01" } }}
+            />
+            <TextField
+              label="Special Doctor Incentive (%)"
+              type="number"
+              fullWidth
+              size="small"
+              value={editingSpecialIncentive}
+              onChange={(e) => setEditingSpecialIncentive(e.target.value)}
+              placeholder="Leave empty to use doctor's default %"
+              helperText="Overrides doctor default incentive for this specific test"
+              InputProps={{ inputProps: { min: 0, max: 100, step: "0.01" } }}
+            />
           </Box>
         </DialogContent>
         <DialogActions sx={{ px: 3, pb: 2 }}>
@@ -863,10 +933,10 @@ export default function TestsClient() {
       </Dialog>
 
       {/* Manage Test Parameters Dialog */}
-      <Dialog 
-        open={openParamsDialog} 
-        onClose={() => setOpenParamsDialog(false)} 
-        maxWidth="lg" 
+      <Dialog
+        open={openParamsDialog}
+        onClose={() => setOpenParamsDialog(false)}
+        maxWidth="lg"
         fullWidth
         PaperProps={{
           sx: {
@@ -926,8 +996,8 @@ export default function TestsClient() {
                     </TableRow>
                   ) : (
                     parametersList.map((param, idx) => (
-                      <TableRow 
-                        key={param.key} 
+                      <TableRow
+                        key={param.key}
                         hover
                         onDragOver={(e) => handleDragOver(e, idx)}
                         onDrop={handleDrop}
@@ -989,11 +1059,11 @@ export default function TestsClient() {
                                   {...restProps}
                                   sx={{ display: "flex", alignItems: "center", gap: 1, py: "6px !important" }}
                                 >
-                                  <Box 
-                                    sx={{ 
-                                      fontSize: "0.82rem", 
-                                      color: isTest ? "#ef4444" : "#2563eb", 
-                                      fontWeight: 600 
+                                  <Box
+                                    sx={{
+                                      fontSize: "0.82rem",
+                                      color: isTest ? "#ef4444" : "#2563eb",
+                                      fontWeight: 600
                                     }}
                                   >
                                     {option.name}

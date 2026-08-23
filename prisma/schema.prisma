@@ -210,6 +210,8 @@ model Test {
   superFranchiseRate  Decimal?     @db.Decimal(10, 2)
   labRate             Decimal?     @db.Decimal(10, 2)
   offerPrice          Decimal?     @db.Decimal(10, 2)
+  outsourceCost       Decimal?     @default(0.00) @db.Decimal(10, 2)
+  specialIncentivePercent Decimal? @db.Decimal(5, 2)
   createdAt     DateTime           @default(now())
   updatedAt     DateTime           @updatedAt
   isProcessed   Boolean            @default(false)
@@ -289,21 +291,22 @@ model Registration {
 }
 
 model RegistrationTest {
-  registrationId Int
-  testId         Int
-  price          Decimal      @default(0.00) @db.Decimal(10, 2)
-  assessNo       String?
-  collectedBy    String       @default("-NA-")
-  expense        Decimal      @default(0.00) @db.Decimal(10, 2)
-  pathologist    String       @default("-NA-")
-  product        String       @default("-NA-")
-  sampleBarcode  String?
-  sampleRemark   String?
-  sampleStatus   String       @default("Pending")
-  sendTo         String       @default("-NA-")
-  interpretation String?      @db.Text
-  registration   Registration @relation(fields: [registrationId], references: [id], onDelete: Cascade)
-  test           Test         @relation(fields: [testId], references: [id], onDelete: Cascade)
+  registrationId         Int
+  testId                 Int
+  price                  Decimal      @default(0.00) @db.Decimal(10, 2)
+  assessNo               String?
+  collectedBy            String       @default("-NA-")
+  expense                Decimal      @default(0.00) @db.Decimal(10, 2)
+  specialIncentivePercent Decimal?     @db.Decimal(5, 2)
+  pathologist            String       @default("-NA-")
+  product                String       @default("-NA-")
+  sampleBarcode          String?
+  sampleRemark           String?
+  sampleStatus           String       @default("Pending")
+  sendTo                 String       @default("-NA-")
+  interpretation         String?      @db.Text
+  registration           Registration @relation(fields: [registrationId], references: [id], onDelete: Cascade)
+  test                   Test         @relation(fields: [testId], references: [id], onDelete: Cascade)
 
   @@id([registrationId, testId])
   @@index([testId], map: "RegistrationTest_testId_fkey")

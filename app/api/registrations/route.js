@@ -204,20 +204,42 @@ export async function POST(req) {
         });
       }
 
+      const testIdsToQuery = validatedData.testIds;
       const selectedTests = await tx.test.findMany({
-        where: { id: { in: validatedData.testIds } },
-        select: { id: true, price: true }
+        where: { id: { in: testIdsToQuery } },
+        select: { id: true, price: true, outsourceCost: true, specialIncentivePercent: true }
       });
-      const priceMap = {};
+      const testMetaMap = {};
       selectedTests.forEach((t) => {
-        priceMap[t.id] = t.price;
+        testMetaMap[t.id] = t;
       });
 
-      const registrationTests = validatedData.testIds.map((testId) => ({
-        registrationId: registration.id,
-        testId: testId,
-        price: priceMap[testId] || 0.00,
-      }));
+      const customTestMap = {};
+      if (body.tests && Array.isArray(body.tests)) {
+        body.tests.forEach((ct) => {
+          customTestMap[ct.testId || ct.id] = ct;
+        });
+      }
+
+      const registrationTests = testIdsToQuery.map((testId) => {
+        const meta = testMetaMap[testId] || {};
+        const custom = customTestMap[testId] || {};
+        const price = custom.price !== undefined ? parseFloat(custom.price) : (meta.price ? Number(meta.price) : 0.00);
+        const expense = custom.expense !== undefined 
+          ? parseFloat(custom.expense) 
+          : (meta.outsourceCost ? Number(meta.outsourceCost) : 0.00);
+        const specialIncentivePercent = custom.specialIncentivePercent !== undefined 
+          ? (custom.specialIncentivePercent !== null && custom.specialIncentivePercent !== "" ? parseFloat(custom.specialIncentivePercent) : null)
+          : (meta.specialIncentivePercent ? Number(meta.specialIncentivePercent) : null);
+
+        return {
+          registrationId: registration.id,
+          testId: testId,
+          price: price,
+          expense: expense,
+          specialIncentivePercent: specialIncentivePercent,
+        };
+      });
 
       console.log(`Adding ${registrationTests.length} tests to registration ID ${registration.id}`);
       await tx.registrationTest.createMany({ data: registrationTests });

@@ -163,29 +163,73 @@ export async function PUT(req, { params }) {
       const existingTests = await tx.registrationTest.findMany({
         where: { registrationId: regId }
       });
-      const existingPriceMap = {};
+      const existingMap = {};
       existingTests.forEach((et) => {
-        existingPriceMap[et.testId] = Number(et.price);
+        existingMap[et.testId] = {
+          price: Number(et.price),
+          expense: Number(et.expense),
+          specialIncentivePercent: et.specialIncentivePercent !== null ? Number(et.specialIncentivePercent) : null,
+          sendTo: et.sendTo,
+          sampleStatus: et.sampleStatus,
+          sampleBarcode: et.sampleBarcode,
+          sampleRemark: et.sampleRemark,
+          assessNo: et.assessNo,
+          pathologist: et.pathologist,
+          collectedBy: et.collectedBy,
+          product: et.product,
+          interpretation: et.interpretation,
+        };
       });
 
       const currentTests = await tx.test.findMany({
         where: { id: { in: validatedData.testIds } },
-        select: { id: true, price: true }
+        select: { id: true, price: true, outsourceCost: true, specialIncentivePercent: true }
       });
-      const currentPriceMap = {};
+      const currentMetaMap = {};
       currentTests.forEach((t) => {
-        currentPriceMap[t.id] = Number(t.price);
+        currentMetaMap[t.id] = t;
       });
+
+      const customTestMap = {};
+      if (body.tests && Array.isArray(body.tests)) {
+        body.tests.forEach((ct) => {
+          customTestMap[ct.testId || ct.id] = ct;
+        });
+      }
 
       await tx.registrationTest.deleteMany({ where: { registrationId: regId } });
       const registrationTests = validatedData.testIds.map((testId) => {
-        const price = existingPriceMap[testId] !== undefined 
-          ? existingPriceMap[testId] 
-          : (currentPriceMap[testId] || 0.00);
+        const existing = existingMap[testId];
+        const meta = currentMetaMap[testId] || {};
+        const custom = customTestMap[testId] || {};
+
+        const price = custom.price !== undefined 
+          ? parseFloat(custom.price) 
+          : (existing?.price !== undefined ? existing.price : (meta.price ? Number(meta.price) : 0.00));
+
+        const expense = custom.expense !== undefined 
+          ? parseFloat(custom.expense) 
+          : (existing?.expense !== undefined ? existing.expense : (meta.outsourceCost ? Number(meta.outsourceCost) : 0.00));
+
+        const specialIncentivePercent = custom.specialIncentivePercent !== undefined
+          ? (custom.specialIncentivePercent !== null && custom.specialIncentivePercent !== "" ? parseFloat(custom.specialIncentivePercent) : null)
+          : (existing?.specialIncentivePercent !== undefined ? existing.specialIncentivePercent : (meta.specialIncentivePercent ? Number(meta.specialIncentivePercent) : null));
+
         return {
           registrationId: regId,
           testId: testId,
           price: price,
+          expense: expense,
+          specialIncentivePercent: specialIncentivePercent,
+          sendTo: existing?.sendTo || "-NA-",
+          sampleStatus: existing?.sampleStatus || "Pending",
+          sampleBarcode: existing?.sampleBarcode || null,
+          sampleRemark: existing?.sampleRemark || null,
+          assessNo: existing?.assessNo || null,
+          pathologist: existing?.pathologist || "-NA-",
+          collectedBy: existing?.collectedBy || "-NA-",
+          product: existing?.product || "-NA-",
+          interpretation: existing?.interpretation || null,
         };
       });
       await tx.registrationTest.createMany({ data: registrationTests });

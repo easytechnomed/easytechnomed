@@ -162,7 +162,7 @@ export async function POST(req) {
   try {
     const admin = await requireAdmin("TEST_WRITE");
     const body = await req.json().catch(() => ({}));
-    const { name, code, price } = body;
+    const { name, code, price, outsourceCost, specialIncentivePercent } = body;
 
     if (!name || typeof name !== "string" || name.trim() === "") {
       return NextResponse.json(
@@ -180,6 +180,10 @@ export async function POST(req) {
 
     const testCode = code ? code.trim() : `T-${Date.now()}`;
     const numericPrice = parseFloat(price);
+    const parsedOutsourceCost = outsourceCost !== undefined && outsourceCost !== "" ? parseFloat(outsourceCost) || 0.00 : 0.00;
+    const parsedSpecialIncentive = specialIncentivePercent !== undefined && specialIncentivePercent !== "" && specialIncentivePercent !== null
+      ? parseFloat(specialIncentivePercent) || 0.00
+      : null;
 
     // Check if code is already used in this workspace
     const existingTest = await prisma.test.findFirst({
@@ -202,6 +206,8 @@ export async function POST(req) {
         name: name.trim(),
         code: testCode,
         price: numericPrice,
+        outsourceCost: parsedOutsourceCost,
+        specialIncentivePercent: parsedSpecialIncentive,
         workspaceId: admin.workspaceId,
         isProcessed: true,
       },
@@ -256,7 +262,7 @@ export async function PUT(req) {
   try {
     const admin = await requireAdmin("TEST_WRITE");
     const body = await req.json().catch(() => ({}));
-    const { testId, price, name } = body;
+    const { testId, price, name, outsourceCost, specialIncentivePercent } = body;
 
     if (!testId || price === undefined || isNaN(parseFloat(price))) {
       return NextResponse.json(
@@ -292,6 +298,14 @@ export async function PUT(req) {
       if (testName) {
         updateData.name = testName;
       }
+      if (outsourceCost !== undefined) {
+        updateData.outsourceCost = outsourceCost !== "" ? parseFloat(outsourceCost) || 0.00 : 0.00;
+      }
+      if (specialIncentivePercent !== undefined) {
+        updateData.specialIncentivePercent = specialIncentivePercent !== "" && specialIncentivePercent !== null
+          ? parseFloat(specialIncentivePercent) || 0.00
+          : null;
+      }
 
       const updatedTest = await prisma.test.update({
         where: { id: test.id },
@@ -306,12 +320,22 @@ export async function PUT(req) {
 
     // If it's a global test, we clone it for this workspace
     const newTest = await prisma.$transaction(async (tx) => {
+      const parsedOutsourceCost = outsourceCost !== undefined 
+        ? (outsourceCost !== "" ? parseFloat(outsourceCost) || 0.00 : 0.00)
+        : (test.outsourceCost ? Number(test.outsourceCost) : 0.00);
+
+      const parsedSpecialIncentive = specialIncentivePercent !== undefined
+        ? (specialIncentivePercent !== "" && specialIncentivePercent !== null ? parseFloat(specialIncentivePercent) || 0.00 : null)
+        : (test.specialIncentivePercent ? Number(test.specialIncentivePercent) : null);
+
       // 1. Create the cloned test
       const clonedTest = await tx.test.create({
         data: {
           name: testName || test.name,
           code: test.code,
           price: numericPrice,
+          outsourceCost: parsedOutsourceCost,
+          specialIncentivePercent: parsedSpecialIncentive,
           isProcessed: test.isProcessed,
           workspaceId: admin.workspaceId,
           isCustomized: true,

@@ -46,6 +46,8 @@ export async function GET(req) {
                   name: true,
                   code: true,
                   price: true,
+                  outsourceCost: true,
+                  specialIncentivePercent: true,
                 },
               },
             },
@@ -67,12 +69,52 @@ export async function GET(req) {
         const total = Number(r.totalAmount) || 0;
         const discount = Number(r.discountAmount) || 0;
         const net = total - discount;
-        const pct =
+        const discPercent = Number(r.discountPercent) || 0;
+        const discountFactor = Math.max(0, 1 - (discPercent / 100));
+
+        const defaultDocPct =
           r.refByIncentivePercent !== null && r.refByIncentivePercent !== undefined
             ? Number(r.refByIncentivePercent)
             : incentivePercent;
-        const incentive = (net * pct) / 100;
-        totalIncentiveAmount += incentive;
+
+        let regIncentive = 0;
+        const testsList = (r.tests || []).map((t) => {
+          const price = Number(t.price) || 0;
+          const expense = t.expense !== undefined && t.expense !== null
+            ? Number(t.expense)
+            : (t.test?.outsourceCost ? Number(t.test.outsourceCost) : 0);
+
+          const netTestPrice = price * discountFactor;
+          const netBase = Math.max(0, netTestPrice - expense);
+
+          let testPct = defaultDocPct;
+          let isSpecialRate = false;
+
+          if (t.specialIncentivePercent !== null && t.specialIncentivePercent !== undefined && Number(t.specialIncentivePercent) > 0) {
+            testPct = Number(t.specialIncentivePercent);
+            isSpecialRate = true;
+          } else if (t.test?.specialIncentivePercent !== null && t.test?.specialIncentivePercent !== undefined && Number(t.test.specialIncentivePercent) > 0) {
+            testPct = Number(t.test.specialIncentivePercent);
+            isSpecialRate = true;
+          }
+
+          const itemIncentive = (netBase * testPct) / 100;
+          regIncentive += itemIncentive;
+
+          return {
+            testId: t.testId,
+            name: t.test?.name || "Test",
+            code: t.test?.code || "",
+            price: price,
+            expense: expense,
+            netBase: netBase,
+            incentivePercent: testPct,
+            isSpecialRate: isSpecialRate,
+            incentiveAmount: itemIncentive,
+          };
+        });
+
+        totalIncentiveAmount += regIncentive;
         const received = Number(r.receivedAmount) || 0;
         const due = Number(r.dueAmount) || 0;
 
@@ -91,18 +133,15 @@ export async function GET(req) {
           status: r.status,
           totalAmount: total,
           discountAmount: discount,
-          discountPercent: Number(r.discountPercent) || 0,
+          discountPercent: discPercent,
           netAmount: net,
           receivedAmount: received,
           dueAmount: due,
-          incentivePercent: pct,
-          incentiveAmount: incentive,
-          tests: (r.tests || []).map((t) => ({
-            testId: t.testId,
-            name: t.test?.name || "Test",
-            code: t.test?.code || "",
-            price: Number(t.price) || 0,
-          })),
+          incentivePercent: defaultDocPct,
+          incentiveAmount: regIncentive,
+          hasSpecialTests: testsList.some((t) => t.isSpecialRate),
+          hasOutsourcedTests: testsList.some((t) => t.expense > 0),
+          tests: testsList,
         };
       });
 

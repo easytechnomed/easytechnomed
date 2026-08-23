@@ -134,12 +134,16 @@ export default function RegistrationPage() {
   const [newTestName, setNewTestName] = useState("");
   const [newTestCode, setNewTestCode] = useState("");
   const [newTestPrice, setNewTestPrice] = useState("");
+  const [newTestOutsourceCost, setNewTestOutsourceCost] = useState("0");
+  const [newTestSpecialIncentive, setNewTestSpecialIncentive] = useState("");
   const [isSavingTest, setIsSavingTest] = useState(false);
 
   const [openEditTestDialog, setOpenEditTestDialog] = useState(false);
   const [editingTest, setEditingTest] = useState(null);
   const [editingTestName, setEditingTestName] = useState("");
   const [editingTestPrice, setEditingTestPrice] = useState("");
+  const [editingTestOutsourceCost, setEditingTestOutsourceCost] = useState("0");
+  const [editingTestSpecialIncentive, setEditingTestSpecialIncentive] = useState("");
 
   // Mobile lookup states
   const [matchingPatients, setMatchingPatients] = useState([]);
@@ -189,6 +193,8 @@ export default function RegistrationPage() {
           const parsedTests = testsRes.tests.map((t) => ({
             ...t,
             price: Number(t.price) || 0,
+            outsourceCost: t.outsourceCost !== undefined && t.outsourceCost !== null ? Number(t.outsourceCost) : 0,
+            specialIncentivePercent: t.specialIncentivePercent !== undefined && t.specialIncentivePercent !== null ? Number(t.specialIncentivePercent) : null,
           }));
           setTests(parsedTests);
         }
@@ -262,6 +268,8 @@ export default function RegistrationPage() {
               return {
                 ...match,
                 price: rt.price !== undefined ? Number(rt.price) : Number(match.price),
+                outsourceCost: rt.expense !== undefined ? Number(rt.expense) : (match.outsourceCost || 0),
+                specialIncentivePercent: rt.specialIncentivePercent !== undefined && rt.specialIncentivePercent !== null ? Number(rt.specialIncentivePercent) : match.specialIncentivePercent,
               };
             }
             return null;
@@ -423,6 +431,8 @@ export default function RegistrationPage() {
           name: newTestName.trim(),
           code: newTestCode.trim() || null,
           price: parseFloat(newTestPrice),
+          outsourceCost: newTestOutsourceCost !== "" ? parseFloat(newTestOutsourceCost) || 0 : 0,
+          specialIncentivePercent: newTestSpecialIncentive !== "" && !isNaN(parseFloat(newTestSpecialIncentive)) ? parseFloat(newTestSpecialIncentive) : null,
         }),
       }).then((r) => r.json());
 
@@ -432,6 +442,8 @@ export default function RegistrationPage() {
         const parsedTest = {
           ...res.test,
           price: Number(res.test.price) || 0,
+          outsourceCost: res.test.outsourceCost !== undefined && res.test.outsourceCost !== null ? Number(res.test.outsourceCost) : 0,
+          specialIncentivePercent: res.test.specialIncentivePercent !== undefined && res.test.specialIncentivePercent !== null ? Number(res.test.specialIncentivePercent) : null,
         };
 
         // Update the master test catalog list
@@ -448,6 +460,8 @@ export default function RegistrationPage() {
         setNewTestName("");
         setNewTestCode("");
         setNewTestPrice("");
+        setNewTestOutsourceCost("0");
+        setNewTestSpecialIncentive("");
       } else {
         showNotification(res.message || "Failed to add test.", "error");
       }
@@ -464,6 +478,8 @@ export default function RegistrationPage() {
     setEditingTest(test);
     setEditingTestName(test.name);
     setEditingTestPrice(String(test.price));
+    setEditingTestOutsourceCost(test.outsourceCost !== null && test.outsourceCost !== undefined ? String(test.outsourceCost) : "0");
+    setEditingTestSpecialIncentive(test.specialIncentivePercent !== null && test.specialIncentivePercent !== undefined ? String(test.specialIncentivePercent) : "");
     setOpenEditTestDialog(true);
   };
 
@@ -488,6 +504,8 @@ export default function RegistrationPage() {
           testId: editingTest.id,
           name: editingTestName.trim(),
           price: parseFloat(editingTestPrice),
+          outsourceCost: editingTestOutsourceCost !== "" ? parseFloat(editingTestOutsourceCost) || 0 : 0,
+          specialIncentivePercent: editingTestSpecialIncentive !== "" && !isNaN(parseFloat(editingTestSpecialIncentive)) ? parseFloat(editingTestSpecialIncentive) : null,
         }),
       }).then((r) => r.json());
 
@@ -497,6 +515,8 @@ export default function RegistrationPage() {
         const parsedTest = {
           ...res.test,
           price: Number(res.test.price) || 0,
+          outsourceCost: res.test.outsourceCost !== undefined && res.test.outsourceCost !== null ? Number(res.test.outsourceCost) : 0,
+          specialIncentivePercent: res.test.specialIncentivePercent !== undefined && res.test.specialIncentivePercent !== null ? Number(res.test.specialIncentivePercent) : null,
         };
 
         // Update test in master tests list
@@ -520,6 +540,8 @@ export default function RegistrationPage() {
         setEditingTest(null);
         setEditingTestName("");
         setEditingTestPrice("");
+        setEditingTestOutsourceCost("0");
+        setEditingTestSpecialIncentive("");
       } else {
         showNotification(res.message || "Failed to update test.", "error");
       }
@@ -608,6 +630,12 @@ _Thank you for choosing us for your health diagnostics!_`;
         dueAmount: calculatedDue,
         stickerCount: parseInt(stickerCount) || 1,
         testIds: selectedTests.map((t) => t.id),
+        tests: selectedTests.map((t) => ({
+          testId: t.id,
+          price: t.price,
+          expense: t.outsourceCost !== undefined ? Number(t.outsourceCost) : (t.expense !== undefined ? Number(t.expense) : 0),
+          specialIncentivePercent: t.specialIncentivePercent !== undefined && t.specialIncentivePercent !== null ? Number(t.specialIncentivePercent) : null,
+        })),
       };
 
       const res = editId
@@ -1178,6 +1206,8 @@ _Thank you for choosing us for your health diagnostics!_`;
                       <TableCell sx={{ fontWeight: 700 }}>SNO</TableCell>
                       <TableCell sx={{ fontWeight: 700 }}>Test Code</TableCell>
                       <TableCell sx={{ fontWeight: 700 }}>Test Name</TableCell>
+                      <TableCell sx={{ fontWeight: 700 }} align="right">Outsource (₹)</TableCell>
+                      <TableCell sx={{ fontWeight: 700 }} align="center">Doc Incentive</TableCell>
                       <TableCell sx={{ fontWeight: 700 }} align="right">Price (₹)</TableCell>
                       <TableCell sx={{ fontWeight: 700 }} align="center">Action</TableCell>
                     </TableRow>
@@ -1185,7 +1215,7 @@ _Thank you for choosing us for your health diagnostics!_`;
                   <TableBody>
                     {selectedTests.length === 0 ? (
                       <TableRow>
-                        <TableCell colSpan={5} align="center" sx={{ py: 3, color: "text.secondary" }}>
+                        <TableCell colSpan={7} align="center" sx={{ py: 3, color: "text.secondary" }}>
                           No tests selected. Use search bar above to add tests.
                         </TableCell>
                       </TableRow>
@@ -1195,11 +1225,30 @@ _Thank you for choosing us for your health diagnostics!_`;
                           <TableCell>{idx + 1}</TableCell>
                           <TableCell>{t.code}</TableCell>
                           <TableCell sx={{ fontWeight: 500 }}>{t.name}</TableCell>
-                          <TableCell align="right">₹{t.price.toFixed(2)}</TableCell>
+                          <TableCell align="right" sx={{ color: Number(t.outsourceCost) > 0 ? "warning.dark" : "text.secondary", fontWeight: Number(t.outsourceCost) > 0 ? 600 : 400 }}>
+                            {Number(t.outsourceCost) > 0 ? `₹${Number(t.outsourceCost).toFixed(2)}` : "-"}
+                          </TableCell>
                           <TableCell align="center">
-                            <IconButton color="error" size="small" onClick={() => handleRemoveTest(t.id)}>
-                              <DeleteIcon fontSize="small" />
-                            </IconButton>
+                            {t.specialIncentivePercent !== null && t.specialIncentivePercent !== undefined && Number(t.specialIncentivePercent) > 0 ? (
+                              <Typography variant="caption" sx={{ bgcolor: "primary.50", color: "primary.main", border: "1px solid", borderColor: "primary.200", px: 1, py: 0.2, borderRadius: 1, fontWeight: 700 }}>
+                                {Number(t.specialIncentivePercent)}% (Special)
+                              </Typography>
+                            ) : (
+                              <Typography variant="caption" sx={{ color: "text.secondary" }}>
+                                {refBy ? `${Number(refBy.incentivePercent || 0)}% (Doc)` : "Default"}
+                              </Typography>
+                            )}
+                          </TableCell>
+                          <TableCell align="right" sx={{ fontWeight: 600 }}>₹{t.price.toFixed(2)}</TableCell>
+                          <TableCell align="center">
+                            <Box sx={{ display: "flex", justifyContent: "center", gap: 0.5 }}>
+                              <IconButton color="primary" size="small" onClick={() => handleOpenEditTest(t)}>
+                                <EditIcon fontSize="small" />
+                              </IconButton>
+                              <IconButton color="error" size="small" onClick={() => handleRemoveTest(t.id)}>
+                                <DeleteIcon fontSize="small" />
+                              </IconButton>
+                            </Box>
                           </TableCell>
                         </TableRow>
                       ))
@@ -1595,6 +1644,27 @@ _Thank you for choosing us for your health diagnostics!_`;
               required
               slotProps={{ htmlInput: { min: 0, step: "0.01" } }}
             />
+            <TextField
+              label="Outsource / Lab Cost (₹)"
+              type="number"
+              fullWidth
+              size="small"
+              value={newTestOutsourceCost}
+              onChange={(e) => setNewTestOutsourceCost(e.target.value)}
+              helperText="Cost deducted before doctor incentive (if sent outside)"
+              slotProps={{ htmlInput: { min: 0, step: "0.01" } }}
+            />
+            <TextField
+              label="Special Doctor Incentive (%)"
+              type="number"
+              fullWidth
+              size="small"
+              value={newTestSpecialIncentive}
+              onChange={(e) => setNewTestSpecialIncentive(e.target.value)}
+              placeholder="Leave empty for doctor's default %"
+              helperText="Special incentive % for this specific test"
+              slotProps={{ htmlInput: { min: 0, max: 100, step: "0.01" } }}
+            />
           </Box>
         </DialogContent>
         <DialogActions sx={{ px: 3, pb: 2 }}>
@@ -1638,6 +1708,27 @@ _Thank you for choosing us for your health diagnostics!_`;
               onChange={(e) => setEditingTestPrice(e.target.value)}
               required
               slotProps={{ htmlInput: { min: 0, step: "0.01" } }}
+            />
+            <TextField
+              label="Outsource / Lab Cost (₹)"
+              type="number"
+              fullWidth
+              size="small"
+              value={editingTestOutsourceCost}
+              onChange={(e) => setEditingTestOutsourceCost(e.target.value)}
+              helperText="Cost deducted before doctor incentive (if sent outside)"
+              slotProps={{ htmlInput: { min: 0, step: "0.01" } }}
+            />
+            <TextField
+              label="Special Doctor Incentive (%)"
+              type="number"
+              fullWidth
+              size="small"
+              value={editingTestSpecialIncentive}
+              onChange={(e) => setEditingTestSpecialIncentive(e.target.value)}
+              placeholder="Leave empty for doctor's default %"
+              helperText="Special incentive % for this specific test"
+              slotProps={{ htmlInput: { min: 0, max: 100, step: "0.01" } }}
             />
           </Box>
         </DialogContent>
