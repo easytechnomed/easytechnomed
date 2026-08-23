@@ -140,20 +140,29 @@ export async function GET(req, { params }) {
       include: { address: true }
     });
 
-    const companyName = adminRecord?.companyName || "Pathology Laboratory";
+    const companyName = adminRecord?.companyName || "Technomed Laboratory";
+    const email = adminRecord?.email || "";
     const phoneNo = adminRecord?.mobileNumber || "-";
     const addr = adminRecord?.address;
-    const addressStr = addr
+    const addrString = addr
       ? [addr.address1, addr.address2, addr.city, addr.state, addr.pincode].filter(Boolean).join(", ")
       : "Diagnostic & Clinical Pathology Center";
 
+    const subtotal = reg.tests?.reduce((sum, t) => sum + parseFloat(t.price !== undefined ? t.price : t.test?.price || 0), 0) || 0;
+    const collCharge = parseFloat(reg.collectionCharge || 0);
+    const discAmount = parseFloat(reg.discountAmount || 0);
+    const discPercent = parseFloat(reg.discountPercent || 0);
+    const netAmount = subtotal + collCharge - discAmount;
+    const paidAmount = parseFloat(reg.receivedAmount || 0);
+    const dueAmount = parseFloat(reg.dueAmount || 0);
+
     // Format tests table rows
-    const testRowsHtml = reg.tests?.map((t, idx) => `
+    const testRows = reg.tests?.map((t, idx) => `
       <tr>
-        <td style="text-align: center;">${idx + 1}</td>
-        <td>${t.test?.name || "Diagnostic Test"}</td>
-        <td style="text-align: right;">${parseFloat(t.price || 0).toFixed(2)}</td>
-        <td style="text-align: right;">${parseFloat(t.price || 0).toFixed(2)}</td>
+        <td style="padding: 8px 0; font-family: monospace;">${idx + 1}</td>
+        <td style="padding: 8px 0;">${t.test?.name || "Diagnostic Test"}</td>
+        <td style="padding: 8px 0; color: #555;">-</td>
+        <td align="right" style="padding: 8px 0; font-family: monospace;">${parseFloat(t.price !== undefined ? t.price : t.test?.price || 0).toFixed(2)}</td>
       </tr>
     `).join("") || "";
 
