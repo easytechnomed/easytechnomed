@@ -36,7 +36,10 @@ import {
   Drawer,
   Checkbox,
   FormControlLabel,
-  Chip
+  Chip,
+  Select,
+  FormControl,
+  InputLabel,
 } from "@mui/material";
 import {
   Search as SearchIcon,
@@ -255,7 +258,8 @@ const getTestChip = (reg) => {
 
 const exportColumns = [
   { id: "sno", label: "SNO", getValue: (reg, idx) => idx + 1 },
-  { id: "date", label: "Reg. Date", getValue: (reg) => {
+  {
+    id: "date", label: "Reg. Date", getValue: (reg) => {
       if (!reg.date) return "-";
       const d = new Date(reg.date);
       return d.toLocaleDateString("en-US", { month: "short", day: "2-digit", year: "numeric" });
@@ -268,7 +272,8 @@ const exportColumns = [
   { id: "gender", label: "Gender", getValue: (reg) => reg.gender },
   { id: "age", label: "Age", getValue: (reg) => `${Math.round(reg.age)}${reg.ageUnit?.charAt(0) || "Y"}` },
   { id: "mobile", label: "Mobile No", getValue: (reg) => reg.mobileNo },
-  { id: "rptTime", label: "Rpt. Time", getValue: (reg) => {
+  {
+    id: "rptTime", label: "Rpt. Time", getValue: (reg) => {
       if (!reg.expRptDate) return "-";
       const d = new Date(reg.expRptDate);
       return d.toLocaleDateString("en-US", { month: "2-digit", day: "2-digit", year: "2-digit" }) + " " + d.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit", hour12: true });
@@ -289,14 +294,71 @@ export default function TestReportPage() {
   const [limit, setLimit] = useState(50);
   const [total, setTotal] = useState(0);
 
-  // Filters
+  // Filters & Range
+  const calculateDatesForRange = (selectedRange) => {
+    const now = new Date();
+    let start = new Date();
+    let end = new Date();
+
+    if (selectedRange === "7days") {
+      start.setDate(now.getDate() - 7);
+    } else if (selectedRange === "30days") {
+      start.setDate(now.getDate() - 30);
+    } else if (selectedRange === "thismonth") {
+      start = new Date(now.getFullYear(), now.getMonth(), 1);
+      end = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+    } else if (selectedRange === "prevmonth") {
+      start = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+      end = new Date(now.getFullYear(), now.getMonth(), 0);
+    } else if (selectedRange === "3months") {
+      start.setDate(now.getDate() - 90);
+    } else if (selectedRange === "6months") {
+      start.setDate(now.getDate() - 180);
+    } else if (selectedRange === "year") {
+      start.setDate(now.getDate() - 365);
+    }
+
+    const formatToInput = (d) => {
+      const year = d.getFullYear();
+      const month = String(d.getMonth() + 1).padStart(2, "0");
+      const day = String(d.getDate()).padStart(2, "0");
+      return `${year}-${month}-${day}`;
+    };
+
+    return {
+      startStr: formatToInput(start),
+      endStr: formatToInput(end),
+    };
+  };
+
+  const [range, setRange] = useState("thismonth");
   const [startDate, setStartDate] = useState(() => {
     const d = new Date();
-    d.setDate(d.getDate() - 10); // default last 10 days
-    return d.toISOString().substring(0, 10);
+    const startOfMonth = new Date(d.getFullYear(), d.getMonth(), 1);
+    const year = startOfMonth.getFullYear();
+    const month = String(startOfMonth.getMonth() + 1).padStart(2, "0");
+    const day = String(startOfMonth.getDate()).padStart(2, "0");
+    return `${year}-${month}-${day}`;
   });
-  const [endDate, setEndDate] = useState(new Date().toISOString().substring(0, 10));
+  const [endDate, setEndDate] = useState(() => {
+    const d = new Date();
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, "0");
+    const day = String(d.getDate()).padStart(2, "0");
+    return `${year}-${month}-${day}`;
+  });
   const [search, setSearch] = useState("");
+
+  const handleRangeChange = (e) => {
+    const val = e.target.value;
+    setRange(val);
+    if (val !== "custom") {
+      const { startStr, endStr } = calculateDatesForRange(val);
+      setStartDate(startStr);
+      setEndDate(endStr);
+      setPage(1);
+    }
+  };
 
   // Popover Anchor for Actions Menu
   const [anchorEl, setAnchorEl] = useState(null);
@@ -424,10 +486,10 @@ export default function TestReportPage() {
   };
 
   const handleResetFilters = () => {
-    const d = new Date();
-    d.setDate(d.getDate() - 10);
-    setStartDate(d.toISOString().substring(0, 10));
-    setEndDate(new Date().toISOString().substring(0, 10));
+    setRange("thismonth");
+    const { startStr, endStr } = calculateDatesForRange("thismonth");
+    setStartDate(startStr);
+    setEndDate(endStr);
     setSearch("");
     setPage(1);
     if (page === 1) {
@@ -807,29 +869,8 @@ export default function TestReportPage() {
         <CardContent sx={{ py: 2 }}>
           <Box component="form" onSubmit={handleSearchSubmit}>
             <Grid container spacing={2} alignItems="center">
-              <Grid size={{ xs: 12, sm: 3 }}>
-                <TextField
-                  label="From Date"
-                  type="date"
-                  fullWidth
-                  size="small"
-                  value={startDate}
-                  onChange={(e) => setStartDate(e.target.value)}
-                  slotProps={{ inputLabel: { shrink: true } }}
-                />
-              </Grid>
-              <Grid size={{ xs: 12, sm: 3 }}>
-                <TextField
-                  label="To Date"
-                  type="date"
-                  fullWidth
-                  size="small"
-                  value={endDate}
-                  onChange={(e) => setEndDate(e.target.value)}
-                  slotProps={{ inputLabel: { shrink: true } }}
-                />
-              </Grid>
-              <Grid size={{ xs: 12, sm: 4 }}>
+              {/* 1. SEARCH BAR */}
+              <Grid size={{ xs: 12, sm: 6, md: 3 }}>
                 <TextField
                   label="Search Patient"
                   placeholder="Name, Reg No, Mobile..."
@@ -848,7 +889,64 @@ export default function TestReportPage() {
                   }}
                 />
               </Grid>
-              <Grid size={{ xs: 12, sm: 2 }} sx={{ display: "flex", gap: 1 }}>
+
+              {/* 2. FROM DATE */}
+              <Grid size={{ xs: 12, sm: 6, md: 2 }}>
+                <TextField
+                  label="From Date"
+                  type="date"
+                  fullWidth
+                  size="small"
+                  value={startDate}
+                  onChange={(e) => {
+                    setStartDate(e.target.value);
+                    setRange("custom");
+                  }}
+                  slotProps={{ inputLabel: { shrink: true } }}
+                />
+              </Grid>
+
+              {/* 3. TO DATE */}
+              <Grid size={{ xs: 12, sm: 6, md: 2 }}>
+                <TextField
+                  label="To Date"
+                  type="date"
+                  fullWidth
+                  size="small"
+                  value={endDate}
+                  onChange={(e) => {
+                    setEndDate(e.target.value);
+                    setRange("custom");
+                  }}
+                  slotProps={{ inputLabel: { shrink: true } }}
+                />
+              </Grid>
+
+              {/* 4. DATE PERIOD */}
+              <Grid size={{ xs: 12, sm: 6, md: 2.5 }}>
+                <FormControl fullWidth size="small">
+                  <InputLabel id="test-report-range-label">Date Period</InputLabel>
+                  <Select
+                    labelId="test-report-range-label"
+                    value={range}
+                    label="Date Period"
+                    onChange={handleRangeChange}
+                    sx={{ bgcolor: "background.paper" }}
+                  >
+                    <MenuItem value="7days">Last 7 Days</MenuItem>
+                    <MenuItem value="30days">Last 30 Days</MenuItem>
+                    <MenuItem value="thismonth">This Month</MenuItem>
+                    <MenuItem value="prevmonth">Previous Month</MenuItem>
+                    <MenuItem value="3months">Last 3 Months</MenuItem>
+                    <MenuItem value="6months">Last 6 Months</MenuItem>
+                    <MenuItem value="year">Last Year</MenuItem>
+                    <MenuItem value="custom">Custom Range</MenuItem>
+                  </Select>
+                </FormControl>
+              </Grid>
+
+              {/* 5. FILTER & RESET */}
+              <Grid size={{ xs: 12, sm: 12, md: 2.5 }} sx={{ display: "flex", gap: 1 }}>
                 <Button variant="contained" fullWidth size="small" type="submit" startIcon={<SearchIcon />}>
                   Filter
                 </Button>
@@ -862,7 +960,7 @@ export default function TestReportPage() {
       </Card>
 
       {/* Registrations List Table */}
-      <TableContainer component={Paper} variant="outlined">
+      <TableContainer component={Paper} variant="outlined" sx={{ overflow: "visible" }}>
         {loading ? (
           <Box sx={{ display: "flex", flexDirection: "column", justifyContent: "center", alignItems: "center", py: 8, gap: 2 }}>
             <CircularProgress size={40} />
@@ -872,7 +970,23 @@ export default function TestReportPage() {
           </Box>
         ) : (
           <Table size="small" sx={{ minWidth: 800 }}>
-            <TableHead sx={{ bgcolor: "#e2e8f0" }}>
+            <TableHead
+              sx={{
+                position: "sticky",
+                top: { xs: 56, sm: 64 },
+                zIndex: 10,
+                bgcolor: "#e2e8f0",
+                "& th": {
+                  position: "sticky",
+                  top: { xs: 56, sm: 64 },
+                  zIndex: 10,
+                  bgcolor: "#e2e8f0",
+                  fontWeight: 700,
+                  borderBottom: "2px solid #cbd5e1",
+                  boxShadow: "0 2px 4px rgba(0,0,0,0.06)",
+                },
+              }}
+            >
               <TableRow>
                 <TableCell sx={{ fontWeight: 700, fontSize: "0.82rem", width: "50px" }}>SNO</TableCell>
                 <TableCell sx={{ fontWeight: 700, fontSize: "0.82rem", width: "60px" }} align="center">Actions</TableCell>

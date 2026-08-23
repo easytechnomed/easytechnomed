@@ -19,9 +19,11 @@ import {
   TableContainer,
   TableHead,
   TableRow,
+  TableFooter,
   Paper,
   Avatar,
-  Badge
+  Badge,
+  Chip
 } from "@mui/material";
 import {
   People as PeopleIcon,
@@ -32,7 +34,9 @@ import {
   PendingActions as PendingIcon,
   TrendingUp as TrendingUpIcon,
   ArrowForward as ArrowForwardIcon,
-  AccessTime as TimeIcon
+  AccessTime as TimeIcon,
+  TableChart as TableChartIcon,
+  CalendarMonth as CalendarIcon
 } from "@mui/icons-material";
 
 export const dynamic = "force-dynamic";
@@ -40,14 +44,14 @@ export const dynamic = "force-dynamic";
 export default async function AdminDashboardPage({ searchParams }) {
   // Ensure user is admin
   const admin = await requireAdmin();
-  
+
   const roleNameUpper = admin.role?.name?.toUpperCase() || "";
   const isSuperRole = roleNameUpper === "ADMIN" || roleNameUpper === "OWNER";
   const hasAllPermission = admin.role?.permissions?.some(p => p.permission?.toUpperCase() === "ALL") || false;
   const userPerms = admin.role?.permissions?.map(p => p.permission) || [];
-  
+
   const hasDashboardView = isSuperRole || hasAllPermission || userPerms.includes("DASHBOARD_VIEW");
-  
+
   if (!hasDashboardView) {
     if (userPerms.includes("REGISTRATION_READ") || userPerms.includes("REGISTRATION_WRITE")) {
       redirect("/registration");
@@ -175,20 +179,7 @@ export default async function AdminDashboardPage({ searchParams }) {
     .sort((a, b) => b.value - a.value)
     .slice(0, 5);
 
-  // Calculate total billing amount (sum of totalAmount + collectionCharge) in this period
-  const billingSummary = await prisma.registration.aggregate({
-    where: { workspaceId: admin.workspaceId, isDeleted: false, date: dateFilter },
-    _sum: {
-      totalAmount: true,
-      collectionCharge: true,
-      receivedAmount: true,
-    },
-  });
-
-  const totalBilling = Number(billingSummary._sum.totalAmount || 0) + Number(billingSummary._sum.collectionCharge || 0);
-  const totalCollected = Number(billingSummary._sum.receivedAmount || 0);
-
-  // Fetch all registrations in the selected date range to calculate daily charts
+  // Fetch all registrations in the selected date range
   const registrationsInPeriod = await prisma.registration.findMany({
     where: {
       workspaceId: admin.workspaceId,
@@ -196,16 +187,45 @@ export default async function AdminDashboardPage({ searchParams }) {
       date: dateFilter,
     },
     select: {
+      id: true,
       date: true,
       totalAmount: true,
       collectionCharge: true,
+      discountAmount: true,
+      receivedAmount: true,
+      status: true,
+      payments: {
+        select: {
+          id: true,
+        },
+      },
     },
     orderBy: {
       date: "asc",
     },
   });
 
-  // Calculate aggregated data
+  // Fetch all payment transactions received during this period
+  const paymentsInPeriod = await prisma.registrationPayment.findMany({
+    where: {
+      registration: {
+        workspaceId: admin.workspaceId,
+        isDeleted: false,
+      },
+      createdAt: dateFilter,
+    },
+    select: {
+      id: true,
+      amount: true,
+      createdAt: true,
+      registrationId: true,
+    },
+    orderBy: {
+      createdAt: "asc",
+    },
+  });
+
+  // Determine whether to group by month or date (> 31 days => Monthly, <= 31 days => Daily)
   const isMonthly = ["3months", "6months", "year"].includes(range);
   const aggregatedData = {};
 
@@ -217,20 +237,23 @@ export default async function AdminDashboardPage({ searchParams }) {
       const year = tempDate.getFullYear();
       const month = String(tempDate.getMonth() + 1).padStart(2, "0");
       const key = `${year}-${month}`;
-      aggregatedData[key] = { count: 0, revenue: 0 };
+      aggregatedData[key] = { registered: 0, completed: 0, revenue: 0, received: 0 };
       tempDate.setMonth(tempDate.getMonth() + 1);
     }
   } else {
-    // Generate daily keys
+    // Generate daily keys YYYY-MM-DD
     const tempDate = new Date(startDate);
     while (tempDate <= endDate) {
-      const key = tempDate.toISOString().substring(0, 10);
-      aggregatedData[key] = { count: 0, revenue: 0 };
+      const year = tempDate.getFullYear();
+      const month = String(tempDate.getMonth() + 1).padStart(2, "0");
+      const day = String(tempDate.getDate()).padStart(2, "0");
+      const key = `${year}-${month}-${day}`;
+      aggregatedData[key] = { registered: 0, completed: 0, revenue: 0, received: 0 };
       tempDate.setDate(tempDate.getDate() + 1);
     }
   }
 
-  // Populate from database
+  // Populate registrations data (registered count, completed count, revenue)
   registrationsInPeriod.forEach((reg) => {
     let key;
     if (isMonthly) {
@@ -238,16 +261,49 @@ export default async function AdminDashboardPage({ searchParams }) {
       const month = String(reg.date.getMonth() + 1).padStart(2, "0");
       key = `${year}-${month}`;
     } else {
-      key = reg.date.toISOString().substring(0, 10);
+      const year = reg.date.getFullYear();
+      const month = String(reg.date.getMonth() + 1).padStart(2, "0");
+      const day = String(reg.date.getDate()).padStart(2, "0");
+      key = `${year}-${month}-${day}`;
     }
 
     if (!aggregatedData[key]) {
-      aggregatedData[key] = { count: 0, revenue: 0 };
+      aggregatedData[key] = { registered: 0, completed: 0, revenue: 0, received: 0 };
     }
-    aggregatedData[key].count += 1;
-    aggregatedData[key].revenue += Number(reg.totalAmount || 0) + Number(reg.collectionCharge || 0);
+    aggregatedData[key].registered += 1;
+    if (reg.status === "Completed") {
+      aggregatedData[key].completed += 1;
+    }
+    const regRevenue = (Number(reg.totalAmount) || 0) + (Number(reg.collectionCharge) || 0) - (Number(reg.discountAmount) || 0);
+    aggregatedData[key].revenue += regRevenue;
+
+    // Fallback: If legacy registration has receivedAmount > 0 and no RegistrationPayment rows
+    if ((!reg.payments || reg.payments.length === 0) && Number(reg.receivedAmount || 0) > 0) {
+      aggregatedData[key].received += Number(reg.receivedAmount || 0);
+    }
   });
 
+  // Populate cash/online collections received on that specific date/month
+  paymentsInPeriod.forEach((payment) => {
+    let pKey;
+    if (isMonthly) {
+      const year = payment.createdAt.getFullYear();
+      const month = String(payment.createdAt.getMonth() + 1).padStart(2, "0");
+      pKey = `${year}-${month}`;
+    } else {
+      const year = payment.createdAt.getFullYear();
+      const month = String(payment.createdAt.getMonth() + 1).padStart(2, "0");
+      const day = String(payment.createdAt.getDate()).padStart(2, "0");
+      pKey = `${year}-${month}-${day}`;
+    }
+
+    if (!aggregatedData[pKey]) {
+      aggregatedData[pKey] = { registered: 0, completed: 0, revenue: 0, received: 0 };
+    }
+    aggregatedData[pKey].received += Number(payment.amount || 0);
+  });
+
+  // Prepare chart data (in chronological order)
   const chartData = Object.entries(aggregatedData).map(([key, val]) => {
     let label = "";
     if (isMonthly) {
@@ -255,17 +311,54 @@ export default async function AdminDashboardPage({ searchParams }) {
       const dateObj = new Date(Number(year), Number(month) - 1, 1);
       label = dateObj.toLocaleDateString("en-US", { month: "short", year: "2-digit" });
     } else {
-      const dateObj = new Date(key);
+      const [year, month, day] = key.split("-");
+      const dateObj = new Date(Number(year), Number(month) - 1, Number(day));
       label = dateObj.toLocaleDateString("en-US", { month: "short", day: "numeric" });
     }
     return {
       date: key,
       label,
-      count: val.count,
+      count: val.registered,
       revenue: val.revenue,
     };
   });
 
+  // Prepare Table Rows (sorted newest first)
+  const summaryTableRows = Object.entries(aggregatedData)
+    .map(([key, val]) => {
+      let formattedDate = "";
+      if (isMonthly) {
+        const [year, month] = key.split("-");
+        const dateObj = new Date(Number(year), Number(month) - 1, 1);
+        formattedDate = dateObj.toLocaleDateString("en-US", { month: "long", year: "numeric" });
+      } else {
+        const [year, month, day] = key.split("-");
+        const dateObj = new Date(Number(year), Number(month) - 1, Number(day));
+        formattedDate = dateObj.toLocaleDateString("en-US", {
+          weekday: "short",
+          day: "2-digit",
+          month: "short",
+          year: "numeric",
+        });
+      }
+      return {
+        key,
+        dateLabel: formattedDate,
+        registered: val.registered,
+        completed: val.completed,
+        revenue: val.revenue,
+        received: val.received,
+      };
+    })
+    .sort((a, b) => b.key.localeCompare(a.key));
+
+  // Totals for summary footer & financial overview
+  const totalBilling = summaryTableRows.reduce((sum, r) => sum + r.revenue, 0);
+  const totalCollected = summaryTableRows.reduce((sum, r) => sum + r.received, 0);
+  const totalTableRegistered = summaryTableRows.reduce((sum, r) => sum + r.registered, 0);
+  const totalTableCompleted = summaryTableRows.reduce((sum, r) => sum + r.completed, 0);
+  const totalTableRevenue = totalBilling;
+  const totalTableReceived = totalCollected;
 
   const formatPeriodDate = (d) => {
     return d.toLocaleDateString("en-US", {
@@ -275,17 +368,6 @@ export default async function AdminDashboardPage({ searchParams }) {
     });
   };
   const periodDateRangeStr = `${formatPeriodDate(startDate)} - ${formatPeriodDate(endDate)}`;
-
-  // Helper to format date
-  const formatDate = (dateStr) => {
-    if (!dateStr) return "-";
-    const d = new Date(dateStr);
-    return d.toLocaleDateString("en-US", {
-      month: "short",
-      day: "2-digit",
-      year: "numeric",
-    });
-  };
 
   const statCards = [
     {
@@ -306,12 +388,12 @@ export default async function AdminDashboardPage({ searchParams }) {
       icon: <CheckedIcon sx={{ fontSize: 32, color: "#16a34a" }} />,
       bgColor: "#dcfce7",
     },
-    {
-      title: "Avg Turnaround Time",
-      value: `${avgTAT}h`,
-      icon: <TimeIcon sx={{ fontSize: 32, color: "#4f46e5" }} />,
-      bgColor: "#e0e7ff",
-    },
+    // {
+    //   title: "Avg Turnaround Time",
+    //   value: `${avgTAT}h`,
+    //   icon: <TimeIcon sx={{ fontSize: 32, color: "#4f46e5" }} />,
+    //   bgColor: "#e0e7ff",
+    // },
   ];
 
   return (
@@ -337,7 +419,7 @@ export default async function AdminDashboardPage({ searchParams }) {
       {/* Stats Grid */}
       <Grid container spacing={3} sx={{ mb: 4 }}>
         {statCards.map((stat, idx) => (
-          <Grid size={{ xs: 12, sm: 6, md: 3 }} key={idx}>
+          <Grid size={{ xs: 12, sm: 6, md: 4 }} key={idx}>
             <Card variant="outlined">
               <CardContent sx={{ display: "flex", alignItems: "center", gap: 2 }}>
                 <Box
@@ -396,6 +478,144 @@ export default async function AdminDashboardPage({ searchParams }) {
           </Card>
         </Grid>
       </Grid>
+
+      {/* Daily / Monthly Operational & Financial Breakdown Table */}
+      <Card variant="outlined" sx={{ mb: 4, borderRadius: 2 }}>
+        <CardContent sx={{ p: { xs: 2, sm: 3 } }}>
+          <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 1.5, mb: 2 }}>
+            <Box>
+              <Typography variant="subtitle1" sx={{ fontWeight: 800, display: "flex", alignItems: "center", gap: 1, color: "text.primary" }}>
+                <TableChartIcon sx={{ color: "primary.main", fontSize: 22 }} />
+                {isMonthly ? "Monthly Operational & Revenue Summary" : "Daily Operational & Revenue Summary"}
+              </Typography>
+              <Typography variant="caption" color="text.secondary">
+                {isMonthly
+                  ? "Month-wise breakdown of registrations, completed tests, billed revenue, and cash collections"
+                  : "Date-wise breakdown of registrations, completed tests, billed revenue, and cash collections"}
+              </Typography>
+            </Box>
+            <Chip
+              icon={<CalendarIcon sx={{ fontSize: "16px !important" }} />}
+              label={isMonthly ? "Month-wise View" : "Date-wise View"}
+              size="small"
+              color="primary"
+              variant="outlined"
+              sx={{ fontWeight: 700, borderRadius: 1.5 }}
+            />
+          </Box>
+
+          <TableContainer
+            component={Paper}
+            elevation={0}
+            sx={{
+              border: "1px solid",
+              borderColor: "divider",
+              borderRadius: 2,
+              maxHeight: 440,
+              overflow: "auto",
+            }}
+          >
+            <Table stickyHeader size="small">
+              <TableHead>
+                <TableRow>
+                  <TableCell sx={{ fontWeight: 700, bgcolor: "background.paper", width: { xs: "30%", sm: "28%" }, py: 1.5 }}>
+                    {isMonthly ? "Month" : "Date"}
+                  </TableCell>
+                  <TableCell align="center" sx={{ fontWeight: 700, bgcolor: "background.paper", width: "18%", py: 1.5 }}>
+                    Registered
+                  </TableCell>
+                  <TableCell align="center" sx={{ fontWeight: 700, bgcolor: "background.paper", width: "18%", py: 1.5 }}>
+                    Completed
+                  </TableCell>
+                  <TableCell align="right" sx={{ fontWeight: 700, bgcolor: "background.paper", width: "18%", py: 1.5 }}>
+                    Revenue (₹)
+                  </TableCell>
+                  <TableCell align="right" sx={{ fontWeight: 700, bgcolor: "background.paper", width: "18%", py: 1.5 }}>
+                    Received (₹)
+                  </TableCell>
+                </TableRow>
+              </TableHead>
+
+              <TableBody>
+                {summaryTableRows.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={5} align="center" sx={{ py: 4, color: "text.secondary" }}>
+                      <Typography variant="body2">No registration or revenue activity found for this period.</Typography>
+                    </TableCell>
+                  </TableRow>
+                ) : (
+                  summaryTableRows.map((row) => (
+                    <TableRow
+                      key={row.key}
+                      hover
+                      sx={{
+                        "&:last-child td, &:last-child th": { border: 0 },
+                        transition: "background-color 0.15s ease",
+                      }}
+                    >
+                      <TableCell sx={{ fontWeight: 600, color: "text.primary", py: 1.2 }}>
+                        {row.dateLabel}
+                      </TableCell>
+                      <TableCell align="center" sx={{ py: 1.2 }}>
+                        <Chip
+                          size="small"
+                          label={row.registered}
+                          sx={{
+                            fontWeight: 700,
+                            minWidth: 38,
+                            bgcolor: row.registered > 0 ? "rgba(15, 118, 110, 0.1)" : "action.hover",
+                            color: row.registered > 0 ? "#0f766e" : "text.secondary",
+                            borderRadius: 1.5,
+                          }}
+                        />
+                      </TableCell>
+                      <TableCell align="center" sx={{ py: 1.2 }}>
+                        <Chip
+                          size="small"
+                          label={row.completed}
+                          sx={{
+                            fontWeight: 700,
+                            minWidth: 38,
+                            bgcolor: row.completed > 0 ? "#dcfce7" : "action.hover",
+                            color: row.completed > 0 ? "#15803d" : "text.secondary",
+                            borderRadius: 1.5,
+                          }}
+                        />
+                      </TableCell>
+                      <TableCell align="right" sx={{ fontWeight: 700, color: row.revenue > 0 ? "text.primary" : "text.secondary", py: 1.2 }}>
+                        ₹{row.revenue.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                      </TableCell>
+                      <TableCell align="right" sx={{ fontWeight: 700, color: row.received > 0 ? "success.main" : "text.secondary", py: 1.2 }}>
+                        ₹{row.received.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                      </TableCell>
+                    </TableRow>
+                  ))
+                )}
+              </TableBody>
+
+              <TableFooter>
+                <TableRow sx={{ bgcolor: "action.hover" }}>
+                  <TableCell sx={{ fontWeight: 800, color: "text.primary", py: 1.5 }}>
+                    Total ({summaryTableRows.length} {isMonthly ? "Months" : "Days"})
+                  </TableCell>
+                  <TableCell align="center" sx={{ fontWeight: 800, color: "primary.main", py: 1.5 }}>
+                    {totalTableRegistered}
+                  </TableCell>
+                  <TableCell align="center" sx={{ fontWeight: 800, color: "#15803d", py: 1.5 }}>
+                    {totalTableCompleted}
+                  </TableCell>
+                  <TableCell align="right" sx={{ fontWeight: 800, color: "text.primary", py: 1.5 }}>
+                    ₹{totalTableRevenue.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                  </TableCell>
+                  <TableCell align="right" sx={{ fontWeight: 800, color: "success.main", py: 1.5 }}>
+                    ₹{totalTableReceived.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                  </TableCell>
+                </TableRow>
+              </TableFooter>
+            </Table>
+          </TableContainer>
+        </CardContent>
+      </Card>
 
       {/* Financials & Quick Links & Recent items */}
       <Grid container spacing={4}>
@@ -461,3 +681,4 @@ export default async function AdminDashboardPage({ searchParams }) {
     </Box>
   );
 }
+

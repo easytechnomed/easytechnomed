@@ -30,6 +30,10 @@ import {
   Chip,
   Tooltip,
   Stack,
+  Select,
+  MenuItem,
+  FormControl,
+  InputLabel,
 } from "@mui/material";
 import {
   Print as PrintIcon,
@@ -141,13 +145,68 @@ export default function DoctorSummaryPage() {
   };
 
   // Filters
+  const calculateDatesForRange = (selectedRange) => {
+    const now = new Date();
+    let start = new Date();
+    let end = new Date();
+
+    if (selectedRange === "7days") {
+      start.setDate(now.getDate() - 7);
+    } else if (selectedRange === "30days") {
+      start.setDate(now.getDate() - 30);
+    } else if (selectedRange === "thismonth") {
+      start = new Date(now.getFullYear(), now.getMonth(), 1);
+      end = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+    } else if (selectedRange === "prevmonth") {
+      start = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+      end = new Date(now.getFullYear(), now.getMonth(), 0);
+    } else if (selectedRange === "3months") {
+      start.setDate(now.getDate() - 90);
+    } else if (selectedRange === "6months") {
+      start.setDate(now.getDate() - 180);
+    } else if (selectedRange === "year") {
+      start.setDate(now.getDate() - 365);
+    }
+
+    const formatToInput = (d) => {
+      const year = d.getFullYear();
+      const month = String(d.getMonth() + 1).padStart(2, "0");
+      const day = String(d.getDate()).padStart(2, "0");
+      return `${year}-${month}-${day}`;
+    };
+
+    return {
+      startStr: formatToInput(start),
+      endStr: formatToInput(end),
+    };
+  };
+
+  const [range, setRange] = useState("thismonth");
   const [startDate, setStartDate] = useState(() => {
     const d = new Date();
-    // Default to the start of current month
     const startOfMonth = new Date(d.getFullYear(), d.getMonth(), 1);
-    return startOfMonth.toISOString().substring(0, 10);
+    const year = startOfMonth.getFullYear();
+    const month = String(startOfMonth.getMonth() + 1).padStart(2, "0");
+    const day = String(startOfMonth.getDate()).padStart(2, "0");
+    return `${year}-${month}-${day}`;
   });
-  const [endDate, setEndDate] = useState(new Date().toISOString().substring(0, 10));
+  const [endDate, setEndDate] = useState(() => {
+    const d = new Date();
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, "0");
+    const day = String(d.getDate()).padStart(2, "0");
+    return `${year}-${month}-${day}`;
+  });
+
+  const handleRangeChange = (e) => {
+    const val = e.target.value;
+    setRange(val);
+    if (val !== "custom") {
+      const { startStr, endStr } = calculateDatesForRange(val);
+      setStartDate(startStr);
+      setEndDate(endStr);
+    }
+  };
 
   const loadData = async () => {
     setLoading(true);
@@ -182,11 +241,10 @@ export default function DoctorSummaryPage() {
   }, [startDate, endDate]);
 
   const handleResetFilters = () => {
-    const d = new Date();
-    const startOfMonth = new Date(d.getFullYear(), d.getMonth(), 1);
-    setStartDate(startOfMonth.toISOString().substring(0, 10));
-    setEndDate(new Date().toISOString().substring(0, 10));
-    setTimeout(() => loadData(), 50);
+    setRange("thismonth");
+    const { startStr, endStr } = calculateDatesForRange("thismonth");
+    setStartDate(startStr);
+    setEndDate(endStr);
   };
 
   // Toggle single row accordion
@@ -459,29 +517,56 @@ export default function DoctorSummaryPage() {
       <Card variant="outlined" sx={{ mb: 3, bgcolor: "#ffffff" }}>
         <CardContent sx={{ py: 2 }}>
           <Grid container spacing={2} alignItems="center">
-            <Grid size={{ xs: 12, sm: 4 }}>
+            <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+              <FormControl fullWidth size="small">
+                <InputLabel id="period-select-label">Date Period</InputLabel>
+                <Select
+                  labelId="period-select-label"
+                  value={range}
+                  label="Date Period"
+                  onChange={handleRangeChange}
+                  sx={{ bgcolor: "background.paper" }}
+                >
+                  <MenuItem value="7days">Last 7 Days</MenuItem>
+                  <MenuItem value="30days">Last 30 Days</MenuItem>
+                  <MenuItem value="thismonth">This Month</MenuItem>
+                  <MenuItem value="prevmonth">Previous Month</MenuItem>
+                  <MenuItem value="3months">Last 3 Months</MenuItem>
+                  <MenuItem value="6months">Last 6 Months</MenuItem>
+                  <MenuItem value="year">Last Year</MenuItem>
+                  <MenuItem value="custom">Custom Range</MenuItem>
+                </Select>
+              </FormControl>
+            </Grid>
+            <Grid size={{ xs: 12, sm: 6, md: 3 }}>
               <TextField
                 label="Start Date"
                 type="date"
                 fullWidth
                 size="small"
                 value={startDate}
-                onChange={(e) => setStartDate(e.target.value)}
+                onChange={(e) => {
+                  setStartDate(e.target.value);
+                  setRange("custom");
+                }}
                 slotProps={{ inputLabel: { shrink: true } }}
               />
             </Grid>
-            <Grid size={{ xs: 12, sm: 4 }}>
+            <Grid size={{ xs: 12, sm: 6, md: 3 }}>
               <TextField
                 label="End Date"
                 type="date"
                 fullWidth
                 size="small"
                 value={endDate}
-                onChange={(e) => setEndDate(e.target.value)}
+                onChange={(e) => {
+                  setEndDate(e.target.value);
+                  setRange("custom");
+                }}
                 slotProps={{ inputLabel: { shrink: true } }}
               />
             </Grid>
-            <Grid size={{ xs: 12, sm: 4 }} sx={{ display: "flex", gap: 1 }}>
+            <Grid size={{ xs: 12, sm: 6, md: 3 }} sx={{ display: "flex", gap: 1 }}>
               <Button variant="contained" fullWidth size="small" onClick={loadData} startIcon={<SearchIcon />}>
                 Filter Summary
               </Button>
@@ -515,7 +600,7 @@ export default function DoctorSummaryPage() {
       </Box>
 
       {/* Doctor Summary Table */}
-      <TableContainer component={Paper} variant="outlined" sx={{ borderRadius: "0 0 8px 8px", boxShadow: "0 1px 3px rgba(0,0,0,0.05)" }}>
+      <TableContainer component={Paper} variant="outlined" sx={{ borderRadius: "0 0 8px 8px", boxShadow: "0 1px 3px rgba(0,0,0,0.05)", overflow: "visible" }}>
         {loading ? (
           <Box sx={{ display: "flex", flexDirection: "column", justifyContent: "center", alignItems: "center", py: 8, gap: 2 }}>
             <CircularProgress size={40} />
@@ -525,7 +610,23 @@ export default function DoctorSummaryPage() {
           </Box>
         ) : (
           <Table size="small">
-            <TableHead sx={{ bgcolor: "#f1f5f9" }}>
+            <TableHead
+              sx={{
+                position: "sticky",
+                top: { xs: 56, sm: 64 },
+                zIndex: 10,
+                bgcolor: "#f1f5f9",
+                "& th": {
+                  position: "sticky",
+                  top: { xs: 56, sm: 64 },
+                  zIndex: 10,
+                  bgcolor: "#f1f5f9",
+                  fontWeight: 700,
+                  borderBottom: "2px solid #cbd5e1",
+                  boxShadow: "0 2px 4px rgba(0,0,0,0.06)",
+                },
+              }}
+            >
               <TableRow>
                 <TableCell sx={{ width: 44, px: 1 }} align="center">
                   <Tooltip title={areAllExpanded ? "Collapse all doctors" : "Expand all doctors"}>
