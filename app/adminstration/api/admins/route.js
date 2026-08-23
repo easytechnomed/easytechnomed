@@ -30,6 +30,7 @@ export async function GET(req) {
       id: admin.id,
       name: admin.name,
       email: admin.email,
+      mobileNumber: admin.mobileNumber || "",
       isActive: admin.isActive,
       isApproved: admin.isApproved,
       role: admin.role,

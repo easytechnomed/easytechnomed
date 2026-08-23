@@ -114,7 +114,8 @@ export default function SuperAdminLayout({ children }) {
   };
 
   const menuItems = [
-    { text: "Workspace Controller", icon: <WorkspaceIcon />, path: "/adminstration/dashboard", exact: "/adminstration/dashboard" },
+    { text: "Executive Dashboard", icon: <TrendingUpIcon />, path: "/adminstration/dashboard", exact: "/adminstration/dashboard" },
+    { text: "Workspace Controller", icon: <WorkspaceIcon />, path: "/adminstration/workspace", exact: "/adminstration/workspace" },
     { text: "Administrators", icon: <PeopleIcon />, path: "/adminstration/admins", exact: "/adminstration/admins" },
     { text: "Import Lab Tests", icon: <UploadIcon />, path: "/adminstration/importer", exact: "/adminstration/importer" },
     { text: "Default Tests & Params", icon: <ScienceIcon />, path: "/adminstration/test-parameter", exact: "/adminstration/test-parameter" },

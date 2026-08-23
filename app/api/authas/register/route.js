@@ -52,8 +52,6 @@ export async function POST(req) {
         isApproved: false,
         verificationToken: token,
         verificationTokenExpires: expires,
-        startAt: now,
-        expireAt: trialEnd,
       },
     });
 

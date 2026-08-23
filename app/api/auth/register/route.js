@@ -48,8 +48,6 @@ export async function POST(req) {
                 isEmailVerified: true,
                 isApproved: true,
                 isActive: true,
-                startAt: now,
-                expireAt: trialEnd,
             },
         });
 

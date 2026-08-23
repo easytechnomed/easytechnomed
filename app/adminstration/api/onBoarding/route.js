@@ -72,7 +72,9 @@ export async function POST(req) {
         data: {
           name: workspaceName,
           slug,
-          isActive: true
+          isActive: true,
+          startAt,
+          expireAt,
         }
       });
 
@@ -89,8 +91,6 @@ export async function POST(req) {
           isApproved: true,
           isEmailVerified: true,
           isActive: true,
-          startAt,
-          expireAt,
           companyName
         }
       });

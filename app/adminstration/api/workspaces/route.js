@@ -44,6 +44,8 @@ export async function GET() {
           slug: ws.slug,
           isActive: ws.isActive,
           createdAt: ws.createdAt.toISOString(),
+          expireAt: ws.expireAt ? ws.expireAt.toISOString() : null,
+          startAt: ws.startAt ? ws.startAt.toISOString() : null,
           admins: ws.admins,
           stats: {
             today: regToday,

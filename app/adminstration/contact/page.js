@@ -241,10 +241,11 @@ export default function ContactAdminPage() {
   };
 
   const menuItems = [
-    { text: "Workspace Controller", icon: <WorkspaceIcon />, path: "/adminstration/dashboard?tab=workspaces", index: 0 },
-    { text: "Administrators", icon: <PeopleIcon />, path: "/adminstration/dashboard?tab=admins", index: 1 },
+    { text: "Executive Dashboard", icon: <TrendingUpIcon />, path: "/adminstration/dashboard", index: -1 },
+    { text: "Workspace Controller", icon: <WorkspaceIcon />, path: "/adminstration/workspace", index: 0 },
+    { text: "Administrators", icon: <PeopleIcon />, path: "/adminstration/admins", index: 1 },
     { text: "Admin Roles", icon: <SecurityIcon />, path: "/adminstration/adminRole", index: 2 },
-    { text: "Import Lab Tests", icon: <UploadIcon />, path: "/adminstration/dashboard?tab=importer", index: 3 },
+    { text: "Import Lab Tests", icon: <UploadIcon />, path: "/adminstration/importer", index: 3 },
     { text: "Default Tests & Params", icon: <ScienceIcon />, path: "/adminstration/test-parameter", index: 4 },
   ];
 

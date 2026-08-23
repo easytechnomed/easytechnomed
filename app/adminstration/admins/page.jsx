@@ -202,15 +202,14 @@ export default function AdminsPage() {
                   <TableCell sx={{ fontWeight: 700 }}>Mobile</TableCell>
                   <TableCell sx={{ fontWeight: 700 }}>Laboratory Workspace</TableCell>
                   <TableCell sx={{ fontWeight: 700 }}>Role</TableCell>
-                  <TableCell sx={{ fontWeight: 700 }}>Approval</TableCell>
-                  <TableCell sx={{ fontWeight: 700 }} align="center">Active</TableCell>
+                  <TableCell sx={{ fontWeight: 700 }} align="center">Active Status</TableCell>
                   <TableCell sx={{ fontWeight: 700 }} align="center">Activity</TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
                 {admins.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={8} align="center" sx={{ py: 6, color: "text.secondary" }}>
+                    <TableCell colSpan={7} align="center" sx={{ py: 6, color: "text.secondary" }}>
                       No admin accounts found. Create one.
                     </TableCell>
                   </TableRow>
@@ -233,7 +232,6 @@ export default function AdminsPage() {
                       <TableCell>
                         <Chip label={admin.role?.name || "Admin"} size="small" variant="outlined" color="primary" />
                       </TableCell>
-                      <TableCell>{admin.isApproved ? "Approved" : "Pending"}</TableCell>
                       <TableCell align="center">
                         <Switch
                           checked={admin.isActive}

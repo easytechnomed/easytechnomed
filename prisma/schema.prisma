@@ -8,25 +8,47 @@ datasource db {
 }
 
 model Workspace {
-  id            Int            @id @default(autoincrement())
-  name          String
-  slug          String         @unique
-  isActive      Boolean        @default(true)
-  createdAt     DateTime       @default(now())
-  updatedAt     DateTime       @updatedAt
-  deletedAt     DateTime?
-  isDeleted     Boolean        @default(false)
-  nextSequence  Int            @default(1)
-  admins        Admin[]
-  doctors       Doctor[]
-  registrations Registration[]
-  tests         Test[]
-  users         User[]
-  parameters     Parameter[]
-  testParameters TestParameter[]
-  testFormulas   TestFormula[]
+  id                  Int                  @id @default(autoincrement())
+  name                String
+  slug                String               @unique
+  isActive            Boolean              @default(true)
+  createdAt           DateTime             @default(now())
+  updatedAt           DateTime             @updatedAt
+  deletedAt           DateTime?
+  isDeleted           Boolean              @default(false)
+  expireAt            DateTime?
+  startAt             DateTime?
+  nextSequence        Int                  @default(1)
+  admins              Admin[]
+  doctors             Doctor[]
+  registrations       Registration[]
+  tests               Test[]
+  users               User[]
+  parameters          Parameter[]
+  testParameters      TestParameter[]
+  testFormulas        TestFormula[]
   interpretationRules InterpretationRule[]
-  pdfSetting     WorkspacePdf?
+  pdfSetting          WorkspacePdf?
+  payments            WorkspacePayment[]
+}
+
+model WorkspacePayment {
+  id           Int        @id @default(autoincrement())
+  workspaceId  Int
+  amount       Decimal    @default(0.00) @db.Decimal(10, 2)
+  days         Int
+  paymentMode  String     @default("Cash")
+  referenceNo  String?
+  notes        String?    @db.Text
+  paidAt       DateTime   @default(now())
+  startAt      DateTime?
+  expireAt     DateTime?
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+  workspace    Workspace  @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@index([workspaceId])
+  @@index([paidAt])
 }
 
 model SuperAdmin {
@@ -69,8 +91,6 @@ model User {
   createdAt                DateTime      @default(now())
   updatedAt                DateTime      @updatedAt
   workspaceId              Int?
-  expireAt                 DateTime?
-  startAt                  DateTime?
   role                     UserRole      @relation(fields: [roleId], references: [id])
   workspace                Workspace?    @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
   sessions                 UserSession[]
@@ -125,8 +145,6 @@ model Admin {
   useFrameDefault            Boolean        @default(true)
   isActive                   Boolean        @default(true)
   workspaceId                Int?
-  expireAt                   DateTime?
-  startAt                    DateTime?
   authorizedSignatoryDegree1 String?
   authorizedSignatoryDegree2 String?
   authorizedSignatoryName1   String?
