@@ -331,41 +331,29 @@ export default function DoctorSummaryPage() {
     const rows = doctor.registrations.map((reg, idx) => ({
       "S.No": idx + 1,
       "Date & Time": formatDateTime(reg.date),
-      "Reg No": reg.regNo || "-",
-      "Lab ID": reg.labId || "-",
       "Patient Name": reg.fullName || reg.name || "-",
       "Age": reg.age ? `${reg.age} ${reg.ageUnit || "Y"}` : "-",
       "Gender": reg.gender || "-",
-      "Contact No": reg.mobileNo || "-",
       "Tests Booked": (reg.tests || []).map((t) => t.name).join(", ") || "-",
-      "Bill Amount (₹)": Number(reg.totalAmount) || 0,
-      "Discount (₹)": Number(reg.discountAmount) || 0,
       "Net Amount (₹)": Number(reg.netAmount) || 0,
       "Incentive (%)": `${reg.incentivePercent}%`,
       "Incentive (₹)": Number(reg.incentiveAmount) || 0,
       "Received (₹)": Number(reg.receivedAmount) || 0,
-      "Due (₹)": Number(reg.dueAmount) || 0,
-      "Status": reg.status || "Pending",
+      "Status": reg.status || "Completed",
     }));
 
     // Add total summary row
     rows.push({
       "S.No": "TOTAL",
       "Date & Time": `From ${formatDate(startDate)} to ${formatDate(endDate)}`,
-      "Reg No": `Doctor: ${doctor.name}`,
-      "Lab ID": `Code: ${doctor.code}`,
-      "Patient Name": "",
+      "Patient Name": `Doctor: ${doctor.name} (${doctor.code})`,
       "Age": "",
       "Gender": "",
-      "Contact No": "",
       "Tests Booked": `Total Visits: ${doctor.count}`,
-      "Bill Amount (₹)": Number(doctor.amount) || 0,
-      "Discount (₹)": Number(doctor.discount) || 0,
       "Net Amount (₹)": Number(doctor.netAmount) || 0,
-      "Incentive (%)": `${doctor.incentivePercent}%`,
-      "Incentive (₹)": Number(doctor.incentiveAmount) || 0,
+      "Incentive (%)": "-",
+      "Incentive (₹)": "-",
       "Received (₹)": Number(doctor.collection) || 0,
-      "Due (₹)": (Number(doctor.netAmount) || 0) - (Number(doctor.collection) || 0),
       "Status": "",
     });
 
@@ -397,8 +385,6 @@ export default function DoctorSummaryPage() {
       "Incentive Rate (%)": `${doc.incentivePercent}%`,
       "Patient Count": doc.count,
       "Total Amount (₹)": Number(doc.amount) || 0,
-      "Discount (₹)": Number(doc.discount) || 0,
-      "Net Amount (₹)": Number(doc.netAmount) || 0,
       "Doctor Incentive (₹)": Number(doc.incentiveAmount) || 0,
       "Collection / Received (₹)": Number(doc.collection) || 0,
     }));
@@ -412,9 +398,7 @@ export default function DoctorSummaryPage() {
       "Incentive Rate (%)": "-",
       "Patient Count": totalCount,
       "Total Amount (₹)": totalAmount,
-      "Discount (₹)": totalDiscount,
-      "Net Amount (₹)": totalNetAmount,
-      "Doctor Incentive (₹)": totalIncentive,
+      "Doctor Incentive (₹)": "-",
       "Collection / Received (₹)": totalCollection,
     });
 
@@ -431,21 +415,15 @@ export default function DoctorSummaryPage() {
           "Doctor Name": doc.name,
           "Doctor Code": doc.code,
           "Date & Time": formatDateTime(reg.date),
-          "Reg No": reg.regNo || "-",
-          "Lab ID": reg.labId || "-",
           "Patient Name": reg.fullName || reg.name || "-",
           "Age": reg.age ? `${reg.age} ${reg.ageUnit || "Y"}` : "-",
           "Gender": reg.gender || "-",
-          "Contact No": reg.mobileNo || "-",
           "Tests Booked": (reg.tests || []).map((t) => t.name).join(", ") || "-",
-          "Bill Amount (₹)": Number(reg.totalAmount) || 0,
-          "Discount (₹)": Number(reg.discountAmount) || 0,
           "Net Amount (₹)": Number(reg.netAmount) || 0,
           "Doc Incentive (%)": `${reg.incentivePercent}%`,
           "Doc Incentive (₹)": Number(reg.incentiveAmount) || 0,
           "Received (₹)": Number(reg.receivedAmount) || 0,
-          "Due (₹)": Number(reg.dueAmount) || 0,
-          "Status": reg.status || "Pending",
+          "Status": reg.status || "Completed",
         });
       });
     });
@@ -846,15 +824,11 @@ export default function DoctorSummaryPage() {
                                       <TableRow>
                                         <TableCell sx={{ fontWeight: 700, fontSize: "0.78rem" }}>#</TableCell>
                                         <TableCell sx={{ fontWeight: 700, fontSize: "0.78rem" }}>Date & Time</TableCell>
-                                        <TableCell sx={{ fontWeight: 700, fontSize: "0.78rem" }}>Reg No / Lab ID</TableCell>
                                         <TableCell sx={{ fontWeight: 700, fontSize: "0.78rem" }}>Patient Details</TableCell>
-                                        <TableCell sx={{ fontWeight: 700, fontSize: "0.78rem" }}>Contact No</TableCell>
                                         <TableCell sx={{ fontWeight: 700, fontSize: "0.78rem" }}>Tests Booked</TableCell>
-                                        <TableCell sx={{ fontWeight: 700, fontSize: "0.78rem" }} align="right">Bill (₹)</TableCell>
-                                        <TableCell sx={{ fontWeight: 700, fontSize: "0.78rem" }} align="right">Discount (₹)</TableCell>
-                                        <TableCell sx={{ fontWeight: 700, fontSize: "0.78rem" }} align="right">Net (₹)</TableCell>
+                                        <TableCell sx={{ fontWeight: 700, fontSize: "0.78rem" }} align="right">Net Amount (₹)</TableCell>
                                         <TableCell sx={{ fontWeight: 700, fontSize: "0.78rem" }} align="right">Incentive</TableCell>
-                                        <TableCell sx={{ fontWeight: 700, fontSize: "0.78rem" }} align="right">Paid / Due (₹)</TableCell>
+                                        <TableCell sx={{ fontWeight: 700, fontSize: "0.78rem" }} align="right">Paid (₹)</TableCell>
                                         <TableCell sx={{ fontWeight: 700, fontSize: "0.78rem" }} align="center">Status</TableCell>
                                         <TableCell sx={{ fontWeight: 700, fontSize: "0.78rem" }} align="center">Print Actions</TableCell>
                                       </TableRow>
@@ -872,16 +846,6 @@ export default function DoctorSummaryPage() {
                                           <TableCell sx={{ fontSize: "0.78rem", whiteSpace: "nowrap" }}>
                                             {formatDateTime(reg.date)}
                                           </TableCell>
-                                          <TableCell sx={{ fontSize: "0.78rem", whiteSpace: "nowrap" }}>
-                                            <Typography variant="caption" sx={{ display: "block", fontWeight: 700, color: "text.primary" }}>
-                                              {reg.regNo}
-                                            </Typography>
-                                            {reg.labId && reg.labId !== reg.regNo && (
-                                              <Typography variant="caption" sx={{ display: "block", color: "text.secondary" }}>
-                                                Lab: {reg.labId}
-                                              </Typography>
-                                            )}
-                                          </TableCell>
                                           <TableCell sx={{ fontSize: "0.78rem" }}>
                                             <Typography variant="body2" sx={{ fontWeight: 600, color: "text.primary" }}>
                                               {reg.fullName || reg.name}
@@ -891,10 +855,7 @@ export default function DoctorSummaryPage() {
                                               {reg.gender ? ` • ${reg.gender}` : ""}
                                             </Typography>
                                           </TableCell>
-                                          <TableCell sx={{ fontSize: "0.78rem", color: "text.secondary" }}>
-                                            {reg.mobileNo || "-"}
-                                          </TableCell>
-                                          <TableCell sx={{ fontSize: "0.78rem", maxWidth: 220 }}>
+                                          <TableCell sx={{ fontSize: "0.78rem", maxWidth: 260 }}>
                                             <Box sx={{ display: "flex", flexWrap: "wrap", gap: 0.5 }}>
                                               {reg.tests && reg.tests.length > 0 ? (
                                                 reg.tests.map((t, tIdx) => (
@@ -918,13 +879,7 @@ export default function DoctorSummaryPage() {
                                               )}
                                             </Box>
                                           </TableCell>
-                                          <TableCell align="right" sx={{ fontSize: "0.78rem" }}>
-                                            ₹{reg.totalAmount.toFixed(2)}
-                                          </TableCell>
-                                          <TableCell align="right" sx={{ fontSize: "0.78rem", color: reg.discountAmount > 0 ? "error.main" : "text.secondary" }}>
-                                            {reg.discountAmount > 0 ? `₹${reg.discountAmount.toFixed(2)}` : "₹0.00"}
-                                          </TableCell>
-                                          <TableCell align="right" sx={{ fontSize: "0.78rem", fontWeight: 700 }}>
+                                          <TableCell align="right" sx={{ fontSize: "0.78rem", fontWeight: 600 }}>
                                             ₹{reg.netAmount.toFixed(2)}
                                           </TableCell>
                                           <TableCell align="right" sx={{ fontSize: "0.78rem", color: "primary.dark", fontWeight: 600 }}>
@@ -933,15 +888,8 @@ export default function DoctorSummaryPage() {
                                               ({reg.incentivePercent}%)
                                             </Typography>
                                           </TableCell>
-                                          <TableCell align="right" sx={{ fontSize: "0.78rem", whiteSpace: "nowrap" }}>
-                                            <Typography variant="caption" sx={{ display: "block", color: "success.main", fontWeight: 600 }}>
-                                              Rec: ₹{reg.receivedAmount.toFixed(2)}
-                                            </Typography>
-                                            {reg.dueAmount > 0 && (
-                                              <Typography variant="caption" sx={{ display: "block", color: "error.main", fontWeight: 600 }}>
-                                                Due: ₹{reg.dueAmount.toFixed(2)}
-                                              </Typography>
-                                            )}
+                                          <TableCell align="right" sx={{ fontSize: "0.78rem", whiteSpace: "nowrap", color: "success.main", fontWeight: 600 }}>
+                                            ₹{reg.receivedAmount.toFixed(2)}
                                           </TableCell>
                                           <TableCell align="center" sx={{ fontSize: "0.78rem" }}>
                                             {getStatusChip(reg.status)}

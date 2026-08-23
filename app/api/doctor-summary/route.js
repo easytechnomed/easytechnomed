@@ -26,7 +26,13 @@ export async function GET(req) {
 
     const summary = [];
     for (const doc of doctors) {
-      const whereClause = { refById: doc.id, workspaceId: admin.workspaceId, isDeleted: false };
+      const whereClause = {
+        refById: doc.id,
+        workspaceId: admin.workspaceId,
+        isDeleted: false,
+        status: "Completed",
+        dueAmount: { lte: 0 },
+      };
       if (hasDateFilter) whereClause.date = regDateFilter;
 
       const regs = await prisma.registration.findMany({
