@@ -412,7 +412,7 @@ export async function GET(req, { params }) {
                   <div class="details-row"><span style="color: #64748b;">Total Amount:</span> <span>₹${parseFloat(reg.totalAmount || 0).toFixed(2)}</span></div>
                   <div class="details-row"><span style="color: #64748b;">Pending Balance:</span> <span class="due-badge">₹${parseFloat(reg.dueAmount).toFixed(2)}</span></div>
                 </div>
-                <a href="/api/print-bill/${reg.regNo}" target="_blank" class="btn">View & Pay Bill</a>
+                <a href="/api/print-bill/${reg.regNo}?otp=${reg.pdfOtp}" target="_blank" class="btn">View & Pay Bill</a>
               </div>
             </body>
           </html>

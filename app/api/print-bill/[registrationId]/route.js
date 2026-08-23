@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
+import { cookies } from "next/headers";
 import { prisma } from "@/lib/db";
+import { verifyToken } from "@/lib/auth";
 
 const formatDate = (dateStr) => {
   if (!dateStr) return "-";
@@ -134,6 +136,133 @@ export async function GET(req, { params }) {
       reg.pdfOtp = generatedOtp;
     }
 
+    const cookieStore = await cookies();
+    const isAdminToken = cookieStore.get("admin_session_token")?.value;
+    const isSuperAdminToken = cookieStore.get("super_admin_session_token")?.value;
+
+    let isStaff = false;
+
+    if (isAdminToken) {
+      const decoded = verifyToken(isAdminToken);
+      if (decoded) {
+        const session = await prisma.adminSession.findUnique({
+          where: { token: isAdminToken },
+          include: { admin: true },
+        });
+        if (session && session.expiresAt > new Date() && session.admin.isActive) {
+          // Strict workspace check: Admin ONLY has staff access to their OWN workspace!
+          if (session.admin.workspaceId === reg.workspaceId) {
+            isStaff = true;
+          }
+        }
+      }
+    }
+
+    if (isSuperAdminToken) {
+      const decoded = verifyToken(isSuperAdminToken);
+      if (decoded) {
+        const session = await prisma.superAdminSession.findUnique({
+          where: { token: isSuperAdminToken },
+        });
+        if (session && session.expiresAt > new Date()) {
+          isStaff = true;
+        }
+      }
+    }
+
+    // ── PUBLIC ACCESS SECURITY CHECKS (If not authenticated as own lab staff) ──
+    if (!isStaff) {
+      const searchParams = req.nextUrl?.searchParams || new URL(req.url).searchParams;
+      let reqOtp = (
+        searchParams.get("otp") ||
+        searchParams.get("otp?") ||
+        searchParams.get("token") ||
+        searchParams.get("code") ||
+        ""
+      ).trim();
+
+      if (!reqOtp) {
+        for (const [key, value] of searchParams.entries()) {
+          const cleanKey = key.replace(/[^a-zA-Z0-9]/g, "").toLowerCase();
+          if (cleanKey === "otp" || cleanKey === "token" || cleanKey === "code") {
+            reqOtp = String(value).trim();
+            break;
+          }
+        }
+      }
+
+      // Security Access Code (OTP) Verification
+      if (!reqOtp || reqOtp !== String(reg.pdfOtp).trim()) {
+        const isWrong = Boolean(reqOtp && reqOtp !== String(reg.pdfOtp).trim());
+        const invalidOtpHtml = `
+          <!DOCTYPE html>
+          <html>
+            <head>
+              <meta charset="UTF-8">
+              <meta name="viewport" content="width=device-width, initial-scale=1.0">
+              <title>Security Access Required - Money Receipt</title>
+              <style>
+                body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #f8fafc; color: #1e293b; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; padding: 20px; box-sizing: border-box; }
+                .card { background: white; padding: 36px 28px; border-radius: 16px; box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.08); max-width: 480px; width: 100%; text-align: center; border-top: 4px solid #0f766e; }
+                .icon-box { width: 64px; height: 64px; background: #f0fdfa; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 16px; font-size: 30px; border: 2px solid #ccfbf1; }
+                h1 { font-size: 20px; margin: 0 0 8px; font-weight: 800; color: #0f172a; }
+                .subtitle { font-size: 13px; color: #0f766e; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 16px; }
+                p { font-size: 14px; line-height: 1.6; color: #475569; margin: 0 0 20px; }
+                .details { background: #f8fafc; border: 1px solid #e2e8f0; padding: 14px; border-radius: 10px; font-size: 13px; text-align: left; margin-bottom: 20px; }
+                .details-row { display: flex; justify-content: space-between; margin-bottom: 6px; }
+                .details-row:last-child { margin-bottom: 0; }
+                .error-alert { background: #fef2f2; border: 1px solid #fecaca; color: #dc2626; padding: 10px; border-radius: 8px; font-size: 13px; font-weight: 600; margin-bottom: 16px; }
+                .hint { font-size: 12px; color: #64748b; line-height: 1.5; background: #eff6ff; padding: 10px; border-radius: 8px; border-left: 3px solid #3b82f6; text-align: left; }
+              </style>
+            </head>
+            <body>
+              <div class="card">
+                <div class="icon-box">🧾</div>
+                <div class="subtitle">Secure Billing Portal</div>
+                <h1>Security Code Required</h1>
+                <p>To protect patient financial and medical confidentiality, money receipts can only be accessed using the official QR code or by entering the security OTP code.</p>
+                
+                ${isWrong ? `<div class="error-alert">⚠️ Incorrect Security Code. Please check and try again.</div>` : ""}
+
+                <div class="details">
+                  <div class="details-row"><span style="color: #64748b;">Patient:</span> <strong style="color: #0f172a;">${reg.title} ${reg.name}</strong></div>
+                  <div class="details-row"><span style="color: #64748b;">Registration No:</span> <strong>${reg.regNo}</strong></div>
+                  <div class="details-row"><span style="color: #64748b;">Lab Reference:</span> <strong>${reg.labId}</strong></div>
+                </div>
+
+                <form method="GET" style="margin: 0 0 20px;">
+                  <div style="display: flex; gap: 8px; justify-content: center;">
+                    <input 
+                      type="text" 
+                      name="otp" 
+                      placeholder="Enter 6-digit OTP" 
+                      maxlength="10" 
+                      required
+                      style="padding: 10px 14px; border: 1.5px solid #cbd5e1; border-radius: 8px; font-size: 15px; width: 180px; text-align: center; font-weight: 700; letter-spacing: 2px; outline: none;"
+                    />
+                    <button 
+                      type="submit" 
+                      style="background-color: #0f766e; color: white; border: none; padding: 10px 18px; border-radius: 8px; font-weight: 700; font-size: 14px; cursor: pointer; transition: background 0.2s;"
+                    >
+                      Unlock Bill
+                    </button>
+                  </div>
+                </form>
+
+                <div class="hint">
+                  💡 <strong>Tip:</strong> Please enter the 6-digit security code received on SMS/WhatsApp or scan your QR code to view this receipt.
+                </div>
+              </div>
+            </body>
+          </html>
+        `;
+        return new Response(invalidOtpHtml, {
+          status: 200,
+          headers: { "Content-Type": "text/html; charset=utf-8" },
+        });
+      }
+    }
+
     // Fetch workspace address details from AdminAddress
     const adminRecord = await prisma.admin.findFirst({
       where: { workspaceId: reg.workspaceId },
@@ -173,7 +302,7 @@ export async function GET(req, { params }) {
     const qrReportData = `${req.nextUrl.origin}/api/print-report/${reg.regNo}?otp=${reg.pdfOtp}&withFrame=true`;
     const qrReportUrl = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(qrReportData)}`;
 
-    const qrPaymentData = `${req.nextUrl.origin}/api/print-bill/${reg.regNo}`;
+    const qrPaymentData = `${req.nextUrl.origin}/api/print-bill/${reg.regNo}?otp=${reg.pdfOtp}`;
     const qrPaymentUrl = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(qrPaymentData)}`;
 
     const receivedAmt = parseFloat(reg.receivedAmount || 0);

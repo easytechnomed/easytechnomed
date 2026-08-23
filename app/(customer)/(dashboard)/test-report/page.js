@@ -633,7 +633,8 @@ export default function TestReportPage() {
         row["Report QR Link"] = `${window.location.origin}/api/print-report/${reg.regNo}${otpParam}`;
       }
       if (includePaymentQr) {
-        row["Payment QR Link"] = `${window.location.origin}/api/print-bill/${reg.regNo}`;
+        const otpParam = reg.pdfOtp ? `?otp=${reg.pdfOtp}` : ``;
+        row["Payment QR Link"] = `${window.location.origin}/api/print-bill/${reg.regNo}${otpParam}`;
       }
 
       return row;
@@ -684,7 +685,8 @@ export default function TestReportPage() {
         }
 
         if (includePaymentQr) {
-          const qrData = `${window.location.origin}/api/print-bill/${reg.regNo}`;
+          const otpParam = reg.pdfOtp ? `?otp=${reg.pdfOtp}` : ``;
+          const qrData = `${window.location.origin}/api/print-bill/${reg.regNo}${otpParam}`;
           const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=100x100&data=${encodeURIComponent(qrData)}`;
           cells.push(`
             <td class="qr-container">
