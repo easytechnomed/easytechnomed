@@ -94,6 +94,212 @@ const getParamKey = (name) => {
   return null;
 };
 
+const addValueToValuesMap = (valuesMap, param, numVal) => {
+  if (numVal === null || numVal === undefined || isNaN(numVal)) return;
+
+  const id = param.id || param.parameterId;
+  if (id) valuesMap[id] = numVal;
+
+  const name = param.name || param.parameterName || "";
+  if (name) {
+    valuesMap[name.trim()] = numVal;
+    const normName = name.toLowerCase().replace(/[^a-z0-9]/g, "");
+    valuesMap[normName] = numVal;
+    valuesMap[normName.toUpperCase()] = numVal;
+
+    // Lipids
+    if (normName.includes("triglyceride")) {
+      valuesMap["TG"] = numVal;
+      valuesMap["TRIG"] = numVal;
+      valuesMap["TRIGLYCERIDE"] = numVal;
+      valuesMap["TRIGLYCERIDES"] = numVal;
+      valuesMap["SERUMTRIGLYCERIDES"] = numVal;
+      valuesMap["SERUMTRIGLYCERIDE"] = numVal;
+      valuesMap["tg"] = numVal;
+      valuesMap["trig"] = numVal;
+    }
+    if (normName === "cholesterol" || normName === "totalcholesterol" || normName === "serumcholesterol") {
+      valuesMap["CHOL"] = numVal;
+      valuesMap["TC"] = numVal;
+      valuesMap["CHOLESTEROL"] = numVal;
+      valuesMap["TOTALCHOLESTEROL"] = numVal;
+      valuesMap["chol"] = numVal;
+      valuesMap["tc"] = numVal;
+    }
+    if (normName === "hdl" || normName === "hdlcholesterol" || normName === "serumhdl") {
+      valuesMap["HDL"] = numVal;
+      valuesMap["HDL_CHOLESTEROL"] = numVal;
+      valuesMap["hdl"] = numVal;
+    }
+    if (normName === "ldl" || normName === "ldlcholesterol" || normName === "serumldl") {
+      valuesMap["LDL"] = numVal;
+      valuesMap["LDL_CHOLESTEROL"] = numVal;
+      valuesMap["ldl"] = numVal;
+    }
+    if (normName === "vldl" || normName === "vldlcholesterol" || normName === "serumvldl") {
+      valuesMap["VLDL"] = numVal;
+      valuesMap["VLDL_CHOLESTEROL"] = numVal;
+      valuesMap["vldl"] = numVal;
+    }
+    if (normName.includes("nonhdl")) {
+      valuesMap["NON_HDL"] = numVal;
+      valuesMap["NON_HDL_CHOLESTEROL"] = numVal;
+      valuesMap["NONHDL"] = numVal;
+      valuesMap["NONHDLCHOLESTEROL"] = numVal;
+    }
+
+    // CBC / DLC
+    if (normName === "hemoglobin" || normName === "haemoglobin" || normName === "hb" || normName === "hgb") {
+      valuesMap["HB"] = numVal;
+      valuesMap["HGB"] = numVal;
+      valuesMap["hb"] = numVal;
+      valuesMap["hgb"] = numVal;
+    }
+    if (normName === "pcv" || normName === "hematocrit" || normName === "haematocrit" || normName.includes("pcv") || normName.includes("haematocrit") || normName.includes("hematocrit")) {
+      valuesMap["PCV"] = numVal;
+      valuesMap["HCT"] = numVal;
+      valuesMap["pcv"] = numVal;
+      valuesMap["hct"] = numVal;
+    }
+    if (normName === "rbc" || normName === "rbccount" || normName.includes("redbloodcell") || normName.includes("rbccount")) {
+      valuesMap["RBC"] = numVal;
+      valuesMap["rbc"] = numVal;
+    }
+    if (normName === "wbc" || normName === "totalwbccount" || normName === "tlc" || normName.includes("leucocytecount") || normName.includes("wbccount")) {
+      valuesMap["WBC"] = numVal;
+      valuesMap["TLC"] = numVal;
+      valuesMap["wbc"] = numVal;
+      valuesMap["tlc"] = numVal;
+    }
+    if (normName.includes("neutrophil") || normName.includes("polymorph")) {
+      valuesMap["NEUT"] = numVal;
+      valuesMap["POLY"] = numVal;
+      valuesMap["neut"] = numVal;
+      valuesMap["poly"] = numVal;
+    }
+    if (normName.includes("lymphocyte")) {
+      valuesMap["LYMPH"] = numVal;
+      valuesMap["lymph"] = numVal;
+    }
+    if (normName.includes("eosinophil")) {
+      valuesMap["EOS"] = numVal;
+      valuesMap["eos"] = numVal;
+    }
+    if (normName.includes("monocyte")) {
+      valuesMap["MONO"] = numVal;
+      valuesMap["mono"] = numVal;
+    }
+    if (normName.includes("basophil")) {
+      valuesMap["BASO"] = numVal;
+      valuesMap["baso"] = numVal;
+    }
+    if (normName.includes("platelet") || normName === "plt") {
+      valuesMap["PLT"] = numVal;
+      valuesMap["plt"] = numVal;
+    }
+
+    // LFT
+    if (normName.includes("totalbilirubin") || normName === "tb" || normName === "tbil") {
+      valuesMap["TB"] = numVal;
+      valuesMap["TBIL"] = numVal;
+      valuesMap["tb"] = numVal;
+      valuesMap["tbil"] = numVal;
+    }
+    if (normName.includes("directbilirubin") || normName === "db" || normName === "dbil") {
+      valuesMap["DB"] = numVal;
+      valuesMap["DBIL"] = numVal;
+      valuesMap["db"] = numVal;
+      valuesMap["dbil"] = numVal;
+    }
+    if (normName.includes("indirectbilirubin") || normName === "ib" || normName === "ibil") {
+      valuesMap["IB"] = numVal;
+      valuesMap["IBIL"] = numVal;
+      valuesMap["ib"] = numVal;
+      valuesMap["ibil"] = numVal;
+    }
+    if (normName === "totalprotein" || normName === "tp") {
+      valuesMap["TP"] = numVal;
+      valuesMap["tp"] = numVal;
+    }
+    if (normName === "albumin" || normName === "alb" || normName === "serumalbumin") {
+      valuesMap["ALB"] = numVal;
+      valuesMap["alb"] = numVal;
+    }
+    if (normName === "globulin" || normName === "glob" || normName === "serumglobulin") {
+      valuesMap["GLOB"] = numVal;
+      valuesMap["glob"] = numVal;
+    }
+
+    // KFT
+    if (normName.includes("urea") && !normName.includes("ratio") && !normName.includes("nitrogen")) {
+      valuesMap["UREA"] = numVal;
+      valuesMap["urea"] = numVal;
+    }
+    if (normName.includes("creatinine") && !normName.includes("ratio")) {
+      valuesMap["CR"] = numVal;
+      valuesMap["CREAT"] = numVal;
+      valuesMap["cr"] = numVal;
+      valuesMap["creat"] = numVal;
+    }
+    if (normName === "bun" || normName.includes("ureanitrogen")) {
+      valuesMap["BUN"] = numVal;
+      valuesMap["bun"] = numVal;
+    }
+    if (normName.includes("sgot") || normName.includes("ast")) {
+      valuesMap["SGOT"] = numVal;
+      valuesMap["AST"] = numVal;
+      valuesMap["sgot"] = numVal;
+      valuesMap["ast"] = numVal;
+    }
+    if (normName.includes("sgpt") || normName.includes("alt")) {
+      valuesMap["SGPT"] = numVal;
+      valuesMap["ALT"] = numVal;
+      valuesMap["sgpt"] = numVal;
+      valuesMap["alt"] = numVal;
+    }
+  }
+
+  const rawCode = param.code || "";
+  if (rawCode) {
+    const code = rawCode.trim().toUpperCase();
+    valuesMap[code] = numVal;
+    valuesMap[code.toLowerCase()] = numVal;
+
+    if (code === "TG" || code === "TRIG") {
+      valuesMap["TG"] = numVal;
+      valuesMap["TRIG"] = numVal;
+      valuesMap["TRIGLYCERIDE"] = numVal;
+      valuesMap["TRIGLYCERIDES"] = numVal;
+      valuesMap["tg"] = numVal;
+      valuesMap["trig"] = numVal;
+    }
+    if (code === "CHOL" || code === "TC") {
+      valuesMap["CHOL"] = numVal;
+      valuesMap["TC"] = numVal;
+      valuesMap["chol"] = numVal;
+      valuesMap["tc"] = numVal;
+    }
+    if (code === "HB" || code === "HGB") {
+      valuesMap["HB"] = numVal;
+      valuesMap["HGB"] = numVal;
+      valuesMap["hb"] = numVal;
+      valuesMap["hgb"] = numVal;
+    }
+    if (code === "PCV" || code === "HCT") {
+      valuesMap["PCV"] = numVal;
+      valuesMap["HCT"] = numVal;
+      valuesMap["pcv"] = numVal;
+      valuesMap["hct"] = numVal;
+    }
+    if (code === "WBC" || code === "TLC") {
+      valuesMap["WBC"] = numVal;
+      valuesMap["TLC"] = numVal;
+      valuesMap["wbc"] = numVal;
+      valuesMap["tlc"] = numVal;
+    }
+  }
+};
+
 const evaluateExpression = (formulaStr, valuesMap) => {
   if (!formulaStr) return null;
 
@@ -104,8 +310,9 @@ const evaluateExpression = (formulaStr, valuesMap) => {
   const tokenRegex = /\b(?!ROUND|ABS|SQRT|MIN|MAX|IF|null|NULL\b)[a-zA-Z_][a-zA-Z0-9_]*\b/g;
 
   const substituted = prepared.replace(tokenRegex, (match) => {
-    if (valuesMap[match] !== undefined && valuesMap[match] !== null) {
-      return valuesMap[match];
+    const val = valuesMap[match] ?? valuesMap[match.toUpperCase()] ?? valuesMap[match.toLowerCase()];
+    if (val !== undefined && val !== null && !isNaN(val)) {
+      return val;
     }
     return match;
   });
@@ -157,7 +364,8 @@ const checkFormulaDependencies = (formulaStr, valuesMap) => {
   const matches = formulaStr.match(tokenRegex) || [];
 
   for (const match of matches) {
-    if (valuesMap[match] === undefined || valuesMap[match] === null || valuesMap[match] === "") {
+    const val = valuesMap[match] ?? valuesMap[match.toUpperCase()] ?? valuesMap[match.toLowerCase()];
+    if (val === undefined || val === null || val === "" || isNaN(val)) {
       return false;
     }
   }
@@ -178,52 +386,6 @@ const calculateAllDependents = (values, tests, changedId, overrides = new Set())
     });
   });
 
-  const STANDARD_CODE_FALLBACKS = {
-    "polymorphsneutrophils": "NEUT",
-    "neutrophils": "NEUT",
-    "lymphocytes": "LYMPH",
-    "eosinophils": "EOS",
-    "monocytes": "MONO",
-    "basophils": "BASO",
-    "haemoglobin": "HB",
-    "hemoglobin": "HB",
-    "rbccountredbloodcells": "RBC",
-    "rbccount": "RBC",
-    "totalwbccount": "WBC",
-    "wbccount": "WBC",
-    "pcvhaematocrit": "PCV",
-    "pcv": "PCV",
-    "mcv": "MCV",
-    "mch": "MCH",
-    "mchc": "MCHC",
-    "totalcholesterol": "TC",
-    "triglycerides": "TG",
-    "hdlcholesterol": "HDL",
-    "ldlcholesterol": "LDL",
-    "vldlcholesterol": "VLDL",
-    "totalbilirubin": "TB",
-    "directbilirubin": "DB",
-    "indirectbilirubin": "IB",
-    "sgotast": "AST",
-    "sgptalt": "ALT",
-    "alkalinephosphatase": "ALP",
-    "totalprotein": "TP",
-    "albumin": "ALB",
-    "globulin": "GLOB",
-    "albuminglobulinratio": "AGR",
-    "bloodurea": "UREA",
-    "serumcreatinine": "CREAT",
-    "bloodureanitrogenbun": "BUN",
-    "buncreatinineratio": "BCR",
-    "ureacreatinineratio": "UCR",
-    "serumuricacid": "UA",
-    "serumsodiumna": "NA",
-    "serumpotassiumk": "K",
-    "serumchloridecl": "CL",
-    "estimatedaverageglucoseeag": "EAG",
-    "urineproteincreatinineratio": "UPCR"
-  };
-
   // 2. Build valuesMap of currently typed values
   const valuesMap = {};
   tests.forEach((test) => {
@@ -232,16 +394,7 @@ const calculateAllDependents = (values, tests, changedId, overrides = new Set())
       if (rawVal !== undefined && rawVal !== null && rawVal !== "") {
         const numVal = parseFloat(rawVal);
         if (!isNaN(numVal)) {
-          valuesMap[tp.parameterId] = numVal;
-          valuesMap[tp.name.trim()] = numVal;
-          const normName = tp.name.toLowerCase().replace(/[^a-z0-9]/g, "");
-          valuesMap[normName] = numVal;
-
-          const code = (tp.code || STANDARD_CODE_FALLBACKS[normName])?.toUpperCase().trim();
-          if (code) {
-            valuesMap[code] = numVal;
-            valuesMap[code.toLowerCase()] = numVal;
-          }
+          addValueToValuesMap(valuesMap, tp, numVal);
         }
       }
     });
@@ -295,20 +448,13 @@ const calculateAllDependents = (values, tests, changedId, overrides = new Set())
           const precision = form.outputParameterTestConfig?.decimalPlace ?? 2;
           const roundedResult = parseFloat(result.toFixed(precision));
 
-          // Save to valuesMap
-          valuesMap[form.outputParameterId] = roundedResult;
-          valuesMap[form.outputParameter.name.trim()] = roundedResult;
-          valuesMap[form.outputParameterNameStripped] = roundedResult;
-          if (form.outputParameterCode) {
-            valuesMap[form.outputParameterCode.trim()] = roundedResult;
-            valuesMap[form.outputParameterCode.trim().toLowerCase()] = roundedResult;
-          }
+          // Save to valuesMap with all aliases
+          addValueToValuesMap(valuesMap, form.outputParameter, roundedResult);
 
           // Save to res (which maps testParameterId -> stringVal)
           res[form.outputTestParameterId] = String(roundedResult);
           evaluatedFormulas.add(form.id);
           changed = true;
-          console.log(`[calculateAllDependents] -> Updated calculated value in res for Parameter "${form.outputParameter.name}" (ID: ${form.outputTestParameterId}) = "${roundedResult}"`);
         }
       }
     }
@@ -814,7 +960,7 @@ export default function ResultEntry({ open, onClose, selectedReg, onSaveSuccess,
     };
   }, [resultValues, reportNotes]);
 
-  const handleResultValueChange = (paramId, val, triggerCalc = false) => {
+  const handleResultValueChange = (paramId, val, triggerCalc = true) => {
     const newOverrides = new Set(manualOverrides);
     if (val !== undefined && val !== null && val !== "") {
       newOverrides.add(paramId);
@@ -1398,7 +1544,7 @@ export default function ResultEntry({ open, onClose, selectedReg, onSaveSuccess,
                                           fullWidth
                                           disabled={!param.editable}
                                           value={val}
-                                          onChange={(e) => handleResultValueChange(param.id, e.target.value, hasOptions)}
+                                          onChange={(e) => handleResultValueChange(param.id, e.target.value, true)}
                                           onBlur={() => handleResultValueBlur(param.id)}
                                           onKeyDown={handleKeyDown}
                                           error={isAbnormal}
@@ -1420,8 +1566,23 @@ export default function ResultEntry({ open, onClose, selectedReg, onSaveSuccess,
                                               endAdornment: (isAbnormal || hasFormula) && (
                                                 <InputAdornment position="end">
                                                   {hasFormula && (
-                                                    <Tooltip title={isOverridden ? "Formula overridden (manual entry)" : `Calculated by formula: ${paramFormula.formula}`}>
-                                                      <IconButton size="small" tabIndex={-1} sx={{ p: 0.25, mr: isAbnormal ? 0.5 : 0 }}>
+                                                    <Tooltip title={isOverridden ? "Formula overridden (manual entry) - Click to restore formula" : `Calculated by formula: ${paramFormula.formula}`}>
+                                                      <IconButton
+                                                        size="small"
+                                                        tabIndex={-1}
+                                                        onClick={(e) => {
+                                                          e.stopPropagation();
+                                                          if (isOverridden) {
+                                                            const newOverrides = new Set(manualOverrides);
+                                                            newOverrides.delete(param.id);
+                                                            newOverrides.delete(String(param.id));
+                                                            setManualOverrides(newOverrides);
+                                                            const finalValues = calculateAllDependents(resultValues, resultTests, param.id, newOverrides);
+                                                            setResultValues(finalValues);
+                                                          }
+                                                        }}
+                                                        sx={{ p: 0.25, mr: isAbnormal ? 0.5 : 0 }}
+                                                      >
                                                         <CalculateIcon
                                                           color={isOverridden ? "action" : "primary"}
                                                           sx={{ fontSize: "1.1rem", opacity: isOverridden ? 0.5 : 0.8 }}
