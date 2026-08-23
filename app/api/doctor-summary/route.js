@@ -29,7 +29,24 @@ export async function GET(req) {
       const whereClause = { refById: doc.id, workspaceId: admin.workspaceId, isDeleted: false };
       if (hasDateFilter) whereClause.date = regDateFilter;
 
-      const regs = await prisma.registration.findMany({ where: whereClause });
+      const regs = await prisma.registration.findMany({
+        where: whereClause,
+        include: {
+          tests: {
+            include: {
+              test: {
+                select: {
+                  id: true,
+                  name: true,
+                  code: true,
+                  price: true,
+                },
+              },
+            },
+          },
+        },
+        orderBy: { date: "desc" },
+      });
       if (regs.length === 0 && hasDateFilter) continue;
 
       const count = regs.length;
@@ -37,17 +54,51 @@ export async function GET(req) {
       const totalDiscount = regs.reduce((sum, r) => sum + Number(r.discountAmount), 0);
       const netAmount = totalAmount - totalDiscount;
       const collection = regs.reduce((sum, r) => sum + Number(r.receivedAmount), 0);
+      const incentivePercent = Number(doc.incentivePercent) || 0;
 
       let totalIncentiveAmount = 0;
-      for (const r of regs) {
-        const netAmt = Number(r.totalAmount) - Number(r.discountAmount);
-        const pct = r.refByIncentivePercent !== null && r.refByIncentivePercent !== undefined
-          ? Number(r.refByIncentivePercent)
-          : Number(doc.incentivePercent) || 0;
-        totalIncentiveAmount += (netAmt * pct) / 100;
-      }
+      const registrations = regs.map((r) => {
+        const total = Number(r.totalAmount) || 0;
+        const discount = Number(r.discountAmount) || 0;
+        const net = total - discount;
+        const pct =
+          r.refByIncentivePercent !== null && r.refByIncentivePercent !== undefined
+            ? Number(r.refByIncentivePercent)
+            : incentivePercent;
+        const incentive = (net * pct) / 100;
+        totalIncentiveAmount += incentive;
+        const received = Number(r.receivedAmount) || 0;
+        const due = Number(r.dueAmount) || 0;
 
-      const incentivePercent = Number(doc.incentivePercent) || 0;
+        return {
+          id: r.id,
+          regNo: r.regNo,
+          labId: r.labId,
+          date: r.date ? r.date.toISOString() : null,
+          title: r.title || "",
+          name: r.name || "",
+          fullName: `${r.title ? r.title + " " : ""}${r.name || ""}`.trim(),
+          age: r.age,
+          ageUnit: r.ageUnit || "Year",
+          gender: r.gender,
+          mobileNo: r.mobileNo,
+          status: r.status,
+          totalAmount: total,
+          discountAmount: discount,
+          discountPercent: Number(r.discountPercent) || 0,
+          netAmount: net,
+          receivedAmount: received,
+          dueAmount: due,
+          incentivePercent: pct,
+          incentiveAmount: incentive,
+          tests: (r.tests || []).map((t) => ({
+            testId: t.testId,
+            name: t.test?.name || "Test",
+            code: t.test?.code || "",
+            price: Number(t.price) || 0,
+          })),
+        };
+      });
 
       summary.push({
         id: doc.id,
@@ -61,6 +112,7 @@ export async function GET(req) {
         discount: totalDiscount,
         netAmount,
         collection,
+        registrations,
       });
     }
 

@@ -117,31 +117,7 @@ export async function GET(req, { params }) {
       },
     });
 
-    // 2. Fallback lookup by numeric ID, barcode, or labId
-    if (!reg) {
-      let regId = parseInt(registrationId);
-      if (!isNaN(regId)) {
-        reg = await prisma.registration.findFirst({
-          where: { id: regId, isDeleted: false },
-          include: {
-            refBy: true,
-            tests: {
-              include: {
-                test: {
-                  department: true,
-                  parameters: {
-                    where: { isDeleted: false },
-                    orderBy: { order: "asc" },
-                    include: { parameter: true }
-                  },
-                },
-              },
-            },
-            results: true,
-          },
-        });
-      }
-    }
+    // 2. Fallback lookup by barcode or labId
 
     if (!reg) {
       reg = await prisma.registration.findFirst({

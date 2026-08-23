@@ -25,7 +25,11 @@ import {
   DialogContentText,
   DialogActions,
   Snackbar,
-  Alert
+  Alert,
+  Collapse,
+  Chip,
+  Tooltip,
+  Stack,
 } from "@mui/material";
 import {
   Print as PrintIcon,
@@ -33,14 +37,24 @@ import {
   RestartAlt as ResetIcon,
   Add as AddIcon,
   Edit as EditIcon,
-  Delete as DeleteIcon
+  Delete as DeleteIcon,
+  KeyboardArrowDown as KeyboardArrowDownIcon,
+  KeyboardArrowUp as KeyboardArrowUpIcon,
+  ReceiptLong as ReceiptIcon,
+  Description as ReportIcon,
+  UnfoldMore as UnfoldMoreIcon,
+  UnfoldLess as UnfoldLessIcon,
+  Person as PersonIcon,
+  FileDownload as FileDownloadIcon,
 } from "@mui/icons-material";
+import * as XLSX from "xlsx";
 import AddDoctorDrawer from "@/components/AddDoctorDrawer";
 
 export default function DoctorSummaryPage() {
   const [openAddDocDrawer, setOpenAddDocDrawer] = useState(false);
   const [summaryData, setSummaryData] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [expandedRows, setExpandedRows] = useState({});
 
   // Edit & Delete States
   const [openEditDialog, setOpenEditDialog] = useState(false);
@@ -152,6 +166,7 @@ export default function DoctorSummaryPage() {
           collection: Number(item.collection) || 0,
           incentivePercent: Number(item.incentivePercent) || 0,
           incentiveAmount: Number(item.incentiveAmount) || 0,
+          registrations: item.registrations || [],
         }));
         setSummaryData(parsed);
       }
@@ -174,6 +189,28 @@ export default function DoctorSummaryPage() {
     setTimeout(() => loadData(), 50);
   };
 
+  // Toggle single row accordion
+  const toggleRow = (id) => {
+    setExpandedRows((prev) => ({
+      ...prev,
+      [id]: !prev[id],
+    }));
+  };
+
+  // Toggle all rows expand/collapse
+  const toggleAllRows = () => {
+    const allExpanded = summaryData.length > 0 && summaryData.every((item) => expandedRows[item.id]);
+    if (allExpanded) {
+      setExpandedRows({});
+    } else {
+      const newMap = {};
+      summaryData.forEach((item) => {
+        newMap[item.id] = true;
+      });
+      setExpandedRows(newMap);
+    }
+  };
+
   // Helper to format Date
   const formatDate = (dateStr) => {
     if (!dateStr) return "-";
@@ -185,6 +222,185 @@ export default function DoctorSummaryPage() {
     });
   };
 
+  // Helper to format Date & Time
+  const formatDateTime = (dateStr) => {
+    if (!dateStr) return "-";
+    const d = new Date(dateStr);
+    return d.toLocaleString("en-US", {
+      month: "short",
+      day: "2-digit",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: true,
+    });
+  };
+
+  // Status Chip helper
+  const getStatusChip = (status) => {
+    const s = (status || "Pending").toLowerCase();
+    let color = "default";
+    let variant = "filled";
+
+    if (s.includes("complete")) {
+      color = "success";
+    } else if (s.includes("pending")) {
+      color = "warning";
+    } else if (s.includes("sample") || s.includes("collect")) {
+      color = "info";
+    } else if (s.includes("cancel")) {
+      color = "error";
+    }
+
+    return (
+      <Chip
+        label={status || "Pending"}
+        size="small"
+        color={color}
+        variant={variant}
+        sx={{ fontSize: "0.72rem", height: 20, fontWeight: 600 }}
+      />
+    );
+  };
+
+  // Excel Export for a single doctor
+  const exportDoctorExcel = (doctor) => {
+    if (!doctor || !doctor.registrations || doctor.registrations.length === 0) {
+      showToast(`No referral records found for Dr. ${doctor?.name || "Doctor"} to export.`, "info");
+      return;
+    }
+
+    const rows = doctor.registrations.map((reg, idx) => ({
+      "S.No": idx + 1,
+      "Date & Time": formatDateTime(reg.date),
+      "Reg No": reg.regNo || "-",
+      "Lab ID": reg.labId || "-",
+      "Patient Name": reg.fullName || reg.name || "-",
+      "Age": reg.age ? `${reg.age} ${reg.ageUnit || "Y"}` : "-",
+      "Gender": reg.gender || "-",
+      "Contact No": reg.mobileNo || "-",
+      "Tests Booked": (reg.tests || []).map((t) => t.name).join(", ") || "-",
+      "Bill Amount (₹)": Number(reg.totalAmount) || 0,
+      "Discount (₹)": Number(reg.discountAmount) || 0,
+      "Net Amount (₹)": Number(reg.netAmount) || 0,
+      "Incentive (%)": `${reg.incentivePercent}%`,
+      "Incentive (₹)": Number(reg.incentiveAmount) || 0,
+      "Received (₹)": Number(reg.receivedAmount) || 0,
+      "Due (₹)": Number(reg.dueAmount) || 0,
+      "Status": reg.status || "Pending",
+    }));
+
+    // Add total summary row
+    rows.push({
+      "S.No": "TOTAL",
+      "Date & Time": `From ${formatDate(startDate)} to ${formatDate(endDate)}`,
+      "Reg No": `Doctor: ${doctor.name}`,
+      "Lab ID": `Code: ${doctor.code}`,
+      "Patient Name": "",
+      "Age": "",
+      "Gender": "",
+      "Contact No": "",
+      "Tests Booked": `Total Visits: ${doctor.count}`,
+      "Bill Amount (₹)": Number(doctor.amount) || 0,
+      "Discount (₹)": Number(doctor.discount) || 0,
+      "Net Amount (₹)": Number(doctor.netAmount) || 0,
+      "Incentive (%)": `${doctor.incentivePercent}%`,
+      "Incentive (₹)": Number(doctor.incentiveAmount) || 0,
+      "Received (₹)": Number(doctor.collection) || 0,
+      "Due (₹)": (Number(doctor.netAmount) || 0) - (Number(doctor.collection) || 0),
+      "Status": "",
+    });
+
+    const worksheet = XLSX.utils.json_to_sheet(rows);
+    const workbook = XLSX.utils.book_new();
+    const sheetName = (doctor.name || "Doctor").substring(0, 31).replace(/[:\\\/\?\*\[\]]/g, "");
+    XLSX.utils.book_append_sheet(workbook, worksheet, sheetName);
+
+    const safeName = (doctor.name || "Doctor").replace(/[^a-zA-Z0-9_-]/g, "_");
+    XLSX.writeFile(workbook, `${safeName}_Referrals_${startDate}_to_${endDate}.xlsx`);
+    showToast(`Excel report exported for Dr. ${doctor.name}!`, "success");
+  };
+
+  // Excel Export for all doctors
+  const exportAllDoctorsExcel = () => {
+    if (summaryData.length === 0) {
+      showToast("No doctor referral data available to export.", "info");
+      return;
+    }
+
+    const workbook = XLSX.utils.book_new();
+
+    // Sheet 1: Doctor Summary
+    const summaryRows = summaryData.map((doc, idx) => ({
+      "S.No": idx + 1,
+      "Doctor Name": doc.name,
+      "Code": doc.code,
+      "Last Paid Date": doc.lastPaid ? formatDate(doc.lastPaid) : "-",
+      "Incentive Rate (%)": `${doc.incentivePercent}%`,
+      "Patient Count": doc.count,
+      "Total Amount (₹)": Number(doc.amount) || 0,
+      "Discount (₹)": Number(doc.discount) || 0,
+      "Net Amount (₹)": Number(doc.netAmount) || 0,
+      "Doctor Incentive (₹)": Number(doc.incentiveAmount) || 0,
+      "Collection / Received (₹)": Number(doc.collection) || 0,
+    }));
+
+    // Add totals row
+    summaryRows.push({
+      "S.No": "TOTAL",
+      "Doctor Name": "Grand Total",
+      "Code": "",
+      "Last Paid Date": `From ${formatDate(startDate)} to ${formatDate(endDate)}`,
+      "Incentive Rate (%)": "-",
+      "Patient Count": totalCount,
+      "Total Amount (₹)": totalAmount,
+      "Discount (₹)": totalDiscount,
+      "Net Amount (₹)": totalNetAmount,
+      "Doctor Incentive (₹)": totalIncentive,
+      "Collection / Received (₹)": totalCollection,
+    });
+
+    const summarySheet = XLSX.utils.json_to_sheet(summaryRows);
+    XLSX.utils.book_append_sheet(workbook, summarySheet, "Doctors Summary");
+
+    // Sheet 2: All Referred Patients Breakdown
+    const allPatientRows = [];
+    let counter = 1;
+    summaryData.forEach((doc) => {
+      (doc.registrations || []).forEach((reg) => {
+        allPatientRows.push({
+          "S.No": counter++,
+          "Doctor Name": doc.name,
+          "Doctor Code": doc.code,
+          "Date & Time": formatDateTime(reg.date),
+          "Reg No": reg.regNo || "-",
+          "Lab ID": reg.labId || "-",
+          "Patient Name": reg.fullName || reg.name || "-",
+          "Age": reg.age ? `${reg.age} ${reg.ageUnit || "Y"}` : "-",
+          "Gender": reg.gender || "-",
+          "Contact No": reg.mobileNo || "-",
+          "Tests Booked": (reg.tests || []).map((t) => t.name).join(", ") || "-",
+          "Bill Amount (₹)": Number(reg.totalAmount) || 0,
+          "Discount (₹)": Number(reg.discountAmount) || 0,
+          "Net Amount (₹)": Number(reg.netAmount) || 0,
+          "Doc Incentive (%)": `${reg.incentivePercent}%`,
+          "Doc Incentive (₹)": Number(reg.incentiveAmount) || 0,
+          "Received (₹)": Number(reg.receivedAmount) || 0,
+          "Due (₹)": Number(reg.dueAmount) || 0,
+          "Status": reg.status || "Pending",
+        });
+      });
+    });
+
+    if (allPatientRows.length > 0) {
+      const patientsSheet = XLSX.utils.json_to_sheet(allPatientRows);
+      XLSX.utils.book_append_sheet(workbook, patientsSheet, "All Patient Referrals");
+    }
+
+    XLSX.writeFile(workbook, `Doctor_Referral_Full_Report_${startDate}_to_${endDate}.xlsx`);
+    showToast("All doctors referral Excel exported successfully!", "success");
+  };
+
   // Sum calculations
   const totalCount = summaryData.reduce((sum, item) => sum + item.count, 0);
   const totalAmount = summaryData.reduce((sum, item) => sum + item.amount, 0);
@@ -193,15 +409,43 @@ export default function DoctorSummaryPage() {
   const totalIncentive = summaryData.reduce((sum, item) => sum + item.incentiveAmount, 0);
   const totalCollection = summaryData.reduce((sum, item) => sum + item.collection, 0);
 
+  const areAllExpanded = summaryData.length > 0 && summaryData.every((item) => expandedRows[item.id]);
+
   return (
-    <Box sx={{ flexGrow: 1 }}>
+    <Box sx={{ flexGrow: 1, pb: 4 }}>
       {/* Header section with print utilities */}
       <Box sx={{ display: "flex", flexWrap: "wrap", justifyContent: "space-between", alignItems: "center", mb: 3, gap: 2 }}>
-        <Typography variant="h5" sx={{ fontWeight: 800, color: "primary.main" }}>
-          Doctor Referral Summary (Ref Summary)
-        </Typography>
+        <Box>
+          <Typography variant="h5" sx={{ fontWeight: 800, color: "primary.main" }}>
+            Doctor Referral Summary (Ref Summary)
+          </Typography>
+          <Typography variant="body2" sx={{ color: "text.secondary", mt: 0.3 }}>
+            Track referred patient counts, test billings, incentives, and payments per doctor.
+          </Typography>
+        </Box>
 
-        <Box sx={{ display: "flex", gap: 1.5 }}>
+        <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1.5 }}>
+          {summaryData.length > 0 && (
+            <>
+              <Button
+                variant="outlined"
+                size="small"
+                startIcon={areAllExpanded ? <UnfoldLessIcon /> : <UnfoldMoreIcon />}
+                onClick={toggleAllRows}
+              >
+                {areAllExpanded ? "Collapse All" : "Expand All"}
+              </Button>
+              <Button
+                variant="outlined"
+                color="success"
+                size="small"
+                startIcon={<FileDownloadIcon />}
+                onClick={exportAllDoctorsExcel}
+              >
+                Export Excel (XLS)
+              </Button>
+            </>
+          )}
           <Button variant="outlined" size="small" startIcon={<PrintIcon />} onClick={() => window.print()}>
             Print Summary
           </Button>
@@ -212,7 +456,7 @@ export default function DoctorSummaryPage() {
       </Box>
 
       {/* Date Filter Toolbar Card */}
-      <Card variant="outlined" sx={{ mb: 3 }}>
+      <Card variant="outlined" sx={{ mb: 3, bgcolor: "#ffffff" }}>
         <CardContent sx={{ py: 2 }}>
           <Grid container spacing={2} alignItems="center">
             <Grid size={{ xs: 12, sm: 4 }}>
@@ -249,15 +493,29 @@ export default function DoctorSummaryPage() {
         </CardContent>
       </Card>
 
-      {/* Date range descriptor */}
-      <Box sx={{ bgcolor: "#d1fae5", p: 1.5, borderRadius: "6px 6px 0 0", border: "1px solid #a7f3d0", borderBottom: 0 }}>
+      {/* Date range descriptor banner */}
+      <Box
+        sx={{
+          bgcolor: "#ecfdf5",
+          p: 1.5,
+          borderRadius: "8px 8px 0 0",
+          border: "1px solid #a7f3d0",
+          borderBottom: 0,
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+        }}
+      >
         <Typography variant="subtitle2" sx={{ fontWeight: 700, color: "#065f46" }}>
           Ref Summary from {formatDate(startDate)} to {formatDate(endDate)}
+        </Typography>
+        <Typography variant="caption" sx={{ color: "#047857", fontWeight: 600 }}>
+          Click the down arrow on any doctor row to view all referred patient details
         </Typography>
       </Box>
 
       {/* Doctor Summary Table */}
-      <TableContainer component={Paper} variant="outlined" sx={{ borderRadius: "0 0 4px 4px" }}>
+      <TableContainer component={Paper} variant="outlined" sx={{ borderRadius: "0 0 8px 8px", boxShadow: "0 1px 3px rgba(0,0,0,0.05)" }}>
         {loading ? (
           <Box sx={{ display: "flex", flexDirection: "column", justifyContent: "center", alignItems: "center", py: 8, gap: 2 }}>
             <CircularProgress size={40} />
@@ -267,8 +525,15 @@ export default function DoctorSummaryPage() {
           </Box>
         ) : (
           <Table size="small">
-            <TableHead sx={{ bgcolor: "#e2e8f0" }}>
+            <TableHead sx={{ bgcolor: "#f1f5f9" }}>
               <TableRow>
+                <TableCell sx={{ width: 44, px: 1 }} align="center">
+                  <Tooltip title={areAllExpanded ? "Collapse all doctors" : "Expand all doctors"}>
+                    <IconButton size="small" onClick={toggleAllRows}>
+                      {areAllExpanded ? <KeyboardArrowUpIcon fontSize="small" /> : <KeyboardArrowDownIcon fontSize="small" />}
+                    </IconButton>
+                  </Tooltip>
+                </TableCell>
                 <TableCell sx={{ fontWeight: 700 }}>SNO</TableCell>
                 <TableCell sx={{ fontWeight: 700 }} align="center">Actions</TableCell>
                 <TableCell sx={{ fontWeight: 700 }}>Ref. By (Doctor)</TableCell>
@@ -286,54 +551,349 @@ export default function DoctorSummaryPage() {
             <TableBody>
               {summaryData.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={12} align="center" sx={{ py: 6, color: "text.secondary" }}>
+                  <TableCell colSpan={13} align="center" sx={{ py: 6, color: "text.secondary" }}>
                     No referral activities found in this date range.
                   </TableCell>
                 </TableRow>
               ) : (
-                <>
-                  {summaryData.map((item, idx) => (
-                    <TableRow
-                      key={item.id}
-                      sx={{
-                        "&:hover": { bgcolor: "rgba(16, 185, 129, 0.04)" }
-                      }}
-                    >
-                      <TableCell>{idx + 1}</TableCell>
-                      <TableCell align="center" sx={{ whiteSpace: "nowrap" }}>
-                        <IconButton onClick={() => handleOpenEdit(item)} color="primary" size="small">
-                          <EditIcon fontSize="small" />
-                        </IconButton>
-                        <IconButton onClick={() => handleOpenDelete(item)} color="error" size="small">
-                          <DeleteIcon fontSize="small" />
-                        </IconButton>
-                      </TableCell>
-                      <TableCell sx={{ fontWeight: 600, color: "primary.main" }}>{item.name}</TableCell>
-                      <TableCell>{item.code}</TableCell>
-                      <TableCell>{item.lastPaid ? formatDate(item.lastPaid) : "-"}</TableCell>
-                      <TableCell align="right">{item.incentivePercent}%</TableCell>
-                      <TableCell align="right">{item.count}</TableCell>
-                      <TableCell align="right">₹{item.amount.toFixed(2)}</TableCell>
-                      <TableCell align="right">₹{item.discount.toFixed(2)}</TableCell>
-                      <TableCell align="right" sx={{ fontWeight: 500 }}>₹{item.netAmount.toFixed(2)}</TableCell>
-                      <TableCell align="right" sx={{ color: "primary.dark", fontWeight: 500 }}>₹{item.incentiveAmount.toFixed(2)}</TableCell>
-                      <TableCell align="right" sx={{ color: "success.main", fontWeight: 500 }}>
-                        {item.collection > 0 ? `₹${item.collection.toFixed(2)}` : "0.00"}
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                  {/* Totals Row */}
-                  <TableRow sx={{ bgcolor: "#f1f5f9", "& td": { fontWeight: 800 } }}>
-                    <TableCell colSpan={5}>Total</TableCell>
-                    <TableCell align="right">-</TableCell>
-                    <TableCell align="right">{totalCount}</TableCell>
-                    <TableCell align="right">₹{totalAmount.toFixed(2)}</TableCell>
-                    <TableCell align="right">₹{totalDiscount.toFixed(2)}</TableCell>
-                    <TableCell align="right">₹{totalNetAmount.toFixed(2)}</TableCell>
-                    <TableCell align="right">₹{totalIncentive.toFixed(2)}</TableCell>
-                    <TableCell align="right" sx={{ color: "success.main" }}>₹{totalCollection.toFixed(2)}</TableCell>
-                  </TableRow>
-                </>
+                summaryData.map((item, idx) => {
+                  const isExpanded = Boolean(expandedRows[item.id]);
+                  return (
+                    <React.Fragment key={item.id}>
+                      <TableRow
+                        sx={{
+                          bgcolor: isExpanded ? "rgba(15, 118, 110, 0.05)" : "inherit",
+                          transition: "background-color 0.2s",
+                          "&:hover": { bgcolor: "rgba(15, 118, 110, 0.08)" },
+                          "& > td": {
+                            borderBottom: isExpanded ? "none" : undefined,
+                          },
+                        }}
+                      >
+                        {/* Accordion toggle button */}
+                        <TableCell align="center" sx={{ px: 1 }}>
+                          <Tooltip title={isExpanded ? "Hide referred patients" : "View referred patients"}>
+                            <IconButton
+                              size="small"
+                              onClick={() => toggleRow(item.id)}
+                              color={isExpanded ? "primary" : "default"}
+                              sx={{
+                                transition: "transform 0.2s",
+                                transform: isExpanded ? "rotate(180deg)" : "rotate(0deg)",
+                              }}
+                            >
+                              <KeyboardArrowDownIcon fontSize="small" />
+                            </IconButton>
+                          </Tooltip>
+                        </TableCell>
+
+                        <TableCell sx={{ fontWeight: 500 }}>{idx + 1}</TableCell>
+
+                        <TableCell align="center" sx={{ whiteSpace: "nowrap" }}>
+                          <Tooltip title="Edit Doctor Incentive">
+                            <IconButton onClick={() => handleOpenEdit(item)} color="primary" size="small">
+                              <EditIcon fontSize="small" />
+                            </IconButton>
+                          </Tooltip>
+                          <Tooltip title={`Export ${item.name} Referral Report (Excel)`}>
+                            <IconButton onClick={() => exportDoctorExcel(item)} color="success" size="small">
+                              <FileDownloadIcon fontSize="small" />
+                            </IconButton>
+                          </Tooltip>
+                          <Tooltip title="Delete Doctor">
+                            <IconButton onClick={() => handleOpenDelete(item)} color="error" size="small">
+                              <DeleteIcon fontSize="small" />
+                            </IconButton>
+                          </Tooltip>
+                        </TableCell>
+
+                        <TableCell>
+                          <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                            <Typography
+                              variant="body2"
+                              sx={{
+                                fontWeight: 700,
+                                color: "primary.main",
+                                cursor: "pointer",
+                                "&:hover": { textDecoration: "underline" },
+                              }}
+                              onClick={() => toggleRow(item.id)}
+                            >
+                              {item.name}
+                            </Typography>
+                            {item.count > 0 && (
+                              <Chip
+                                label={`${item.count} pts`}
+                                size="small"
+                                color="primary"
+                                variant="outlined"
+                                sx={{ height: 18, fontSize: "0.68rem", fontWeight: 700 }}
+                              />
+                            )}
+                          </Box>
+                        </TableCell>
+
+                        <TableCell sx={{ color: "text.secondary" }}>{item.code}</TableCell>
+                        <TableCell sx={{ color: "text.secondary" }}>{item.lastPaid ? formatDate(item.lastPaid) : "-"}</TableCell>
+                        <TableCell align="right" sx={{ fontWeight: 600 }}>{item.incentivePercent}%</TableCell>
+                        <TableCell align="right" sx={{ fontWeight: 700 }}>{item.count}</TableCell>
+                        <TableCell align="right">₹{item.amount.toFixed(2)}</TableCell>
+                        <TableCell align="right">₹{item.discount.toFixed(2)}</TableCell>
+                        <TableCell align="right" sx={{ fontWeight: 600 }}>₹{item.netAmount.toFixed(2)}</TableCell>
+                        <TableCell align="right" sx={{ color: "primary.dark", fontWeight: 700 }}>₹{item.incentiveAmount.toFixed(2)}</TableCell>
+                        <TableCell align="right" sx={{ color: "success.main", fontWeight: 700 }}>
+                          {item.collection > 0 ? `₹${item.collection.toFixed(2)}` : "0.00"}
+                        </TableCell>
+                      </TableRow>
+
+                      {/* Collapsible Accordion Row */}
+                      <TableRow>
+                        <TableCell colSpan={13} sx={{ py: 0, px: 2, borderBottom: isExpanded ? undefined : "none" }}>
+                          <Collapse in={isExpanded} timeout="auto" unmountOnExit>
+                            <Box sx={{ py: 2.5, px: 1 }}>
+                              {/* Sub Header Box */}
+                              <Box
+                                sx={{
+                                  display: "flex",
+                                  flexWrap: "wrap",
+                                  justifyContent: "space-between",
+                                  alignItems: "center",
+                                  p: 1.5,
+                                  mb: 1.5,
+                                  bgcolor: "#f8fafc",
+                                  borderRadius: 1.5,
+                                  border: "1px solid #e2e8f0",
+                                  gap: 1.5,
+                                }}
+                              >
+                                <Box sx={{ display: "flex", alignItems: "center", flexWrap: "wrap", gap: 1 }}>
+                                  <PersonIcon sx={{ color: "primary.main", fontSize: 20 }} />
+                                  <Typography variant="subtitle2" sx={{ fontWeight: 700, color: "text.primary" }}>
+                                    Patients Referred by {item.name}
+                                  </Typography>
+                                  <Chip
+                                    label={`Total: ${item.registrations?.length || 0} Registrations`}
+                                    size="small"
+                                    color="primary"
+                                    sx={{ height: 22, fontSize: "0.75rem", fontWeight: 600 }}
+                                  />
+                                  {item.registrations && item.registrations.length > 0 && (
+                                    <Button
+                                      variant="outlined"
+                                      color="success"
+                                      size="small"
+                                      startIcon={<FileDownloadIcon />}
+                                      onClick={() => exportDoctorExcel(item)}
+                                      sx={{
+                                        height: 24,
+                                        fontSize: "0.72rem",
+                                        fontWeight: 700,
+                                        ml: 1,
+                                        textTransform: "none",
+                                      }}
+                                    >
+                                      Export Doctor XLS
+                                    </Button>
+                                  )}
+                                </Box>
+
+                                <Stack direction="row" spacing={2} sx={{ fontSize: "0.8rem", color: "text.secondary" }}>
+                                  <Box>
+                                    Gross: <strong>₹{item.amount.toFixed(2)}</strong>
+                                  </Box>
+                                  <Box>
+                                    Net: <strong>₹{item.netAmount.toFixed(2)}</strong>
+                                  </Box>
+                                  <Box sx={{ color: "primary.dark" }}>
+                                    Doc. Incentive: <strong>₹{item.incentiveAmount.toFixed(2)}</strong>
+                                  </Box>
+                                  <Box sx={{ color: "success.main" }}>
+                                    Received: <strong>₹{item.collection.toFixed(2)}</strong>
+                                  </Box>
+                                </Stack>
+                              </Box>
+
+                              {/* Patients Detailed Table */}
+                              {(!item.registrations || item.registrations.length === 0) ? (
+                                <Box
+                                  sx={{
+                                    p: 3,
+                                    textAlign: "center",
+                                    bgcolor: "#fdfdfd",
+                                    borderRadius: 1,
+                                    border: "1px dashed #cbd5e1",
+                                    color: "text.secondary",
+                                  }}
+                                >
+                                  <Typography variant="body2">
+                                    No patient visits found for <strong>{item.name}</strong> between {formatDate(startDate)} and {formatDate(endDate)}.
+                                  </Typography>
+                                </Box>
+                              ) : (
+                                <TableContainer
+                                  component={Paper}
+                                  variant="outlined"
+                                  sx={{
+                                    bgcolor: "#ffffff",
+                                    borderRadius: 1.5,
+                                    overflow: "hidden",
+                                    boxShadow: "0 1px 3px rgba(0,0,0,0.04)",
+                                  }}
+                                >
+                                  <Table size="small">
+                                    <TableHead sx={{ bgcolor: "#f8fafc" }}>
+                                      <TableRow>
+                                        <TableCell sx={{ fontWeight: 700, fontSize: "0.78rem" }}>#</TableCell>
+                                        <TableCell sx={{ fontWeight: 700, fontSize: "0.78rem" }}>Date & Time</TableCell>
+                                        <TableCell sx={{ fontWeight: 700, fontSize: "0.78rem" }}>Reg No / Lab ID</TableCell>
+                                        <TableCell sx={{ fontWeight: 700, fontSize: "0.78rem" }}>Patient Details</TableCell>
+                                        <TableCell sx={{ fontWeight: 700, fontSize: "0.78rem" }}>Contact No</TableCell>
+                                        <TableCell sx={{ fontWeight: 700, fontSize: "0.78rem" }}>Tests Booked</TableCell>
+                                        <TableCell sx={{ fontWeight: 700, fontSize: "0.78rem" }} align="right">Bill (₹)</TableCell>
+                                        <TableCell sx={{ fontWeight: 700, fontSize: "0.78rem" }} align="right">Discount (₹)</TableCell>
+                                        <TableCell sx={{ fontWeight: 700, fontSize: "0.78rem" }} align="right">Net (₹)</TableCell>
+                                        <TableCell sx={{ fontWeight: 700, fontSize: "0.78rem" }} align="right">Incentive</TableCell>
+                                        <TableCell sx={{ fontWeight: 700, fontSize: "0.78rem" }} align="right">Paid / Due (₹)</TableCell>
+                                        <TableCell sx={{ fontWeight: 700, fontSize: "0.78rem" }} align="center">Status</TableCell>
+                                        <TableCell sx={{ fontWeight: 700, fontSize: "0.78rem" }} align="center">Print Actions</TableCell>
+                                      </TableRow>
+                                    </TableHead>
+                                    <TableBody>
+                                      {item.registrations.map((reg, regIdx) => (
+                                        <TableRow
+                                          key={reg.id}
+                                          sx={{
+                                            "&:hover": { bgcolor: "#f8fafc" },
+                                            "&:last-child td, &:last-child th": { border: 0 },
+                                          }}
+                                        >
+                                          <TableCell sx={{ fontSize: "0.78rem" }}>{regIdx + 1}</TableCell>
+                                          <TableCell sx={{ fontSize: "0.78rem", whiteSpace: "nowrap" }}>
+                                            {formatDateTime(reg.date)}
+                                          </TableCell>
+                                          <TableCell sx={{ fontSize: "0.78rem", whiteSpace: "nowrap" }}>
+                                            <Typography variant="caption" sx={{ display: "block", fontWeight: 700, color: "text.primary" }}>
+                                              {reg.regNo}
+                                            </Typography>
+                                            {reg.labId && reg.labId !== reg.regNo && (
+                                              <Typography variant="caption" sx={{ display: "block", color: "text.secondary" }}>
+                                                Lab: {reg.labId}
+                                              </Typography>
+                                            )}
+                                          </TableCell>
+                                          <TableCell sx={{ fontSize: "0.78rem" }}>
+                                            <Typography variant="body2" sx={{ fontWeight: 600, color: "text.primary" }}>
+                                              {reg.fullName || reg.name}
+                                            </Typography>
+                                            <Typography variant="caption" sx={{ color: "text.secondary" }}>
+                                              {reg.age ? `${reg.age} ${reg.ageUnit || "Y"}` : ""}
+                                              {reg.gender ? ` • ${reg.gender}` : ""}
+                                            </Typography>
+                                          </TableCell>
+                                          <TableCell sx={{ fontSize: "0.78rem", color: "text.secondary" }}>
+                                            {reg.mobileNo || "-"}
+                                          </TableCell>
+                                          <TableCell sx={{ fontSize: "0.78rem", maxWidth: 220 }}>
+                                            <Box sx={{ display: "flex", flexWrap: "wrap", gap: 0.5 }}>
+                                              {reg.tests && reg.tests.length > 0 ? (
+                                                reg.tests.map((t, tIdx) => (
+                                                  <Chip
+                                                    key={tIdx}
+                                                    label={t.name}
+                                                    size="small"
+                                                    variant="outlined"
+                                                    sx={{
+                                                      fontSize: "0.7rem",
+                                                      height: 19,
+                                                      bgcolor: "#f1f5f9",
+                                                      borderColor: "#cbd5e1",
+                                                    }}
+                                                  />
+                                                ))
+                                              ) : (
+                                                <Typography variant="caption" sx={{ color: "text.secondary" }}>
+                                                  No tests
+                                                </Typography>
+                                              )}
+                                            </Box>
+                                          </TableCell>
+                                          <TableCell align="right" sx={{ fontSize: "0.78rem" }}>
+                                            ₹{reg.totalAmount.toFixed(2)}
+                                          </TableCell>
+                                          <TableCell align="right" sx={{ fontSize: "0.78rem", color: reg.discountAmount > 0 ? "error.main" : "text.secondary" }}>
+                                            {reg.discountAmount > 0 ? `₹${reg.discountAmount.toFixed(2)}` : "₹0.00"}
+                                          </TableCell>
+                                          <TableCell align="right" sx={{ fontSize: "0.78rem", fontWeight: 700 }}>
+                                            ₹{reg.netAmount.toFixed(2)}
+                                          </TableCell>
+                                          <TableCell align="right" sx={{ fontSize: "0.78rem", color: "primary.dark", fontWeight: 600 }}>
+                                            ₹{reg.incentiveAmount.toFixed(2)}
+                                            <Typography variant="caption" sx={{ display: "block", color: "text.secondary", fontSize: "0.68rem" }}>
+                                              ({reg.incentivePercent}%)
+                                            </Typography>
+                                          </TableCell>
+                                          <TableCell align="right" sx={{ fontSize: "0.78rem", whiteSpace: "nowrap" }}>
+                                            <Typography variant="caption" sx={{ display: "block", color: "success.main", fontWeight: 600 }}>
+                                              Rec: ₹{reg.receivedAmount.toFixed(2)}
+                                            </Typography>
+                                            {reg.dueAmount > 0 && (
+                                              <Typography variant="caption" sx={{ display: "block", color: "error.main", fontWeight: 600 }}>
+                                                Due: ₹{reg.dueAmount.toFixed(2)}
+                                              </Typography>
+                                            )}
+                                          </TableCell>
+                                          <TableCell align="center" sx={{ fontSize: "0.78rem" }}>
+                                            {getStatusChip(reg.status)}
+                                          </TableCell>
+                                          <TableCell align="center" sx={{ whiteSpace: "nowrap" }}>
+                                            <Tooltip title="Print / View Bill">
+                                              <IconButton
+                                                size="small"
+                                                color="primary"
+                                                onClick={() => window.open(`/api/print-bill/${reg.id}`, "_blank")}
+                                                sx={{ mr: 0.5 }}
+                                              >
+                                                <ReceiptIcon fontSize="small" />
+                                              </IconButton>
+                                            </Tooltip>
+                                            <Tooltip title="Print / View Test Report">
+                                              <IconButton
+                                                size="small"
+                                                color="success"
+                                                onClick={() => window.open(`/api/print-report/${reg.regNo}?withFrame=true`, "_blank")}
+                                              >
+                                                <ReportIcon fontSize="small" />
+                                              </IconButton>
+                                            </Tooltip>
+                                          </TableCell>
+                                        </TableRow>
+                                      ))}
+                                    </TableBody>
+                                  </Table>
+                                </TableContainer>
+                              )}
+                            </Box>
+                          </Collapse>
+                        </TableCell>
+                      </TableRow>
+                    </React.Fragment>
+                  );
+                })
+              )}
+
+              {/* Totals Row */}
+              {summaryData.length > 0 && (
+                <TableRow sx={{ bgcolor: "#f1f5f9", "& td": { fontWeight: 800 } }}>
+                  <TableCell />
+                  <TableCell colSpan={5}>Grand Total</TableCell>
+                  <TableCell align="right">-</TableCell>
+                  <TableCell align="right">{totalCount}</TableCell>
+                  <TableCell align="right">₹{totalAmount.toFixed(2)}</TableCell>
+                  <TableCell align="right">₹{totalDiscount.toFixed(2)}</TableCell>
+                  <TableCell align="right">₹{totalNetAmount.toFixed(2)}</TableCell>
+                  <TableCell align="right">₹{totalIncentive.toFixed(2)}</TableCell>
+                  <TableCell align="right" sx={{ color: "success.main" }}>₹{totalCollection.toFixed(2)}</TableCell>
+                </TableRow>
               )}
             </TableBody>
           </Table>
