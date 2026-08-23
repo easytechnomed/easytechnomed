@@ -47,7 +47,9 @@ import { useSearchParams, useRouter } from "next/navigation";
 import { useAdminPermissions } from "@/lib/clientAuth";
 import { City, State } from "country-state-city";
 
-const filter = createFilterOptions();
+const filter = createFilterOptions({
+  limit: 100,
+});
 
 // Helpers for timezone-aware date conversions
 const getLocalIsoString = (date) => {
@@ -1102,19 +1104,22 @@ _Thank you for choosing us for your health diagnostics!_`;
                 filterOptions={(options, params) => {
                   const filtered = filter(options, params);
                   const { inputValue } = params;
+                  const trimmed = (inputValue || "").toLowerCase().trim();
 
-                  const isExisting = options.some(
-                    (option) => inputValue.toLowerCase().trim() === option.name.toLowerCase().trim()
-                  );
-                  if (inputValue !== "" && !isExisting) {
-                    filtered.push({
-                      inputValue,
-                      name: `+ Add "${inputValue}" as New Test`,
-                      isNew: true,
-                    });
+                  if (trimmed !== "") {
+                    const isExisting = options.some(
+                      (option) => trimmed === (option.name || "").toLowerCase().trim()
+                    );
+                    if (!isExisting) {
+                      filtered.push({
+                        inputValue,
+                        name: `+ Add "${inputValue}" as New Test`,
+                        isNew: true,
+                      });
+                    }
                   }
 
-                  return filtered;
+                  return filtered.slice(0, 100);
                 }}
                 selectOnFocus
                 clearOnBlur
