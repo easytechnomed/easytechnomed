@@ -31,7 +31,8 @@ import {
   DialogActions,
   Menu,
   createFilterOptions,
-  Tooltip
+  Tooltip,
+  Checkbox,
 } from "@mui/material";
 import {
   Delete as DeleteIcon,
@@ -39,7 +40,8 @@ import {
   Print as PrintIcon,
   Refresh as RefreshIcon,
   Add as AddIcon,
-  Edit as EditIcon
+  Edit as EditIcon,
+  WhatsApp as WhatsAppIcon,
 } from "@mui/icons-material";
 import { useSearchParams, useRouter } from "next/navigation";
 import { useAdminPermissions } from "@/lib/clientAuth";
@@ -159,6 +161,15 @@ export default function RegistrationPage() {
   const [discountAmount, setDiscountAmount] = useState(0);
   const [receivedAmount, setReceivedAmount] = useState(0);
   const [stickerCount, setStickerCount] = useState(1);
+  const [sendWhatsapp, setSendWhatsapp] = useState(true);
+  const [labName, setLabName] = useState("Pathology Laboratory");
+
+  useEffect(() => {
+    try {
+      const savedWa = localStorage.getItem("registration_send_whatsapp");
+      if (savedWa !== null) setSendWhatsapp(savedWa === "true");
+    } catch (e) {}
+  }, []);
 
   // Notifications
   const [notification, setNotification] = useState({ open: false, message: "", severity: "success" });
@@ -179,6 +190,12 @@ export default function RegistrationPage() {
           }));
           setTests(parsedTests);
         }
+        fetch("/api/settings")
+          .then((r) => r.json())
+          .then((s) => {
+            if (s?.settings?.companyName) setLabName(s.settings.companyName);
+          })
+          .catch(() => {});
       } catch (err) {
         console.error(err);
         showNotification("Failed to load initial data", "error");
@@ -512,6 +529,35 @@ export default function RegistrationPage() {
     }
   };
 
+  // Build WhatsApp report link message URL
+  const getRegistrationWhatsappUrl = (reg, labTitle) => {
+    if (!reg || !reg.mobileNo) return null;
+    const cleanMobile = String(reg.mobileNo).replace(/\D/g, "");
+    if (cleanMobile.length < 10) return null;
+    const phone = cleanMobile.length === 10 ? `91${cleanMobile}` : cleanMobile;
+
+    const reportUrl = `${window.location.origin}/api/print-report/${reg.regNo}?otp=${reg.pdfOtp || ""}&withFrame=true`;
+    const patientTitle = reg.title ? `${reg.title} ` : "";
+    const totalAmt = parseFloat(reg.totalAmount || 0).toFixed(2);
+    const dueAmt = parseFloat(reg.dueAmount || 0).toFixed(2);
+
+    const text = 
+`*🏥 ${labTitle || "Pathology Laboratory"}*
+Hello ${patientTitle}${reg.name}, your test registration has been confirmed!
+
+📋 *Reg No:* ${reg.regNo}
+🔬 *Lab ID:* ${reg.labId || "-"}
+💰 *Bill Amount:* ₹${totalAmt} | *Due:* ₹${dueAmt}
+🔑 *Security Code / OTP:* ${reg.pdfOtp || "-"}
+
+🔗 *Track Status & View Report:*
+${reportUrl}
+
+_Thank you for choosing us for your health diagnostics!_`;
+
+    return `https://api.whatsapp.com/send?phone=${phone}&text=${encodeURIComponent(text)}`;
+  };
+
   // Save Registration
   const handleSave = async () => {
     if (!mobileNo || mobileNo.length < 10) {
@@ -576,6 +622,15 @@ export default function RegistrationPage() {
 
       if (res.success) {
         showNotification(res.message, "success");
+
+        // Automatically open WhatsApp with prefilled message & report link if enabled
+        if (sendWhatsapp && res.registration) {
+          const waUrl = getRegistrationWhatsappUrl(res.registration, labName);
+          if (waUrl) {
+            window.open(waUrl, "_blank");
+          }
+        }
+
         if (editId) {
           setTimeout(() => router.push("/test-report"), 1000);
         } else {
@@ -1349,6 +1404,40 @@ export default function RegistrationPage() {
 
             {/* Save / Reset Footer */}
             <Box sx={{ p: 2, display: "flex", flexWrap: "wrap", gap: 1.5 }}>
+              <Box sx={{ width: "100%" }}>
+                <FormControlLabel
+                  control={
+                    <Checkbox
+                      checked={sendWhatsapp}
+                      onChange={(e) => {
+                        const val = e.target.checked;
+                        setSendWhatsapp(val);
+                        try {
+                          localStorage.setItem("registration_send_whatsapp", String(val));
+                        } catch (err) {}
+                      }}
+                      icon={<WhatsAppIcon sx={{ color: "#94a3b8" }} />}
+                      checkedIcon={<WhatsAppIcon sx={{ color: "#25D366" }} />}
+                      size="small"
+                    />
+                  }
+                  label={
+                    <Typography variant="body2" sx={{ fontWeight: 600, color: sendWhatsapp ? "#166534" : "text.secondary", userSelect: "none" }}>
+                      Send Report Link via WhatsApp
+                    </Typography>
+                  }
+                  sx={{
+                    m: 0,
+                    px: 1.5,
+                    py: 0.6,
+                    width: "100%",
+                    borderRadius: 2,
+                    backgroundColor: sendWhatsapp ? "#f0fdf4" : "#f8fafc",
+                    border: sendWhatsapp ? "1px solid #bbf7d0" : "1px solid #e2e8f0",
+                    transition: "all 0.2s ease",
+                  }}
+                />
+              </Box>
               <Tooltip title={!canWrite ? "You do not have permission to save registrations" : ""} style={{ width: "100%" }}>
                 <span>
                   <Button
