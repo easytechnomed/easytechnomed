@@ -385,7 +385,7 @@ export default function ShowResult({ open, onClose, selectedReg }) {
               color="primary"
               size="small"
               startIcon={<DownloadIcon />}
-              onClick={() => window.open(`/api/print-report/${previewData.id}?withFrame=false`, "_blank")}
+              onClick={() => window.open(`/api/print-report/${previewData.regNo || previewData.id}?withFrame=false`, "_blank")}
             >
               Download Without Frame
             </Button>
@@ -394,7 +394,7 @@ export default function ShowResult({ open, onClose, selectedReg }) {
               color="primary"
               size="small"
               startIcon={<DownloadIcon />}
-              onClick={() => window.open(`/api/print-report/${previewData.id}?withFrame=true`, "_blank")}
+              onClick={() => window.open(`/api/print-report/${previewData.regNo || previewData.id}?withFrame=true`, "_blank")}
             >
               Download With Frame
             </Button>

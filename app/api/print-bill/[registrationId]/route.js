@@ -54,26 +54,45 @@ function numberToWords(num) {
 export async function GET(req, { params }) {
   try {
     const { registrationId } = await params;
-    let regId = parseInt(registrationId);
-    let reg = null;
-
-    if (!isNaN(regId)) {
-      reg = await prisma.registration.findFirst({
-        where: { id: regId, isDeleted: false },
-        include: {
-          refBy: true,
-          tests: {
-            include: {
-              test: true,
-            },
-          },
-          payments: {
-            orderBy: {
-              createdAt: "asc",
-            },
+    // 1. Primary lookup by regNo
+    let reg = await prisma.registration.findFirst({
+      where: { regNo: registrationId, isDeleted: false },
+      include: {
+        refBy: true,
+        tests: {
+          include: {
+            test: true,
           },
         },
-      });
+        payments: {
+          orderBy: {
+            createdAt: "asc",
+          },
+        },
+      },
+    });
+
+    // 2. Fallback lookup by numeric ID, barcode, or labId
+    if (!reg) {
+      let regId = parseInt(registrationId);
+      if (!isNaN(regId)) {
+        reg = await prisma.registration.findFirst({
+          where: { id: regId, isDeleted: false },
+          include: {
+            refBy: true,
+            tests: {
+              include: {
+                test: true,
+              },
+            },
+            payments: {
+              orderBy: {
+                createdAt: "asc",
+              },
+            },
+          },
+        });
+      }
     }
 
     if (!reg) {
@@ -82,7 +101,6 @@ export async function GET(req, { params }) {
           isDeleted: false,
           OR: [
             { barcode: { contains: registrationId } },
-            { regNo: registrationId },
             { labId: registrationId }
           ]
         },
@@ -103,51 +121,50 @@ export async function GET(req, { params }) {
     }
 
     if (!reg) {
-      return new Response("Registration not found", { status: 404 });
+      return new Response("Receipt not found", { status: 404 });
     }
 
-    // Retrieve active configuration from the workspace admin
-    const configAdmin = await prisma.admin.findFirst({
+    // Auto-populate pdfOtp if legacy registration has null pdfOtp
+    if (!reg.pdfOtp) {
+      const generatedOtp = Math.floor(100000 + Math.random() * 900000).toString();
+      await prisma.registration.update({
+        where: { id: reg.id },
+        data: { pdfOtp: generatedOtp },
+      }).catch(() => {});
+      reg.pdfOtp = generatedOtp;
+    }
+
+    // Fetch workspace address details from AdminAddress
+    const adminRecord = await prisma.admin.findFirst({
       where: { workspaceId: reg.workspaceId },
-      include: {
-        address: true,
-      },
+      include: { address: true }
     });
 
-    const companyName = configAdmin?.companyName || "Technomed Laboratory";
-    const email = configAdmin?.email || "";
-    
-    const addr = configAdmin?.address;
-    const addrString = addr 
-      ? `${addr.address1 || ""}, ${addr.address2 || ""}, ${addr.city || ""}-${addr.pincode || ""}, ${addr.state || ""}, ${addr.country || ""}`
-      : "Address details not configured";
+    const companyName = adminRecord?.companyName || "Pathology Laboratory";
+    const phoneNo = adminRecord?.mobileNumber || "-";
+    const addr = adminRecord?.address;
+    const addressStr = addr
+      ? [addr.address1, addr.address2, addr.city, addr.state, addr.pincode].filter(Boolean).join(", ")
+      : "Diagnostic & Clinical Pathology Center";
 
-    const subtotal = reg.tests?.reduce((sum, t) => sum + parseFloat(t.price !== undefined ? t.price : t.test?.price || 0), 0) || 0;
-    const collCharge = parseFloat(reg.collectionCharge || 0);
-    const discAmount = parseFloat(reg.discountAmount || 0);
-    const discPercent = parseFloat(reg.discountPercent || 0);
-    const netAmount = subtotal + collCharge - discAmount;
-    const paidAmount = parseFloat(reg.receivedAmount || 0);
-    const dueAmount = parseFloat(reg.dueAmount || 0);
-
-    const testRows = reg.tests?.map((t, idx) => `
+    // Format tests table rows
+    const testRowsHtml = reg.tests?.map((t, idx) => `
       <tr>
-        <td style="padding: 8px 0; font-family: monospace;">${idx + 1}</td>
-        <td style="padding: 8px 0;">${t.test?.name || "Test"}</td>
-        <td style="padding: 8px 0; color: #555;">-</td>
-        <td align="right" style="padding: 8px 0; font-family: monospace;">${parseFloat(t.price !== undefined ? t.price : t.test?.price || 0).toFixed(2)}</td>
+        <td style="text-align: center;">${idx + 1}</td>
+        <td>${t.test?.name || "Diagnostic Test"}</td>
+        <td style="text-align: right;">${parseFloat(t.price || 0).toFixed(2)}</td>
+        <td style="text-align: right;">${parseFloat(t.price || 0).toFixed(2)}</td>
       </tr>
     `).join("") || "";
 
     const currentDateStr = new Date().toLocaleString("en-IN", { dateStyle: "short", timeStyle: "short" });
     const regDateStr = formatDate(reg.date);
 
-    // QR Codes
-    const cleanBarcode = reg.barcode ? reg.barcode.replace(/^,\s*/, "").split(" ")[0] : null;
-    const qrReportData = `${req.nextUrl.origin}/api/print-report/${cleanBarcode || reg.id}?withFrame=true`;
+    // QR Codes with regNo and pdfOtp
+    const qrReportData = `${req.nextUrl.origin}/api/print-report/${reg.regNo}?otp=${reg.pdfOtp}&withFrame=true`;
     const qrReportUrl = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(qrReportData)}`;
 
-    const qrPaymentData = `${req.nextUrl.origin}/api/print-bill/${reg.id}`;
+    const qrPaymentData = `${req.nextUrl.origin}/api/print-bill/${reg.regNo}`;
     const qrPaymentUrl = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(qrPaymentData)}`;
 
     const receivedAmt = parseFloat(reg.receivedAmount || 0);

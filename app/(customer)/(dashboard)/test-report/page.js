@@ -346,13 +346,13 @@ export default function TestReportPage() {
   };
 
   const handleExecutePrint = (withFrame) => {
-    if (!selectedReg?.id) return;
+    if (!selectedReg?.regNo && !selectedReg?.id) return;
     if (selectedTestIdsForPrint.length === 0) {
       showToast("Please select at least one test to print", "warning");
       return;
     }
     const testIdsQuery = `&testIds=${selectedTestIdsForPrint.join(",")}`;
-    window.open(`/api/print-report/${selectedReg.id}?withFrame=${withFrame}${testIdsQuery}`, "_blank");
+    window.open(`/api/print-report/${selectedReg.regNo || selectedReg.id}?withFrame=${withFrame}${testIdsQuery}`, "_blank");
     setPrintDialogOpen(false);
   };
 
@@ -605,7 +605,20 @@ export default function TestReportPage() {
     setExportDialogOpen(true);
   };
 
-  const handleExportExcel = () => {
+  const handleExportSubmit = () => {
+    if (exportFormat === "excel") {
+      handleExcelExport();
+    } else {
+      handlePrintOrPdf();
+    }
+  };
+
+  const handleExcelExport = () => {
+    if (selectedExportCols.length === 0) {
+      showToast("Please select at least one column to export", "warning");
+      return;
+    }
+
     const data = registrations.map((reg, idx) => {
       const row = {};
       selectedExportCols.forEach((colId) => {
@@ -616,11 +629,11 @@ export default function TestReportPage() {
       });
 
       if (includeReportQr) {
-        const cleanBarcode = reg.barcode ? reg.barcode.replace(/^,\s*/, "").split(" ")[0] : null;
-        row["Report QR Link"] = `${window.location.origin}/api/print-report/${cleanBarcode || reg.id}?withFrame=true`;
+        const otpParam = reg.pdfOtp ? `?otp=${reg.pdfOtp}&withFrame=true` : `?withFrame=true`;
+        row["Report QR Link"] = `${window.location.origin}/api/print-report/${reg.regNo}${otpParam}`;
       }
       if (includePaymentQr) {
-        row["Payment QR Link"] = `${window.location.origin}/api/print-bill/${reg.id}`;
+        row["Payment QR Link"] = `${window.location.origin}/api/print-bill/${reg.regNo}`;
       }
 
       return row;
@@ -660,8 +673,8 @@ export default function TestReportPage() {
         });
 
         if (includeReportQr) {
-          const cleanBarcode = reg.barcode ? reg.barcode.replace(/^,\s*/, "").split(" ")[0] : null;
-          const qrData = `${window.location.origin}/api/print-report/${cleanBarcode || reg.id}?withFrame=true`;
+          const otpParam = reg.pdfOtp ? `?otp=${reg.pdfOtp}&withFrame=true` : `?withFrame=true`;
+          const qrData = `${window.location.origin}/api/print-report/${reg.regNo}${otpParam}`;
           const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=100x100&data=${encodeURIComponent(qrData)}`;
           cells.push(`
             <td class="qr-container">
@@ -671,7 +684,7 @@ export default function TestReportPage() {
         }
 
         if (includePaymentQr) {
-          const qrData = `${window.location.origin}/api/print-bill/${reg.id}`;
+          const qrData = `${window.location.origin}/api/print-bill/${reg.regNo}`;
           const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=100x100&data=${encodeURIComponent(qrData)}`;
           cells.push(`
             <td class="qr-container">

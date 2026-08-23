@@ -264,6 +264,7 @@ model Registration {
   stickerCount     Int                   @default(1)
   barcode          String?
   status           String                @default("Pending")
+  pdfOtp           String?               @db.VarChar(10)
   createdAt        DateTime              @default(now())
   updatedAt        DateTime              @updatedAt
   workspaceId      Int?

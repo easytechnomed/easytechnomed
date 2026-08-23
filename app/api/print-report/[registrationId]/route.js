@@ -92,19 +92,42 @@ const formatDate = (dateStr) => {
 export async function GET(req, { params }) {
   try {
     const { registrationId } = await params;
-    let regId = parseInt(registrationId);
     let reg = null;
 
-    if (!isNaN(regId)) {
-      // First try to find by integer ID
-      reg = await prisma.registration.findFirst({
-        where: { id: regId, isDeleted: false },
-        include: {
-          refBy: true,
-          tests: {
-            include: {
-              test: {
-                include: {
+    // 1. Primary lookup by regNo
+    reg = await prisma.registration.findFirst({
+      where: { regNo: registrationId, isDeleted: false },
+      include: {
+        refBy: true,
+        tests: {
+          include: {
+            test: {
+              include: {
+                department: true,
+                parameters: {
+                  where: { isDeleted: false },
+                  orderBy: { order: "asc" },
+                  include: { parameter: true }
+                },
+              },
+            },
+          },
+        },
+        results: true,
+      },
+    });
+
+    // 2. Fallback lookup by numeric ID, barcode, or labId
+    if (!reg) {
+      let regId = parseInt(registrationId);
+      if (!isNaN(regId)) {
+        reg = await prisma.registration.findFirst({
+          where: { id: regId, isDeleted: false },
+          include: {
+            refBy: true,
+            tests: {
+              include: {
+                test: {
                   department: true,
                   parameters: {
                     where: { isDeleted: false },
@@ -114,20 +137,18 @@ export async function GET(req, { params }) {
                 },
               },
             },
+            results: true,
           },
-          results: true,
-        },
-      });
+        });
+      }
     }
 
     if (!reg) {
-      // Find by barcode, regNo, or labId
       reg = await prisma.registration.findFirst({
         where: {
           isDeleted: false,
           OR: [
             { barcode: { contains: registrationId } },
-            { regNo: registrationId },
             { labId: registrationId }
           ]
         },
@@ -154,6 +175,16 @@ export async function GET(req, { params }) {
 
     if (!reg) {
       return new Response("Registration not found", { status: 404 });
+    }
+
+    // Auto-populate pdfOtp if legacy registration has null pdfOtp
+    if (!reg.pdfOtp) {
+      const generatedOtp = Math.floor(100000 + Math.random() * 900000).toString();
+      await prisma.registration.update({
+        where: { id: reg.id },
+        data: { pdfOtp: generatedOtp },
+      }).catch(() => { });
+      reg.pdfOtp = generatedOtp;
     }
 
     // Filter tests by testIds query parameter if specified
@@ -186,11 +217,10 @@ export async function GET(req, { params }) {
           include: { admin: true },
         });
         if (session && session.expiresAt > new Date() && session.admin.isActive) {
-          const admin = session.admin;
-          if (admin.workspaceId !== reg.workspaceId) {
-            return new Response("Unauthorized: You do not have permission to access reports from this laboratory.", { status: 403 });
+          // Strict workspace check: Admin ONLY has staff access to their OWN workspace!
+          if (session.admin.workspaceId === reg.workspaceId) {
+            isStaff = true;
           }
-          isStaff = true;
         }
       }
     }
@@ -207,44 +237,191 @@ export async function GET(req, { params }) {
       }
     }
 
-    if (!isStaff && parseFloat(reg.dueAmount || 0) > 0 && reg.status === "Completed") {
-      const htmlMsg = `
-        <html>
-          <head>
-            <meta charset="UTF-8">
-            <title>Report Hold - Pending Dues</title>
-            <style>
-              body { font-family: 'Arial', sans-serif; background-color: #f8fafc; color: #1e293b; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; padding: 20px; text-align: center; }
-              .card { background: white; padding: 40px; border-radius: 16px; box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1); max-width: 500px; width: 100%; border-top: 4px solid #ef4444; }
-              .icon { font-size: 48px; margin-bottom: 20px; }
-              h1 { font-size: 22px; margin-bottom: 12px; font-weight: 800; color: #ef4444; }
-              p { font-size: 15px; line-height: 1.6; color: #475569; margin-bottom: 24px; }
-              .details { background: #f1f5f9; padding: 12px; border-radius: 8px; font-size: 13px; text-align: left; margin-bottom: 24px; }
-              .details-row { display: flex; justify-content: space-between; margin-bottom: 6px; }
-              .details-row:last-child { margin-bottom: 0; }
-              .button { display: inline-block; background-color: #0f766e; color: white; padding: 10px 24px; border-radius: 8px; text-decoration: none; font-weight: bold; font-size: 14px; transition: background-color 0.2s; }
-              .button:hover { background-color: #0d5c56; }
-            </style>
-          </head>
-          <body>
-            <div class="card">
-              <div class="icon">⚠️</div>
-              <h1>Report on Hold</h1>
-              <p>Your report is complete, but because of outstanding dues, it cannot be displayed. Please contact the laboratory to clear your balance.</p>
-              <div class="details">
-                <div class="details-row"><strong>Patient Name:</strong> <span>${reg.title} ${reg.name}</span></div>
-                <div class="details-row"><strong>Reg No:</strong> <span>${reg.regNo}</span></div>
-                <div class="details-row"><strong>Pending Dues:</strong> <span>₹${parseFloat(reg.dueAmount).toFixed(2)}</span></div>
+    // ── PUBLIC ACCESS SECURITY CHECKS (If not authenticated as own lab staff) ──
+    if (!isStaff) {
+      let reqOtp = (
+        searchParams.get("otp") ||
+        searchParams.get("otp?") ||
+        searchParams.get("token") ||
+        searchParams.get("code") ||
+        ""
+      ).trim();
+
+      if (!reqOtp) {
+        for (const [key, value] of searchParams.entries()) {
+          const cleanKey = key.replace(/[^a-zA-Z0-9]/g, "").toLowerCase();
+          if (cleanKey === "otp" || cleanKey === "token" || cleanKey === "code") {
+            reqOtp = String(value).trim();
+            break;
+          }
+        }
+      }
+
+      // Check 1: Security Access Code (OTP) Verification
+      if (!reqOtp || reqOtp !== String(reg.pdfOtp).trim()) {
+        const isWrong = Boolean(reqOtp && reqOtp !== String(reg.pdfOtp).trim());
+        const invalidOtpHtml = `
+          <!DOCTYPE html>
+          <html>
+            <head>
+              <meta charset="UTF-8">
+              <meta name="viewport" content="width=device-width, initial-scale=1.0">
+              <title>Security Access Required - Patient Report</title>
+              <style>
+                body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #f8fafc; color: #1e293b; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; padding: 20px; box-sizing: border-box; }
+                .card { background: white; padding: 36px 28px; border-radius: 16px; box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.08); max-width: 480px; width: 100%; text-align: center; border-top: 4px solid #0f766e; }
+                .icon-box { width: 64px; height: 64px; background: #f0fdfa; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 16px; font-size: 30px; border: 2px solid #ccfbf1; }
+                h1 { font-size: 20px; margin: 0 0 8px; font-weight: 800; color: #0f172a; }
+                .subtitle { font-size: 13px; color: #0f766e; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 16px; }
+                p { font-size: 14px; line-height: 1.6; color: #475569; margin: 0 0 20px; }
+                .details { background: #f8fafc; border: 1px solid #e2e8f0; padding: 14px; border-radius: 10px; font-size: 13px; text-align: left; margin-bottom: 20px; }
+                .details-row { display: flex; justify-content: space-between; margin-bottom: 6px; }
+                .details-row:last-child { margin-bottom: 0; }
+                .error-alert { background: #fef2f2; border: 1px solid #fecaca; color: #dc2626; padding: 10px; border-radius: 8px; font-size: 13px; font-weight: 600; margin-bottom: 16px; }
+                .hint { font-size: 12px; color: #64748b; line-height: 1.5; background: #eff6ff; padding: 10px; border-radius: 8px; border-left: 3px solid #3b82f6; text-align: left; }
+              </style>
+            </head>
+            <body>
+              <div class="card">
+                <div class="icon-box">🔒</div>
+                <div class="subtitle">Secure Diagnostic Portal</div>
+                <h1>Security Code Required</h1>
+                <p>To protect patient medical confidentiality, diagnostic reports can only be accessed using the official QR code or by entering the security OTP code printed on your receipt.</p>
+                
+                ${isWrong ? `<div class="error-alert">⚠️ Incorrect Security Code. Please check and try again.</div>` : ""}
+
+                <div class="details">
+                  <div class="details-row"><span style="color: #64748b;">Patient:</span> <strong style="color: #0f172a;">${reg.title} ${reg.name}</strong></div>
+                  <div class="details-row"><span style="color: #64748b;">Registration No:</span> <strong>${reg.regNo}</strong></div>
+                  <div class="details-row"><span style="color: #64748b;">Lab Reference:</span> <strong>${reg.labId}</strong></div>
+                </div>
+
+                <form method="GET" style="margin: 0 0 20px;">
+                  <div style="display: flex; gap: 8px; justify-content: center;">
+                    <input 
+                      type="text" 
+                      name="otp" 
+                      placeholder="Enter 6-digit OTP" 
+                      maxlength="10" 
+                      required
+                      style="padding: 10px 14px; border: 1.5px solid #cbd5e1; border-radius: 8px; font-size: 15px; width: 180px; text-align: center; font-weight: 700; letter-spacing: 2px; outline: none;"
+                    />
+                    <input type="hidden" name="withFrame" value="true" />
+                    <button 
+                      type="submit" 
+                      style="background-color: #0f766e; color: white; border: none; padding: 10px 18px; border-radius: 8px; font-weight: 700; font-size: 14px; cursor: pointer; transition: background 0.2s;"
+                    >
+                      Unlock Report
+                    </button>
+                  </div>
+                </form>
+
+                <div class="hint">
+                  💡 <strong>Tip:</strong> Please scan the QR code printed on your Money Receipt or enter the 6-digit security code to view your verified report.
+                </div>
               </div>
-              <a href="/api/print-bill/${reg.id}" target="_blank" class="button">View & Pay Bill</a>
-            </div>
-          </body>
-        </html>
-      `;
-      return new Response(htmlMsg, {
-        status: 200,
-        headers: { "Content-Type": "text/html; charset=utf-8" },
-      });
+            </body>
+          </html>
+        `;
+        return new Response(invalidOtpHtml, {
+          status: 200,
+          headers: { "Content-Type": "text/html; charset=utf-8" },
+        });
+      }
+
+      // Check 2: Report Completion Status
+      if (reg.status !== "Completed") {
+        const pendingHtml = `
+          <!DOCTYPE html>
+          <html>
+            <head>
+              <meta charset="UTF-8">
+              <meta name="viewport" content="width=device-width, initial-scale=1.0">
+              <title>Report Under Processing - ${reg.name}</title>
+              <style>
+                body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #f8fafc; color: #1e293b; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; padding: 20px; box-sizing: border-box; }
+                .card { background: white; padding: 36px 28px; border-radius: 16px; box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.08); max-width: 480px; width: 100%; text-align: center; border-top: 4px solid #f59e0b; }
+                .icon-box { width: 64px; height: 64px; background: #fef3c7; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 16px; font-size: 30px; border: 2px solid #fde68a; }
+                h1 { font-size: 20px; margin: 0 0 8px; font-weight: 800; color: #b45309; }
+                .subtitle { font-size: 13px; color: #64748b; font-weight: 600; margin-bottom: 16px; }
+                p { font-size: 14px; line-height: 1.6; color: #475569; margin: 0 0 20px; }
+                .details { background: #f8fafc; border: 1px solid #e2e8f0; padding: 14px; border-radius: 10px; font-size: 13px; text-align: left; margin-bottom: 20px; }
+                .details-row { display: flex; justify-content: space-between; margin-bottom: 6px; }
+                .details-row:last-child { margin-bottom: 0; }
+                .badge { display: inline-block; background: #fef3c7; color: #92400e; font-weight: 700; padding: 3px 10px; border-radius: 12px; font-size: 12px; }
+                .btn { display: inline-block; background: #0f766e; color: white; padding: 10px 24px; border-radius: 8px; text-decoration: none; font-weight: 700; font-size: 14px; transition: background 0.2s; cursor: pointer; border: none; }
+                .btn:hover { background: #0d5c56; }
+              </style>
+            </head>
+            <body>
+              <div class="card">
+                <div class="icon-box">⏳</div>
+                <h1>Report Under Processing</h1>
+                <div class="subtitle">Diagnostic Analysis in Progress</div>
+                <p>Your sample is currently being analyzed and verified by our clinical pathologists. The completed report will be available here as soon as testing is concluded.</p>
+                <div class="details">
+                  <div class="details-row"><span style="color: #64748b;">Patient Name:</span> <strong>${reg.title} ${reg.name}</strong></div>
+                  <div class="details-row"><span style="color: #64748b;">Registration No:</span> <strong>${reg.regNo}</strong></div>
+                  <div class="details-row"><span style="color: #64748b;">Registered On:</span> <span>${formatDate(reg.date)}</span></div>
+                  <div class="details-row"><span style="color: #64748b;">Current Status:</span> <span class="badge">${reg.status}</span></div>
+                </div>
+                <button onclick="window.location.reload()" class="btn"> Refresh Status</button>
+              </div>
+            </body>
+          </html>
+        `;
+        return new Response(pendingHtml, {
+          status: 200,
+          headers: { "Content-Type": "text/html; charset=utf-8" },
+        });
+      }
+
+      // Check 3: Payment Balance Check
+      if (parseFloat(reg.dueAmount || 0) > 0) {
+        const holdHtml = `
+          <!DOCTYPE html>
+          <html>
+            <head>
+              <meta charset="UTF-8">
+              <meta name="viewport" content="width=device-width, initial-scale=1.0">
+              <title>Report Hold - Pending Balance</title>
+              <style>
+                body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #f8fafc; color: #1e293b; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; padding: 20px; box-sizing: border-box; }
+                .card { background: white; padding: 36px 28px; border-radius: 16px; box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.08); max-width: 480px; width: 100%; text-align: center; border-top: 4px solid #ef4444; }
+                .icon-box { width: 64px; height: 64px; background: #fee2e2; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 16px; font-size: 30px; border: 2px solid #fecaca; }
+                h1 { font-size: 20px; margin: 0 0 8px; font-weight: 800; color: #ef4444; }
+                .subtitle { font-size: 13px; color: #64748b; font-weight: 600; margin-bottom: 16px; }
+                p { font-size: 14px; line-height: 1.6; color: #475569; margin: 0 0 20px; }
+                .details { background: #f8fafc; border: 1px solid #e2e8f0; padding: 14px; border-radius: 10px; font-size: 13px; text-align: left; margin-bottom: 20px; }
+                .details-row { display: flex; justify-content: space-between; margin-bottom: 6px; }
+                .details-row:last-child { margin-bottom: 0; }
+                .due-badge { color: #dc2626; font-weight: 800; font-size: 14px; }
+                .btn { display: inline-block; background: #0f766e; color: white; padding: 10px 24px; border-radius: 8px; text-decoration: none; font-weight: 700; font-size: 14px; transition: background 0.2s; }
+                .btn:hover { background: #0d5c56; }
+              </style>
+            </head>
+            <body>
+              <div class="card">
+                <div class="icon-box">⚠️</div>
+                <h1>Report on Hold</h1>
+                <div class="subtitle">Outstanding Balance Pending</div>
+                <p>Your report is ready and verified. However, due to pending dues, the document cannot be displayed. Please clear your balance to access the report.</p>
+                <div class="details">
+                  <div class="details-row"><span style="color: #64748b;">Patient Name:</span> <strong>${reg.title} ${reg.name}</strong></div>
+                  <div class="details-row"><span style="color: #64748b;">Registration No:</span> <strong>${reg.regNo}</strong></div>
+                  <div class="details-row"><span style="color: #64748b;">Total Amount:</span> <span>₹${parseFloat(reg.totalAmount || 0).toFixed(2)}</span></div>
+                  <div class="details-row"><span style="color: #64748b;">Pending Balance:</span> <span class="due-badge">₹${parseFloat(reg.dueAmount).toFixed(2)}</span></div>
+                </div>
+                <a href="/api/print-bill/${reg.regNo}" target="_blank" class="btn">View & Pay Bill</a>
+              </div>
+            </body>
+          </html>
+        `;
+        return new Response(holdHtml, {
+          status: 200,
+          headers: { "Content-Type": "text/html; charset=utf-8" },
+        });
+      }
     }
 
     // Flatten parameter fields so downstream PDF drawing logic sees them directly
@@ -356,8 +533,7 @@ export async function GET(req, { params }) {
     let qrImage = null;
     if (showQrCode) {
       try {
-        const cleanBarcode = reg.barcode ? reg.barcode.replace(/^,\s*/, "").split(" ")[0] : null;
-        const qrData = `${req.nextUrl.origin}/api/print-report/${cleanBarcode || reg.id}?withFrame=true`;
+        const qrData = `${req.nextUrl.origin}/api/print-report/${reg.regNo}?otp=${reg.pdfOtp || ""}&withFrame=true`;
         const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(qrData)}`;
         const qrRes = await fetch(qrUrl);
         if (qrRes.ok) {

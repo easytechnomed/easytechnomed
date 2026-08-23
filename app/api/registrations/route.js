@@ -185,6 +185,7 @@ export async function POST(req) {
           dueAmount: validatedData.dueAmount,
           stickerCount: validatedData.stickerCount,
           barcode,
+          pdfOtp: Math.floor(100000 + Math.random() * 900000).toString(),
           status: validatedData.dueAmount > 0 ? "Pending" : "Completed",
           workspaceId: admin.workspaceId,
           adminId: admin.id,
