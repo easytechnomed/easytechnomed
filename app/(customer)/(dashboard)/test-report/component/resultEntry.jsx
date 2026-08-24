@@ -82,6 +82,7 @@ export default function ResultEntry({ open, onClose, selectedReg, onSaveSuccess,
   const debounceTimerRef = React.useRef(null);
   const isInitialLoadRef = React.useRef(true);
   const isSavingRef = React.useRef(false);
+  const draftAbortControllerRef = React.useRef(null);
 
   // Configurator States
   const [configDialogOpen, setConfigDialogOpen] = useState(false);
@@ -167,6 +168,13 @@ export default function ResultEntry({ open, onClose, selectedReg, onSaveSuccess,
 
   useEffect(() => {
     if (open && selectedReg) {
+      if (draftAbortControllerRef.current) {
+        draftAbortControllerRef.current.abort();
+        draftAbortControllerRef.current = null;
+      }
+      if (debounceTimerRef.current) {
+        clearTimeout(debounceTimerRef.current);
+      }
       setIsSaved(false);
       setSelectedDepartment("all");
       setAutoSaveStatus("idle");
@@ -175,6 +183,15 @@ export default function ResultEntry({ open, onClose, selectedReg, onSaveSuccess,
       // eslint-disable-next-line react-hooks/set-state-in-effect
       loadParameters();
     }
+    return () => {
+      if (draftAbortControllerRef.current) {
+        draftAbortControllerRef.current.abort();
+        draftAbortControllerRef.current = null;
+      }
+      if (debounceTimerRef.current) {
+        clearTimeout(debounceTimerRef.current);
+      }
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, selectedReg]);
 
@@ -183,9 +200,10 @@ export default function ResultEntry({ open, onClose, selectedReg, onSaveSuccess,
     if (!resultRegDetails?.id) return;
     if (!canWrite) return;
 
-    // Concurrency guard: If already saving and this is an auto-save, skip this cycle
-    if (isSavingRef.current && isSilent) {
-      return;
+    // Cancel any previous in-flight draft save before starting a new save
+    if (draftAbortControllerRef.current) {
+      draftAbortControllerRef.current.abort();
+      draftAbortControllerRef.current = null;
     }
 
     // --- Differential Count 100% Validation (Only on Final Save, not Draft / Auto-save) ---
@@ -195,6 +213,11 @@ export default function ResultEntry({ open, onClose, selectedReg, onSaveSuccess,
         showToast(dlcError, "error");
         return;
       }
+    }
+
+    const abortController = new AbortController();
+    if (isDraft) {
+      draftAbortControllerRef.current = abortController;
     }
 
     isSavingRef.current = true;
@@ -221,14 +244,17 @@ export default function ResultEntry({ open, onClose, selectedReg, onSaveSuccess,
         ? `/api/registrations/${resultRegDetails.id}/results/draft`
         : `/api/registrations/${resultRegDetails.id}/results`;
 
-      const res = await fetch(apiUrl, {
+      const response = await fetch(apiUrl, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           resultsData,
           reportNotes,
         }),
-      }).then((r) => r.json());
+        signal: abortController.signal,
+      });
+
+      const res = await response.json();
 
       if (res.success) {
         const now = new Date();
@@ -252,6 +278,10 @@ export default function ResultEntry({ open, onClose, selectedReg, onSaveSuccess,
         }
       }
     } catch (err) {
+      // If request was aborted by a newer draft request, silently ignore
+      if (err.name === "AbortError" || abortController.signal.aborted) {
+        return;
+      }
       console.error("Save results error:", err);
       if (isSilent) {
         setAutoSaveStatus("error");
@@ -259,9 +289,14 @@ export default function ResultEntry({ open, onClose, selectedReg, onSaveSuccess,
         showToast(err.message || "Failed to save results", "error");
       }
     } finally {
-      isSavingRef.current = false;
-      setIsDraftSaving(false);
-      setResultSaving(false);
+      if (!abortController.signal.aborted) {
+        if (isDraft && draftAbortControllerRef.current === abortController) {
+          draftAbortControllerRef.current = null;
+        }
+        isSavingRef.current = false;
+        setIsDraftSaving(false);
+        setResultSaving(false);
+      }
     }
   };
 

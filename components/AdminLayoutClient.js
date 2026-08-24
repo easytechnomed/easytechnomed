@@ -4,6 +4,7 @@ import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { TrackingProvider } from "@/app/context/TrackingContext";
+import packageJson from "@/package.json";
 import {
   Box,
   Drawer,
@@ -97,11 +98,11 @@ const getExpiryMessage = (expireAt) => {
   const expiry = new Date(expireAt);
   const now = new Date();
   const diffMs = expiry.getTime() - now.getTime();
-  
+
   if (diffMs <= 0) {
     return { text: "Expired", color: "error.main", severity: "error" };
   }
-  
+
   // Calculate remaining days based on local calendar dates (timezone-aware system time)
   const expiryDateOnly = new Date(expiry.getFullYear(), expiry.getMonth(), expiry.getDate());
   const nowDateOnly = new Date(now.getFullYear(), now.getMonth(), now.getDate());
@@ -112,17 +113,17 @@ const getExpiryMessage = (expireAt) => {
     const diffHours = diffMs / (1000 * 60 * 60);
     const hours = Math.floor(diffHours);
     const minutes = Math.floor((diffHours - hours) * 60);
-    return { 
-      text: `${hours}h ${minutes}m left`, 
-      color: "error.main", 
-      severity: "warning" 
+    return {
+      text: `${hours}h ${minutes}m left`,
+      color: "error.main",
+      severity: "warning"
     };
   }
-  
-  return { 
-    text: `${diffDays} ${diffDays === 1 ? "day" : "days"} left`, 
+
+  return {
+    text: `${diffDays} ${diffDays === 1 ? "day" : "days"} left`,
     color: diffDays <= 7 ? "warning.main" : "text.secondary",
-    severity: diffDays <= 7 ? "warning" : "info" 
+    severity: diffDays <= 7 ? "warning" : "info"
   };
 };
 
@@ -177,14 +178,14 @@ export default function AdminLayoutClient({ admin, children }) {
 
       const isAdmin = pathname.startsWith("/admin");
       const cleanPath = isAdmin ? pathname.slice(6) || "/" : pathname;
-      
+
       const roleUpper = (admin.role?.name || admin.role || "").toUpperCase();
       const userPerms = admin.permissions || [];
       const hasAll = roleUpper === "ADMIN" || roleUpper === "OWNER" || userPerms.includes("ALL");
 
       if (!hasAll) {
         let hasAccess = true;
-        
+
         if (cleanPath === "/" || cleanPath === "/dashboard") {
           hasAccess = userPerms.includes("DASHBOARD_VIEW");
         } else if (cleanPath.startsWith("/registration")) {
@@ -197,7 +198,7 @@ export default function AdminLayoutClient({ admin, children }) {
           hasAccess = userPerms.includes("MEMBER_READ") || userPerms.includes("MEMBER_WRITE");
         } else if (cleanPath.startsWith("/settings")) {
           hasAccess = userPerms.includes("SETTINGS_READ") || userPerms.includes("SETTINGS_WRITE") ||
-                      userPerms.includes("TEST_READ") || userPerms.includes("TEST_WRITE");
+            userPerms.includes("TEST_READ") || userPerms.includes("TEST_WRITE");
         }
 
         if (!hasAccess) {
@@ -274,42 +275,42 @@ export default function AdminLayoutClient({ admin, children }) {
     if (!admin) return false;
     const roleUpper = (admin.role?.name || admin.role || "").toUpperCase();
     const userPerms = admin.permissions || [];
-    
+
     if (roleUpper === "ADMIN" || roleUpper === "OWNER" || userPerms.includes("ALL")) {
       return true;
     }
-    
+
     return requiredPermissions.some(perm => userPerms.includes(perm));
   };
 
   const menuItems = [
-    { 
-      text: "Dashboard", 
-      path: "/dashboard", 
+    {
+      text: "Dashboard",
+      path: "/dashboard",
       icon: <DashboardIcon />,
       required: ["DASHBOARD_VIEW"]
     },
-    { 
-      text: "Patient Registration", 
-      path: "/registration", 
+    {
+      text: "Patient Registration",
+      path: "/registration",
       icon: <RegisterIcon />,
       required: ["REGISTRATION_READ", "REGISTRATION_WRITE"]
     },
-    { 
-      text: "Test Reports", 
-      path: "/test-report", 
+    {
+      text: "Test Reports",
+      path: "/test-report",
       icon: <ReportIcon />,
       required: ["REGISTRATION_READ", "REGISTRATION_WRITE"]
     },
-    { 
-      text: "Dr. Referral Summary", 
-      path: "/doctor-summary", 
+    {
+      text: "Dr. Referral Summary",
+      path: "/doctor-summary",
       icon: <DoctorIcon />,
       required: ["DOCTOR_READ", "DOCTOR_WRITE"]
     },
-    { 
-      text: "Manage Members", 
-      path: "/members", 
+    {
+      text: "Manage Members",
+      path: "/members",
       icon: <PeopleIcon />,
       required: ["MEMBER_READ", "MEMBER_WRITE"]
     },
@@ -472,7 +473,7 @@ export default function AdminLayoutClient({ admin, children }) {
       </Box>
       <Divider />
       {/* Bottom Profile Info */}
-      <Box sx={{ p: 2, backgroundColor: "grey.50", display: "flex", flexDirection: "column", gap: 1 }}>
+      <Box sx={{ p: 2, pb: 0, backgroundColor: "grey.50", display: "flex", flexDirection: "column", gap: 1 }}>
         <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, justifyContent: isDrawerExpanded ? "initial" : "center" }}>
           <Avatar sx={{ bgcolor: "primary.main", width: 40, height: 40 }}>
             {admin?.name?.charAt(0).toUpperCase() || "A"}
@@ -494,24 +495,24 @@ export default function AdminLayoutClient({ admin, children }) {
               const expiryInfo = getExpiryMessage(admin.expireAt);
               if (!expiryInfo) return null;
               return (
-                <Box 
-                  sx={{ 
+                <Box
+                  sx={{
                     flex: 1.1,
-                    px: 1, 
-                    py: 0.5, 
-                    borderRadius: 1.5, 
-                    bgcolor: expiryInfo.severity === "error" 
-                      ? "#fee2e2" 
-                      : expiryInfo.severity === "warning" 
-                        ? "#fffbeb" 
+                    px: 1,
+                    py: 0.5,
+                    borderRadius: 1.5,
+                    bgcolor: expiryInfo.severity === "error"
+                      ? "#fee2e2"
+                      : expiryInfo.severity === "warning"
+                        ? "#fffbeb"
                         : "#f1f5f9",
                     border: "1px solid",
-                    borderColor: expiryInfo.severity === "error" 
-                      ? "#fca5a5" 
-                      : expiryInfo.severity === "warning" 
-                        ? "#fcd34d" 
+                    borderColor: expiryInfo.severity === "error"
+                      ? "#fca5a5"
+                      : expiryInfo.severity === "warning"
+                        ? "#fcd34d"
                         : "#cbd5e1",
-                    display: "flex", 
+                    display: "flex",
                     flexDirection: "column",
                     justifyContent: "center",
                     alignItems: "center",
@@ -521,14 +522,14 @@ export default function AdminLayoutClient({ admin, children }) {
                   <Typography variant="caption" sx={{ fontWeight: 700, color: "text.primary", fontSize: "0.62rem", lineHeight: 1.1 }}>
                     Ends in:
                   </Typography>
-                  <Typography 
-                    variant="caption" 
-                    sx={{ 
-                      fontWeight: 800, 
-                      color: expiryInfo.severity === "error" 
-                        ? "#991b1b" 
-                        : expiryInfo.severity === "warning" 
-                          ? "#92400e" 
+                  <Typography
+                    variant="caption"
+                    sx={{
+                      fontWeight: 800,
+                      color: expiryInfo.severity === "error"
+                        ? "#991b1b"
+                        : expiryInfo.severity === "warning"
+                          ? "#92400e"
                           : "#334155",
                       fontSize: "0.65rem",
                       lineHeight: 1.1
@@ -539,13 +540,13 @@ export default function AdminLayoutClient({ admin, children }) {
                 </Box>
               );
             })()}
-            <Button 
-              variant="outlined" 
-              color="error" 
-              size="small" 
+            <Button
+              variant="outlined"
+              color="error"
+              size="small"
               startIcon={<LogoutIcon />}
               onClick={handleLogout}
-              sx={{ 
+              sx={{
                 flex: 1,
                 py: 0.5,
                 borderRadius: 1.5,
@@ -562,17 +563,17 @@ export default function AdminLayoutClient({ admin, children }) {
             </Button>
           </Box>
         ) : (
-          <Button 
-            variant="outlined" 
-            color="error" 
-            size="small" 
+          <Button
+            variant="outlined"
+            color="error"
+            size="small"
             startIcon={<LogoutIcon />}
             onClick={handleLogout}
-            sx={{ 
-              mt: 1, 
-              py: 0.6,
+            sx={{
+              mt: 0,
+              py: 0,
               minWidth: 0,
-              px: 1,
+              px: 0,
               borderRadius: 1.5,
               fontWeight: 700,
               fontSize: "0.8rem",
@@ -584,8 +585,25 @@ export default function AdminLayoutClient({ admin, children }) {
             }}
           />
         )}
+        {/* App Version at bottom */}
+        {packageJson?.version && (
+          <Typography
+            variant="caption"
+            sx={{
+              display: "block",
+              textAlign: "center",
+              fontSize: "0.68rem",
+              fontWeight: 600,
+              color: "text.disabled",
+              letterSpacing: "0.02em",
+              mt: 0
+            }}
+          >
+            v{packageJson.version}
+          </Typography>
+        )}
       </Box>
-    </Box>
+    </Box >
   );
 
   const getPageTitle = () => {
@@ -598,227 +616,227 @@ export default function AdminLayoutClient({ admin, children }) {
       <ThemeProvider theme={theme}>
         <CssBaseline />
         <Box sx={{ display: "flex", minHeight: "100vh" }}>
-        {/* AppBar */}
-        <AppBar
-          position="fixed"
-          sx={{
-            width: { md: `calc(100% - ${currentDrawerWidth}px)` },
-            ml: { md: `${currentDrawerWidth}px` },
-            backgroundColor: "background.paper",
-            color: "text.primary",
-            boxShadow: "0 1px 3px 0 rgba(0,0,0,0.05)",
-            borderBottom: "1px solid",
-            borderColor: "divider",
-            transition: (theme) => theme.transitions.create(["width", "margin"], {
-              easing: theme.transitions.easing.sharp,
-              duration: theme.transitions.duration.enteringScreen,
-            }),
-          }}
-        >
-          <Toolbar sx={{ justifyContent: "space-between", px: 3 }}>
-            <Box sx={{ display: "flex", alignItems: "center" }}>
-              <IconButton
-                color="inherit"
-                aria-label="open drawer"
-                edge="start"
-                onClick={handleDrawerToggle}
-                sx={{ mr: 2 }}
-              >
-                <MenuIcon />
-              </IconButton>
-              <Typography variant="h6" noWrap component="div" sx={{ fontWeight: 700, fontSize: "1.1rem" }}>
-                {getPageTitle()}
-              </Typography>
-            </Box>
-
-            {/* Profile Dropdown */}
-            <Box>
-              <Button
-                onClick={handleProfileMenuOpen}
-                startIcon={
-                  <Avatar sx={{ bgcolor: "primary.main", width: 32, height: 32, fontSize: "0.875rem" }}>
-                    {admin?.name?.charAt(0).toUpperCase() || "A"}
-                  </Avatar>
-                }
-                sx={{ color: "text.primary", px: 1.5, py: 0.5 }}
-              >
-                <Typography variant="subtitle2" sx={{ display: { xs: "none", sm: "block" }, fontWeight: 600, ml: 1 }}>
-                  {admin?.name || "Admin"}
-                </Typography>
-              </Button>
-              <Menu
-                anchorEl={anchorEl}
-                open={Boolean(anchorEl)}
-                onClose={handleProfileMenuClose}
-                transformOrigin={{ horizontal: "right", vertical: "top" }}
-                anchorOrigin={{ horizontal: "right", vertical: "bottom" }}
-                PaperProps={{
-                  sx: {
-                    mt: 1.5,
-                    boxShadow: "0 4px 20px 0 rgba(0,0,0,0.08)",
-                    border: "1px solid",
-                    borderColor: "divider",
-                    borderRadius: 2,
-                    minWidth: 180,
-                  },
-                }}
-              >
-                <Box sx={{ px: 2, py: 1.5 }}>
-                  <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>
-                    {admin?.name || "System Admin"}
-                  </Typography>
-                  <Typography variant="caption" sx={{ color: "text.secondary" }}>
-                    Role: {admin?.role?.name || "Admin"}
-                  </Typography>
-                </Box>
-                <Divider />
-                <MenuItem onClick={handleLogout} sx={{ py: 1.2, color: "error.main", gap: 1 }}>
-                  <LogoutIcon fontSize="small" />
-                  Logout
-                </MenuItem>
-              </Menu>
-            </Box>
-          </Toolbar>
-        </AppBar>
-
-        {/* Sidebar Drawer */}
-        <Box
-          component="nav"
-          sx={{
-            width: { md: currentDrawerWidth },
-            flexShrink: { md: 0 },
-            transition: (theme) => theme.transitions.create("width", {
-              easing: theme.transitions.easing.sharp,
-              duration: theme.transitions.duration.enteringScreen,
-            })
-          }}
-          aria-label="mailbox folders"
-        >
-          {/* Temporary Drawer for Mobile */}
-          <Drawer
-            variant="temporary"
-            open={mobileOpen}
-            onTransitionEnd={handleDrawerTransitionEnd}
-            onClose={handleDrawerClose}
-            ModalProps={{
-              keepMounted: true, // Better open performance on mobile.
-            }}
+          {/* AppBar */}
+          <AppBar
+            position="fixed"
             sx={{
-              display: { xs: "block", md: "none" },
-              "& .MuiDrawer-paper": { boxSizing: "border-box", width: drawerWidth, borderRight: "1px solid", borderColor: "divider" },
-            }}
-          >
-            {drawerContent}
-          </Drawer>
-          {/* Permanent Drawer for Desktop */}
-          <Drawer
-            variant="permanent"
-            sx={{
-              display: { xs: "none", md: "block" },
-              "& .MuiDrawer-paper": {
-                boxSizing: "border-box",
-                width: currentDrawerWidth,
-                borderRight: "1px solid",
-                borderColor: "divider",
-                overflowX: "hidden",
-                transition: (theme) => theme.transitions.create("width", {
-                  easing: theme.transitions.easing.sharp,
-                  duration: theme.transitions.duration.enteringScreen,
-                }),
-              },
-            }}
-            open
-          >
-            {drawerContent}
-          </Drawer>
-        </Box>
-
-        {/* Main Content Area */}
-        <Box
-          component="main"
-          sx={{
-            flexGrow: 1,
-            p: { xs: 1.5, sm: 3 },
-            width: { md: `calc(100% - ${currentDrawerWidth}px)` },
-            minWidth: 0,
-            mt: "64px",
-            backgroundColor: "background.default",
-            minHeight: "calc(100vh - 64px)",
-            transition: (theme) => theme.transitions.create(["width", "margin"], {
-              easing: theme.transitions.easing.sharp,
-              duration: theme.transitions.duration.enteringScreen,
-            }),
-          }}
-        >
-          {children}
-        </Box>
-
-        {/* Floating Submenu for Collapsed Drawer */}
-        <Popper
-          open={Boolean(hoverAnchorEl)}
-          anchorEl={hoverAnchorEl}
-          placement="right-start"
-          style={{ zIndex: 1400 }}
-        >
-          <Paper
-            onMouseEnter={handleMenuEnter}
-            onMouseLeave={handleMenuLeave}
-            sx={{
-              boxShadow: "0 4px 20px rgba(0,0,0,0.08)",
-              border: "1px solid",
+              width: { md: `calc(100% - ${currentDrawerWidth}px)` },
+              ml: { md: `${currentDrawerWidth}px` },
+              backgroundColor: "background.paper",
+              color: "text.primary",
+              boxShadow: "0 1px 3px 0 rgba(0,0,0,0.05)",
+              borderBottom: "1px solid",
               borderColor: "divider",
-              minWidth: 180,
-              py: 0.5,
-              ml: 0.5
+              transition: (theme) => theme.transitions.create(["width", "margin"], {
+                easing: theme.transitions.easing.sharp,
+                duration: theme.transitions.duration.enteringScreen,
+              }),
             }}
           >
-            <Box sx={{ px: 2, py: 0.8, bgcolor: "rgba(15, 118, 110, 0.04)" }}>
-              <Typography variant="caption" sx={{ fontWeight: 700, color: "primary.main", textTransform: "uppercase", letterSpacing: 0.5 }}>
-                {hoveredItem?.text}
-              </Typography>
-            </Box>
-            <Divider sx={{ opacity: 0.6 }} />
-            <MenuList>
-              {hoveredItem?.subItems?.map((sub) => {
-                const isAdmin = pathname.startsWith("/admin");
-                const cleanPath = isAdmin ? pathname.slice(6) || "/" : pathname;
-                const searchParamsStr = sub.path.split("?")[1] || "";
-                const tabName = searchParamsStr.split("=")[1] || "";
-                const currentTab = searchParams.get("tab") || (cleanPath === "/settings" ? "profile" : "");
-                const isSubActive = sub.path.includes("?")
-                  ? (cleanPath === "/settings" && currentTab === tabName)
-                  : (cleanPath === sub.path || cleanPath.startsWith(sub.path + "/"));
-                const subHref = isAdmin ? `/admin${sub.path}` : sub.path;
+            <Toolbar sx={{ justifyContent: "space-between", px: 3 }}>
+              <Box sx={{ display: "flex", alignItems: "center" }}>
+                <IconButton
+                  color="inherit"
+                  aria-label="open drawer"
+                  edge="start"
+                  onClick={handleDrawerToggle}
+                  sx={{ mr: 2 }}
+                >
+                  <MenuIcon />
+                </IconButton>
+                <Typography variant="h6" noWrap component="div" sx={{ fontWeight: 700, fontSize: "1.1rem" }}>
+                  {getPageTitle()}
+                </Typography>
+              </Box>
 
-                return (
-                  <MenuItem
-                    key={sub.text}
-                    onClick={() => {
-                      handleMenuLeave();
-                      router.push(subHref);
-                    }}
-                    sx={{
-                      py: 1,
-                      px: 2,
-                      fontSize: "0.825rem",
-                      fontWeight: isSubActive ? 700 : 500,
-                      color: isSubActive ? "primary.main" : "text.secondary",
-                      backgroundColor: isSubActive ? "rgba(15, 118, 110, 0.08)" : "transparent",
-                      "&:hover": {
-                        backgroundColor: "rgba(15, 118, 110, 0.04)",
-                        color: "primary.main"
-                      }
-                    }}
-                  >
-                    {sub.text}
+              {/* Profile Dropdown */}
+              <Box>
+                <Button
+                  onClick={handleProfileMenuOpen}
+                  startIcon={
+                    <Avatar sx={{ bgcolor: "primary.main", width: 32, height: 32, fontSize: "0.875rem" }}>
+                      {admin?.name?.charAt(0).toUpperCase() || "A"}
+                    </Avatar>
+                  }
+                  sx={{ color: "text.primary", px: 1.5, py: 0.5 }}
+                >
+                  <Typography variant="subtitle2" sx={{ display: { xs: "none", sm: "block" }, fontWeight: 600, ml: 1 }}>
+                    {admin?.name || "Admin"}
+                  </Typography>
+                </Button>
+                <Menu
+                  anchorEl={anchorEl}
+                  open={Boolean(anchorEl)}
+                  onClose={handleProfileMenuClose}
+                  transformOrigin={{ horizontal: "right", vertical: "top" }}
+                  anchorOrigin={{ horizontal: "right", vertical: "bottom" }}
+                  PaperProps={{
+                    sx: {
+                      mt: 1.5,
+                      boxShadow: "0 4px 20px 0 rgba(0,0,0,0.08)",
+                      border: "1px solid",
+                      borderColor: "divider",
+                      borderRadius: 2,
+                      minWidth: 180,
+                    },
+                  }}
+                >
+                  <Box sx={{ px: 2, py: 1.5 }}>
+                    <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>
+                      {admin?.name || "System Admin"}
+                    </Typography>
+                    <Typography variant="caption" sx={{ color: "text.secondary" }}>
+                      Role: {admin?.role?.name || "Admin"}
+                    </Typography>
+                  </Box>
+                  <Divider />
+                  <MenuItem onClick={handleLogout} sx={{ py: 1.2, color: "error.main", gap: 1 }}>
+                    <LogoutIcon fontSize="small" />
+                    Logout
                   </MenuItem>
-                );
-              })}
-            </MenuList>
-          </Paper>
-        </Popper>
-      </Box>
-    </ThemeProvider>
-  </TrackingProvider>
+                </Menu>
+              </Box>
+            </Toolbar>
+          </AppBar>
+
+          {/* Sidebar Drawer */}
+          <Box
+            component="nav"
+            sx={{
+              width: { md: currentDrawerWidth },
+              flexShrink: { md: 0 },
+              transition: (theme) => theme.transitions.create("width", {
+                easing: theme.transitions.easing.sharp,
+                duration: theme.transitions.duration.enteringScreen,
+              })
+            }}
+            aria-label="mailbox folders"
+          >
+            {/* Temporary Drawer for Mobile */}
+            <Drawer
+              variant="temporary"
+              open={mobileOpen}
+              onTransitionEnd={handleDrawerTransitionEnd}
+              onClose={handleDrawerClose}
+              ModalProps={{
+                keepMounted: true, // Better open performance on mobile.
+              }}
+              sx={{
+                display: { xs: "block", md: "none" },
+                "& .MuiDrawer-paper": { boxSizing: "border-box", width: drawerWidth, borderRight: "1px solid", borderColor: "divider" },
+              }}
+            >
+              {drawerContent}
+            </Drawer>
+            {/* Permanent Drawer for Desktop */}
+            <Drawer
+              variant="permanent"
+              sx={{
+                display: { xs: "none", md: "block" },
+                "& .MuiDrawer-paper": {
+                  boxSizing: "border-box",
+                  width: currentDrawerWidth,
+                  borderRight: "1px solid",
+                  borderColor: "divider",
+                  overflowX: "hidden",
+                  transition: (theme) => theme.transitions.create("width", {
+                    easing: theme.transitions.easing.sharp,
+                    duration: theme.transitions.duration.enteringScreen,
+                  }),
+                },
+              }}
+              open
+            >
+              {drawerContent}
+            </Drawer>
+          </Box>
+
+          {/* Main Content Area */}
+          <Box
+            component="main"
+            sx={{
+              flexGrow: 1,
+              p: { xs: 1.5, sm: 3 },
+              width: { md: `calc(100% - ${currentDrawerWidth}px)` },
+              minWidth: 0,
+              mt: "64px",
+              backgroundColor: "background.default",
+              minHeight: "calc(100vh - 64px)",
+              transition: (theme) => theme.transitions.create(["width", "margin"], {
+                easing: theme.transitions.easing.sharp,
+                duration: theme.transitions.duration.enteringScreen,
+              }),
+            }}
+          >
+            {children}
+          </Box>
+
+          {/* Floating Submenu for Collapsed Drawer */}
+          <Popper
+            open={Boolean(hoverAnchorEl)}
+            anchorEl={hoverAnchorEl}
+            placement="right-start"
+            style={{ zIndex: 1400 }}
+          >
+            <Paper
+              onMouseEnter={handleMenuEnter}
+              onMouseLeave={handleMenuLeave}
+              sx={{
+                boxShadow: "0 4px 20px rgba(0,0,0,0.08)",
+                border: "1px solid",
+                borderColor: "divider",
+                minWidth: 180,
+                py: 0.5,
+                ml: 0.5
+              }}
+            >
+              <Box sx={{ px: 2, py: 0.8, bgcolor: "rgba(15, 118, 110, 0.04)" }}>
+                <Typography variant="caption" sx={{ fontWeight: 700, color: "primary.main", textTransform: "uppercase", letterSpacing: 0.5 }}>
+                  {hoveredItem?.text}
+                </Typography>
+              </Box>
+              <Divider sx={{ opacity: 0.6 }} />
+              <MenuList>
+                {hoveredItem?.subItems?.map((sub) => {
+                  const isAdmin = pathname.startsWith("/admin");
+                  const cleanPath = isAdmin ? pathname.slice(6) || "/" : pathname;
+                  const searchParamsStr = sub.path.split("?")[1] || "";
+                  const tabName = searchParamsStr.split("=")[1] || "";
+                  const currentTab = searchParams.get("tab") || (cleanPath === "/settings" ? "profile" : "");
+                  const isSubActive = sub.path.includes("?")
+                    ? (cleanPath === "/settings" && currentTab === tabName)
+                    : (cleanPath === sub.path || cleanPath.startsWith(sub.path + "/"));
+                  const subHref = isAdmin ? `/admin${sub.path}` : sub.path;
+
+                  return (
+                    <MenuItem
+                      key={sub.text}
+                      onClick={() => {
+                        handleMenuLeave();
+                        router.push(subHref);
+                      }}
+                      sx={{
+                        py: 1,
+                        px: 2,
+                        fontSize: "0.825rem",
+                        fontWeight: isSubActive ? 700 : 500,
+                        color: isSubActive ? "primary.main" : "text.secondary",
+                        backgroundColor: isSubActive ? "rgba(15, 118, 110, 0.08)" : "transparent",
+                        "&:hover": {
+                          backgroundColor: "rgba(15, 118, 110, 0.04)",
+                          color: "primary.main"
+                        }
+                      }}
+                    >
+                      {sub.text}
+                    </MenuItem>
+                  );
+                })}
+              </MenuList>
+            </Paper>
+          </Popper>
+        </Box>
+      </ThemeProvider>
+    </TrackingProvider>
   );
 }
