@@ -1,7 +1,5 @@
 import { NextResponse } from "next/server";
-import { cookies } from "next/headers";
 import { prisma } from "@/lib/db";
-import { verifyToken } from "@/lib/auth";
 import { decodePaymentUid, encodePaymentUid } from "@/lib/saasInvoice";
 import fs from "fs";
 import path from "path";
@@ -79,7 +77,7 @@ export async function GET(req, { params }) {
     const pId = decodePaymentUid(paymentId);
 
     if (!pId) {
-      return new Response("Invalid payment UID / Reference", { status: 400 });
+      return new Response("Invalid or expired invoice UID link. Direct numeric IDs are not permitted.", { status: 404 });
     }
 
     const payment = await prisma.workspacePayment.findUnique({
@@ -100,44 +98,6 @@ export async function GET(req, { params }) {
 
     if (!payment) {
       return new Response("Subscription payment record not found", { status: 404 });
-    }
-
-    // ── Authentication Check (SuperAdmin or Lab Admin of own workspace) ──
-    const cookieStore = await cookies();
-    const isAdminToken = cookieStore.get("admin_session_token")?.value;
-    const isSuperAdminToken = cookieStore.get("super_admin_session_token")?.value;
-
-    let isAuthorized = false;
-
-    if (isSuperAdminToken) {
-      const decoded = verifyToken(isSuperAdminToken);
-      if (decoded) {
-        const session = await prisma.superAdminSession.findUnique({
-          where: { token: isSuperAdminToken },
-        });
-        if (session && session.expiresAt > new Date()) {
-          isAuthorized = true;
-        }
-      }
-    }
-
-    if (!isAuthorized && isAdminToken) {
-      const decoded = verifyToken(isAdminToken);
-      if (decoded) {
-        const session = await prisma.adminSession.findUnique({
-          where: { token: isAdminToken },
-          include: { admin: true },
-        });
-        if (session && session.expiresAt > new Date() && session.admin.isActive) {
-          if (session.admin.workspaceId === payment.workspaceId) {
-            isAuthorized = true;
-          }
-        }
-      }
-    }
-
-    if (!isAuthorized) {
-      return new Response("Unauthorized to view this subscription invoice. Please login.", { status: 401 });
     }
 
     // ── Load Logo Base64 ──
