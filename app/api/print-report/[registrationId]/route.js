@@ -684,7 +684,7 @@ export async function GET(req, { params }) {
       }
 
       const topY = pageHeight - headerMargin - 15;
-      const boxHeight = 70;
+      const boxHeight = 72;
 
       page.drawRectangle({
         x: leftMargin,
@@ -702,23 +702,25 @@ export async function GET(req, { params }) {
 
       const reportedDate = reg.reportedAt || (reg.status === "Completed" ? reg.updatedAt : null);
 
-      // Row 1
-      drawText(page, `Patient Name:`, col1X, topY - 20, patientInfoFontSize, true, textColor);
-      drawText(page, `${reg.title} ${reg.name}`, col1X + labelW, topY - 20, patientInfoFontSize, false, textColor);
+      // Left Column (3 items - aligned with rows 1, 2, 3)
+      drawText(page, `Patient Name:`, col1X, topY - 15, patientInfoFontSize, true, textColor);
+      drawText(page, `${reg.title} ${reg.name}`, col1X + labelW, topY - 15, patientInfoFontSize, false, textColor);
 
-      drawText(page, `Registered On:`, col2X, topY - 20, patientInfoFontSize, true, textColor);
-      drawText(page, `${formatDate(reg.date)}`, col2X + labelW, topY - 20, patientInfoFontSize, false, textColor);
+      drawText(page, `Age / Gender:`, col1X, topY - 30, patientInfoFontSize, true, textColor);
+      drawText(page, `${reg.age % 1 === 0 ? reg.age : reg.age.toFixed(1)} ${reg.ageUnit} / ${reg.gender}`, col1X + labelW, topY - 30, patientInfoFontSize, false, textColor);
 
-      // Row 2
-      drawText(page, `Age / Gender:`, col1X, topY - 40, patientInfoFontSize, true, textColor);
-      drawText(page, `${reg.age % 1 === 0 ? reg.age : reg.age.toFixed(1)} ${reg.ageUnit} / ${reg.gender}`, col1X + labelW, topY - 40, patientInfoFontSize, false, textColor);
+      drawText(page, `Ref. Doctor:`, col1X, topY - 45, patientInfoFontSize, true, textColor);
+      drawText(page, `${reg.refBy?.name || "Self / Walk-in"}`, col1X + labelW, topY - 45, patientInfoFontSize, false, textColor);
 
-      drawText(page, `Reported On:`, col2X, topY - 40, patientInfoFontSize, true, textColor);
-      drawText(page, `${reportedDate ? formatDate(reportedDate) : "—"}`, col2X + labelW, topY - 40, patientInfoFontSize, false, textColor);
+      // Right Column (4 items)
+      drawText(page, `Reg. No:`, col2X, topY - 15, patientInfoFontSize, true, textColor);
+      drawText(page, `${reg.regNo || "—"}`, col2X + labelW, topY - 15, patientInfoFontSize, false, textColor);
 
-      // Row 3
-      drawText(page, `Ref. Doctor:`, col1X, topY - 60, patientInfoFontSize, true, textColor);
-      drawText(page, `${reg.refBy?.name || "Self / Walk-in"}`, col1X + labelW, topY - 60, patientInfoFontSize, false, textColor);
+      drawText(page, `Registered On:`, col2X, topY - 30, patientInfoFontSize, true, textColor);
+      drawText(page, `${formatDate(reg.date)}`, col2X + labelW, topY - 30, patientInfoFontSize, false, textColor);
+
+      drawText(page, `Reported On:`, col2X, topY - 45, patientInfoFontSize, true, textColor);
+      drawText(page, `${reportedDate ? formatDate(reportedDate) : "—"}`, col2X + labelW, topY - 45, patientInfoFontSize, false, textColor);
 
       drawText(page, `Report Status:`, col2X, topY - 60, patientInfoFontSize, true, textColor);
       drawText(

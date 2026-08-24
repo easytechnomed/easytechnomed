@@ -191,7 +191,7 @@ export async function GET(req) {
 
     // 1. Patient Demographics Box
     if (showPatientBox) {
-      const boxHeight = 70;
+      const boxHeight = 72;
       currentPage.drawRectangle({
         x: leftMargin,
         y: activeY - boxHeight,
@@ -206,23 +206,25 @@ export async function GET(req) {
       const col2X = leftMargin + (contentWidth / 2) + 8;
       const labelW = 75;
 
-      // Row 1
-      drawText(currentPage, `Patient Name:`, col1X, activeY - 20, patientInfoFontSize, true, textColor);
-      drawText(currentPage, `Mr. Rajesh Sharma`, col1X + labelW, activeY - 20, patientInfoFontSize, false, textColor);
+      // Left Column (3 items - aligned with rows 1, 2, 3)
+      drawText(currentPage, `Patient Name:`, col1X, activeY - 15, patientInfoFontSize, true, textColor);
+      drawText(currentPage, `Mr. Rajesh Sharma`, col1X + labelW, activeY - 15, patientInfoFontSize, false, textColor);
 
-      drawText(currentPage, `Registered On:`, col2X, activeY - 20, patientInfoFontSize, true, textColor);
-      drawText(currentPage, formatDate(), col2X + labelW, activeY - 20, patientInfoFontSize, false, textColor);
+      drawText(currentPage, `Age / Gender:`, col1X, activeY - 30, patientInfoFontSize, true, textColor);
+      drawText(currentPage, `32 Year / Male`, col1X + labelW, activeY - 30, patientInfoFontSize, false, textColor);
 
-      // Row 2
-      drawText(currentPage, `Age / Gender:`, col1X, activeY - 40, patientInfoFontSize, true, textColor);
-      drawText(currentPage, `32 Year / Male`, col1X + labelW, activeY - 40, patientInfoFontSize, false, textColor);
+      drawText(currentPage, `Ref. Doctor:`, col1X, activeY - 45, patientInfoFontSize, true, textColor);
+      drawText(currentPage, `Dr. A. K. Gupta (MD, Med.)`, col1X + labelW, activeY - 45, patientInfoFontSize, false, textColor);
 
-      drawText(currentPage, `Reported On:`, col2X, activeY - 40, patientInfoFontSize, true, textColor);
-      drawText(currentPage, formatDate(), col2X + labelW, activeY - 40, patientInfoFontSize, false, textColor);
+      // Right Column (4 items)
+      drawText(currentPage, `Reg. No:`, col2X, activeY - 15, patientInfoFontSize, true, textColor);
+      drawText(currentPage, `REG-2026-00123`, col2X + labelW, activeY - 15, patientInfoFontSize, false, textColor);
 
-      // Row 3
-      drawText(currentPage, `Ref. Doctor:`, col1X, activeY - 60, patientInfoFontSize, true, textColor);
-      drawText(currentPage, `Dr. A. K. Gupta (MD, Med.)`, col1X + labelW, activeY - 60, patientInfoFontSize, false, textColor);
+      drawText(currentPage, `Registered On:`, col2X, activeY - 30, patientInfoFontSize, true, textColor);
+      drawText(currentPage, formatDate(), col2X + labelW, activeY - 30, patientInfoFontSize, false, textColor);
+
+      drawText(currentPage, `Reported On:`, col2X, activeY - 45, patientInfoFontSize, true, textColor);
+      drawText(currentPage, formatDate(), col2X + labelW, activeY - 45, patientInfoFontSize, false, textColor);
 
       drawText(currentPage, `Report Status:`, col2X, activeY - 60, patientInfoFontSize, true, textColor);
       drawText(currentPage, `Completed`, col2X + labelW, activeY - 60, patientInfoFontSize, true, rgb(0.06, 0.46, 0.23));
