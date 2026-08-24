@@ -777,7 +777,7 @@ export async function GET(req, { params }) {
               <div class="signature-box">
                 <div class="signature-seal">✓ DIGITALLY VERIFIED</div>
                 <div class="signatory-title">Authorized Signatory</div>
-                <div class="signatory-sub">EasyTechnoMed Cloud Solutions</div>
+                <div class="signatory-sub">EasyTechnoMed</div>
               </div>
             </div>
 
