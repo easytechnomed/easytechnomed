@@ -285,6 +285,7 @@ model Registration {
   barcode          String?
   status           String                @default("Pending")
   pdfOtp           String?               @db.VarChar(10)
+  reportedAt       DateTime?
   createdAt        DateTime              @default(now())
   updatedAt        DateTime              @updatedAt
   workspaceId      Int?
@@ -301,6 +302,7 @@ model Registration {
 
   @@unique([workspaceId, labId])
   @@index([date])
+  @@index([reportedAt])
   @@index([mobileNo])
   @@index([refById], map: "Registration_refById_fkey")
   @@index([secondRefId], map: "Registration_secondRefId_fkey")

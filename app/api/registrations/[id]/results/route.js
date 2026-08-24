@@ -23,9 +23,14 @@ export async function POST(req, { params }) {
       return NextResponse.json({ success: false, message: "Registration not found or unauthorized." }, { status: 404 });
     }
 
-    const validResults = (resultsData || []).filter(
-      (r) => r && r.testParameterId && !isNaN(parseInt(r.testParameterId)) && parseInt(r.testParameterId) > 0
-    );
+    // Deduplicate validResults by testParameterId (taking the latest value)
+    const uniqueResultsMap = new Map();
+    (resultsData || []).forEach((r) => {
+      if (r && r.testParameterId && !isNaN(parseInt(r.testParameterId)) && parseInt(r.testParameterId) > 0) {
+        uniqueResultsMap.set(parseInt(r.testParameterId), r);
+      }
+    });
+    const validResults = Array.from(uniqueResultsMap.values());
 
     // 1. Fetch test parameter configurations to evaluate thresholds and flags
     const testParamIds = validResults.map((r) => parseInt(r.testParameterId));
@@ -70,12 +75,14 @@ export async function POST(req, { params }) {
     });
 
     const finalStatus = status || "Completed";
+    const reportedAtVal = finalStatus === "Completed" ? (existing.reportedAt || new Date()) : existing.reportedAt;
     operations.push(
       prisma.registration.update({
         where: { id: registrationId },
         data: {
           remark: reportNotes !== undefined ? (reportNotes || null) : existing.remark,
           status: finalStatus,
+          reportedAt: reportedAtVal,
         },
       })
     );

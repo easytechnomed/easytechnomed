@@ -164,6 +164,12 @@ export default function ShowResult({ open, onClose, selectedReg }) {
                 <Grid item xs={12} sm={6}>
                   <Typography variant="body2" sx={{ mb: 0.5 }}><strong>Age / Gender:</strong> {previewData.age} {previewData.ageUnit} / {previewData.gender}</Typography>
                   <Typography variant="body2" sx={{ mb: 0.5 }}><strong>Registered On:</strong> {new Date(previewData.date).toLocaleString("en-IN")}</Typography>
+                  {(previewData.reportedAt || previewData.status === "Completed") && (
+                    <Typography variant="body2" sx={{ mb: 0.5 }}>
+                      <strong>Reported On:</strong>{" "}
+                      {new Date(previewData.reportedAt || previewData.updatedAt).toLocaleString("en-IN")}
+                    </Typography>
+                  )}
                   <Typography variant="body2">
                     <strong>Status:</strong>{" "}
                     <Badge
