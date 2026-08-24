@@ -710,7 +710,7 @@ export async function GET(req, { params }) {
       drawText(page, `${reg.age % 1 === 0 ? reg.age : reg.age.toFixed(1)} ${reg.ageUnit} / ${reg.gender}`, col1X + labelW, topY - 30, patientInfoFontSize, false, textColor);
 
       drawText(page, `Ref. Doctor:`, col1X, topY - 45, patientInfoFontSize, true, textColor);
-      drawText(page, `${reg.refBy?.name || "Self / Walk-in"}`, col1X + labelW, topY - 45, patientInfoFontSize, false, textColor);
+      drawText(page, `${reg.refBy?.name || "Self"}`, col1X + labelW, topY - 45, patientInfoFontSize, false, textColor);
 
       // Right Column (4 items)
       drawText(page, `Reg. No:`, col2X, topY - 15, patientInfoFontSize, true, textColor);

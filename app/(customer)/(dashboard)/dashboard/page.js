@@ -171,7 +171,7 @@ export default async function AdminDashboardPage({ searchParams }) {
   });
   const refAggregation = {};
   doctorRefs.forEach((reg) => {
-    const docName = reg.refBy?.name || "Self / Walk-in";
+    const docName = reg.refBy?.name || "Self";
     refAggregation[docName] = (refAggregation[docName] || 0) + 1;
   });
   const referralData = Object.entries(refAggregation)
