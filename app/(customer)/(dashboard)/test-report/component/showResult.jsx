@@ -30,7 +30,6 @@ import {
   Download as DownloadIcon,
   Assignment as AssignmentIcon
 } from "@mui/icons-material";
-import DifferentialHeaderBadge from "./DifferentialCountTracker";
 
 const getReferenceRange = (param, reg) => {
   const isBaby = reg.ageUnit !== "Year" || reg.age < 12;
@@ -276,17 +275,9 @@ export default function ShowResult({ open, onClose, selectedReg }) {
                                     {displaySerial}
                                   </TableCell>
                                   <TableCell colSpan={4} sx={{ fontWeight: 800, color: "primary.main", py: 1 }}>
-                                    <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", pr: 2 }}>
-                                      <Typography variant="subtitle2" sx={{ fontWeight: 800, color: "primary.main" }}>
-                                        {param.name}
-                                      </Typography>
-                                      <DifferentialHeaderBadge
-                                        headerId={param.id}
-                                        headerName={param.name}
-                                        sectionParams={sectionParams}
-                                        resultValues={resultValuesMap}
-                                      />
-                                    </Box>
+                                    <Typography variant="subtitle2" sx={{ fontWeight: 800, color: "primary.main" }}>
+                                      {param.name}
+                                    </Typography>
                                   </TableCell>
                                 </TableRow>
                               );

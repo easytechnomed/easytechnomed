@@ -47,7 +47,6 @@ import {
   Drafts as DraftsIcon,
   AutoAwesome as AutoAwesomeIcon
 } from "@mui/icons-material";
-import DifferentialHeaderBadge, { validateDifferentialOnSave } from "./DifferentialCountTracker";
 import ResultEntryMobile from "./resultEntryMobile";
 import {
   addValueToValuesMap,
@@ -59,6 +58,7 @@ import {
   isOutOfRange,
   getReferenceRange,
   calculateAllDependents,
+  validateDifferentialCount,
 } from "@/lib/formulaUtils";
 
 export default function ResultEntry({ open, onClose, selectedReg, onSaveSuccess, canWrite, handlePrintReport }) {
@@ -138,31 +138,16 @@ export default function ResultEntry({ open, onClose, selectedReg, onSaveSuccess,
       const res = await fetch(`/api/registrations/${selectedReg.id}/parameters`).then((r) => r.json());
       if (res.success) {
         setResultRegDetails(res.registration);
-        const tests = res.registration.tests.map((rt) => rt.test);
+        const tests = (res.registration.tests || []).map((rt) => rt.test);
         setResultTests(tests);
-
-        // Collect all testParameterIds that are calculated by formulas
-        const calculatedParamIds = new Set();
-        tests.forEach((test) => {
-          (test.formulas || []).forEach((form) => {
-            const tp = (test.parameters || []).find(p => p.parameterId === form.outputParameterId);
-            if (tp) {
-              calculatedParamIds.add(tp.id);
-              calculatedParamIds.add(String(tp.id));
-            }
-          });
-        });
 
         const values = {};
         const overrides = new Set();
-        res.registration.results.forEach((r) => {
+        (res.registration.results || []).forEach((r) => {
           values[r.testParameterId] = r.value;
           if (r.value !== undefined && r.value !== null && r.value !== "") {
-            // Only lock as manual override if this is NOT a formula-calculated parameter
-            if (!calculatedParamIds.has(r.testParameterId)) {
-              overrides.add(r.testParameterId);
-              overrides.add(String(r.testParameterId));
-            }
+            overrides.add(r.testParameterId);
+            overrides.add(String(r.testParameterId));
           }
         });
         const initialCalculated = calculateAllDependents(values, tests, null, overrides, res.registration);
@@ -203,9 +188,9 @@ export default function ResultEntry({ open, onClose, selectedReg, onSaveSuccess,
       return;
     }
 
-    // --- Differential Count 100% Validation (Only on Final Save & Complete, not Draft / Auto-save) ---
+    // --- Differential Count 100% Validation (Only on Final Save, not Draft / Auto-save) ---
     if (!isDraft) {
-      const dlcError = validateDifferentialOnSave(resultTests, resultValues);
+      const dlcError = validateDifferentialCount(resultTests, resultValues);
       if (dlcError) {
         showToast(dlcError, "error");
         return;
@@ -887,30 +872,20 @@ export default function ResultEntry({ open, onClose, selectedReg, onSaveSuccess,
                                           {displaySerial}
                                         </TableCell>
                                         <TableCell colSpan={5} sx={{ fontWeight: 800, color: "primary.main", py: 1, px: { xs: 1, sm: 1.5 } }}>
-                                          <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", pr: { xs: 0.5, sm: 2 } }}>
-                                            <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                                              <Typography variant="subtitle2" sx={{ fontWeight: 800, color: "primary.main", fontSize: { xs: "0.82rem", sm: "0.875rem" } }}>
-                                                {param.name}
-                                              </Typography>
-                                              <Chip
-                                                label="Section Header"
-                                                size="small"
-                                                sx={{
-                                                  height: 20,
-                                                  fontSize: "0.68rem",
-                                                  fontWeight: 700,
-                                                  bgcolor: "rgba(15, 118, 110, 0.12)",
-                                                  color: "primary.main"
-                                                }}
-                                              />
-                                            </Box>
-
-                                            {/* Differential Count Total Badge */}
-                                            <DifferentialHeaderBadge
-                                              headerId={param.id}
-                                              headerName={param.name}
-                                              sectionParams={params}
-                                              resultValues={resultValues}
+                                          <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                                            <Typography variant="subtitle2" sx={{ fontWeight: 800, color: "primary.main", fontSize: { xs: "0.82rem", sm: "0.875rem" } }}>
+                                              {param.name}
+                                            </Typography>
+                                            <Chip
+                                              label="Section Header"
+                                              size="small"
+                                              sx={{
+                                                height: 20,
+                                                fontSize: "0.68rem",
+                                                fontWeight: 700,
+                                                bgcolor: "rgba(15, 118, 110, 0.12)",
+                                                color: "primary.main"
+                                              }}
                                             />
                                           </Box>
                                         </TableCell>
@@ -1259,10 +1234,10 @@ export default function ResultEntry({ open, onClose, selectedReg, onSaveSuccess,
               autoSaveStatus === "saving"
                 ? "Auto-saving..."
                 : autoSaveStatus === "error"
-                ? "Offline (Auto-save pending)"
-                : lastSavedTime
-                ? `Auto-saved (${lastSavedTime})`
-                : "Auto-save is ON"
+                  ? "Offline (Auto-save pending)"
+                  : lastSavedTime
+                    ? `Auto-saved (${lastSavedTime})`
+                    : "Auto-save is ON"
             }
             size="small"
             variant="outlined"

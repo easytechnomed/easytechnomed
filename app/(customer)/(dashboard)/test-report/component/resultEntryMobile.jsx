@@ -39,7 +39,6 @@ import {
   QrCode as QrCodeIcon,
   LocalHospital as DoctorIcon
 } from "@mui/icons-material";
-import DifferentialHeaderBadge from "./DifferentialCountTracker";
 import {
   isOutOfRange,
   getReferenceRange,
@@ -422,13 +421,6 @@ export default function ResultEntryMobile({
                                         {param.name}
                                       </Typography>
                                     </Box>
-
-                                    <DifferentialHeaderBadge
-                                      headerId={param.id}
-                                      headerName={param.name}
-                                      sectionParams={params}
-                                      resultValues={resultValues}
-                                    />
                                   </Box>
                                 );
                               }
