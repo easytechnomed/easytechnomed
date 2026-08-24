@@ -544,15 +544,140 @@ export async function GET(req, { params }) {
               line-height: 1.5;
             }
 
+            /* Responsive Styles for Mobile & Tablets */
+            @media screen and (max-width: 768px) {
+              body {
+                background-color: #f8fafc;
+              }
+              .no-print-bar {
+                display: none !important;
+              }
+              .invoice-wrapper {
+                margin: 12px auto 24px auto;
+                padding: 24px 18px;
+                border-radius: 12px;
+                width: calc(100% - 24px);
+                max-width: 100%;
+                box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04);
+              }
+              .header-grid {
+                flex-direction: column;
+                gap: 20px;
+                align-items: flex-start;
+                padding-bottom: 20px;
+              }
+              .invoice-meta {
+                text-align: left;
+                width: 100%;
+                border-top: 1px dashed #e2e8f0;
+                padding-top: 16px;
+              }
+              .meta-row {
+                justify-content: space-between;
+              }
+              .details-cards {
+                grid-template-columns: 1fr;
+                gap: 12px;
+                margin: 16px 0;
+              }
+              .table-box {
+                margin: 16px 0;
+                overflow-x: auto;
+                -webkit-overflow-scrolling: touch;
+              }
+              .invoice-table {
+                min-width: 480px;
+              }
+              .invoice-table th, .invoice-table td {
+                padding: 10px 8px;
+              }
+              .summary-container {
+                flex-direction: column-reverse;
+                gap: 16px;
+              }
+              .totals-box {
+                width: 100%;
+                background: #f8fafc;
+                border: 1px solid #e2e8f0;
+                border-radius: 8px;
+                padding: 14px 16px;
+              }
+              .words-box {
+                width: 100%;
+              }
+              .footer-section {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 20px;
+                margin-top: 24px;
+                padding-top: 18px;
+              }
+              .signature-box {
+                text-align: left;
+                width: 100%;
+                border-top: 1px dashed #e2e8f0;
+                padding-top: 16px;
+              }
+            }
+
+            @media screen and (max-width: 480px) {
+              .invoice-wrapper {
+                margin: 8px auto 16px auto;
+                padding: 18px 14px;
+                width: calc(100% - 16px);
+              }
+              .company-name {
+                font-size: 16px;
+              }
+              .invoice-title {
+                font-size: 19px;
+              }
+            }
+
             @media print {
               body { background: white; }
               .no-print-bar { display: none !important; }
               .invoice-wrapper {
-                margin: 0;
-                padding: 0;
-                border: none;
-                box-shadow: none;
-                max-width: 100%;
+                margin: 0 !important;
+                padding: 0 !important;
+                border: none !important;
+                box-shadow: none !important;
+                max-width: 100% !important;
+                width: 100% !important;
+              }
+              .header-grid {
+                flex-direction: row !important;
+              }
+              .invoice-meta {
+                text-align: right !important;
+                border-top: none !important;
+                padding-top: 0 !important;
+                width: auto !important;
+              }
+              .meta-row {
+                justify-content: flex-end !important;
+              }
+              .details-cards {
+                grid-template-columns: 1fr 1fr !important;
+              }
+              .summary-container {
+                flex-direction: row !important;
+              }
+              .totals-box {
+                width: 280px !important;
+                background: none !important;
+                border: none !important;
+                padding: 0 !important;
+              }
+              .footer-section {
+                flex-direction: row !important;
+                align-items: flex-end !important;
+              }
+              .signature-box {
+                text-align: right !important;
+                border-top: none !important;
+                padding-top: 0 !important;
+                width: auto !important;
               }
               @page {
                 size: A4;
