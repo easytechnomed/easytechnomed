@@ -68,7 +68,8 @@ function WorkspaceControllerContent() {
   const [renewWorkspaceModalOpen, setRenewWorkspaceModalOpen] = useState(false);
   const [renewingWorkspace, setRenewingWorkspace] = useState(null);
   const [renewDays, setRenewDays] = useState(30);
-  const [renewAmount, setRenewAmount] = useState("");
+  const [renewOriginalPrice, setRenewOriginalPrice] = useState(499);
+  const [renewAmount, setRenewAmount] = useState(399);
   const [renewPaymentMode, setRenewPaymentMode] = useState("UPI");
   const [renewReferenceNo, setRenewReferenceNo] = useState("");
   const [renewNotes, setRenewNotes] = useState("");
@@ -307,15 +308,46 @@ function WorkspaceControllerContent() {
   };
   const handleWorkspaceSubmit = handleCreateWorkspace;
 
+  const PLAN_PRESETS = [
+    { label: "+30 Days (1M)", val: 30, mrp: 499, amount: 399 },
+    { label: "+60 Days (2M)", val: 60, mrp: 999, amount: 799 },
+    { label: "+90 Days (3M)", val: 90, mrp: 1499, amount: 1099 },
+    { label: "+180 Days (6M)", val: 180, mrp: 2999, amount: 1999 },
+    { label: "+365 Days (1Y)", val: 365, mrp: 5999, amount: 3999 },
+  ];
+
   const handleOpenRenewWorkspace = (ws) => {
     setRenewingWorkspace(ws);
     setRenewDays(30);
-    setRenewAmount("");
+    setRenewOriginalPrice(499);
+    setRenewAmount(399);
     setRenewPaymentMode("UPI");
     setRenewReferenceNo("");
     setRenewNotes("");
     setRenewConfirmed(false);
     setRenewWorkspaceModalOpen(true);
+  };
+
+  const handleSelectPlanPreset = (preset) => {
+    setRenewDays(preset.val);
+    setRenewOriginalPrice(preset.mrp);
+    setRenewAmount(preset.amount);
+  };
+
+  const handleCustomDaysChange = (val) => {
+    setRenewDays(val);
+    const d = parseInt(val, 10);
+    if (!isNaN(d) && d > 0) {
+      const preset = PLAN_PRESETS.find((p) => p.val === d);
+      if (preset) {
+        setRenewOriginalPrice(preset.mrp);
+        setRenewAmount(preset.amount);
+      } else {
+        const calculatedMrp = Math.round((d / 30) * 499);
+        setRenewOriginalPrice(calculatedMrp);
+        setRenewAmount(Math.round(calculatedMrp * 0.8));
+      }
+    }
   };
 
   const handleOpenPaymentHistory = async (ws) => {
@@ -346,8 +378,11 @@ function WorkspaceControllerContent() {
     if (daysNum <= 0) return null;
     const now = new Date();
     let base = now;
-    if (ws?.expireAt && new Date(ws.expireAt) > now) {
-      base = new Date(ws.expireAt);
+    if (ws?.expireAt) {
+      const exp = new Date(ws.expireAt);
+      if (!isNaN(exp.getTime()) && exp > now) {
+        base = exp;
+      }
     }
     return new Date(base.getTime() + daysNum * 24 * 60 * 60 * 1000);
   };
@@ -365,6 +400,10 @@ function WorkspaceControllerContent() {
       return;
     }
 
+    const mrpNum = parseFloat(renewOriginalPrice) || 0;
+    const paidNum = parseFloat(renewAmount) || 0;
+    const discountNum = mrpNum > paidNum ? mrpNum - paidNum : 0;
+
     setRenewing(true);
     try {
       const res = await fetch(`/adminstration/api/workspaces/${renewingWorkspace.id}/renew`, {
@@ -372,7 +411,9 @@ function WorkspaceControllerContent() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           days: daysNum,
-          amount: renewAmount ? parseFloat(renewAmount) : 0,
+          amount: paidNum,
+          originalPrice: mrpNum,
+          discount: discountNum,
           paymentMode: renewPaymentMode,
           referenceNo: renewReferenceNo,
           notes: renewNotes,
@@ -1166,7 +1207,7 @@ function WorkspaceControllerContent() {
                   fullWidth
                   size="small"
                   value={renewDays}
-                  onChange={(e) => setRenewDays(e.target.value)}
+                  onChange={(e) => handleCustomDaysChange(e.target.value)}
                   onWheel={(e) => e.target.blur()}
                   slotProps={{ htmlInput: { min: 1, step: 1 } }}
                   helperText="Default is 30 days. Workspace and all associated admins will be extended."
@@ -1174,48 +1215,94 @@ function WorkspaceControllerContent() {
                 />
 
                 <Box sx={{ display: "flex", flexWrap: "wrap", gap: 0.8, mt: 1.5 }}>
-                  {[
-                    { label: "+30 Days (1M)", val: 30 },
-                    { label: "+60 Days (2M)", val: 60 },
-                    { label: "+90 Days (3M)", val: 90 },
-                    { label: "+180 Days (6M)", val: 180 },
-                    { label: "+365 Days (1Y)", val: 365 },
-                  ].map((preset) => (
+                  {PLAN_PRESETS.map((preset) => (
                     <Chip
                       key={preset.val}
                       label={preset.label}
                       size="small"
-                      onClick={() => setRenewDays(preset.val)}
+                      onClick={() => handleSelectPlanPreset(preset)}
                       color={Number(renewDays) === preset.val ? "primary" : "default"}
                       variant={Number(renewDays) === preset.val ? "filled" : "outlined"}
                       clickable
-                      sx={{ fontSize: "0.75rem" }}
+                      sx={{ fontSize: "0.75rem", fontWeight: 700 }}
                     />
                   ))}
                 </Box>
               </Box>
 
-              {/* Payment Details Section */}
+              {/* Payment & Pricing Details Section */}
               <Box sx={{ border: "1px solid rgba(0,0,0,0.1)", borderRadius: 2, p: 2, bgcolor: "#fafafa" }}>
                 <Typography variant="subtitle2" sx={{ fontWeight: 800, mb: 1.5, color: "text.primary", display: "flex", alignItems: "center", gap: 0.8 }}>
                   <RupeeIcon color="primary" fontSize="small" />
-                  2. Payment & Billing Details
+                  2. Pricing, Discount & Billing Details
                 </Typography>
                 
                 <Grid container spacing={1.5}>
                   <Grid size={{ xs: 12, sm: 6 }}>
                     <TextField
-                      label="Amount Received (₹)"
+                      label="Standard Plan MRP (₹)"
                       type="number"
                       fullWidth
                       size="small"
-                      placeholder="e.g. 1500 (0 for trial)"
+                      placeholder="e.g. 499"
+                      value={renewOriginalPrice}
+                      onChange={(e) => setRenewOriginalPrice(e.target.value)}
+                      onWheel={(e) => e.target.blur()}
+                      slotProps={{ htmlInput: { min: 0, step: "any" } }}
+                      helperText="Standard list / MRP rate"
+                    />
+                  </Grid>
+
+                  <Grid size={{ xs: 12, sm: 6 }}>
+                    <TextField
+                      label="Final Amount Received (₹)"
+                      type="number"
+                      fullWidth
+                      size="small"
+                      placeholder="e.g. 399 (0 for trial)"
                       value={renewAmount}
                       onChange={(e) => setRenewAmount(e.target.value)}
                       onWheel={(e) => e.target.blur()}
                       slotProps={{ htmlInput: { min: 0, step: "any" } }}
+                      helperText="Discounted amount paid by subscriber"
+                      required
                     />
                   </Grid>
+
+                  {/* Real-time Discount Breakdown Banner */}
+                  {(parseFloat(renewOriginalPrice) || 0) > (parseFloat(renewAmount) || 0) && (
+                    <Grid size={{ xs: 12 }}>
+                      <Paper
+                        variant="outlined"
+                        sx={{
+                          p: 1.2,
+                          px: 1.8,
+                          bgcolor: "#ecfdf5",
+                          borderColor: "#a7f3d0",
+                          borderRadius: 2,
+                          display: "flex",
+                          justifyContent: "space-between",
+                          alignItems: "center",
+                          flexWrap: "wrap",
+                          gap: 1,
+                        }}
+                      >
+                        <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                          <Typography variant="body2" sx={{ color: "#166534", fontWeight: 700, fontSize: "0.82rem" }}>
+                            🎉 Special Discount:
+                          </Typography>
+                          <Chip
+                            label={`-₹${((parseFloat(renewOriginalPrice) || 0) - (parseFloat(renewAmount) || 0)).toLocaleString("en-IN")} (${Math.round((((parseFloat(renewOriginalPrice) || 0) - (parseFloat(renewAmount) || 0)) / (parseFloat(renewOriginalPrice) || 1)) * 100)}% OFF)`}
+                            size="small"
+                            sx={{ bgcolor: "#dcfce7", color: "#15803d", fontWeight: 800, fontSize: "0.72rem" }}
+                          />
+                        </Box>
+                        <Typography variant="caption" sx={{ color: "#166534", fontWeight: 600 }}>
+                          MRP: ₹{renewOriginalPrice} → Final Paid: ₹{renewAmount}
+                        </Typography>
+                      </Paper>
+                    </Grid>
+                  )}
 
                   <Grid size={{ xs: 12, sm: 6 }}>
                     <FormControl fullWidth size="small">
@@ -1246,12 +1333,12 @@ function WorkspaceControllerContent() {
                     />
                   </Grid>
 
-                  <Grid size={{ xs: 12, sm: 6 }}>
+                  <Grid size={{ xs: 12 }}>
                     <TextField
                       label="Remarks / Notes"
                       fullWidth
                       size="small"
-                      placeholder="e.g. 3 Months Renewal"
+                      placeholder="e.g. 30 Days SaaS Plan Renewal"
                       value={renewNotes}
                       onChange={(e) => setRenewNotes(e.target.value)}
                     />
@@ -1259,18 +1346,44 @@ function WorkspaceControllerContent() {
                 </Grid>
               </Box>
 
-              {calculateNewWorkspaceExpiry(renewingWorkspace, renewDays) && (
-                <Alert severity="success" sx={{ borderRadius: 2, py: 0.5 }}>
-                  <Typography variant="body2" sx={{ fontSize: "0.82rem" }}>
-                    New Expiry Date will be:{" "}
-                    <strong>
-                      {calculateNewWorkspaceExpiry(renewingWorkspace, renewDays).toLocaleDateString("en-IN", {
-                        day: "numeric",
-                        month: "long",
-                        year: "numeric",
-                      })}
-                    </strong>
-                  </Typography>
+                {calculateNewWorkspaceExpiry(renewingWorkspace, renewDays) && (
+                <Alert
+                  severity={
+                    renewingWorkspace?.expireAt && new Date(renewingWorkspace.expireAt) > new Date()
+                      ? "info"
+                      : "success"
+                  }
+                  sx={{ borderRadius: 2, py: 1 }}
+                >
+                  <Box sx={{ display: "flex", flexDirection: "column", gap: 0.5 }}>
+                    {renewingWorkspace?.expireAt && new Date(renewingWorkspace.expireAt) > new Date() ? (
+                      <Typography variant="caption" sx={{ color: "text.primary", fontWeight: 600 }}>
+                        ⏳ <strong>Active Plan:</strong> Current validity is till{" "}
+                        <strong>
+                          {new Date(renewingWorkspace.expireAt).toLocaleDateString("en-IN", {
+                            day: "numeric",
+                            month: "short",
+                            year: "numeric",
+                          })}
+                        </strong>
+                        . New <strong>+{renewDays || 0} days</strong> will be added on top of current expiry date.
+                      </Typography>
+                    ) : (
+                      <Typography variant="caption" sx={{ color: "text.secondary", fontWeight: 600 }}>
+                        ⚡ Plan extension of <strong>+{renewDays || 0} days</strong> will start from today.
+                      </Typography>
+                    )}
+                    <Typography variant="body2" sx={{ fontSize: "0.85rem", color: "text.primary" }}>
+                      New Expiry Date will be:{" "}
+                      <strong style={{ color: "#0f766e" }}>
+                        {calculateNewWorkspaceExpiry(renewingWorkspace, renewDays).toLocaleDateString("en-IN", {
+                          day: "numeric",
+                          month: "long",
+                          year: "numeric",
+                        })}
+                      </strong>
+                    </Typography>
+                  </Box>
                 </Alert>
               )}
 
@@ -1613,7 +1726,7 @@ function WorkspaceControllerContent() {
 
                     {/* Notes / Remarks */}
                     {log.notes && log.notes !== "—" && (
-                      <Box sx={{ display: "flex", alignItems: "flex-start", gap: 0.8, px: 0.5 }}>
+                      <Box sx={{ display: "flex", alignItems: "flex-start", gap: 0.8, px: 0.5, mb: 1 }}>
                         <Typography variant="caption" sx={{ color: "text.secondary", fontWeight: 600, fontSize: "0.75rem" }}>
                           Note:
                         </Typography>
@@ -1622,6 +1735,31 @@ function WorkspaceControllerContent() {
                         </Typography>
                       </Box>
                     )}
+
+                    {/* Download Bill Action */}
+                    <Button
+                      variant="outlined"
+                      size="small"
+                      fullWidth
+                      startIcon={<ReceiptLongIcon fontSize="small" />}
+                      onClick={() => window.open(`/api/print-subscription-invoice/${log.uid || log.id}`, "_blank")}
+                      sx={{
+                        mt: 1,
+                        py: 0.6,
+                        fontSize: "0.78rem",
+                        fontWeight: 700,
+                        textTransform: "none",
+                        borderRadius: 2,
+                        borderColor: "rgba(124, 58, 237, 0.4)",
+                        color: "#7c3aed",
+                        "&:hover": {
+                          bgcolor: "rgba(124, 58, 237, 0.08)",
+                          borderColor: "#7c3aed",
+                        },
+                      }}
+                    >
+                      Download Bill (PDF)
+                    </Button>
                   </Paper>
                 ))}
               </Box>
@@ -1650,6 +1788,9 @@ function WorkspaceControllerContent() {
                       <TableCell sx={{ fontWeight: 700 }}>Ref / UTR No</TableCell>
                       <TableCell sx={{ fontWeight: 700 }}>Valid Until</TableCell>
                       <TableCell sx={{ fontWeight: 700 }}>Remarks</TableCell>
+                      <TableCell sx={{ fontWeight: 700 }} align="center">
+                        Invoice
+                      </TableCell>
                     </TableRow>
                   </TableHead>
                   <TableBody>
@@ -1716,6 +1857,31 @@ function WorkspaceControllerContent() {
                         </TableCell>
                         <TableCell sx={{ fontSize: "0.75rem", color: "text.secondary", maxWidth: 140 }}>
                           {log.notes || "—"}
+                        </TableCell>
+                        <TableCell align="center">
+                          <Button
+                            variant="outlined"
+                            size="small"
+                            startIcon={<ReceiptLongIcon sx={{ fontSize: "14px !important" }} />}
+                            onClick={() => window.open(`/api/print-subscription-invoice/${log.uid || log.id}`, "_blank")}
+                            sx={{
+                              py: 0.3,
+                              px: 1,
+                              fontSize: "0.72rem",
+                              fontWeight: 700,
+                              textTransform: "none",
+                              borderRadius: 1.5,
+                              whiteSpace: "nowrap",
+                              borderColor: "rgba(124, 58, 237, 0.4)",
+                              color: "#7c3aed",
+                              "&:hover": {
+                                bgcolor: "rgba(124, 58, 237, 0.08)",
+                                borderColor: "#7c3aed",
+                              },
+                            }}
+                          >
+                            Download Bill
+                          </Button>
                         </TableCell>
                       </TableRow>
                     ))}

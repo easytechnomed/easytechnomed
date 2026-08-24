@@ -1470,15 +1470,23 @@ _Thank you for choosing us for your health diagnostics!_`;
                           localStorage.setItem("registration_send_whatsapp", String(val));
                         } catch (err) {}
                       }}
-                      icon={<WhatsAppIcon sx={{ color: "#94a3b8" }} />}
-                      checkedIcon={<WhatsAppIcon sx={{ color: "#25D366" }} />}
+                      color="success"
                       size="small"
+                      sx={{
+                        color: "#94a3b8",
+                        "&.Mui-checked": {
+                          color: "#16a34a",
+                        },
+                      }}
                     />
                   }
                   label={
-                    <Typography variant="body2" sx={{ fontWeight: 600, color: sendWhatsapp ? "#166534" : "text.secondary", userSelect: "none" }}>
-                      Send Report Link via WhatsApp
-                    </Typography>
+                    <Box sx={{ display: "flex", alignItems: "center", gap: 0.8 }}>
+                      <WhatsAppIcon sx={{ color: sendWhatsapp ? "#25D366" : "#94a3b8", fontSize: 20 }} />
+                      <Typography variant="body2" sx={{ fontWeight: 600, color: sendWhatsapp ? "#166534" : "text.secondary", userSelect: "none" }}>
+                        Send Report Link via WhatsApp
+                      </Typography>
+                    </Box>
                   }
                   sx={{
                     m: 0,
@@ -1489,6 +1497,7 @@ _Thank you for choosing us for your health diagnostics!_`;
                     backgroundColor: sendWhatsapp ? "#f0fdf4" : "#f8fafc",
                     border: sendWhatsapp ? "1px solid #bbf7d0" : "1px solid #e2e8f0",
                     transition: "all 0.2s ease",
+                    cursor: "pointer",
                   }}
                 />
               </Box>

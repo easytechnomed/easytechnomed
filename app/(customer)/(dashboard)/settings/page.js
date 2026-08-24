@@ -22,6 +22,7 @@ import { useSearchParams, useRouter } from "next/navigation";
 import { useAdminPermissions } from "@/lib/clientAuth";
 import TestsClient from "./tests/testsClient";
 import PdfSettingsClient from "./pdf/pdfClient";
+import PaymentsClient from "./payments/paymentsClient";
 
 function SettingsContent({ defaultSection = "profile" }) {
   const { hasPermission } = useAdminPermissions();
@@ -32,7 +33,7 @@ function SettingsContent({ defaultSection = "profile" }) {
   const [activeSection, setActiveSection] = useState(defaultSection);
 
   useEffect(() => {
-    if (tab && ["profile", "tests", "pdf"].includes(tab)) {
+    if (tab && ["profile", "tests", "pdf", "payments"].includes(tab)) {
       setActiveSection(tab);
     }
   }, [tab]);
@@ -271,6 +272,10 @@ function SettingsContent({ defaultSection = "profile" }) {
 
       {activeSection === "pdf" && (
         <PdfSettingsClient />
+      )}
+
+      {activeSection === "payments" && (
+        <PaymentsClient />
       )}
 
       <Snackbar

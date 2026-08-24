@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { verifySuperAdminAPI } from "@/lib/auth";
+import { encodePaymentUid } from "@/lib/saasInvoice";
 
 export async function PUT(req, { params }) {
   try {
@@ -33,15 +34,28 @@ export async function PUT(req, { params }) {
     const now = new Date();
     // If workspace already has an active future expiry date, extend from that date; otherwise extend from now
     let baseDate = now;
-    if (workspace.expireAt && new Date(workspace.expireAt) > now) {
-      baseDate = new Date(workspace.expireAt);
+    if (workspace.expireAt) {
+      const currentExp = new Date(workspace.expireAt);
+      if (!isNaN(currentExp.getTime()) && currentExp > now) {
+        baseDate = currentExp;
+      }
     }
 
     const newExpireAt = new Date(baseDate.getTime() + days * 24 * 60 * 60 * 1000);
     const paymentAmount = !isNaN(parseFloat(body.amount)) ? parseFloat(body.amount) : 0;
+    const originalPrice = !isNaN(parseFloat(body.originalPrice)) && parseFloat(body.originalPrice) > 0
+      ? parseFloat(body.originalPrice)
+      : paymentAmount > 0 ? paymentAmount : 0;
+    const discount = originalPrice > paymentAmount ? originalPrice - paymentAmount : 0;
+
     const paymentMode = body.paymentMode || "Cash";
     const referenceNo = body.referenceNo?.trim() || null;
-    const notes = body.notes?.trim() || null;
+    let notes = body.notes?.trim() || null;
+
+    if (originalPrice > 0 && discount > 0) {
+      const discountTag = `[MRP:₹${originalPrice}|DISC:₹${discount}]`;
+      notes = notes ? `${notes} ${discountTag}` : discountTag;
+    }
 
     const [updatedWorkspace, paymentRecord] = await prisma.$transaction([
       prisma.workspace.update({
@@ -67,6 +81,12 @@ export async function PUT(req, { params }) {
           expireAt: newExpireAt,
         },
       }),
+      prisma.admin.updateMany({
+        where: { workspaceId },
+        data: {
+          isActive: true,
+        },
+      }),
     ]);
 
     return NextResponse.json({
@@ -85,6 +105,7 @@ export async function PUT(req, { params }) {
       },
       payment: {
         id: paymentRecord.id,
+        uid: encodePaymentUid(paymentRecord.id),
         amount: Number(paymentRecord.amount),
         days: paymentRecord.days,
         paymentMode: paymentRecord.paymentMode,

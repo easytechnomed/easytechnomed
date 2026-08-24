@@ -1,6 +1,7 @@
-  import { NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { verifySuperAdminAPI } from "@/lib/auth";
+import { encodePaymentUid } from "@/lib/saasInvoice";
 
 export async function GET(req, { params }) {
   try {
@@ -34,6 +35,7 @@ export async function GET(req, { params }) {
 
     const serializedPayments = payments.map((p) => ({
       id: p.id,
+      uid: encodePaymentUid(p.id),
       amount: Number(p.amount),
       days: p.days,
       paymentMode: p.paymentMode,
