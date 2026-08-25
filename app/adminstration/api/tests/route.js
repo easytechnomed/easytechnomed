@@ -12,7 +12,7 @@ function serializeTests(tests) {
           return {
             ...rest,
             name: parameter.name,
-            unit: tp.unit || parameter.unit,
+            unit: tp.unit !== undefined && tp.unit !== null ? tp.unit : (parameter.unit || ""),
             valueType: tp.valueType || parameter.valueType || "NUMERIC",
             options: tp.options || parameter.options || null,
             minValMale: parameter.minValMale,
@@ -44,7 +44,7 @@ function serializeSingleTest(test) {
         return {
           ...rest,
           name: parameter.name,
-          unit: tp.unit || parameter.unit,
+          unit: tp.unit !== undefined && tp.unit !== null ? tp.unit : (parameter.unit || ""),
           valueType: tp.valueType || parameter.valueType || "NUMERIC",
           options: tp.options || parameter.options || null,
           minValMale: parameter.minValMale,
@@ -180,26 +180,36 @@ export async function POST(req) {
 
       // Helper: resolve or upsert a parameter record in the master dictionary
       const resolveParameter = async (p) => {
-        const normName = p.name.trim();
-        let parameter = await tx.parameter.findFirst({ where: { name: { equals: normName } } });
+        const normName = (p.name || "").trim();
+        let parameter = p.parameterId
+          ? await tx.parameter.findUnique({ where: { id: p.parameterId } })
+          : null;
+        if (!parameter && normName) {
+          parameter = await tx.parameter.findFirst({
+            where: {
+              name: { equals: normName, mode: "insensitive" },
+              workspaceId: null
+            }
+          });
+        }
         const isNumeric = (p.valueType || parameter?.valueType || "NUMERIC") === "NUMERIC";
         const pData = {
           valueType: p.valueType || (parameter?.valueType ?? "NUMERIC"),
-          options: p.options !== undefined ? p.options : (parameter?.options ?? null),
-          unit: p.unit && p.unit.trim() !== "" ? p.unit.trim() : (parameter?.unit ?? null),
-          minValMale: isNumeric && p.minValMale !== "" && p.minValMale !== undefined && !isNaN(parseFloat(p.minValMale)) ? parseFloat(p.minValMale) : (isNumeric ? (parameter?.minValMale ?? null) : null),
-          maxValMale: isNumeric && p.maxValMale !== "" && p.maxValMale !== undefined && !isNaN(parseFloat(p.maxValMale)) ? parseFloat(p.maxValMale) : (isNumeric ? (parameter?.maxValMale ?? null) : null),
-          normalRangeMale: p.normalRangeMale && p.normalRangeMale.trim() !== "" ? p.normalRangeMale.trim() : (parameter?.normalRangeMale ?? null),
-          minValFemale: isNumeric && p.minValFemale !== "" && p.minValFemale !== undefined && !isNaN(parseFloat(p.minValFemale)) ? parseFloat(p.minValFemale) : (isNumeric ? (parameter?.minValFemale ?? null) : null),
-          maxValFemale: isNumeric && p.maxValFemale !== "" && p.maxValFemale !== undefined && !isNaN(parseFloat(p.maxValFemale)) ? parseFloat(p.maxValFemale) : (isNumeric ? (parameter?.maxValFemale ?? null) : null),
-          normalRangeFemale: p.normalRangeFemale && p.normalRangeFemale.trim() !== "" ? p.normalRangeFemale.trim() : (parameter?.normalRangeFemale ?? null),
-          minValBaby: isNumeric && p.minValBaby !== "" && p.minValBaby !== undefined && !isNaN(parseFloat(p.minValBaby)) ? parseFloat(p.minValBaby) : (isNumeric ? (parameter?.minValBaby ?? null) : null),
-          maxValBaby: isNumeric && p.maxValBaby !== "" && p.maxValBaby !== undefined && !isNaN(parseFloat(p.maxValBaby)) ? parseFloat(p.maxValBaby) : (isNumeric ? (parameter?.maxValBaby ?? null) : null),
-          normalRangeBaby: p.normalRangeBaby && p.normalRangeBaby.trim() !== "" ? p.normalRangeBaby.trim() : (parameter?.normalRangeBaby ?? null),
-          normalRangeDefault: p.normalRangeDefault && p.normalRangeDefault.trim() !== "" ? p.normalRangeDefault.trim() : (parameter?.normalRangeDefault ?? null),
+          options: p.options !== undefined ? (p.options?.trim() || null) : (parameter?.options ?? null),
+          unit: p.unit !== undefined ? (p.unit?.trim() || null) : (parameter?.unit ?? null),
+          minValMale: isNumeric && p.minValMale !== "" && p.minValMale !== undefined && !isNaN(parseFloat(p.minValMale)) ? parseFloat(p.minValMale) : null,
+          maxValMale: isNumeric && p.maxValMale !== "" && p.maxValMale !== undefined && !isNaN(parseFloat(p.maxValMale)) ? parseFloat(p.maxValMale) : null,
+          normalRangeMale: p.normalRangeMale !== undefined ? (p.normalRangeMale?.trim() || null) : (parameter?.normalRangeMale ?? null),
+          minValFemale: isNumeric && p.minValFemale !== "" && p.minValFemale !== undefined && !isNaN(parseFloat(p.minValFemale)) ? parseFloat(p.minValFemale) : null,
+          maxValFemale: isNumeric && p.maxValFemale !== "" && p.maxValFemale !== undefined && !isNaN(parseFloat(p.maxValFemale)) ? parseFloat(p.maxValFemale) : null,
+          normalRangeFemale: p.normalRangeFemale !== undefined ? (p.normalRangeFemale?.trim() || null) : (parameter?.normalRangeFemale ?? null),
+          minValBaby: isNumeric && p.minValBaby !== "" && p.minValBaby !== undefined && !isNaN(parseFloat(p.minValBaby)) ? parseFloat(p.minValBaby) : null,
+          maxValBaby: isNumeric && p.maxValBaby !== "" && p.maxValBaby !== undefined && !isNaN(parseFloat(p.maxValBaby)) ? parseFloat(p.maxValBaby) : null,
+          normalRangeBaby: p.normalRangeBaby !== undefined ? (p.normalRangeBaby?.trim() || null) : (parameter?.normalRangeBaby ?? null),
+          normalRangeDefault: p.normalRangeDefault !== undefined ? (p.normalRangeDefault?.trim() || null) : (parameter?.normalRangeDefault ?? null),
         };
         if (!parameter) {
-          parameter = await tx.parameter.create({ data: { name: normName, ...pData } });
+          parameter = await tx.parameter.create({ data: { name: normName, workspaceId: null, ...pData } });
         } else {
           parameter = await tx.parameter.update({ where: { id: parameter.id }, data: pData });
         }
@@ -221,6 +231,7 @@ export async function POST(req) {
             order: parseInt(p.order) || 1,
             isHeader: true,
             parentId: null,
+            unit: null,
             valueType: p.valueType || parameter.valueType || null,
             options: p.options || parameter.options || null,
             isDeleted: false,
@@ -244,8 +255,9 @@ export async function POST(req) {
             order: parseInt(p.order) || 1,
             isHeader: false,
             parentId: resolvedParentId,
+            unit: p.unit !== undefined ? (p.unit?.trim() || null) : null,
             valueType: p.valueType || parameter.valueType || null,
-            options: p.options || parameter.options || null,
+            options: p.options !== undefined ? (p.options?.trim() || null) : (parameter?.options || null),
             isDeleted: false,
           }
         });

@@ -62,7 +62,7 @@ export async function GET() {
         return {
           ...rest,
           name: parameter.name,
-          unit: tp.unit || parameter.unit || "",
+          unit: tp.unit !== undefined && tp.unit !== null ? tp.unit : (parameter.unit || ""),
           valueType: tp.valueType || parameter.valueType || "NUMERIC",
           options: tp.options || parameter.options || null,
           minValMale: parameter.minValMale,

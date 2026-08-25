@@ -228,12 +228,11 @@ export default function DefaultTestsPage() {
         setTotalPages(res.pagination.totalPages);
         setTotalCount(res.pagination.totalCount);
         // Preserve selectedTest reference if it still exists in the fresh list
-        if (selectedTest) {
-          const freshSelected = res.tests.find((t) => t.id === selectedTest.id);
-          if (freshSelected) {
-            setSelectedTest(freshSelected);
-          }
-        }
+        setSelectedTest((prevSelected) => {
+          if (!prevSelected) return null;
+          const freshSelected = res.tests.find((t) => t.id === prevSelected.id);
+          return freshSelected || prevSelected;
+        });
       } else {
         toast.error(res.error || "Failed to load default tests.");
       }

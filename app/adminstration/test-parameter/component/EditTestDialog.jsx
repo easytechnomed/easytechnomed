@@ -1063,9 +1063,9 @@ export default function EditTestDialog({ open, onClose, test, parameterDictionar
                                       freeSolo
                                       size="small"
                                       options={COMMON_LAB_UNITS}
-                                      value={param.unit}
-                                      onChange={(event, newValue) => handleParamChange(index, "unit", newValue || "")}
-                                      onInputChange={(event, newInputValue) => handleParamChange(index, "unit", newInputValue)}
+                                      value={param.unit || ""}
+                                      onChange={(event, newValue) => handleParamChange(index, "unit", newValue ? String(newValue).trim() : "")}
+                                      onInputChange={(event, newInputValue) => handleParamChange(index, "unit", newInputValue !== undefined ? String(newInputValue).trim() : "")}
                                       renderInput={(params) => (
                                         <TextField {...params} placeholder="Unit (optional)" sx={{ "& .MuiOutlinedInput-root": { borderRadius: 1 } }} />
                                       )}
@@ -1134,7 +1134,7 @@ export default function EditTestDialog({ open, onClose, test, parameterDictionar
                                     <TextField
                                       fullWidth
                                       size="small"
-                                      value={param.normalRangeDefault}
+                                      value={param.normalRangeDefault || ""}
                                       onChange={(e) => handleParamChange(index, "normalRangeDefault", e.target.value)}
                                       placeholder="e.g. Negative (< 1:80)"
                                       sx={{ "& .MuiOutlinedInput-root": { borderRadius: 1 } }}
@@ -1185,9 +1185,9 @@ export default function EditTestDialog({ open, onClose, test, parameterDictionar
                                       freeSolo
                                       size="small"
                                       options={COMMON_LAB_UNITS}
-                                      value={param.unit}
-                                      onChange={(event, newValue) => handleParamChange(index, "unit", newValue || "")}
-                                      onInputChange={(event, newInputValue) => handleParamChange(index, "unit", newInputValue)}
+                                      value={param.unit || ""}
+                                      onChange={(event, newValue) => handleParamChange(index, "unit", newValue ? String(newValue).trim() : "")}
+                                      onInputChange={(event, newInputValue) => handleParamChange(index, "unit", newInputValue !== undefined ? String(newInputValue).trim() : "")}
                                       renderInput={(params) => (
                                         <TextField {...params} placeholder="e.g. g/dL" sx={{ "& .MuiOutlinedInput-root": { borderRadius: 1 } }} />
                                       )}
@@ -1218,7 +1218,7 @@ export default function EditTestDialog({ open, onClose, test, parameterDictionar
                                       size="small"
                                       type="number"
                                       inputProps={{ step: "any" }}
-                                      value={param.minValMale}
+                                      value={param.minValMale || ""}
                                       onChange={(e) => handleParamChange(index, "minValMale", e.target.value)}
                                       placeholder="Min"
                                       sx={{ "& .MuiOutlinedInput-root": { borderRadius: 1 } }}
@@ -1232,7 +1232,7 @@ export default function EditTestDialog({ open, onClose, test, parameterDictionar
                                       size="small"
                                       type="number"
                                       inputProps={{ step: "any" }}
-                                      value={param.maxValMale}
+                                      value={param.maxValMale || ""}
                                       onChange={(e) => handleParamChange(index, "maxValMale", e.target.value)}
                                       placeholder="Max"
                                       sx={{ "& .MuiOutlinedInput-root": { borderRadius: 1 } }}
@@ -1244,7 +1244,7 @@ export default function EditTestDialog({ open, onClose, test, parameterDictionar
                                     <TextField
                                       fullWidth
                                       size="small"
-                                      value={param.normalRangeMale}
+                                      value={param.normalRangeMale || ""}
                                       onChange={(e) => handleParamChange(index, "normalRangeMale", e.target.value)}
                                       placeholder="e.g. 13.0 - 17.0"
                                       sx={{ "& .MuiOutlinedInput-root": { borderRadius: 1 } }}
@@ -1258,7 +1258,7 @@ export default function EditTestDialog({ open, onClose, test, parameterDictionar
                                       size="small"
                                       type="number"
                                       inputProps={{ step: "any" }}
-                                      value={param.minValFemale}
+                                      value={param.minValFemale || ""}
                                       onChange={(e) => handleParamChange(index, "minValFemale", e.target.value)}
                                       placeholder="Min"
                                       sx={{ "& .MuiOutlinedInput-root": { borderRadius: 1 } }}
@@ -1272,7 +1272,7 @@ export default function EditTestDialog({ open, onClose, test, parameterDictionar
                                       size="small"
                                       type="number"
                                       inputProps={{ step: "any" }}
-                                      value={param.maxValFemale}
+                                      value={param.maxValFemale || ""}
                                       onChange={(e) => handleParamChange(index, "maxValFemale", e.target.value)}
                                       placeholder="Max"
                                       sx={{ "& .MuiOutlinedInput-root": { borderRadius: 1 } }}
@@ -1284,7 +1284,7 @@ export default function EditTestDialog({ open, onClose, test, parameterDictionar
                                     <TextField
                                       fullWidth
                                       size="small"
-                                      value={param.normalRangeFemale}
+                                      value={param.normalRangeFemale || ""}
                                       onChange={(e) => handleParamChange(index, "normalRangeFemale", e.target.value)}
                                       placeholder="e.g. 12.0 - 15.0"
                                       sx={{ "& .MuiOutlinedInput-root": { borderRadius: 1 } }}
@@ -1298,7 +1298,7 @@ export default function EditTestDialog({ open, onClose, test, parameterDictionar
                                       size="small"
                                       type="number"
                                       inputProps={{ step: "any" }}
-                                      value={param.minValBaby}
+                                      value={param.minValBaby || ""}
                                       onChange={(e) => handleParamChange(index, "minValBaby", e.target.value)}
                                       placeholder="Min"
                                       sx={{ "& .MuiOutlinedInput-root": { borderRadius: 1 } }}
@@ -1312,7 +1312,7 @@ export default function EditTestDialog({ open, onClose, test, parameterDictionar
                                       size="small"
                                       type="number"
                                       inputProps={{ step: "any" }}
-                                      value={param.maxValBaby}
+                                      value={param.maxValBaby || ""}
                                       onChange={(e) => handleParamChange(index, "maxValBaby", e.target.value)}
                                       placeholder="Max"
                                       sx={{ "& .MuiOutlinedInput-root": { borderRadius: 1 } }}
@@ -1324,7 +1324,7 @@ export default function EditTestDialog({ open, onClose, test, parameterDictionar
                                     <TextField
                                       fullWidth
                                       size="small"
-                                      value={param.normalRangeBaby}
+                                      value={param.normalRangeBaby || ""}
                                       onChange={(e) => handleParamChange(index, "normalRangeBaby", e.target.value)}
                                       placeholder="e.g. 11.0 - 14.0"
                                       sx={{ "& .MuiOutlinedInput-root": { borderRadius: 1 } }}
@@ -1336,7 +1336,7 @@ export default function EditTestDialog({ open, onClose, test, parameterDictionar
                                     <TextField
                                       fullWidth
                                       size="small"
-                                      value={param.normalRangeDefault}
+                                      value={param.normalRangeDefault || ""}
                                       onChange={(e) => handleParamChange(index, "normalRangeDefault", e.target.value)}
                                       placeholder="e.g. 12.0 - 17.0"
                                       sx={{ "& .MuiOutlinedInput-root": { borderRadius: 1 } }}

@@ -16,7 +16,7 @@ function serializeRegistration(reg) {
               ...rest,
               name: parameter.name,
               code: parameter.code,
-              unit: tp.unit || parameter.unit,
+              unit: tp.unit !== undefined && tp.unit !== null ? tp.unit : (parameter.unit || ""),
               valueType: tp.valueType || parameter.valueType || "NUMERIC",
               options: tp.options || parameter.options || null,
               minValMale: parameter.minValMale,
