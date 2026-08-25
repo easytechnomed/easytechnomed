@@ -844,7 +844,7 @@ export default function TestReportPage() {
   };
 
   return (
-    <Box sx={{ flexGrow: 1 }}>
+    <Box sx={{ flexGrow: 1, width: "100%", maxWidth: "100%", overflowX: "hidden" }}>
       {/* Header section with export utilities */}
       <Box sx={{ display: "flex", flexWrap: "wrap", justifyContent: "space-between", alignItems: "center", mb: 3, gap: 2 }}>
         <Typography variant="h5" sx={{ fontWeight: 800, color: "primary.main" }}>
@@ -960,7 +960,18 @@ export default function TestReportPage() {
       </Card>
 
       {/* Registrations List Table */}
-      <TableContainer component={Paper} variant="outlined" sx={{ overflow: "visible" }}>
+      <TableContainer
+        component={Paper}
+        variant="outlined"
+        sx={{
+          width: "100%",
+          maxWidth: "100%",
+          overflowX: "auto",
+          WebkitOverflowScrolling: "touch",
+          borderRadius: total > 0 ? "8px 8px 0 0" : "8px",
+          borderBottom: total > 0 ? "none" : undefined,
+        }}
+      >
         {loading ? (
           <Box sx={{ display: "flex", flexDirection: "column", justifyContent: "center", alignItems: "center", py: 8, gap: 2 }}>
             <CircularProgress size={40} />
@@ -972,35 +983,45 @@ export default function TestReportPage() {
           <Table size="small" sx={{ minWidth: 800 }}>
             <TableHead
               sx={{
-                position: "sticky",
-                top: { xs: 56, sm: 64 },
-                zIndex: 10,
                 bgcolor: "#e2e8f0",
                 "& th": {
-                  position: "sticky",
-                  top: { xs: 56, sm: 64 },
-                  zIndex: 10,
                   bgcolor: "#e2e8f0",
                   fontWeight: 700,
                   borderBottom: "2px solid #cbd5e1",
                   boxShadow: "0 2px 4px rgba(0,0,0,0.06)",
+                  whiteSpace: "nowrap",
                 },
               }}
             >
               <TableRow>
-                <TableCell sx={{ fontWeight: 700, fontSize: "0.82rem", width: "50px" }}>SNO</TableCell>
-                <TableCell sx={{ fontWeight: 700, fontSize: "0.82rem", width: "60px" }} align="center">Actions</TableCell>
-                <TableCell sx={{ fontWeight: 700, fontSize: "0.82rem" }}>Reg.Date</TableCell>
-                <TableCell sx={{ fontWeight: 700, fontSize: "0.82rem" }}>Reg.No</TableCell>
-                <TableCell sx={{ fontWeight: 700, fontSize: "0.82rem" }}>Pat.ID</TableCell>
-                <TableCell sx={{ fontWeight: 700, fontSize: "0.82rem" }}>Test ID(s)</TableCell>
-                <TableCell sx={{ fontWeight: 700, fontSize: "0.82rem" }}>Patient Name</TableCell>
-                <TableCell sx={{ fontWeight: 700, fontSize: "0.82rem" }}>Gender</TableCell>
-                <TableCell sx={{ fontWeight: 700, fontSize: "0.82rem" }}>Age</TableCell>
-                <TableCell sx={{ fontWeight: 700, fontSize: "0.82rem" }}>Mobile No</TableCell>
-                <TableCell sx={{ fontWeight: 700, fontSize: "0.82rem" }}>Rpt.Time</TableCell>
-                <TableCell sx={{ fontWeight: 700, fontSize: "0.82rem" }}>Barcode</TableCell>
-                <TableCell sx={{ fontWeight: 700, fontSize: "0.82rem" }}>Status</TableCell>
+                <TableCell sx={{ fontWeight: 700, fontSize: "0.82rem", width: "50px", whiteSpace: "nowrap" }}>SNO</TableCell>
+                <TableCell sx={{ fontWeight: 700, fontSize: "0.82rem", width: "60px", whiteSpace: "nowrap" }} align="center">Actions</TableCell>
+                <TableCell sx={{ fontWeight: 700, fontSize: "0.82rem", whiteSpace: "nowrap" }}>Reg.Date</TableCell>
+                <TableCell sx={{ fontWeight: 700, fontSize: "0.82rem", whiteSpace: "nowrap" }}>Reg.No</TableCell>
+                <TableCell sx={{ fontWeight: 700, fontSize: "0.82rem", whiteSpace: "nowrap" }}>Pat.ID</TableCell>
+                <TableCell sx={{ fontWeight: 700, fontSize: "0.82rem", whiteSpace: "nowrap" }}>Test ID(s)</TableCell>
+                <TableCell sx={{ fontWeight: 700, fontSize: "0.82rem", whiteSpace: "nowrap" }}>Patient Name</TableCell>
+                <TableCell sx={{ fontWeight: 700, fontSize: "0.82rem", whiteSpace: "nowrap" }}>Gender</TableCell>
+                <TableCell sx={{ fontWeight: 700, fontSize: "0.82rem", whiteSpace: "nowrap" }}>Age</TableCell>
+                <TableCell sx={{ fontWeight: 700, fontSize: "0.82rem", whiteSpace: "nowrap" }}>Mobile No</TableCell>
+                <TableCell sx={{ fontWeight: 700, fontSize: "0.82rem", whiteSpace: "nowrap" }}>Rpt.Time</TableCell>
+                <TableCell sx={{ fontWeight: 700, fontSize: "0.82rem", whiteSpace: "nowrap" }}>Barcode</TableCell>
+                <TableCell
+                  align="center"
+                  sx={{
+                    fontWeight: 700,
+                    fontSize: "0.82rem",
+                    whiteSpace: "nowrap",
+                    position: { xs: "static", md: "sticky" },
+                    right: { xs: "auto", md: 0 },
+                    bgcolor: "#e2e8f0",
+                    zIndex: { xs: "auto", md: 2 },
+                    boxShadow: { xs: "none", md: "-3px 0 6px -2px rgba(0,0,0,0.12)" },
+                    borderLeft: { xs: "none", md: "1px solid #cbd5e1" },
+                  }}
+                >
+                  Status
+                </TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
@@ -1019,12 +1040,17 @@ export default function TestReportPage() {
                     <TableRow
                       key={reg.id}
                       sx={{
-                        "&:hover": { bgcolor: "rgba(15, 118, 110, 0.04)" },
-                        transition: "background-color 0.2s"
+                        "&:hover": {
+                          bgcolor: "rgba(15, 118, 110, 0.04)",
+                          "& .sticky-status-col": {
+                            bgcolor: { xs: "transparent", md: "#f0fdfa" },
+                          },
+                        },
+                        transition: "background-color 0.2s",
                       }}
                     >
-                      <TableCell sx={{ width: "50px" }}>{idx + 1}</TableCell>
-                      <TableCell align="center" sx={{ width: "60px" }}>
+                      <TableCell sx={{ width: "50px", whiteSpace: "nowrap" }}>{idx + 1}</TableCell>
+                      <TableCell align="center" sx={{ width: "60px", whiteSpace: "nowrap" }}>
                         <IconButton
                           size="small"
                           color="primary"
@@ -1041,26 +1067,40 @@ export default function TestReportPage() {
                           return `${day}/${month}`;
                         })() : "-"}
                       </TableCell>
-                      <TableCell sx={{ fontWeight: 700, color: "primary.main" }}>{reg.regNo}</TableCell>
-                      <TableCell>{reg.labId}</TableCell>
-                      <TableCell>
+                      <TableCell sx={{ fontWeight: 700, color: "primary.main", whiteSpace: "nowrap" }}>{reg.regNo}</TableCell>
+                      <TableCell sx={{ whiteSpace: "nowrap" }}>{reg.labId}</TableCell>
+                      <TableCell sx={{ whiteSpace: "nowrap" }}>
                         <Tooltip title={<pre style={{ fontFamily: "inherit" }}>{testNamesTooltip}</pre>}>
                           <Typography variant="body2" sx={{ cursor: "help", textDecoration: "underline dotted", fontSize: "0.82rem" }}>
                             {testCodes.length > 15 ? testCodes.substring(0, 15) + "..." : testCodes || "-"}
                           </Typography>
                         </Tooltip>
                       </TableCell>
-                      <TableCell sx={{ fontWeight: 600 }}>
+                      <TableCell sx={{ fontWeight: 600, whiteSpace: "nowrap" }}>
                         {reg.title} {reg.name}
                       </TableCell>
-                      <TableCell>{reg.gender}</TableCell>
-                      <TableCell>{Math.round(reg.age)}{reg.ageUnit.charAt(0)}</TableCell>
-                      <TableCell>{reg.mobileNo}</TableCell>
+                      <TableCell sx={{ whiteSpace: "nowrap" }}>{reg.gender}</TableCell>
+                      <TableCell sx={{ whiteSpace: "nowrap" }}>{Math.round(reg.age)}{reg.ageUnit.charAt(0)}</TableCell>
+                      <TableCell sx={{ whiteSpace: "nowrap" }}>{reg.mobileNo}</TableCell>
                       <TableCell sx={{ whiteSpace: "nowrap" }}>{formatTimeOnly(reg.expRptDate)}</TableCell>
-                      <TableCell sx={{ fontStyle: "italic", fontSize: "0.75rem" }}>
+                      <TableCell sx={{ fontStyle: "italic", fontSize: "0.75rem", whiteSpace: "nowrap" }}>
                         {reg.barcode ? reg.barcode.replace(/^,\s*/, "") : "-"}
                       </TableCell>
-                      <TableCell>
+                      <TableCell
+                        align="center"
+                        className="sticky-status-col"
+                        sx={{
+                          whiteSpace: "nowrap",
+                          position: { xs: "static", md: "sticky" },
+                          right: { xs: "auto", md: 0 },
+                          bgcolor: { xs: "transparent", md: "#ffffff" },
+                          zIndex: { xs: "auto", md: 1 },
+                          boxShadow: { xs: "none", md: "-3px 0 6px -2px rgba(0,0,0,0.08)" },
+                          borderLeft: { xs: "none", md: "1px solid" },
+                          borderColor: { xs: "transparent", md: "divider" },
+                          transition: "background-color 0.2s ease",
+                        }}
+                      >
                         <Stack spacing={0.6} alignItems="center">
                           {getTestChip(reg)}
                           {getPaymentChip(reg)}
@@ -1085,11 +1125,14 @@ export default function TestReportPage() {
             alignItems: "center",
             gap: { xs: 2, sm: 0 },
             p: 2,
-            borderTop: "1px solid",
+            border: "1px solid",
+            borderTop: "none",
             borderColor: "divider",
             bgcolor: "#ffffff",
-            borderBottomLeftRadius: 12,
-            borderBottomRightRadius: 12,
+            borderBottomLeftRadius: 8,
+            borderBottomRightRadius: 8,
+            width: "100%",
+            boxSizing: "border-box",
           }}
         >
           {/* Left Side: 1-10 of 25 */}
