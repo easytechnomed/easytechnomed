@@ -674,6 +674,65 @@ export async function GET(req, { params }) {
       return formattedLines;
     };
 
+    /**
+     * Splits plain text into multiple lines fitting within maxWidth.
+     */
+    const wrapPlainTextLines = (text, maxWidth, activeFont, fontSize) => {
+      if (!text) return [];
+      const clean = String(text || "")
+        .replace(/[μµ]/g, "u")
+        .replace(/–/g, "-")
+        .replace(/—/g, "-")
+        .replace(/[“”]/g, '"')
+        .replace(/[‘’]/g, "'");
+
+      const words = clean.split(/\s+/);
+      const lines = [];
+      let currentLine = "";
+
+      for (const word of words) {
+        if (!word) continue;
+        const testLine = currentLine ? `${currentLine} ${word}` : word;
+        const testWidth = activeFont.widthOfTextAtSize(testLine, fontSize);
+        if (testWidth <= maxWidth) {
+          currentLine = testLine;
+        } else {
+          if (currentLine) {
+            lines.push(currentLine);
+            if (activeFont.widthOfTextAtSize(word, fontSize) <= maxWidth) {
+              currentLine = word;
+            } else {
+              let partial = "";
+              for (const ch of word) {
+                if (activeFont.widthOfTextAtSize(partial + ch, fontSize) <= maxWidth) {
+                  partial += ch;
+                } else {
+                  if (partial) lines.push(partial);
+                  partial = ch;
+                }
+              }
+              currentLine = partial;
+            }
+          } else {
+            let partial = "";
+            for (const ch of word) {
+              if (activeFont.widthOfTextAtSize(partial + ch, fontSize) <= maxWidth) {
+                partial += ch;
+              } else {
+                if (partial) lines.push(partial);
+                partial = ch;
+              }
+            }
+            currentLine = partial;
+          }
+        }
+      }
+      if (currentLine) {
+        lines.push(currentLine);
+      }
+      return lines.length > 0 ? lines : [clean];
+    };
+
     // Calculate dynamic column layout
     const columnsLayout = computeColumnLayout(columnOrderRaw, leftMargin, contentWidth);
 
@@ -1003,8 +1062,17 @@ export async function GET(req, { params }) {
             // Skip rows with no result
             if (rawVal === null || rawVal === undefined || val === "" || val === "-") return;
 
+            const displayName = indented ? `  -  ${param.name}` : param.name;
+            const paramCol = columnsLayout.find(c => c.id === "parameter") || columnsLayout[0];
+            const xIndent = indented ? 6 : 0;
+            const paramMaxWidth = paramCol.width - 8 - xIndent;
+            const paramLines = wrapPlainTextLines(displayName, paramMaxWidth, font, parameterFontSize);
+            const numLines = Math.max(1, paramLines.length);
+            const lineSpacing = 11;
+            const rowHeight = 20 + (numLines - 1) * lineSpacing;
+
             // Page-wrap check
-            if (tableActiveY < footerMargin + 35) {
+            if (tableActiveY - rowHeight < footerMargin + 25) {
               await addNewPage();
               let pageTopY = drawPatientDemographics(currentPage);
               pageTopY = drawDepartmentHeader(currentPage, pageTopY, deptGroup.name, true);
@@ -1037,7 +1105,6 @@ export async function GET(req, { params }) {
               if (abbrs[flag]) displayVal = `${formattedVal} (${abbrs[flag]})`;
             }
 
-            const displayName = indented ? `  -  ${param.name}` : param.name;
             const unitText = (param.unit && param.unit !== "-" && param.unit !== "null" && param.unit !== "undefined") ? String(param.unit).trim() : "";
 
             // Render each dynamic column
@@ -1045,17 +1112,13 @@ export async function GET(req, { params }) {
               let cellText = "";
               let isBoldCell = false;
               let cellColor = textColor;
-              let xIndent = 0;
 
               if (col.id === "sNo") {
                 cellText = serialNo ? String(serialNo) : "";
                 cellColor = indented ? mutedTextColor : textColor;
                 isBoldCell = !indented;
               } else if (col.id === "parameter") {
-                cellText = displayName;
-                cellColor = textColor;
-                isBoldCell = false;
-                if (indented) xIndent = 6;
+                // Parameter is rendered with line wrapping below
               } else if (col.id === "value") {
                 cellText = displayVal || "-";
                 cellColor = resultColor;
@@ -1064,24 +1127,37 @@ export async function GET(req, { params }) {
                 cellText = unitText;
                 cellColor = mutedTextColor;
               } else if (col.id === "range") {
-                cellText = ref.rangeStr || "";
+                const rawRange = ref.rangeStr || "";
+                if (/positive|negative|\+ve|-ve/i.test(rawRange)) {
+                  cellText = "";
+                } else {
+                  cellText = rawRange;
+                }
                 cellColor = textColor;
               }
 
-              const activeFont = isBoldCell ? fontBold : font;
-              let textX = col.x + 4 + xIndent;
-              const textWidth = activeFont.widthOfTextAtSize(cellText, parameterFontSize);
+              if (col.id === "parameter") {
+                let currentLineY = tableActiveY - 14;
+                for (const pLine of paramLines) {
+                  drawText(currentPage, pLine, col.x + 4 + xIndent, currentLineY, parameterFontSize, false, textColor);
+                  currentLineY -= lineSpacing;
+                }
+              } else {
+                const activeFont = isBoldCell ? fontBold : font;
+                let textX = col.x + 4;
+                const textWidth = activeFont.widthOfTextAtSize(cellText, parameterFontSize);
 
-              if (col.align === "center") {
-                textX = col.x + (col.width - textWidth) / 2;
-              } else if (col.align === "right") {
-                textX = col.x + col.width - textWidth - 4;
+                if (col.align === "center") {
+                  textX = col.x + (col.width - textWidth) / 2;
+                } else if (col.align === "right") {
+                  textX = col.x + col.width - textWidth - 4;
+                }
+
+                drawText(currentPage, cellText, textX, tableActiveY - 14, parameterFontSize, isBoldCell, cellColor);
               }
-
-              drawText(currentPage, cellText, textX, tableActiveY - 14, parameterFontSize, isBoldCell, cellColor);
             }
 
-            tableActiveY -= 20;
+            tableActiveY -= rowHeight;
 
             if (interpretation) {
               if (tableActiveY < footerMargin + 25) {
@@ -1116,8 +1192,16 @@ export async function GET(req, { params }) {
               mainCounter++;
               const headerSerial = `${mainCounter}.`;
 
+              const sNoCol = columnsLayout.find(c => c.id === "sNo");
+              const paramCol = columnsLayout.find(c => c.id === "parameter") || columnsLayout[0];
+
+              const headerMaxWidth = paramCol.width - 8;
+              const headerLines = wrapPlainTextLines(header.name, headerMaxWidth, fontBold, parameterFontSize);
+              const headerNumLines = Math.max(1, headerLines.length);
+              const headerRowHeight = 20 + (headerNumLines - 1) * 11;
+
               // Draw header row
-              if (tableActiveY < footerMargin + 35) {
+              if (tableActiveY - headerRowHeight < footerMargin + 25) {
                 await addNewPage();
                 let pageTopY = drawPatientDemographics(currentPage);
                 pageTopY = drawDepartmentHeader(currentPage, pageTopY, deptGroup.name, true);
@@ -1133,14 +1217,15 @@ export async function GET(req, { params }) {
                 color: tableRowBorderColor,
               });
 
-              const sNoCol = columnsLayout.find(c => c.id === "sNo");
-              const paramCol = columnsLayout.find(c => c.id === "parameter") || columnsLayout[0];
-
               if (sNoCol) {
                 drawText(currentPage, headerSerial, sNoCol.x + 4, tableActiveY - 14, parameterFontSize, true, primaryColor);
               }
-              drawText(currentPage, header.name, paramCol.x + 4, tableActiveY - 14, parameterFontSize, true, primaryColor);
-              tableActiveY -= 20;
+              let hLineY = tableActiveY - 14;
+              for (const hLine of headerLines) {
+                drawText(currentPage, hLine, paramCol.x + 4, hLineY, parameterFontSize, true, primaryColor);
+                hLineY -= 11;
+              }
+              tableActiveY -= headerRowHeight;
 
               // Draw children (indented) with sub-numbering 1.1, 1.2...
               let childCounter = 0;
