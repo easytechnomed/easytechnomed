@@ -23,13 +23,16 @@ import {
   DialogActions,
   Stack,
   Chip,
-  Tooltip
+  Tooltip,
+  useTheme,
+  useMediaQuery
 } from "@mui/material";
 import {
   Close as CloseIcon,
   Download as DownloadIcon,
   Assignment as AssignmentIcon
 } from "@mui/icons-material";
+import ShowResultMobile from "./showResultMobile";
 
 const getReferenceRange = (param, reg) => {
   const isBaby = reg.ageUnit !== "Year" || reg.age < 12;
@@ -97,6 +100,9 @@ const isOutOfRange = (valStr, min, max, refRangeStr = "") => {
 };
 
 export default function ShowResult({ open, onClose, selectedReg }) {
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
+
   const [previewLoading, setPreviewLoading] = useState(true);
   const [previewData, setPreviewData] = useState(null);
   const [toast, setToast] = useState({ open: false, message: "", severity: "success" });
@@ -127,6 +133,17 @@ export default function ShowResult({ open, onClose, selectedReg }) {
   }, [open, selectedReg]);
 
   if (!open) return null;
+
+  if (isMobile) {
+    return (
+      <ShowResultMobile
+        open={open}
+        onClose={onClose}
+        previewLoading={previewLoading}
+        previewData={previewData}
+      />
+    );
+  }
 
   return (
     <Dialog

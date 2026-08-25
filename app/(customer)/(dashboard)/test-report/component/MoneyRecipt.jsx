@@ -26,15 +26,21 @@ import {
   FormControlLabel,
   Checkbox,
   Snackbar,
-  Alert
+  Alert,
+  useTheme,
+  useMediaQuery
 } from "@mui/material";
 import {
   Close as CloseIcon,
   Save as SaveIcon,
   Print as PrintIcon
 } from "@mui/icons-material";
+import MoneyReciptMobile from "./MoneyReciptMobile";
 
 export default function MoneyRecipt({ open, onClose, selectedReg, onSaveSuccess, canWrite }) {
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
+
   const [loadingReceipt, setLoadingReceipt] = useState(true);
   const [selectedRegistration, setSelectedRegistration] = useState(null);
   const [receivedInput, setReceivedInput] = useState(0);
@@ -210,6 +216,53 @@ export default function MoneyRecipt({ open, onClose, selectedReg, onSaveSuccess,
     if (!reg) return;
     window.open(`/api/print-bill/${reg.id}`, "_blank");
   };
+
+  if (!open) return null;
+
+  if (isMobile) {
+    return (
+      <>
+        <MoneyReciptMobile
+          open={open}
+          onClose={onClose}
+          loadingReceipt={loadingReceipt}
+          selectedRegistration={selectedRegistration}
+          receivedInput={receivedInput}
+          handleReceivedAmountChange={handleReceivedAmountChange}
+          discountInput={discountInput}
+          handleDiscountAmountChange={handleDiscountAmountChange}
+          discountPercentInput={discountPercentInput}
+          handleDiscountPercentChange={handleDiscountPercentChange}
+          paymentModeInput={paymentModeInput}
+          setPaymentModeInput={setPaymentModeInput}
+          paymentRefNoInput={paymentRefNoInput}
+          setPaymentRefNoInput={setPaymentRefNoInput}
+          remarkInput={remarkInput}
+          setRemarkInput={setRemarkInput}
+          savingPayment={savingPayment}
+          handleSavePayment={handleSavePayment}
+          sendSms={sendSms}
+          setSendSms={setSendSms}
+          sendMail={sendMail}
+          setSendMail={setSendMail}
+          handlePrintReceipt={handlePrintReceipt}
+          canWrite={canWrite}
+        />
+
+        {/* Internal Snackbar */}
+        <Snackbar
+          open={toast.open}
+          autoHideDuration={4000}
+          onClose={() => setToast({ ...toast, open: false })}
+          anchorOrigin={{ vertical: "top", horizontal: "right" }}
+        >
+          <Alert severity={toast.severity} onClose={() => setToast({ ...toast, open: false })} sx={{ width: "100%" }}>
+            {toast.message}
+          </Alert>
+        </Snackbar>
+      </>
+    );
+  }
 
   return (
     <>
