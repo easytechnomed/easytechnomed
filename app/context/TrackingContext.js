@@ -23,12 +23,18 @@ export function TrackingProvider({ children, type }) {
       ? "/adminstration/api/tracking/superadmin"
       : "/api/tracking/admin";
 
-    // Synchronize dirty records from IndexedDB to server database
+    // Synchronize dirty records from IndexedDB to server database (at least 1 min)
     const syncDirtyRecords = async () => {
       if (!navigator.onLine) return;
       try {
         const allDirty = await table.filter((r) => r.isDirty === true).toArray();
         for (const record of allDirty) {
+          // Skip and clean up any sub-minute records (< 1 min)
+          if (!record.durationInMin || record.durationInMin < 1) {
+            await table.update(record.id, { isDirty: false });
+            continue;
+          }
+
           const response = await fetch(endpoint, {
             method: "POST",
             headers: {
@@ -71,7 +77,7 @@ export function TrackingProvider({ children, type }) {
         ENDUTC: startUTC,
         mode,
         durationInMin: 0,
-        isDirty: true,
+        isDirty: false, // Only dirty when duration >= 1 min
       };
 
       try {
@@ -84,7 +90,6 @@ export function TrackingProvider({ children, type }) {
         };
         isIdleRef.current = false;
         lastInteractionTimeRef.current = Date.now();
-        await syncDirtyRecords();
       } catch (err) {
         console.error("Failed to initialize active tracking slice:", err);
       }
@@ -95,39 +100,50 @@ export function TrackingProvider({ children, type }) {
       if (!currentSliceRef.current) return;
       const { id, sessionId, startUTC, startTimeMs } = currentSliceRef.current;
       const nowMs = Date.now();
-      const durationInMin = parseFloat(Math.max(0.01, (nowMs - startTimeMs) / 60000).toFixed(2));
+      const elapsedMin = (nowMs - startTimeMs) / 60000;
+      const durationInMin = parseFloat(elapsedMin.toFixed(2));
       const endUTC = new Date(nowMs).toISOString();
       const mode = navigator.onLine ? "online" : "offline";
+      const isEligible = durationInMin >= 1; // At least 1 minute threshold
 
       try {
         await table.update(id, {
           ENDUTC: endUTC,
           durationInMin,
           mode,
-          isDirty: true,
+          isDirty: isEligible,
         });
 
-        if (useKeepalive && typeof fetch !== "undefined") {
-          fetch(endpoint, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              sessionId,
-              startUTC,
-              ENDUTC: endUTC,
-              mode,
-              durationInMin,
-            }),
-            keepalive: true,
-          }).catch(() => {});
-        } else {
-          await syncDirtyRecords();
+        if (isEligible) {
+          if (useKeepalive && typeof fetch !== "undefined") {
+            fetch(endpoint, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                sessionId,
+                startUTC,
+                ENDUTC: endUTC,
+                mode,
+                durationInMin,
+              }),
+              keepalive: true,
+            }).then(async (res) => {
+              if (res.ok) {
+                await table.update(id, { isDirty: false }).catch(() => { });
+              }
+            }).catch(() => { });
+          } else {
+            await syncDirtyRecords();
+          }
         }
       } catch (err) {
         console.error("Failed to update active tracking slice:", err);
       }
 
       if (isFinal) {
+        if (!isEligible) {
+          await table.update(id, { isDirty: false }).catch(() => { });
+        }
         currentSliceRef.current = null;
       }
     };
