@@ -174,7 +174,7 @@ export default function RegistrationPage() {
     try {
       const savedWa = localStorage.getItem("registration_send_whatsapp");
       if (savedWa !== null) setSendWhatsapp(savedWa === "true");
-    } catch (e) {}
+    } catch (e) { }
   }, []);
 
   // Notifications
@@ -203,7 +203,7 @@ export default function RegistrationPage() {
           .then((s) => {
             if (s?.settings?.companyName) setLabName(s.settings.companyName);
           })
-          .catch(() => {});
+          .catch(() => { });
       } catch (err) {
         console.error(err);
         showNotification("Failed to load initial data", "error");
@@ -567,8 +567,8 @@ export default function RegistrationPage() {
     const totalAmt = parseFloat(reg.totalAmount || 0).toFixed(2);
     const dueAmt = parseFloat(reg.dueAmount || 0).toFixed(2);
 
-    const text = 
-`*🏥 ${labTitle || "Pathology Laboratory"}*
+    const text =
+      `*🏥 ${labTitle || "Pathology Laboratory"}*
 Hello ${patientTitle}${reg.name}, your test registration has been confirmed!
 
 📋 *Reg No:* ${reg.regNo}
@@ -944,6 +944,7 @@ _Thank you for choosing us for your health diagnostics!_`;
                       type="number"
                       value={age}
                       onChange={(e) => setAge(e.target.value)}
+                      onWheel={(e) => e.target.blur()}
                       required
                     />
                     <TextField
@@ -1378,6 +1379,7 @@ _Thank you for choosing us for your health diagnostics!_`;
                     type="number"
                     value={collectionCharge}
                     onChange={(e) => setCollectionCharge(e.target.value)}
+                    onWheel={(e) => e.target.blur()}
                   />
                 </Grid>
 
@@ -1389,6 +1391,7 @@ _Thank you for choosing us for your health diagnostics!_`;
                     type="number"
                     value={discountPercent}
                     onChange={(e) => handleDiscountPercentChange(e.target.value)}
+                    onWheel={(e) => e.target.blur()}
                   />
                 </Grid>
                 <Grid size={{ xs: 6 }}>
@@ -1399,6 +1402,7 @@ _Thank you for choosing us for your health diagnostics!_`;
                     type="number"
                     value={discountAmount}
                     onChange={(e) => handleDiscountAmountChange(e.target.value)}
+                    onWheel={(e) => e.target.blur()}
                   />
                 </Grid>
 
@@ -1421,6 +1425,7 @@ _Thank you for choosing us for your health diagnostics!_`;
                     type="number"
                     value={receivedAmount}
                     onChange={(e) => setReceivedAmount(e.target.value)}
+                    onWheel={(e) => e.target.blur()}
                   />
                 </Grid>
 
@@ -1450,6 +1455,7 @@ _Thank you for choosing us for your health diagnostics!_`;
                     type="number"
                     value={stickerCount}
                     onChange={(e) => setStickerCount(Number(e.target.value) || 1)}
+                    onWheel={(e) => e.target.blur()}
                   />
                 </Grid>
               </Grid>
@@ -1469,7 +1475,7 @@ _Thank you for choosing us for your health diagnostics!_`;
                         setSendWhatsapp(val);
                         try {
                           localStorage.setItem("registration_send_whatsapp", String(val));
-                        } catch (err) {}
+                        } catch (err) { }
                       }}
                       color="success"
                       size="small"
@@ -1601,6 +1607,7 @@ _Thank you for choosing us for your health diagnostics!_`;
               type="number"
               value={newDocIncentive}
               onChange={(e) => setNewDocIncentive(e.target.value)}
+              onWheel={(e) => e.target.blur()}
               placeholder="e.g. 50"
             />
           </Box>
@@ -1651,6 +1658,7 @@ _Thank you for choosing us for your health diagnostics!_`;
               size="small"
               value={newTestPrice}
               onChange={(e) => setNewTestPrice(e.target.value)}
+              onWheel={(e) => e.target.blur()}
               required
               slotProps={{ htmlInput: { min: 0, step: "0.01" } }}
             />
@@ -1661,6 +1669,7 @@ _Thank you for choosing us for your health diagnostics!_`;
               size="small"
               value={newTestOutsourceCost}
               onChange={(e) => setNewTestOutsourceCost(e.target.value)}
+              onWheel={(e) => e.target.blur()}
               helperText="Cost deducted before doctor incentive (if sent outside)"
               slotProps={{ htmlInput: { min: 0, step: "0.01" } }}
             />
@@ -1671,6 +1680,7 @@ _Thank you for choosing us for your health diagnostics!_`;
               size="small"
               value={newTestSpecialIncentive}
               onChange={(e) => setNewTestSpecialIncentive(e.target.value)}
+              onWheel={(e) => e.target.blur()}
               placeholder="Leave empty for doctor's default %"
               helperText="Special incentive % for this specific test"
               slotProps={{ htmlInput: { min: 0, max: 100, step: "0.01" } }}
@@ -1716,6 +1726,7 @@ _Thank you for choosing us for your health diagnostics!_`;
               size="small"
               value={editingTestPrice}
               onChange={(e) => setEditingTestPrice(e.target.value)}
+              onWheel={(e) => e.target.blur()}
               required
               slotProps={{ htmlInput: { min: 0, step: "0.01" } }}
             />
@@ -1726,6 +1737,7 @@ _Thank you for choosing us for your health diagnostics!_`;
               size="small"
               value={editingTestOutsourceCost}
               onChange={(e) => setEditingTestOutsourceCost(e.target.value)}
+              onWheel={(e) => e.target.blur()}
               helperText="Cost deducted before doctor incentive (if sent outside)"
               slotProps={{ htmlInput: { min: 0, step: "0.01" } }}
             />
@@ -1736,6 +1748,7 @@ _Thank you for choosing us for your health diagnostics!_`;
               size="small"
               value={editingTestSpecialIncentive}
               onChange={(e) => setEditingTestSpecialIncentive(e.target.value)}
+              onWheel={(e) => e.target.blur()}
               placeholder="Leave empty for doctor's default %"
               helperText="Special incentive % for this specific test"
               slotProps={{ htmlInput: { min: 0, max: 100, step: "0.01" } }}
