@@ -23,14 +23,14 @@ export function TrackingProvider({ children, type }) {
       ? "/adminstration/api/tracking/superadmin"
       : "/api/tracking/admin";
 
-    // Synchronize dirty records from IndexedDB to server database (at least 1 min)
+    // Synchronize dirty records from IndexedDB to server database (at least 20 seconds)
     const syncDirtyRecords = async () => {
       if (!navigator.onLine) return;
       try {
         const allDirty = await table.filter((r) => r.isDirty === true).toArray();
         for (const record of allDirty) {
-          // Skip and clean up any sub-minute records (< 1 min)
-          if (!record.durationInMin || record.durationInMin < 1) {
+          // Skip and clean up any sub-20-second records (< 0.33 min)
+          if (!record.durationInMin || record.durationInMin < 0.33) {
             await table.update(record.id, { isDirty: false });
             continue;
           }
@@ -77,7 +77,7 @@ export function TrackingProvider({ children, type }) {
         ENDUTC: startUTC,
         mode,
         durationInMin: 0,
-        isDirty: false, // Only dirty when duration >= 1 min
+        isDirty: false, // Only dirty when duration >= 20 sec
       };
 
       try {
@@ -104,7 +104,7 @@ export function TrackingProvider({ children, type }) {
       const durationInMin = parseFloat(elapsedMin.toFixed(2));
       const endUTC = new Date(nowMs).toISOString();
       const mode = navigator.onLine ? "online" : "offline";
-      const isEligible = durationInMin >= 1; // At least 1 minute threshold
+      const isEligible = durationInMin >= 0.33; // At least 20 seconds threshold (0.33 min)
 
       try {
         await table.update(id, {

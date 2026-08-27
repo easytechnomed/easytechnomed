@@ -13,13 +13,29 @@ export async function GET(req) {
 
     const page = pageParam ? parseInt(pageParam) : 1;
     const limit = limitParam ? parseInt(limitParam) : 10;
-
     const totalCount = await prisma.admin.count();
+
+    const todayStart = new Date();
+    todayStart.setHours(0, 0, 0, 0);
 
     const admins = await prisma.admin.findMany({
       include: {
         workspace: { select: { name: true } },
         role: { select: { id: true, name: true } },
+        trackings: {
+          where: {
+            OR: [
+              { startUTC: { gte: todayStart } },
+              { ENDUTC: { gte: todayStart } },
+            ],
+          },
+          select: {
+            startUTC: true,
+            ENDUTC: true,
+            durationInMin: true,
+          },
+          orderBy: { startUTC: "asc" },
+        },
       },
       orderBy: { name: "asc" },
       skip: (page - 1) * limit,
@@ -35,6 +51,7 @@ export async function GET(req) {
       isApproved: admin.isApproved,
       role: admin.role,
       workspace: admin.workspace,
+      todayTrackings: admin.trackings || [],
     }));
 
     return NextResponse.json({

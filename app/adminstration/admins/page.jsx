@@ -179,6 +179,183 @@ export default function AdminsPage() {
     return `${Math.round(minutes)} min`;
   };
 
+  function TodayActivityBar({ trackings = [], onClick }) {
+    const now = new Date();
+    const dayStart = new Date(now);
+    dayStart.setHours(0, 0, 0, 0);
+    const dayStartMs = dayStart.getTime();
+
+    const TOTAL_SLOTS = 96; // 15-minute resolution per day (matching drawer)
+    const SLOT_DURATION_MS = 15 * 60 * 1000;
+
+    let totalMinutes = 0;
+    const slots = [];
+
+    for (let s = 0; s < TOTAL_SLOTS; s++) {
+      const slotStart = dayStartMs + s * SLOT_DURATION_MS;
+      const slotEnd = slotStart + SLOT_DURATION_MS;
+
+      let slotMinutes = 0;
+      let slotSessionCount = 0;
+
+      for (const log of trackings) {
+        const logStart = new Date(log.startUTC).getTime();
+        const logEnd = log.ENDUTC
+          ? new Date(log.ENDUTC).getTime()
+          : logStart + (log.durationInMin || 0) * 60 * 1000;
+
+        if (logStart < slotEnd && logEnd > slotStart) {
+          const overlapStart = Math.max(logStart, slotStart);
+          const overlapEnd = Math.min(logEnd, slotEnd);
+          const overlapMin = Math.max(0, (overlapEnd - overlapStart) / (60 * 1000));
+
+          slotMinutes += overlapMin;
+          slotSessionCount++;
+        }
+      }
+
+      const activeMinutes = Math.min(15, Math.round(slotMinutes));
+      totalMinutes += activeMinutes;
+      const isFuture = slotStart > now.getTime();
+
+      const startDate = new Date(slotStart);
+      const endDate = new Date(slotEnd);
+      const timeRangeStr = `${startDate.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })} – ${endDate.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}`;
+
+      slots.push({
+        index: s,
+        timeRangeStr,
+        activeMinutes,
+        isActive: activeMinutes > 0,
+        sessionCount: slotSessionCount,
+        isFuture,
+      });
+    }
+
+    return (
+      <Box
+        onClick={onClick}
+        sx={{
+          display: "inline-flex",
+          alignItems: "center",
+          gap: 1.2,
+          cursor: onClick ? "pointer" : "default",
+          p: "3px 6px",
+          borderRadius: 1.5,
+          transition: "background 0.15s ease",
+          "&:hover": {
+            bgcolor: "action.hover",
+          },
+        }}
+      >
+        <Box
+          sx={{
+            display: "flex",
+            alignItems: "center",
+            gap: "1px",
+            height: 18,
+            width: { xs: 150, sm: 190, md: 230 },
+            flexShrink: 0,
+            bgcolor: "background.paper",
+            p: "2px",
+            borderRadius: "4px",
+            border: "1px solid",
+            borderColor: "divider",
+          }}
+        >
+          {slots.map((slot) => {
+            let bgColor = "#e2e8f0";
+            let opacity = 1;
+
+            if (slot.isActive) {
+              if (slot.activeMinutes >= 10) {
+                bgColor = "#059669";
+              } else if (slot.activeMinutes >= 5) {
+                bgColor = "#10b981";
+              } else {
+                bgColor = "#34d399";
+              }
+            } else if (slot.isFuture) {
+              bgColor = "#f1f5f9";
+              opacity = 0.45;
+            }
+
+            const tooltipTitle = (
+              <Box sx={{ p: 0.5, textAlign: "center", minWidth: 125 }}>
+                <Typography variant="caption" sx={{ fontWeight: 800, display: "block", color: "white" }}>
+                  Today's Activity
+                </Typography>
+                <Typography variant="caption" sx={{ display: "block", color: "rgba(255,255,255,0.85)", fontSize: "0.72rem" }}>
+                  🕒 {slot.timeRangeStr}
+                </Typography>
+                <Divider sx={{ my: 0.5, borderColor: "rgba(255,255,255,0.2)" }} />
+                {slot.isActive ? (
+                  <>
+                    <Typography variant="caption" sx={{ fontWeight: 800, color: "#86efac", display: "block" }}>
+                      🟢 Active: {slot.activeMinutes} min
+                    </Typography>
+                    {slot.sessionCount > 0 && (
+                      <Typography variant="caption" sx={{ color: "rgba(255,255,255,0.75)", fontSize: "0.7rem" }}>
+                        {slot.sessionCount} session{slot.sessionCount > 1 ? "s" : ""}
+                      </Typography>
+                    )}
+                  </>
+                ) : slot.isFuture ? (
+                  <Typography variant="caption" sx={{ color: "rgba(255,255,255,0.6)" }}>
+                    Upcoming Slot
+                  </Typography>
+                ) : (
+                  <Typography variant="caption" sx={{ color: "rgba(255,255,255,0.7)" }}>
+                    ⚪ Inactive (0 min)
+                  </Typography>
+                )}
+              </Box>
+            );
+
+            return (
+              <Tooltip key={slot.index} title={tooltipTitle} arrow placement="top">
+                <Box
+                  sx={{
+                    flex: 1,
+                    height: "100%",
+                    borderRadius: "0.5px",
+                    bgcolor: bgColor,
+                    opacity,
+                    transition: "all 0.12s ease-in-out",
+                    "&:hover": {
+                      transform: "scaleY(1.35)",
+                      zIndex: 10,
+                      bgcolor: slot.isActive ? "#047857" : "#94a3b8",
+                    },
+                  }}
+                />
+              </Tooltip>
+            );
+          })}
+        </Box>
+
+        {/* Day Total Active Duration Chip */}
+        <Chip
+          label={
+            totalMinutes >= 60
+              ? `${Math.floor(totalMinutes / 60)}h ${totalMinutes % 60}m`
+              : `${totalMinutes}m`
+          }
+          size="small"
+          sx={{
+            fontWeight: 800,
+            fontSize: "0.68rem",
+            height: 20,
+            borderRadius: "5px",
+            bgcolor: totalMinutes > 0 ? "rgba(16, 185, 129, 0.12)" : "action.hover",
+            color: totalMinutes > 0 ? "#059669" : "text.secondary",
+            border: totalMinutes > 0 ? "1px solid rgba(16, 185, 129, 0.3)" : "1px solid transparent",
+          }}
+        />
+      </Box>
+    );
+  }
+
   const currentWeekData = React.useMemo(() => {
     const now = new Date();
     const currentDay = now.getDay();
@@ -340,13 +517,14 @@ export default function AdminsPage() {
                   <TableCell sx={{ fontWeight: 700 }}>Workspace</TableCell>
                   <TableCell sx={{ fontWeight: 700 }}>Role</TableCell>
                   <TableCell sx={{ fontWeight: 700 }} align="center">Active Status</TableCell>
-                  <TableCell sx={{ fontWeight: 700 }} align="right">Activity</TableCell>
+                  <TableCell sx={{ fontWeight: 700 }}>Today's Activity</TableCell>
+                  <TableCell sx={{ fontWeight: 700 }} align="right">Activity Logs</TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
                 {admins.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={6} align="center" sx={{ py: 6, color: "text.secondary" }}>
+                    <TableCell colSpan={7} align="center" sx={{ py: 6, color: "text.secondary" }}>
                       No admin accounts found.
                     </TableCell>
                   </TableRow>
@@ -389,6 +567,12 @@ export default function AdminsPage() {
                           checked={admin.isActive}
                           onChange={() => handleToggleAdmin(admin.id, admin.isActive)}
                           color="primary"
+                        />
+                      </TableCell>
+                      <TableCell>
+                        <TodayActivityBar
+                          trackings={admin.todayTrackings}
+                          onClick={() => handleOpenTracking(admin)}
                         />
                       </TableCell>
                       <TableCell align="right">
