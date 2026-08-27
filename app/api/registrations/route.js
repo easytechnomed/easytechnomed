@@ -1,10 +1,27 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { requireAdmin } from "@/lib/auth";
+import { generateReportToken } from "@/lib/reportSecurity";
 import { z } from "zod";
 
-// Helper to serialize Decimal and Dates
+// Helper to serialize Decimal and Dates, attaching cryptographic report token
 function serializeData(data) {
+  if (Array.isArray(data)) {
+    return data.map((item) => {
+      const serialized = JSON.parse(JSON.stringify(item));
+      if (item && (item.regNo || item.id)) {
+        serialized.reportToken = generateReportToken(item);
+      }
+      return serialized;
+    });
+  }
+  if (data && typeof data === "object") {
+    const serialized = JSON.parse(JSON.stringify(data));
+    if (data.regNo || data.id) {
+      serialized.reportToken = generateReportToken(data);
+    }
+    return serialized;
+  }
   return JSON.parse(JSON.stringify(data));
 }
 

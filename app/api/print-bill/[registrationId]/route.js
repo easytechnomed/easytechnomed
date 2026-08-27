@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { prisma } from "@/lib/db";
 import { verifyToken } from "@/lib/auth";
+import { generateReportToken, verifyReportToken } from "@/lib/reportSecurity";
 
 const formatDate = (dateStr) => {
   if (!dateStr) return "-";
@@ -139,6 +140,7 @@ export async function GET(req, { params }) {
     const cookieStore = await cookies();
     const isAdminToken = cookieStore.get("admin_session_token")?.value;
     const isSuperAdminToken = cookieStore.get("super_admin_session_token")?.value;
+    const isUserToken = cookieStore.get("session_token")?.value;
 
     let isStaff = false;
 
@@ -170,94 +172,82 @@ export async function GET(req, { params }) {
       }
     }
 
+    if (isUserToken) {
+      const decoded = verifyToken(isUserToken);
+      if (decoded) {
+        const session = await prisma.userSession.findUnique({
+          where: { token: isUserToken },
+          include: { user: true },
+        });
+        if (session && session.expiresAt > new Date() && session.user.isApproved && !session.user.rejected) {
+          if (session.user.workspaceId === reg.workspaceId) {
+            isStaff = true;
+          }
+        }
+      }
+    }
+
     // ── PUBLIC ACCESS SECURITY CHECKS (If not authenticated as own lab staff) ──
     if (!isStaff) {
       const searchParams = req.nextUrl?.searchParams || new URL(req.url).searchParams;
-      let reqOtp = (
+      let reqToken = (
+        searchParams.get("v") ||
+        searchParams.get("t") ||
+        searchParams.get("token") ||
         searchParams.get("otp") ||
         searchParams.get("otp?") ||
-        searchParams.get("token") ||
         searchParams.get("code") ||
         ""
       ).trim();
 
-      if (!reqOtp) {
+      if (!reqToken) {
         for (const [key, value] of searchParams.entries()) {
           const cleanKey = key.replace(/[^a-zA-Z0-9]/g, "").toLowerCase();
-          if (cleanKey === "otp" || cleanKey === "token" || cleanKey === "code") {
-            reqOtp = String(value).trim();
+          if (["v", "token", "t", "code", "otp"].includes(cleanKey)) {
+            reqToken = String(value).trim();
             break;
           }
         }
       }
 
-      // Security Access Code (OTP) Verification
-      if (!reqOtp || reqOtp !== String(reg.pdfOtp).trim()) {
-        const isWrong = Boolean(reqOtp && reqOtp !== String(reg.pdfOtp).trim());
-        const invalidOtpHtml = `
+      // Security Access Token OR Legacy OTP Verification
+      const isAuthorized = verifyReportToken(reqToken, reg) || Boolean(reg.pdfOtp && reqToken === String(reg.pdfOtp).trim());
+      if (!isAuthorized) {
+        const unauthorizedHtml = `
           <!DOCTYPE html>
           <html>
             <head>
               <meta charset="UTF-8">
               <meta name="viewport" content="width=device-width, initial-scale=1.0">
-              <title>Security Access Required - Money Receipt</title>
+              <title>Access Restricted - Money Receipt</title>
               <style>
                 body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #f8fafc; color: #1e293b; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; padding: 20px; box-sizing: border-box; }
-                .card { background: white; padding: 36px 28px; border-radius: 16px; box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.08); max-width: 480px; width: 100%; text-align: center; border-top: 4px solid #0f766e; }
-                .icon-box { width: 64px; height: 64px; background: #f0fdfa; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 16px; font-size: 30px; border: 2px solid #ccfbf1; }
+                .card { background: white; padding: 36px 28px; border-radius: 16px; box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.08); max-width: 480px; width: 100%; text-align: center; border-top: 4px solid #ef4444; }
+                .icon-box { width: 64px; height: 64px; background: #fef2f2; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 16px; font-size: 30px; border: 2px solid #fecaca; }
                 h1 { font-size: 20px; margin: 0 0 8px; font-weight: 800; color: #0f172a; }
-                .subtitle { font-size: 13px; color: #0f766e; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 16px; }
+                .subtitle { font-size: 13px; color: #ef4444; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 16px; }
                 p { font-size: 14px; line-height: 1.6; color: #475569; margin: 0 0 20px; }
-                .details { background: #f8fafc; border: 1px solid #e2e8f0; padding: 14px; border-radius: 10px; font-size: 13px; text-align: left; margin-bottom: 20px; }
-                .details-row { display: flex; justify-content: space-between; margin-bottom: 6px; }
-                .details-row:last-child { margin-bottom: 0; }
-                .error-alert { background: #fef2f2; border: 1px solid #fecaca; color: #dc2626; padding: 10px; border-radius: 8px; font-size: 13px; font-weight: 600; margin-bottom: 16px; }
-                .hint { font-size: 12px; color: #64748b; line-height: 1.5; background: #eff6ff; padding: 10px; border-radius: 8px; border-left: 3px solid #3b82f6; text-align: left; }
+                .hint { font-size: 13px; color: #334155; line-height: 1.6; background: #f0fdf4; padding: 14px; border-radius: 10px; border-left: 4px solid #0f766e; text-align: left; }
               </style>
             </head>
             <body>
               <div class="card">
                 <div class="icon-box">🧾</div>
-                <div class="subtitle">Secure Billing Portal</div>
-                <h1>Security Code Required</h1>
-                <p>To protect patient financial and medical confidentiality, money receipts can only be accessed using the official QR code or by entering the security OTP code.</p>
+                <div class="subtitle">Secure Billing System</div>
+                <h1>Access Restricted</h1>
+                <p>To protect patient financial and medical confidentiality, money receipts require an authorized cryptographic verification link.</p>
                 
-                ${isWrong ? `<div class="error-alert">⚠️ Incorrect Security Code. Please check and try again.</div>` : ""}
-
-                <div class="details">
-                  <div class="details-row"><span style="color: #64748b;">Patient:</span> <strong style="color: #0f172a;">${reg.title} ${reg.name}</strong></div>
-                  <div class="details-row"><span style="color: #64748b;">Registration No:</span> <strong>${reg.regNo}</strong></div>
-                  <div class="details-row"><span style="color: #64748b;">Lab Reference:</span> <strong>${reg.labId}</strong></div>
-                </div>
-
-                <form method="GET" style="margin: 0 0 20px;">
-                  <div style="display: flex; gap: 8px; justify-content: center;">
-                    <input 
-                      type="text" 
-                      name="otp" 
-                      placeholder="Enter 6-digit OTP" 
-                      maxlength="10" 
-                      required
-                      style="padding: 10px 14px; border: 1.5px solid #cbd5e1; border-radius: 8px; font-size: 15px; width: 180px; text-align: center; font-weight: 700; letter-spacing: 2px; outline: none;"
-                    />
-                    <button 
-                      type="submit" 
-                      style="background-color: #0f766e; color: white; border: none; padding: 10px 18px; border-radius: 8px; font-weight: 700; font-size: 14px; cursor: pointer; transition: background 0.2s;"
-                    >
-                      Unlock Bill
-                    </button>
-                  </div>
-                </form>
-
                 <div class="hint">
-                  💡 <strong>Tip:</strong> Please enter the 6-digit security code received on SMS/WhatsApp or scan your QR code to view this receipt.
+                  📲 <strong>How to view this receipt:</strong><br/>
+                  1. Scan the <strong>QR code</strong> printed on your official receipt or test report.<br/>
+                  2. Or click the secure verification link sent to your registered <strong>WhatsApp / SMS</strong>.
                 </div>
               </div>
             </body>
           </html>
         `;
-        return new Response(invalidOtpHtml, {
-          status: 200,
+        return new Response(unauthorizedHtml, {
+          status: 401,
           headers: { "Content-Type": "text/html; charset=utf-8" },
         });
       }
@@ -298,11 +288,12 @@ export async function GET(req, { params }) {
     const currentDateStr = new Date().toLocaleString("en-IN", { dateStyle: "short", timeStyle: "short" });
     const regDateStr = formatDate(reg.date);
 
-    // QR Codes with regNo and pdfOtp
-    const qrReportData = `${req.nextUrl.origin}/api/print-report/${reg.regNo}?otp=${reg.pdfOtp}&withFrame=true`;
+    // QR Codes with regNo and encrypted token
+    const publicToken = generateReportToken(reg);
+    const qrReportData = `${req.nextUrl.origin}/q?v=${encodeURIComponent(publicToken)}`;
     const qrReportUrl = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(qrReportData)}`;
 
-    const qrPaymentData = `${req.nextUrl.origin}/api/print-bill/${reg.regNo}?otp=${reg.pdfOtp}`;
+    const qrPaymentData = `${req.nextUrl.origin}/q?v=${encodeURIComponent(publicToken)}&type=bill`;
     const qrPaymentUrl = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(qrPaymentData)}`;
 
     const receivedAmt = parseFloat(reg.receivedAmount || 0);

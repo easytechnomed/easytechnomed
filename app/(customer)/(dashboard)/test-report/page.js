@@ -691,12 +691,14 @@ export default function TestReportPage() {
       });
 
       if (includeReportQr) {
-        const otpParam = reg.pdfOtp ? `?otp=${reg.pdfOtp}&withFrame=true` : `?withFrame=true`;
-        row["Report QR Link"] = `${window.location.origin}/api/print-report/${reg.regNo}${otpParam}`;
+        row["Report QR Link"] = reg.reportToken
+          ? `${window.location.origin}/q?v=${encodeURIComponent(reg.reportToken)}`
+          : `${window.location.origin}/api/print-report/${reg.regNo}`;
       }
       if (includePaymentQr) {
-        const otpParam = reg.pdfOtp ? `?otp=${reg.pdfOtp}` : ``;
-        row["Payment QR Link"] = `${window.location.origin}/api/print-bill/${reg.regNo}${otpParam}`;
+        row["Payment QR Link"] = reg.reportToken
+          ? `${window.location.origin}/api/print-bill/${reg.regNo}?v=${encodeURIComponent(reg.reportToken)}`
+          : `${window.location.origin}/api/print-bill/${reg.regNo}`;
       }
 
       return row;
@@ -736,8 +738,9 @@ export default function TestReportPage() {
         });
 
         if (includeReportQr) {
-          const otpParam = reg.pdfOtp ? `?otp=${reg.pdfOtp}&withFrame=true` : `?withFrame=true`;
-          const qrData = `${window.location.origin}/api/print-report/${reg.regNo}${otpParam}`;
+          const qrData = reg.reportToken
+            ? `${window.location.origin}/q?v=${encodeURIComponent(reg.reportToken)}`
+            : `${window.location.origin}/api/print-report/${reg.regNo}`;
           const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=100x100&data=${encodeURIComponent(qrData)}`;
           cells.push(`
             <td class="qr-container">
@@ -747,8 +750,9 @@ export default function TestReportPage() {
         }
 
         if (includePaymentQr) {
-          const otpParam = reg.pdfOtp ? `?otp=${reg.pdfOtp}` : ``;
-          const qrData = `${window.location.origin}/api/print-bill/${reg.regNo}${otpParam}`;
+          const qrData = reg.reportToken
+            ? `${window.location.origin}/api/print-bill/${reg.regNo}?v=${encodeURIComponent(reg.reportToken)}`
+            : `${window.location.origin}/api/print-bill/${reg.regNo}`;
           const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=100x100&data=${encodeURIComponent(qrData)}`;
           cells.push(`
             <td class="qr-container">

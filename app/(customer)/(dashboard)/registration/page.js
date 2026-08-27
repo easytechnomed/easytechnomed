@@ -560,7 +560,9 @@ export default function RegistrationPage() {
     if (cleanMobile.length < 10) return null;
     const phone = cleanMobile.length === 10 ? `91${cleanMobile}` : cleanMobile;
 
-    const reportUrl = `${window.location.origin}/api/print-report/${reg.regNo}?otp=${reg.pdfOtp || ""}&withFrame=true`;
+    const reportUrl = reg.reportToken
+      ? `${window.location.origin}/q?v=${encodeURIComponent(reg.reportToken)}`
+      : (reg.pdfOtp ? `${window.location.origin}/api/print-report/${reg.regNo}?otp=${reg.pdfOtp}` : `${window.location.origin}/api/print-report/${reg.regNo}`);
     const patientTitle = reg.title ? `${reg.title} ` : "";
     const totalAmt = parseFloat(reg.totalAmount || 0).toFixed(2);
     const dueAmt = parseFloat(reg.dueAmount || 0).toFixed(2);
@@ -572,9 +574,8 @@ Hello ${patientTitle}${reg.name}, your test registration has been confirmed!
 📋 *Reg No:* ${reg.regNo}
 🔬 *Lab ID:* ${reg.labId || "-"}
 💰 *Bill Amount:* ₹${totalAmt} | *Due:* ₹${dueAmt}
-🔑 *Security Code / OTP:* ${reg.pdfOtp || "-"}
 
-🔗 *Track Status & View Report:*
+🔗 *Track Status & View Verified Report:*
 ${reportUrl}
 
 _Thank you for choosing us for your health diagnostics!_`;
