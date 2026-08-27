@@ -44,6 +44,7 @@ import {
   AccessTime as AccessTimeIcon,
   LocalFireDepartment as FireIcon,
   Group as GroupIcon,
+  AutoAwesome as AutoAwesomeIcon,
 } from "@mui/icons-material";
 import {
   ResponsiveContainer,
@@ -228,8 +229,8 @@ function SuperAdminDashboardContent() {
       {/* KPI Cards Grid */}
       <Grid container spacing={2.5} sx={{ mb: 4 }}>
         {/* Card 1: Total Laboratories */}
-        <Grid size={{ xs: 12, sm: 6, lg: 3 }}>
-          <Card variant="outlined" sx={{ borderRadius: 3, p: 0.5 }}>
+        <Grid size={{ xs: 12, sm: 6, lg: 2.4 }}>
+          <Card variant="outlined" sx={{ borderRadius: 3, p: 0.5, height: "100%" }}>
             <CardContent sx={{ p: 2.5 }}>
               <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", mb: 2 }}>
                 <Box>
@@ -261,8 +262,8 @@ function SuperAdminDashboardContent() {
         </Grid>
 
         {/* Card 2: Total Registrations */}
-        <Grid size={{ xs: 12, sm: 6, lg: 3 }}>
-          <Card variant="outlined" sx={{ borderRadius: 3, p: 0.5 }}>
+        <Grid size={{ xs: 12, sm: 6, lg: 2.4 }}>
+          <Card variant="outlined" sx={{ borderRadius: 3, p: 0.5, height: "100%" }}>
             <CardContent sx={{ p: 2.5 }}>
               <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", mb: 2 }}>
                 <Box>
@@ -293,8 +294,8 @@ function SuperAdminDashboardContent() {
         </Grid>
 
         {/* Card 3: Total Platform Revenue */}
-        <Grid size={{ xs: 12, sm: 6, lg: 3 }}>
-          <Card variant="outlined" sx={{ borderRadius: 3, p: 0.5 }}>
+        <Grid size={{ xs: 12, sm: 6, lg: 2.4 }}>
+          <Card variant="outlined" sx={{ borderRadius: 3, p: 0.5, height: "100%" }}>
             <CardContent sx={{ p: 2.5 }}>
               <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", mb: 2 }}>
                 <Box>
@@ -324,9 +325,52 @@ function SuperAdminDashboardContent() {
           </Card>
         </Grid>
 
-        {/* Card 4: Doctor & Tests Network */}
-        <Grid size={{ xs: 12, sm: 6, lg: 3 }}>
-          <Card variant="outlined" sx={{ borderRadius: 3, p: 0.5 }}>
+        {/* Card 4: Gemini AI Hits */}
+        <Grid size={{ xs: 12, sm: 6, lg: 2.4 }}>
+          <Card
+            variant="outlined"
+            onClick={() => router.push("/adminstration/ai-usage")}
+            sx={{
+              borderRadius: 3,
+              p: 0.5,
+              height: "100%",
+              cursor: "pointer",
+              transition: "all 0.2s ease",
+              "&:hover": { transform: "translateY(-3px)", boxShadow: "0 8px 24px rgba(124, 58, 237, 0.15)", borderColor: "primary.main" },
+            }}
+          >
+            <CardContent sx={{ p: 2.5 }}>
+              <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", mb: 2 }}>
+                <Box>
+                  <Typography variant="caption" sx={{ color: "primary.main", fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.5px" }}>
+                    Gemini AI Calls
+                  </Typography>
+                  <Typography variant="h4" sx={{ fontWeight: 800, color: "primary.main", mt: 0.5 }}>
+                    {(kpis.totalAiCalls || 0).toLocaleString("en-IN")}
+                  </Typography>
+                </Box>
+                <Avatar sx={{ bgcolor: "rgba(124, 58, 237, 0.15)", color: "primary.main", width: 44, height: 44 }}>
+                  <AutoAwesomeIcon />
+                </Avatar>
+              </Box>
+
+              <Divider sx={{ my: 1.5 }} />
+
+              <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                <Typography variant="caption" sx={{ color: "text.secondary", fontWeight: 600 }}>
+                  Today: <strong style={{ color: "#7c3aed" }}>+{(kpis.aiCallsToday || 0).toLocaleString("en-IN")}</strong>
+                </Typography>
+                <Typography variant="caption" sx={{ color: "primary.main", fontWeight: 700, display: "flex", alignItems: "center" }}>
+                  View Logs <ArrowForwardIcon sx={{ fontSize: 12, ml: 0.3 }} />
+                </Typography>
+              </Box>
+            </CardContent>
+          </Card>
+        </Grid>
+
+        {/* Card 5: Doctor & Tests Network */}
+        <Grid size={{ xs: 12, sm: 6, lg: 2.4 }}>
+          <Card variant="outlined" sx={{ borderRadius: 3, p: 0.5, height: "100%" }}>
             <CardContent sx={{ p: 2.5 }}>
               <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", mb: 2 }}>
                 <Box>

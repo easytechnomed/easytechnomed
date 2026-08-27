@@ -38,6 +38,10 @@ export async function GET() {
           },
         });
 
+        const aiCalls = await prisma.workspaceAiUsage.count({
+          where: { workspaceId: ws.id },
+        }).catch(() => 0);
+
         return {
           id: ws.id,
           name: ws.name,
@@ -50,6 +54,7 @@ export async function GET() {
           stats: {
             today: regToday,
             last7Days: reg7Days,
+            aiCalls,
           },
         };
       })

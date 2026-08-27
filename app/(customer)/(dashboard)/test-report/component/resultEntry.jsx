@@ -341,6 +341,7 @@ export default function ResultEntry({ open, onClose, selectedReg, onSaveSuccess,
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
+          registrationId: resultRegDetails?.id,
           patientInfo: {
             age: resultRegDetails.age,
             ageUnit: resultRegDetails.ageUnit,

@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/auth";
+import { prisma } from "@/lib/db";
 
 async function callGeminiModels(prompt, apiKey) {
   const models = [
@@ -31,7 +32,15 @@ async function callGeminiModels(prompt, apiKey) {
         const data = await res.json();
         const text = data?.candidates?.[0]?.content?.parts?.[0]?.text;
         if (text) {
-          return text.trim();
+          return {
+            text: text.trim(),
+            model,
+            usage: data?.usageMetadata || {
+              promptTokenCount: 0,
+              candidatesTokenCount: 0,
+              totalTokenCount: 0,
+            },
+          };
         }
       } else {
         const errText = await res.text();
@@ -48,8 +57,17 @@ async function callGeminiModels(prompt, apiKey) {
 }
 
 export async function POST(req) {
+  const startTime = Date.now();
+  let admin = null;
+  let workspaceId = null;
+  let adminId = null;
+  let registrationId = null;
+  let prompt = "";
+
   try {
-    await requireAdmin("REGISTRATION_READ");
+    admin = await requireAdmin("REGISTRATION_READ");
+    workspaceId = admin?.workspaceId || null;
+    adminId = admin?.id || null;
 
     const apiKey = process.env.GEMINI_API_KEY;
     if (!apiKey) {
@@ -60,7 +78,8 @@ export async function POST(req) {
     }
 
     const body = await req.json().catch(() => ({}));
-    const { patientInfo = {}, tests = [] } = body;
+    const { patientInfo = {}, tests = [], registrationId: reqRegId = null } = body;
+    registrationId = reqRegId ? Number(reqRegId) : null;
 
     // Filter out tests with at least some observed parameter values
     const validTests = tests
@@ -94,7 +113,7 @@ export async function POST(req) {
       });
     });
 
-    const prompt = `You are an expert pathologist and clinical laboratory reporting specialist.
+    prompt = `You are an expert pathologist and clinical laboratory reporting specialist.
 Analyze the following patient's laboratory test results and write a short, crisp, simple, and professional summary note in plain English.
 
 ${reportDataText}
@@ -107,7 +126,13 @@ Guidelines:
 5. Add a standard closing advice note: "* Please correlate clinically."
 6. Do NOT include markdown headers (# or ##). Keep the output clean and direct.`;
 
-    const rawSuggestion = await callGeminiModels(prompt, apiKey);
+    const geminiResult = await callGeminiModels(prompt, apiKey);
+    const rawSuggestion = geminiResult.text;
+    const modelUsed = geminiResult.model;
+    const usage = geminiResult.usage || {};
+    const promptTokens = Number(usage.promptTokenCount || 0);
+    const candidateTokens = Number(usage.candidatesTokenCount || 0);
+    const totalTokens = Number(usage.totalTokenCount || (promptTokens + candidateTokens));
 
     // Clean up any accidental leading title/heading like "**Clinical Remarks:**" or "**Report Summary:**"
     let cleanSuggestion = (rawSuggestion || "").trim();
@@ -116,15 +141,69 @@ Guidelines:
       .replace(/^(#+\s*(Clinical Remarks|Report Summary|Summary Note|Remarks|Impression|Summary|Note)\s*\n*)/i, "")
       .trim();
 
+    const durationMs = Date.now() - startTime;
+
+    // Log AI usage in database if workspaceId is present
+    if (workspaceId) {
+      try {
+        await prisma.workspaceAiUsage.create({
+          data: {
+            workspaceId,
+            adminId,
+            registrationId,
+            feature: "RESULT_SUGGESTION",
+            model: modelUsed,
+            prompt,
+            response: cleanSuggestion,
+            promptTokens,
+            candidateTokens,
+            totalTokens,
+            status: "SUCCESS",
+            durationMs,
+            ipAddress: req.headers.get("x-forwarded-for") || req.headers.get("x-real-ip") || null,
+          },
+        });
+      } catch (logErr) {
+        console.error("[WorkspaceAiUsage] Failed to log success record:", logErr);
+      }
+    }
+
     return NextResponse.json({
       success: true,
       suggestion: cleanSuggestion,
+      model: modelUsed,
+      tokens: totalTokens,
     });
   } catch (error) {
+    const durationMs = Date.now() - startTime;
     if (error.message === "NEXT_REDIRECT" || (error.digest && error.digest.startsWith("NEXT_REDIRECT"))) {
       return NextResponse.json({ success: false, message: "Unauthorized" }, { status: 401 });
     }
+
+    // Log failed AI usage in database
+    if (workspaceId) {
+      try {
+        await prisma.workspaceAiUsage.create({
+          data: {
+            workspaceId,
+            adminId,
+            registrationId,
+            feature: "RESULT_SUGGESTION",
+            prompt: prompt || "Failed before prompt generation",
+            response: null,
+            status: "FAILED",
+            errorMessage: error.message || "Unknown error",
+            durationMs,
+            ipAddress: req.headers.get("x-forwarded-for") || req.headers.get("x-real-ip") || null,
+          },
+        });
+      } catch (logErr) {
+        console.error("[WorkspaceAiUsage] Failed to log failure record:", logErr);
+      }
+    }
+
     console.error("AI Suggestion POST Error:", error);
     return NextResponse.json({ success: false, error: error.message, message: error.message }, { status: 500 });
   }
 }
+

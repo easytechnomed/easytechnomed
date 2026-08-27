@@ -22,6 +22,10 @@ export async function GET() {
       regToday,
       regThisMonth,
       regLast7Days,
+      totalAiCalls,
+      aiCallsToday,
+      aiCallsThisMonth,
+      aiTokenAggregates,
     ] = await Promise.all([
       prisma.workspace.count({ where: { isDeleted: false } }),
       prisma.workspace.count({ where: { isDeleted: false, isActive: true } }),
@@ -32,6 +36,10 @@ export async function GET() {
       prisma.registration.count({ where: { isDeleted: false, date: { gte: startOfToday } } }),
       prisma.registration.count({ where: { isDeleted: false, date: { gte: startOfMonth } } }),
       prisma.registration.count({ where: { isDeleted: false, date: { gte: startOf7DaysAgo } } }),
+      prisma.workspaceAiUsage.count().catch(() => 0),
+      prisma.workspaceAiUsage.count({ where: { createdAt: { gte: startOfToday } } }).catch(() => 0),
+      prisma.workspaceAiUsage.count({ where: { createdAt: { gte: startOfMonth } } }).catch(() => 0),
+      prisma.workspaceAiUsage.aggregate({ _sum: { totalTokens: true } }).catch(() => ({ _sum: { totalTokens: 0 } })),
     ]);
 
     // 2. SaaS Subscription Payments Aggregation
@@ -302,6 +310,10 @@ export async function GET() {
           totalDue: Number(totalFinancials._sum.dueAmount || 0),
           revenueToday: Number(todayFinancials._sum.receivedAmount || 0),
           revenueThisMonth: Number(monthFinancials._sum.receivedAmount || 0),
+          totalAiCalls: totalAiCalls || 0,
+          aiCallsToday: aiCallsToday || 0,
+          aiCallsThisMonth: aiCallsThisMonth || 0,
+          totalAiTokens: aiTokenAggregates._sum?.totalTokens || 0,
         },
         subscriptionDistribution: [
           { name: "Active (> 30d)", value: activeCount, color: "#16a34a" },

@@ -30,6 +30,7 @@ model Workspace {
   interpretationRules InterpretationRule[]
   pdfSetting          WorkspacePdf?
   payments            WorkspacePayment[]
+  aiUsages            WorkspaceAiUsage[]
 }
 
 model WorkspacePayment {
@@ -157,6 +158,7 @@ model Admin {
   sessions                   AdminSession[]
   trackings                  AdminTracking[]
   registrations              Registration[] @relation("AdminRegistrations")
+  aiUsages                   WorkspaceAiUsage[]
 
   @@index([roleId])
   @@index([workspaceId], map: "Admin_workspaceId_fkey")
@@ -299,6 +301,7 @@ model Registration {
   admin            Admin?                @relation("AdminRegistrations", fields: [adminId], references: [id])
   payments         RegistrationPayment[]
   tests            RegistrationTest[]
+  aiUsages         WorkspaceAiUsage[]
 
   @@unique([workspaceId, labId])
   @@index([date])
@@ -606,5 +609,35 @@ model WorkspacePdf {
   
   createdAt                  DateTime   @default(now())
   updatedAt                  DateTime   @updatedAt
+}
+
+model WorkspaceAiUsage {
+  id              Int           @id @default(autoincrement())
+  workspaceId     Int
+  adminId         Int?
+  registrationId  Int?
+  feature         String        @default("RESULT_SUGGESTION")
+  model           String?
+  prompt          String?       @db.Text
+  response        String?       @db.Text
+  promptTokens    Int?          @default(0)
+  candidateTokens Int?          @default(0)
+  totalTokens     Int?          @default(0)
+  status          String        @default("SUCCESS")
+  errorMessage    String?       @db.Text
+  durationMs      Int?
+  ipAddress       String?
+  createdAt       DateTime      @default(now())
+
+  workspace       Workspace     @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  admin           Admin?        @relation(fields: [adminId], references: [id], onDelete: SetNull)
+  registration    Registration? @relation(fields: [registrationId], references: [id], onDelete: SetNull)
+
+  @@index([workspaceId])
+  @@index([adminId])
+  @@index([registrationId])
+  @@index([createdAt])
+  @@index([status])
+  @@index([feature])
 }
 

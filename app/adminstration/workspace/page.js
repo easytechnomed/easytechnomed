@@ -52,6 +52,7 @@ import {
   ReceiptLong as ReceiptLongIcon,
   CurrencyRupee as RupeeIcon,
   Close as CloseIcon,
+  AutoAwesome as AutoAwesomeIcon,
 } from "@mui/icons-material";
 import { toast } from "sonner";
 
@@ -113,6 +114,9 @@ function WorkspaceControllerContent() {
       } else if (wsOrderBy === "last7Days") {
         aVal = a.stats?.last7Days || 0;
         bVal = b.stats?.last7Days || 0;
+      } else if (wsOrderBy === "aiCalls") {
+        aVal = a.stats?.aiCalls || 0;
+        bVal = b.stats?.aiCalls || 0;
       } else if (wsOrderBy === "expireAt") {
         aVal = a.expireAt ? new Date(a.expireAt).getTime() : 0;
         bVal = b.expireAt ? new Date(b.expireAt).getTime() : 0;
@@ -692,10 +696,10 @@ function WorkspaceControllerContent() {
                           </Box>
                           <Box>
                             <Typography variant="caption" color="text.secondary" sx={{ fontSize: "0.7rem", display: "block" }}>
-                              Last 7d
+                              AI Hits
                             </Typography>
-                            <Typography variant="body2" sx={{ fontWeight: 800 }}>
-                              {ws.stats?.last7Days || 0}
+                            <Typography variant="body2" sx={{ fontWeight: 800, color: "#7c3aed" }}>
+                              {ws.stats?.aiCalls || 0}
                             </Typography>
                           </Box>
                         </Box>
@@ -819,6 +823,15 @@ function WorkspaceControllerContent() {
                   </TableCell>
                   <TableCell sx={{ fontWeight: 700 }} align="center">
                     <TableSortLabel
+                      active={wsOrderBy === "aiCalls"}
+                      direction={wsOrderBy === "aiCalls" ? wsOrder : "asc"}
+                      onClick={() => handleWsRequestSort("aiCalls")}
+                    >
+                      AI Hits
+                    </TableSortLabel>
+                  </TableCell>
+                  <TableCell sx={{ fontWeight: 700 }} align="center">
+                    <TableSortLabel
                       active={wsOrderBy === "isActive"}
                       direction={wsOrderBy === "isActive" ? wsOrder : "asc"}
                       onClick={() => handleWsRequestSort("isActive")}
@@ -901,6 +914,30 @@ function WorkspaceControllerContent() {
                       </TableCell>
                       <TableCell align="center">{ws.stats?.today || 0}</TableCell>
                       <TableCell align="center">{ws.stats?.last7Days || 0}</TableCell>
+                      <TableCell align="center">
+                        {ws.stats?.aiCalls > 0 ? (
+                          <Tooltip title="View AI logs for this workspace">
+                            <Chip
+                              icon={<AutoAwesomeIcon sx={{ fontSize: "12px !important" }} />}
+                              label={`${ws.stats.aiCalls}`}
+                              size="small"
+                              onClick={() => router.push(`/adminstration/ai-usage`)}
+                              sx={{
+                                bgcolor: "rgba(124, 58, 237, 0.1)",
+                                color: "primary.main",
+                                fontWeight: 700,
+                                cursor: "pointer",
+                                height: 22,
+                                "&:hover": { bgcolor: "rgba(124, 58, 237, 0.2)" },
+                              }}
+                            />
+                          </Tooltip>
+                        ) : (
+                          <Typography variant="caption" sx={{ color: "text.disabled" }}>
+                            0
+                          </Typography>
+                        )}
+                      </TableCell>
                       <TableCell align="center">
                         <Switch
                           checked={ws.isActive}
