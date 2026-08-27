@@ -66,13 +66,13 @@ export default function AdminsPage() {
   const [totalCount, setTotalCount] = useState(0);
   const [totalPages, setTotalPages] = useState(1);
 
-  const fetchData = async (pageNum = page, limitNum = limit) => {
-    setLoading(true);
+  const fetchData = async (pageNum = page, limitNum = limit, isSilent = false) => {
+    if (!isSilent) setLoading(true);
     try {
       const [adminRes, wsRes, roleRes] = await Promise.all([
         fetch(`/adminstration/api/admins?page=${pageNum}&limit=${limitNum}`).then((r) => r.json()),
-        fetch("/adminstration/api/workspaces").then((r) => r.json()),
-        fetch("/adminstration/api/roles").then((r) => r.json()),
+        !isSilent ? fetch("/adminstration/api/workspaces").then((r) => r.json()) : Promise.resolve(null),
+        !isSilent ? fetch("/adminstration/api/roles").then((r) => r.json()) : Promise.resolve(null),
       ]);
 
       if (!adminRes.success && (adminRes.error === "Unauthorized" || adminRes.error === "NEXT_REDIRECT")) {
@@ -86,23 +86,57 @@ export default function AdminsPage() {
           setTotalCount(adminRes.pagination.totalCount);
           setTotalPages(adminRes.pagination.totalPages);
         }
-      } else {
+      } else if (!isSilent) {
         toast.error(adminRes.error || "Failed to load admins.");
       }
 
-      if (wsRes.success) setWorkspaces(wsRes.workspaces);
-      if (roleRes.success) setRoles(roleRes.roles);
+      if (wsRes && wsRes.success) setWorkspaces(wsRes.workspaces);
+      if (roleRes && roleRes.success) setRoles(roleRes.roles);
     } catch (err) {
-      console.error(err);
-      toast.error("Failed to load admins data.");
+      if (!isSilent) {
+        console.error(err);
+        toast.error("Failed to load admins data.");
+      }
     } finally {
-      setLoading(false);
+      if (!isSilent) setLoading(false);
     }
   };
 
+  // Live polling for admins table and today's activity bars (every 20 seconds)
   useEffect(() => {
-    fetchData(page, limit);
+    fetchData(page, limit, false);
+
+    const interval = setInterval(() => {
+      fetchData(page, limit, true);
+    }, 20 * 1000);
+
+    return () => clearInterval(interval);
   }, [page, limit]);
+
+  // Live polling for open activity tracking drawer (every 20 seconds)
+  useEffect(() => {
+    if (!trackingOpen || !selectedAdmin) return;
+
+    const fetchDrawerTracking = async (isSilent = true) => {
+      if (!isSilent) setLoadingTracking(true);
+      try {
+        const res = await fetch(`/adminstration/api/admins/${selectedAdmin.id}/tracking`).then((r) => r.json());
+        if (res.success) {
+          setTrackingLogs(res.trackings || []);
+        }
+      } catch (err) {
+        console.error("Live tracking fetch error:", err);
+      } finally {
+        if (!isSilent) setLoadingTracking(false);
+      }
+    };
+
+    const interval = setInterval(() => {
+      fetchDrawerTracking(true);
+    }, 20 * 1000);
+
+    return () => clearInterval(interval);
+  }, [trackingOpen, selectedAdmin]);
 
   const handleToggleAdmin = async (id, currentStatus) => {
     const newStatus = !currentStatus;
@@ -185,8 +219,8 @@ export default function AdminsPage() {
     dayStart.setHours(0, 0, 0, 0);
     const dayStartMs = dayStart.getTime();
 
-    const TOTAL_SLOTS = 96; // 15-minute resolution per day (matching drawer)
-    const SLOT_DURATION_MS = 15 * 60 * 1000;
+    const TOTAL_SLOTS = 48; // 30-minute resolution per day (48 slots)
+    const SLOT_DURATION_MS = 30 * 60 * 1000;
 
     let totalMinutes = 0;
     const slots = [];
@@ -214,13 +248,13 @@ export default function AdminsPage() {
         }
       }
 
-      const activeMinutes = Math.min(15, Math.round(slotMinutes));
+      const activeMinutes = Math.min(30, Math.round(slotMinutes));
       totalMinutes += activeMinutes;
       const isFuture = slotStart > now.getTime();
 
       const startDate = new Date(slotStart);
       const endDate = new Date(slotEnd);
-      const timeRangeStr = `${startDate.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })} – ${endDate.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}`;
+      const timeRangeStr = `${startDate.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })} – ${endDate.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}`;
 
       slots.push({
         index: s,
@@ -252,7 +286,7 @@ export default function AdminsPage() {
           sx={{
             display: "flex",
             alignItems: "center",
-            gap: "1px",
+            gap: "1.5px",
             height: 18,
             width: { xs: 150, sm: 190, md: 230 },
             flexShrink: 0,
@@ -268,9 +302,9 @@ export default function AdminsPage() {
             let opacity = 1;
 
             if (slot.isActive) {
-              if (slot.activeMinutes >= 10) {
+              if (slot.activeMinutes >= 20) {
                 bgColor = "#059669";
-              } else if (slot.activeMinutes >= 5) {
+              } else if (slot.activeMinutes >= 10) {
                 bgColor = "#10b981";
               } else {
                 bgColor = "#34d399";
@@ -318,7 +352,7 @@ export default function AdminsPage() {
                   sx={{
                     flex: 1,
                     height: "100%",
-                    borderRadius: "0.5px",
+                    borderRadius: "1px",
                     bgcolor: bgColor,
                     opacity,
                     transition: "all 0.12s ease-in-out",
@@ -491,6 +525,22 @@ export default function AdminsPage() {
           <Typography variant="h6" sx={{ fontWeight: 700 }}>
             All Admins ({loading ? "…" : admins.length})
           </Typography>
+          <Chip
+            label="⚡ LIVE (20s)"
+            size="small"
+            color="success"
+            variant="outlined"
+            sx={{
+              fontSize: "0.65rem",
+              fontWeight: 800,
+              height: 20,
+              animation: "pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite",
+              "@keyframes pulse": {
+                "0%, 100%": { opacity: 1 },
+                "50%": { opacity: 0.5 },
+              },
+            }}
+          />
         </Box>
         <Button
           variant="contained"
