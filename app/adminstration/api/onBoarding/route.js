@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import bcrypt from "bcryptjs";
+import { sendOnboardingWelcomeEmail } from "@/lib/mail";
 
 export async function POST(req) {
   try {
@@ -395,7 +396,21 @@ export async function POST(req) {
         adminId: admin.id,
         email: admin.email
       };
-    }, { maxWait: 25000, timeout: 50000 });
+    }, { maxWait: 30000, timeout: 90000 });
+
+    // Send onboarding welcome email with credentials
+    try {
+      console.log(`[ONBOARDING_API] Dispatching welcome email to ${email}...`);
+      const mailInfo = await sendOnboardingWelcomeEmail({
+        email,
+        password,
+        workspaceName: workspaceName,
+        companyName: companyName,
+      });
+      console.log(`[ONBOARDING_API] Welcome email successfully dispatched! Response:`, mailInfo);
+    } catch (mailError) {
+      console.error("[ONBOARDING_API_ERROR] Failed to send onboarding welcome email:", mailError);
+    }
 
     return NextResponse.json(result);
   } catch (error) {
