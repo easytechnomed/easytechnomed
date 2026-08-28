@@ -226,8 +226,8 @@ export default function ResultEntryMobile({
                     </Box>
                     <Box sx={{ display: "flex", alignItems: "center", gap: 0.6 }}>
                       <PhoneIcon sx={{ fontSize: 14, color: "text.secondary" }} />
-                      <Typography variant="caption" sx={{ fontWeight: 700, color: "text.primary" }}>
-                        {resultRegDetails.mobileNo || "-"}
+                      <Typography variant="caption" sx={{ fontWeight: 700, color: (resultRegDetails.mobileNo && resultRegDetails.mobileNo !== "-NA-") ? "text.primary" : "text.secondary" }}>
+                        {resultRegDetails.mobileNo && resultRegDetails.mobileNo !== "-NA-" ? resultRegDetails.mobileNo : "Not Available"}
                       </Typography>
                     </Box>
                     <Box sx={{ display: "flex", alignItems: "center", gap: 0.6 }}>

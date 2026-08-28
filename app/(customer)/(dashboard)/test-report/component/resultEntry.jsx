@@ -686,7 +686,9 @@ export default function ResultEntry({ open, onClose, selectedReg, onSaveSuccess,
                   </Grid>
                   <Grid item xs={6} sm={3}>
                     <Typography variant="caption" color="text.secondary">Mobile No</Typography>
-                    <Typography variant="body2" sx={{ fontWeight: 700, fontSize: { xs: "0.8rem", sm: "0.875rem" } }}>{resultRegDetails.mobileNo}</Typography>
+                    <Typography variant="body2" sx={{ fontWeight: 700, fontSize: { xs: "0.8rem", sm: "0.875rem" }, color: (resultRegDetails.mobileNo && resultRegDetails.mobileNo !== "-NA-") ? "text.primary" : "text.secondary" }}>
+                      {resultRegDetails.mobileNo && resultRegDetails.mobileNo !== "-NA-" ? resultRegDetails.mobileNo : "Not Available"}
+                    </Typography>
                   </Grid>
                   <Grid item xs={12} sm={3}>
                     <Typography variant="caption" color="text.secondary">Filter by Department</Typography>

@@ -225,7 +225,7 @@ export default function RegistrationPage() {
         if (res.success) {
           const reg = res.registration;
           setBillOn(reg.billOn);
-          setMobileNo(reg.mobileNo);
+          setMobileNo(reg.mobileNo === "-NA-" ? "" : (reg.mobileNo || ""));
           setRegDate(getLocalIsoString(new Date(reg.date)).substring(0, 10));
           setTitle(reg.title);
           setName(reg.name);
@@ -585,8 +585,8 @@ _Thank you for choosing us for your health diagnostics!_`;
 
   // Save Registration
   const handleSave = async () => {
-    if (!mobileNo || mobileNo.length < 10) {
-      showNotification("Please enter a valid 10-digit mobile number", "error");
+    if (mobileNo && mobileNo.trim().length > 0 && mobileNo.trim().length < 10) {
+      showNotification("Please enter a valid 10-digit mobile number or leave it empty", "error");
       return;
     }
     if (!name) {
@@ -606,7 +606,7 @@ _Thank you for choosing us for your health diagnostics!_`;
     try {
       const payload = {
         billOn,
-        mobileNo,
+        mobileNo: mobileNo ? mobileNo.trim() : "",
         title,
         name,
         city: city.trim() || "-NA-",
@@ -830,12 +830,12 @@ _Thank you for choosing us for your health diagnostics!_`;
                 </Grid>
                 <Grid size={{ xs: 12, sm: 4 }}>
                   <TextField
-                    label="Mobile No"
+                    label="Mobile No (Optional)"
                     fullWidth
                     size="small"
                     value={mobileNo}
                     onChange={handleMobileNoChange}
-                    placeholder="Enter 10 digit number"
+                    placeholder="Enter 10 digit number (Optional)"
                     slotProps={{
                       input: {
                         endAdornment: isLookingUpMobile ? (

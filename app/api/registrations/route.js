@@ -37,7 +37,7 @@ const generateRandomSuffix = (length = 4) => {
 // Zod Schema for Registration
 const registrationSchema = z.object({
   billOn: z.string().default("Patient Rate"),
-  mobileNo: z.string().min(10, "Mobile number must be at least 10 digits"),
+  mobileNo: z.string().optional().default("").transform((val) => val ? val.trim() : ""),
   title: z.string(),
   name: z.string().min(2, "Patient name must be at least 2 characters"),
   city: z.string().default("-NA-"),

@@ -367,7 +367,7 @@ export async function GET(req, { params }) {
               <td class="details-label">Address</td>
               <td class="details-value">: ${reg.city}</td>
               <td class="details-label">Cont. No</td>
-              <td class="details-value">: ${reg.mobileNo}</td>
+              <td class="details-value">: ${reg.mobileNo && reg.mobileNo !== "-NA-" ? reg.mobileNo : "Not Available"}</td>
             </tr>
           </table>
 

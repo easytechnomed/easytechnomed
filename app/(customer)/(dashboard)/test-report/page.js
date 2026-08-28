@@ -271,7 +271,7 @@ const exportColumns = [
   { id: "name", label: "Patient Name", getValue: (reg) => `${reg.title} ${reg.name}` },
   { id: "gender", label: "Gender", getValue: (reg) => reg.gender },
   { id: "age", label: "Age", getValue: (reg) => `${Math.round(reg.age)}${reg.ageUnit?.charAt(0) || "Y"}` },
-  { id: "mobile", label: "Mobile No", getValue: (reg) => reg.mobileNo },
+  { id: "mobile", label: "Mobile No", getValue: (reg) => (reg.mobileNo && reg.mobileNo.trim() && reg.mobileNo !== "-NA-" ? reg.mobileNo : "Not Available") },
   {
     id: "rptTime", label: "Rpt. Time", getValue: (reg) => {
       if (!reg.expRptDate) return "-";
@@ -1085,7 +1085,15 @@ export default function TestReportPage() {
                       </TableCell>
                       <TableCell sx={{ whiteSpace: "nowrap" }}>{reg.gender}</TableCell>
                       <TableCell sx={{ whiteSpace: "nowrap" }}>{Math.round(reg.age)}{reg.ageUnit.charAt(0)}</TableCell>
-                      <TableCell sx={{ whiteSpace: "nowrap" }}>{reg.mobileNo}</TableCell>
+                      <TableCell sx={{ whiteSpace: "nowrap" }}>
+                        {reg.mobileNo && reg.mobileNo.trim() && reg.mobileNo !== "-NA-" ? (
+                          reg.mobileNo
+                        ) : (
+                          <Typography variant="caption" sx={{ color: "text.disabled", fontStyle: "italic", fontWeight: 500 }}>
+                            Not Available
+                          </Typography>
+                        )}
+                      </TableCell>
                       <TableCell sx={{ whiteSpace: "nowrap" }}>{formatTimeOnly(reg.expRptDate)}</TableCell>
                       <TableCell sx={{ fontStyle: "italic", fontSize: "0.75rem", whiteSpace: "nowrap" }}>
                         {reg.barcode ? reg.barcode.replace(/^,\s*/, "") : "-"}
