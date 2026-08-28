@@ -6,6 +6,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as zod from "zod";
 import { toast } from "sonner";
+import { TextField, InputAdornment, IconButton } from "@mui/material";
 import { Lock, ArrowRight, ShieldCheck, CheckCircle2, AlertTriangle, Eye, EyeOff } from "lucide-react";
 import { Label } from "@/components/ui/Label";
 
@@ -66,6 +67,42 @@ export default function ResetPasswordClient({ token }) {
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const inputStyle = {
+    "& .MuiOutlinedInput-root": {
+      bgcolor: "#F8FAFC",
+      borderRadius: "12px",
+      fontSize: { xs: "16px", sm: "0.95rem" },
+      fontWeight: 600,
+      touchAction: "manipulation",
+      "& fieldset": {
+        borderColor: "#CBD5E1",
+        borderWidth: "2px",
+      },
+      "&:hover fieldset": {
+        borderColor: "#94A3B8",
+      },
+      "&.Mui-focused fieldset": {
+        borderColor: "#0f766e",
+        borderWidth: "2px",
+      },
+      "&.Mui-focused": {
+        bgcolor: "#FFFFFF",
+      },
+    },
+    "& .MuiInputBase-input": {
+      py: { xs: 1.5, sm: 1.4 },
+      fontSize: { xs: "16px", sm: "0.95rem" },
+      color: "#0F172A",
+      touchAction: "manipulation",
+    },
+    "& .MuiFormHelperText-root": {
+      fontWeight: 700,
+      fontSize: "0.75rem",
+      mx: 0.5,
+      mt: 0.5,
+    },
   };
 
   return (
@@ -140,28 +177,37 @@ export default function ResetPasswordClient({ token }) {
                 <Label htmlFor="newPassword" className="text-slate-700 text-xs font-bold tracking-wide uppercase">
                   New Password
                 </Label>
-                <div className="relative flex items-center">
-                  <div className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none flex items-center justify-center">
-                    <Lock className="w-5 h-5 text-slate-400" />
-                  </div>
-                  <input
-                    id="newPassword"
-                    type={showNewPassword ? "text" : "password"}
-                    placeholder="Enter at least 8 characters"
-                    className="w-full h-12 bg-slate-50 pl-11 pr-11 rounded-xl border-2 border-slate-300 focus:border-[#0f766e] focus:bg-white text-slate-900 font-semibold placeholder:text-slate-400 placeholder:font-normal text-sm transition-all focus:outline-none"
-                    {...register("newPassword")}
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowNewPassword(!showNewPassword)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 cursor-pointer p-1.5 flex items-center justify-center rounded-lg hover:bg-slate-100 transition-colors"
-                  >
-                    {showNewPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                  </button>
-                </div>
-                {errors.newPassword && (
-                  <p className="text-xs text-red-600 font-bold mt-1 pl-1">{errors.newPassword.message}</p>
-                )}
+                <TextField
+                  fullWidth
+                  id="newPassword"
+                  type={showNewPassword ? "text" : "password"}
+                  placeholder="Enter at least 8 characters"
+                  error={!!errors.newPassword}
+                  helperText={errors.newPassword?.message}
+                  {...register("newPassword")}
+                  slotProps={{
+                    input: {
+                      startAdornment: (
+                        <InputAdornment position="start" sx={{ color: "text.secondary", pl: 0.5 }}>
+                          <Lock className="w-5 h-5 text-slate-400" />
+                        </InputAdornment>
+                      ),
+                      endAdornment: (
+                        <InputAdornment position="end">
+                          <IconButton
+                            size="small"
+                            onClick={() => setShowNewPassword(!showNewPassword)}
+                            edge="end"
+                            sx={{ color: "text.secondary" }}
+                          >
+                            {showNewPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                          </IconButton>
+                        </InputAdornment>
+                      ),
+                    },
+                  }}
+                  sx={inputStyle}
+                />
               </div>
 
               {/* Confirm Password Field */}
@@ -169,28 +215,37 @@ export default function ResetPasswordClient({ token }) {
                 <Label htmlFor="confirmPassword" className="text-slate-700 text-xs font-bold tracking-wide uppercase">
                   Confirm New Password
                 </Label>
-                <div className="relative flex items-center">
-                  <div className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none flex items-center justify-center">
-                    <Lock className="w-5 h-5 text-slate-400" />
-                  </div>
-                  <input
-                    id="confirmPassword"
-                    type={showConfirmPassword ? "text" : "password"}
-                    placeholder="Re-enter your new password"
-                    className="w-full h-12 bg-slate-50 pl-11 pr-11 rounded-xl border-2 border-slate-300 focus:border-[#0f766e] focus:bg-white text-slate-900 font-semibold placeholder:text-slate-400 placeholder:font-normal text-sm transition-all focus:outline-none"
-                    {...register("confirmPassword")}
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 cursor-pointer p-1.5 flex items-center justify-center rounded-lg hover:bg-slate-100 transition-colors"
-                  >
-                    {showConfirmPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                  </button>
-                </div>
-                {errors.confirmPassword && (
-                  <p className="text-xs text-red-600 font-bold mt-1 pl-1">{errors.confirmPassword.message}</p>
-                )}
+                <TextField
+                  fullWidth
+                  id="confirmPassword"
+                  type={showConfirmPassword ? "text" : "password"}
+                  placeholder="Re-enter your new password"
+                  error={!!errors.confirmPassword}
+                  helperText={errors.confirmPassword?.message}
+                  {...register("confirmPassword")}
+                  slotProps={{
+                    input: {
+                      startAdornment: (
+                        <InputAdornment position="start" sx={{ color: "text.secondary", pl: 0.5 }}>
+                          <Lock className="w-5 h-5 text-slate-400" />
+                        </InputAdornment>
+                      ),
+                      endAdornment: (
+                        <InputAdornment position="end">
+                          <IconButton
+                            size="small"
+                            onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                            edge="end"
+                            sx={{ color: "text.secondary" }}
+                          >
+                            {showConfirmPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                          </IconButton>
+                        </InputAdornment>
+                      ),
+                    },
+                  }}
+                  sx={inputStyle}
+                />
               </div>
 
               {/* Submit Button */}

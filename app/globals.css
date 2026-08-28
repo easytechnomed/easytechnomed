@@ -24,6 +24,7 @@ body {
   background: var(--background);
   color: var(--foreground);
   font-family: var(--font-sans);
+  touch-action: manipulation;
 }
 
 /* Strict Flat Design Rule: Zero artificial shadows */
@@ -31,6 +32,23 @@ body {
 *::before,
 *::after {
   box-shadow: none !important;
+}
+
+/* iOS Safari & Mobile Browser Auto-Zoom Fix */
+input,
+select,
+textarea,
+.MuiInputBase-input {
+  touch-action: manipulation;
+}
+
+@media screen and (max-width: 768px) {
+  input,
+  select,
+  textarea,
+  .MuiInputBase-input {
+    font-size: 16px !important;
+  }
 }
 
 /* Flat solid buttons and transitions */
@@ -92,4 +110,5 @@ button,
 [type="submit"],
 [type="reset"] {
   cursor: pointer;
+  touch-action: manipulation;
 }

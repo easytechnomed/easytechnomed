@@ -6,6 +6,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as zod from "zod";
 import { toast } from "sonner";
+import { TextField, InputAdornment, IconButton } from "@mui/material";
 import { ArrowRight, Mail, Lock, Phone, ShieldCheck, X, CheckCircle, KeyRound, Eye, EyeOff } from "lucide-react";
 import { Label } from "@/components/ui/Label";
 
@@ -109,6 +110,42 @@ export default function CustomerLoginPage() {
     }
   };
 
+  const inputStyle = {
+    "& .MuiOutlinedInput-root": {
+      bgcolor: "#F8FAFC",
+      borderRadius: "12px",
+      fontSize: { xs: "16px", sm: "0.95rem" },
+      fontWeight: 600,
+      touchAction: "manipulation",
+      "& fieldset": {
+        borderColor: "#CBD5E1",
+        borderWidth: "2px",
+      },
+      "&:hover fieldset": {
+        borderColor: "#94A3B8",
+      },
+      "&.Mui-focused fieldset": {
+        borderColor: "#0f766e",
+        borderWidth: "2px",
+      },
+      "&.Mui-focused": {
+        bgcolor: "#FFFFFF",
+      },
+    },
+    "& .MuiInputBase-input": {
+      py: { xs: 1.5, sm: 1.4 },
+      fontSize: { xs: "16px", sm: "0.95rem" },
+      color: "#0F172A",
+      touchAction: "manipulation",
+    },
+    "& .MuiFormHelperText-root": {
+      fontWeight: 700,
+      fontSize: "0.75rem",
+      mx: 0.5,
+      mt: 0.5,
+    },
+  };
+
   return (
     <div className="min-h-[calc(100vh-72px)] w-full flex items-center justify-center pt-28 sm:pt-32 pb-16 px-4 sm:px-6 bg-[#F8FAFC] text-slate-900 font-sans">
       <div className="w-full max-w-md space-y-6">
@@ -136,27 +173,30 @@ export default function CustomerLoginPage() {
               <Label htmlFor="identifier" className="text-slate-700 text-xs font-bold tracking-wide uppercase">
                 Mobile Number or Email
               </Label>
-              <div className="relative flex items-center">
-                <div className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none flex items-center justify-center">
-                  {isMobileInput ? (
-                    <Phone className="w-5 h-5 text-slate-400" />
-                  ) : (
-                    <Mail className="w-5 h-5 text-slate-400" />
-                  )}
-                </div>
-                <input
-                  id="identifier"
-                  type="text"
-                  placeholder="Enter mobile number or email"
-                  className="w-full h-12 bg-slate-50 pl-11 pr-4 rounded-xl border-2 border-slate-300 focus:border-[#0f766e] focus:bg-white text-slate-900 font-semibold placeholder:text-slate-400 placeholder:font-normal text-sm transition-all focus:outline-none"
-                  {...register("identifier", {
-                    onChange: (e) => setIdentifierValue(e.target.value),
-                  })}
-                />
-              </div>
-              {errors.identifier && (
-                <p className="text-xs text-red-600 font-bold mt-1 pl-1">{errors.identifier.message}</p>
-              )}
+              <TextField
+                fullWidth
+                id="identifier"
+                placeholder="Enter mobile number or email"
+                error={!!errors.identifier}
+                helperText={errors.identifier?.message}
+                {...register("identifier", {
+                  onChange: (e) => setIdentifierValue(e.target.value),
+                })}
+                slotProps={{
+                  input: {
+                    startAdornment: (
+                      <InputAdornment position="start" sx={{ color: "text.secondary", pl: 0.5 }}>
+                        {isMobileInput ? (
+                          <Phone className="w-5 h-5 text-slate-400" />
+                        ) : (
+                          <Mail className="w-5 h-5 text-slate-400" />
+                        )}
+                      </InputAdornment>
+                    ),
+                  },
+                }}
+                sx={inputStyle}
+              />
             </div>
 
             {/* Password Field */}
@@ -173,28 +213,37 @@ export default function CustomerLoginPage() {
                   Forgot password?
                 </button>
               </div>
-              <div className="relative flex items-center">
-                <div className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none flex items-center justify-center">
-                  <Lock className="w-5 h-5 text-slate-400" />
-                </div>
-                <input
-                  id="password"
-                  type={showPassword ? "text" : "password"}
-                  placeholder="Enter your password"
-                  className="w-full h-12 bg-slate-50 pl-11 pr-11 rounded-xl border-2 border-slate-300 focus:border-[#0f766e] focus:bg-white text-slate-900 font-semibold placeholder:text-slate-400 placeholder:font-normal text-sm transition-all focus:outline-none"
-                  {...register("password")}
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 cursor-pointer p-1.5 flex items-center justify-center rounded-lg hover:bg-slate-100 transition-colors"
-                >
-                  {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                </button>
-              </div>
-              {errors.password && (
-                <p className="text-xs text-red-600 font-bold mt-1 pl-1">{errors.password.message}</p>
-              )}
+              <TextField
+                fullWidth
+                id="password"
+                type={showPassword ? "text" : "password"}
+                placeholder="Enter your password"
+                error={!!errors.password}
+                helperText={errors.password?.message}
+                {...register("password")}
+                slotProps={{
+                  input: {
+                    startAdornment: (
+                      <InputAdornment position="start" sx={{ color: "text.secondary", pl: 0.5 }}>
+                        <Lock className="w-5 h-5 text-slate-400" />
+                      </InputAdornment>
+                    ),
+                    endAdornment: (
+                      <InputAdornment position="end">
+                        <IconButton
+                          size="small"
+                          onClick={() => setShowPassword(!showPassword)}
+                          edge="end"
+                          sx={{ color: "text.secondary" }}
+                        >
+                          {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                        </IconButton>
+                      </InputAdornment>
+                    ),
+                  },
+                }}
+                sx={inputStyle}
+              />
             </div>
 
             {/* Action Button */}
@@ -297,20 +346,25 @@ export default function CustomerLoginPage() {
                     <Label htmlFor="forgot-email" className="text-slate-700 text-xs font-bold tracking-wide uppercase">
                       Registered Email Address
                     </Label>
-                    <div className="relative flex items-center">
-                      <div className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none flex items-center justify-center">
-                        <Mail className="w-5 h-5" />
-                      </div>
-                      <input
-                        id="forgot-email"
-                        type="email"
-                        required
-                        placeholder="e.g. admin@yourlab.com"
-                        value={forgotEmail}
-                        onChange={(e) => setForgotEmail(e.target.value)}
-                        className="w-full h-12 bg-slate-50 pl-11 pr-4 rounded-xl border-2 border-slate-300 focus:border-[#0f766e] focus:bg-white text-slate-900 font-semibold placeholder:text-slate-400 placeholder:font-normal text-sm transition-all focus:outline-none"
-                      />
-                    </div>
+                    <TextField
+                      fullWidth
+                      id="forgot-email"
+                      type="email"
+                      required
+                      placeholder="e.g. admin@yourlab.com"
+                      value={forgotEmail}
+                      onChange={(e) => setForgotEmail(e.target.value)}
+                      slotProps={{
+                        input: {
+                          startAdornment: (
+                            <InputAdornment position="start" sx={{ color: "text.secondary", pl: 0.5 }}>
+                              <Mail className="w-5 h-5 text-slate-400" />
+                            </InputAdornment>
+                          ),
+                        },
+                      }}
+                      sx={inputStyle}
+                    />
                   </div>
 
                   <div className="flex items-center gap-3 pt-2">
