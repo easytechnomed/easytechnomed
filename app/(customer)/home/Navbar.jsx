@@ -19,7 +19,8 @@ import {
 import {
     Menu as MenuIcon,
     Close as CloseIcon,
-    ArrowForward as ArrowForwardIcon
+    ArrowForward as ArrowForwardIcon,
+    Login as LoginIcon
 } from "@mui/icons-material";
 
 export default function Navbar({
@@ -52,11 +53,10 @@ export default function Navbar({
                 position="fixed"
                 elevation={0}
                 sx={{
-                    bgcolor: isSolid ? "rgba(255, 255, 255, 0.95)" : "transparent",
-                    backdropFilter: isSolid ? "blur(12px)" : "none",
-                    borderBottom: "1px solid",
-                    borderColor: isSolid ? "rgba(15, 118, 110, 0.1)" : "transparent",
-                    transition: "all 0.3s ease",
+                    bgcolor: "#FFFFFF",
+                    borderBottom: isSolid ? "2px solid #E5E7EB" : "2px solid transparent",
+                    boxShadow: "none !important",
+                    transition: "border-color 0.2s ease-in-out",
                     zIndex: 1100
                 }}
             >
@@ -67,7 +67,13 @@ export default function Navbar({
                             component="img"
                             src="/logo/logobg.png"
                             alt="EasyTechnoMed Logo"
-                            sx={{ height: 48, cursor: "pointer", borderRadius: "6px" }}
+                            sx={{
+                                height: { xs: 38, sm: 42, md: 44 },
+                                cursor: "pointer",
+                                borderRadius: "6px",
+                                transition: "transform 0.2s",
+                                "&:hover": { transform: "scale(1.02)" }
+                            }}
                             onClick={() => {
                                 if (typeof window !== "undefined" && window.location.pathname === "/") {
                                     window.scrollTo({ top: 0, behavior: "smooth" });
@@ -86,11 +92,12 @@ export default function Navbar({
                                     href={link.href}
                                     sx={{
                                         textDecoration: "none",
-                                        color: isSolid ? "text.primary" : "#334155",
+                                        color: "#111827",
                                         fontWeight: 600,
                                         fontSize: "0.95rem",
-                                        transition: "color 0.2s",
-                                        "&:hover": { color: "primary.main" }
+                                        letterSpacing: "0.01em",
+                                        transition: "color 0.15s ease-in-out",
+                                        "&:hover": { color: "#0f766e" }
                                     }}
                                 >
                                     {link.text}
@@ -98,37 +105,128 @@ export default function Navbar({
                             ))}
                         </Box>
 
-                        {/* Action Buttons */}
-                        <Box sx={{ display: { xs: "none", md: "flex" }, gap: 2 }}>
+                        {/* Desktop Action Buttons */}
+                        <Box sx={{ display: { xs: "none", md: "flex" }, alignItems: "center", gap: 2 }}>
                             {isLoggedIn ? (
                                 <Button
                                     variant="contained"
-                                    color="primary"
                                     onClick={() => router.push("/dashboard")}
-                                    endIcon={<ArrowForwardIcon />}
+                                    endIcon={<ArrowForwardIcon sx={{ fontSize: "1.1rem" }} />}
+                                    sx={{
+                                        fontWeight: 700,
+                                        bgcolor: "#0f766e",
+                                        color: "#FFFFFF",
+                                        borderRadius: "8px",
+                                        px: 3,
+                                        py: 1.1,
+                                        boxShadow: "none !important",
+                                        "&:hover": {
+                                            bgcolor: "#115e59",
+                                            boxShadow: "none !important",
+                                            transform: "scale(1.04)"
+                                        }
+                                    }}
                                 >
                                     Open Dashboard
                                 </Button>
                             ) : (
-                                <Button
-                                    variant="contained"
-                                    color="primary"
-                                    onClick={() => router.push("/auth/login")}
-                                    endIcon={<ArrowForwardIcon />}
-                                >
-                                    Customer Login
-                                </Button>
+                                <>
+                                    <Button
+                                        variant="text"
+                                        onClick={() => router.push("/auth/login")}
+                                        startIcon={<LoginIcon sx={{ fontSize: "1.1rem" }} />}
+                                        sx={{
+                                            fontWeight: 700,
+                                            borderRadius: "8px",
+                                            px: 2.5,
+                                            py: 1.1,
+                                            bgcolor: "#F3F4F6",
+                                            color: "#111827",
+                                            boxShadow: "none !important",
+                                            "&:hover": {
+                                                bgcolor: "#E5E7EB",
+                                                boxShadow: "none !important",
+                                                transform: "scale(1.04)"
+                                            }
+                                        }}
+                                    >
+                                        Login
+                                    </Button>
+                                    <Button
+                                        variant="contained"
+                                        onClick={() => router.push("/auth/register")}
+                                        endIcon={<ArrowForwardIcon sx={{ fontSize: "1.1rem" }} />}
+                                        sx={{
+                                            fontWeight: 700,
+                                            borderRadius: "8px",
+                                            px: 3,
+                                            py: 1.1,
+                                            bgcolor: "#0f766e",
+                                            color: "#FFFFFF",
+                                            boxShadow: "none !important",
+                                            "&:hover": {
+                                                bgcolor: "#115e59",
+                                                boxShadow: "none !important",
+                                                transform: "scale(1.04)"
+                                            }
+                                        }}
+                                    >
+                                        Start Free Trial
+                                    </Button>
+                                </>
                             )}
                         </Box>
 
-                        {/* Mobile Menu Icon */}
-                        <IconButton
-                            edge="end"
-                            sx={{ display: { xs: "flex", md: "none" }, color: isSolid ? "primary.main" : "#334155" }}
-                            onClick={() => setMobileMenuOpen(true)}
-                        >
-                            <MenuIcon />
-                        </IconButton>
+                        {/* Mobile Action & Menu */}
+                        <Box sx={{ display: { xs: "flex", md: "none" }, alignItems: "center", gap: 1 }}>
+                            {isLoggedIn ? (
+                                <Button
+                                    variant="contained"
+                                    size="small"
+                                    onClick={() => router.push("/dashboard")}
+                                    sx={{
+                                        fontWeight: 700,
+                                        fontSize: "0.82rem",
+                                        borderRadius: "6px",
+                                        px: 1.8,
+                                        py: 0.7,
+                                        bgcolor: "#0f766e",
+                                        color: "#FFFFFF",
+                                        boxShadow: "none !important",
+                                    }}
+                                >
+                                    Dashboard
+                                </Button>
+                            ) : (
+                                <Button
+                                    variant="contained"
+                                    size="small"
+                                    onClick={() => router.push("/auth/login")}
+                                    startIcon={<LoginIcon sx={{ fontSize: "1rem !important" }} />}
+                                    sx={{
+                                        fontWeight: 700,
+                                        fontSize: "0.82rem",
+                                        borderRadius: "6px",
+                                        px: 2,
+                                        py: 0.7,
+                                        bgcolor: "#0f766e",
+                                        color: "#FFFFFF",
+                                        boxShadow: "none !important",
+                                    }}
+                                >
+                                    Login
+                                </Button>
+                            )}
+
+                            <IconButton
+                                edge="end"
+                                sx={{ color: "#111827", p: 1 }}
+                                onClick={() => setMobileMenuOpen(true)}
+                                aria-label="open navigation menu"
+                            >
+                                <MenuIcon />
+                            </IconButton>
+                        </Box>
                     </Toolbar>
                 </Container>
             </AppBar>
@@ -139,11 +237,11 @@ export default function Navbar({
                 open={mobileMenuOpen}
                 onClose={() => setMobileMenuOpen(false)}
             >
-                <Box sx={{ width: 280, p: 3, height: "100%", display: "flex", flexDirection: "column" }}>
+                <Box sx={{ width: 280, p: 3, height: "100%", display: "flex", flexDirection: "column", bgcolor: "#FFFFFF" }}>
                     <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 4 }}>
-                        <Box component="img" src="/logo/logobg.png" alt="EasyTechnoMed" sx={{ height: 40, borderRadius: "4px" }} />
+                        <Box component="img" src="/logo/logobg.png" alt="EasyTechnoMed" sx={{ height: 38, borderRadius: "4px" }} />
                         <IconButton onClick={() => setMobileMenuOpen(false)}>
-                            <CloseIcon />
+                            <CloseIcon sx={{ color: "#111827" }} />
                         </IconButton>
                     </Box>
                     <List sx={{ mb: "auto" }}>
@@ -153,40 +251,80 @@ export default function Navbar({
                                     component={Link}
                                     href={link.href}
                                     onClick={() => setMobileMenuOpen(false)}
-                                    sx={{ py: 1.5, borderRadius: 2 }}
+                                    sx={{ py: 1.5, borderRadius: "6px", mb: 0.5 }}
                                 >
-                                    <ListItemText primary={link.text} slotProps={{ primary: { fontWeight: 600, color: "text.primary" } }} />
+                                    <ListItemText primary={link.text} slotProps={{ primary: { fontWeight: 700, color: "#111827" } }} />
                                 </ListItemButton>
                             </ListItem>
                         ))}
                     </List>
-                    <Box sx={{ display: "flex", flexDirection: "column", gap: 2, mt: 4 }}>
+                    <Box sx={{ display: "flex", flexDirection: "column", gap: 1.5, mt: 4 }}>
                         {isLoggedIn ? (
                             <Button
                                 variant="contained"
-                                color="primary"
                                 fullWidth
                                 onClick={() => {
                                     setMobileMenuOpen(false);
                                     router.push("/dashboard");
                                 }}
                                 endIcon={<ArrowForwardIcon />}
+                                sx={{
+                                    fontWeight: 700,
+                                    borderRadius: "8px",
+                                    py: 1.4,
+                                    bgcolor: "#0f766e",
+                                    color: "#FFFFFF",
+                                    boxShadow: "none !important"
+                                }}
                             >
                                 Open Dashboard
                             </Button>
                         ) : (
-                            <Button
-                                variant="contained"
-                                color="primary"
-                                fullWidth
-                                onClick={() => {
-                                    setMobileMenuOpen(false);
-                                    router.push("/auth/login");
-                                }}
-                                endIcon={<ArrowForwardIcon />}
-                            >
-                                Customer Login
-                            </Button>
+                            <>
+                                <Button
+                                    variant="outlined"
+                                    fullWidth
+                                    startIcon={<LoginIcon />}
+                                    onClick={() => {
+                                        setMobileMenuOpen(false);
+                                        router.push("/auth/login");
+                                    }}
+                                    sx={{
+                                        fontWeight: 700,
+                                        borderRadius: "8px",
+                                        py: 1.4,
+                                        border: "3px solid #0f766e",
+                                        color: "#0f766e",
+                                        boxShadow: "none !important",
+                                        "&:hover": {
+                                            bgcolor: "#0f766e",
+                                            color: "#FFFFFF",
+                                            border: "3px solid #0f766e"
+                                        }
+                                    }}
+                                >
+                                    Login
+                                </Button>
+                                <Button
+                                    variant="contained"
+                                    fullWidth
+                                    onClick={() => {
+                                        setMobileMenuOpen(false);
+                                        router.push("/auth/register");
+                                    }}
+                                    endIcon={<ArrowForwardIcon />}
+                                    sx={{
+                                        fontWeight: 700,
+                                        borderRadius: "8px",
+                                        py: 1.4,
+                                        bgcolor: "#0f766e",
+                                        color: "#FFFFFF",
+                                        boxShadow: "none !important"
+                                    }}
+                                >
+                                    Start Free Trial
+                                </Button>
+                            </>
                         )}
                     </Box>
                 </Box>

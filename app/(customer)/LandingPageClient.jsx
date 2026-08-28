@@ -18,6 +18,7 @@ export default function LandingPage() {
     const [contactInput, setContactInput] = useState("");
     const [inputType, setInputType] = useState("email"); // "email" or "mobile"
     const [loading, setLoading] = useState(false);
+    const [leadSuccess, setLeadSuccess] = useState(false);
 
     // Dynamic input type detector
     useEffect(() => {
@@ -47,7 +48,8 @@ export default function LandingPage() {
             }).then((r) => r.json());
 
             if (res.success) {
-                toast.success(res.message);
+                toast.success(res.message || "Thank you! Our team will contact you as soon as possible.");
+                setLeadSuccess(true);
                 setContactInput("");
             } else {
                 toast.error(res.message);
@@ -68,6 +70,8 @@ export default function LandingPage() {
                 setContactInput={setContactInput}
                 inputType={inputType}
                 loading={loading}
+                leadSuccess={leadSuccess}
+                setLeadSuccess={setLeadSuccess}
                 handleLeadSubmit={handleLeadSubmit}
                 router={router}
             />
@@ -90,6 +94,7 @@ export default function LandingPage() {
                 setContactInput={setContactInput}
                 inputType={inputType}
                 loading={loading}
+                leadSuccess={leadSuccess}
                 handleLeadSubmit={handleLeadSubmit}
             />
         </Box>

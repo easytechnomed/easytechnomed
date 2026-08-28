@@ -7,7 +7,7 @@ import { CssBaseline, Box } from "@mui/material";
 import Navbar from "./home/Navbar";
 import Footer from "./home/Footer";
 
-// Unified theme for all customer routes
+// Flat Design System Theme
 const theme = createTheme({
   breakpoints: {
     values: {
@@ -20,44 +20,86 @@ const theme = createTheme({
   },
   palette: {
     primary: {
-      main: "#0f766e", // Teal 700
-      light: "#14b8a6", // Teal 500
-      dark: "#115e59", // Teal 800
-      contrastText: "#ffffff",
+      main: "#0f766e",
+      light: "#14b8a6",
+      dark: "#115e59",
+      contrastText: "#FFFFFF",
     },
     secondary: {
-      main: "#3b82f6", // Blue 500
+      main: "#10B981",
+      contrastText: "#FFFFFF",
     },
     background: {
-      default: "#f8fafc", // Slate 50
-      paper: "#ffffff",
+      default: "#FFFFFF",
+      paper: "#FFFFFF",
     },
     text: {
-      primary: "#0f172a", // Slate 900
-      secondary: "#475569", // Slate 600
+      primary: "#111827",
+      secondary: "#6B7280",
     },
+    divider: "#E5E7EB",
   },
   typography: {
-    fontFamily: "var(--font-outfit), 'Outfit', sans-serif",
+    fontFamily: "var(--font-outfit), 'Outfit', system-ui, sans-serif",
+    h1: {
+      fontWeight: 800,
+      letterSpacing: "-0.02em",
+    },
+    h2: {
+      fontWeight: 800,
+      letterSpacing: "-0.02em",
+    },
+    h3: {
+      fontWeight: 800,
+      letterSpacing: "-0.02em",
+    },
+    h4: {
+      fontWeight: 700,
+      letterSpacing: "-0.01em",
+    },
+    h5: {
+      fontWeight: 700,
+    },
+    h6: {
+      fontWeight: 700,
+    },
     button: {
       textTransform: "none",
-      fontWeight: 600,
+      fontWeight: 700,
+      letterSpacing: "0.01em",
     },
+  },
+  shape: {
+    borderRadius: 8,
   },
   components: {
     MuiButton: {
       styleOverrides: {
         root: {
           borderRadius: 8,
-          padding: "10px 24px",
+          boxShadow: "none !important",
+          padding: "10px 22px",
+          transition: "all 0.2s ease-in-out",
+          "&:hover": {
+            boxShadow: "none !important",
+            transform: "scale(1.04)",
+          },
         },
       },
     },
     MuiCard: {
       styleOverrides: {
         root: {
-          borderRadius: 16,
-          boxShadow: "0 10px 30px -15px rgba(0, 0, 0, 0.05), 0 1px 3px 0 rgba(0, 0, 0, 0.05)",
+          borderRadius: 8,
+          boxShadow: "none !important",
+          border: "none",
+        },
+      },
+    },
+    MuiPaper: {
+      styleOverrides: {
+        root: {
+          boxShadow: "none !important",
         },
       },
     },
@@ -81,7 +123,7 @@ export default function CustomerLayout({ children }) {
 
   useEffect(() => {
     const handleScroll = () => {
-      if (window.scrollY > 50) {
+      if (window.scrollY > 20) {
         setScrolled(true);
       } else {
         setScrolled(false);
@@ -134,7 +176,7 @@ export default function CustomerLayout({ children }) {
   return (
     <ThemeProvider theme={theme}>
       <CssBaseline />
-      <Box sx={{ minHeight: "100vh", display: "flex", flexDirection: "column", bgcolor: "background.default" }}>
+      <Box sx={{ minHeight: "100vh", display: "flex", flexDirection: "column", bgcolor: "#FFFFFF" }}>
         {!isDashboard && (
           <>
             <script
@@ -143,6 +185,7 @@ export default function CustomerLayout({ children }) {
             />
             <Navbar
               scrolled={scrolled}
+              alwaysSolid={pathname.startsWith("/auth")}
               mobileMenuOpen={mobileMenuOpen}
               setMobileMenuOpen={setMobileMenuOpen}
               navLinks={navLinks}

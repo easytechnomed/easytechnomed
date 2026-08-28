@@ -11,12 +11,12 @@ import {
   TextField,
   Button,
   InputAdornment,
-  CircularProgress,
-  Chip
+  CircularProgress
 } from "@mui/material";
 import {
   SupportAgent as SupportIcon,
-  PhoneAndroid as PhoneIcon
+  PhoneAndroid as PhoneIcon,
+  ArrowForward as ArrowForwardIcon
 } from "@mui/icons-material";
 import EmailOutlinedIcon from "@mui/icons-material/EmailOutlined";
 
@@ -31,148 +31,169 @@ export default function Contact({
     <Box
       id="contact"
       sx={{
-        py: { xs: 8, md: 12 },
-        background: "linear-gradient(135deg, #f0fdfa 0%, #e0f2fe 100%)", // Teal-50 to Sky-50
-        borderTop: "1px solid rgba(15, 118, 110, 0.08)",
+        py: { xs: 10, md: 16 },
+        bgcolor: "#111827", // Solid Dark Gray Color Block
         position: "relative",
         overflow: "hidden"
       }}
     >
-      {/* Decorative floating blurred gradient spots */}
+      {/* Flat Poster Geometric Shapes */}
       <Box
         sx={{
           position: "absolute",
-          top: "-10%",
-          left: "-10%",
-          width: "40%",
-          height: "40%",
-          background: "radial-gradient(circle, rgba(20, 184, 166, 0.15) 0%, rgba(20, 184, 166, 0) 70%)",
-          filter: "blur(60px)",
+          top: "-60px",
+          right: "-60px",
+          width: "280px",
+          height: "280px",
+          borderRadius: "50%",
+          bgcolor: "rgba(15, 118, 110, 0.15)",
           pointerEvents: "none"
         }}
       />
       <Box
         sx={{
           position: "absolute",
-          bottom: "-10%",
-          right: "-10%",
-          width: "40%",
-          height: "40%",
-          background: "radial-gradient(circle, rgba(14, 165, 233, 0.15) 0%, rgba(14, 165, 233, 0) 70%)",
-          filter: "blur(60px)",
+          bottom: "-40px",
+          left: "-40px",
+          width: "200px",
+          height: "200px",
+          transform: "rotate(45deg)",
+          bgcolor: "rgba(255, 255, 255, 0.04)",
           pointerEvents: "none"
         }}
       />
 
-      <Container maxWidth="md" sx={{ position: "relative", zIndex: 1 }}>
+      <Container maxWidth="lg" sx={{ position: "relative", zIndex: 1 }}>
+        <Box sx={{ textAlign: "center", mb: { xs: 6, md: 8 } }}>
+          {/* Flat Section Badge */}
+          <Box
+            sx={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 1.5,
+              px: 2.2,
+              py: 0.8,
+              borderRadius: "6px",
+              bgcolor: "rgba(15, 118, 110, 0.2)",
+              mb: 2.5
+            }}
+          >
+            <Box
+              sx={{
+                width: 8,
+                height: 8,
+                borderRadius: "50%",
+                bgcolor: "#0f766e"
+              }}
+            />
+            <Typography
+              sx={{
+                fontFamily: "var(--font-outfit), sans-serif",
+                fontSize: "0.8rem",
+                letterSpacing: "0.08em",
+                textTransform: "uppercase",
+                color: "#14b8a6",
+                fontWeight: 800
+              }}
+            >
+              Get Started In Minutes
+            </Typography>
+          </Box>
+
+          <Typography
+            variant="h2"
+            sx={{
+              fontFamily: "var(--font-outfit), sans-serif",
+              fontSize: { xs: "2.4rem", sm: "3rem", md: "3.5rem" },
+              fontWeight: 800,
+              color: "#FFFFFF",
+              mb: 2,
+              letterSpacing: "-0.02em"
+            }}
+          >
+            Ready to Modernize Your Pathology Lab?
+          </Typography>
+          <Typography
+            variant="body1"
+            sx={{
+              fontFamily: "var(--font-outfit), sans-serif",
+              color: "#9CA3AF",
+              maxWidth: 600,
+              mx: "auto",
+              fontSize: { xs: "1.05rem", md: "1.15rem" },
+              lineHeight: 1.6
+            }}
+          >
+            Leave your contact details and our medical software specialists will set up your 5-day free trial right away.
+          </Typography>
+        </Box>
+
+        {/* Flat Color Block Card */}
         <Card
-          variant="outlined"
+          elevation={0}
           sx={{
-            border: "1px solid rgba(15, 118, 110, 0.15)",
-            background: "rgba(255, 255, 255, 0.75)",
-            backdropFilter: "blur(20px)",
-            borderRadius: "24px",
-            p: { xs: 2, sm: 4, md: 5 },
-            boxShadow: "0 20px 40px -15px rgba(15, 118, 110, 0.08), 0 1px 3px 0 rgba(15, 118, 110, 0.05)"
+            border: "3px solid rgba(255, 255, 255, 0.15)",
+            bgcolor: "#1F2937",
+            borderRadius: "12px",
+            p: { xs: 3, sm: 5, md: 6 },
+            boxShadow: "none !important"
           }}
         >
           <CardContent sx={{ p: 0 }}>
             <Grid container spacing={5} sx={{ alignItems: "center" }}>
-              
-              {/* Support Agent Illustration Column */}
-              <Grid size={{ xs: 12, md: 4 }} sx={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center" }}>
+              {/* Support Icon Column */}
+              <Grid size={{ xs: 12, md: 4 }} sx={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", textAlign: "center" }}>
                 <Box
                   sx={{
-                    position: "relative",
-                    p: 3,
+                    width: 72,
+                    height: 72,
                     borderRadius: "50%",
-                    bgcolor: "rgba(20, 184, 166, 0.08)",
-                    color: "primary.main",
+                    bgcolor: "#0f766e",
+                    color: "#FFFFFF",
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "center",
-                    mb: 2,
-                    animation: "pulseGlow 2.5s infinite ease-in-out",
-                    "@keyframes pulseGlow": {
-                      "0%": { boxShadow: "0 0 0 0 rgba(20, 184, 166, 0.3)" },
-                      "70%": { boxShadow: "0 0 0 20px rgba(20, 184, 166, 0)" },
-                      "100%": { boxShadow: "0 0 0 0 rgba(20, 184, 166, 0)" }
-                    }
+                    mb: 2
                   }}
                 >
-                  <SupportIcon sx={{ fontSize: { xs: 56, md: 72 } }} />
+                  <SupportIcon sx={{ fontSize: 40 }} />
                 </Box>
-                <Typography variant="subtitle2" sx={{ fontWeight: 800, color: "primary.main", letterSpacing: 1 }}>
-                  24/7 SUPPORT
+                <Typography sx={{ fontWeight: 800, color: "#FFFFFF", fontSize: "1.1rem", mb: 0.5, fontFamily: "var(--font-outfit), sans-serif" }}>
+                  Free Setup & Training
                 </Typography>
-                <Typography variant="caption" color="text.secondary" sx={{ mt: 0.5 }}>
-                  Average response: &lt; 2 hours
+                <Typography variant="caption" sx={{ color: "#9CA3AF", fontSize: "0.85rem", fontWeight: 600 }}>
+                  Average support response: &lt; 1 hour
                 </Typography>
               </Grid>
 
-              {/* Contact Form Column */}
+              {/* Form Column */}
               <Grid size={{ xs: 12, md: 8 }}>
-                <Chip
-                  label="FREE TRIAL & QUESTIONS"
-                  color="primary"
-                  size="small"
+                <Typography
                   sx={{
+                    fontFamily: "var(--font-outfit), sans-serif",
                     fontWeight: 800,
-                    mb: 2,
-                    bgcolor: "primary.main",
-                    borderRadius: "9999px",
-                    px: 1,
-                    fontSize: "0.75rem",
-                    letterSpacing: 0.5
-                  }}
-                />
-                
-                <Typography
-                  variant="h3"
-                  sx={{
-                    fontSize: { xs: "1.75rem", sm: "2.1rem" },
-                    fontWeight: 900,
-                    mb: 2,
-                    background: "linear-gradient(135deg, #0f766e 0%, #0d9488 100%)",
-                    WebkitBackgroundClip: "text",
-                    WebkitTextFillColor: "transparent"
+                    fontSize: { xs: "1.4rem", sm: "1.6rem" },
+                    color: "#FFFFFF",
+                    mb: 1.5
                   }}
                 >
-                  Contact Us & Support
+                  Start Your 5-Day Free Trial
+                </Typography>
+                <Typography variant="body2" sx={{ color: "#9CA3AF", mb: 3, lineHeight: 1.6, fontSize: "0.95rem" }}>
+                  Enter your mobile number or email address below. No credit card required.
                 </Typography>
 
-                <Typography
-                  variant="body1"
-                  color="text.secondary"
-                  sx={{
-                    mb: 4,
-                    lineHeight: 1.7,
-                    fontSize: { xs: "0.925rem", sm: "1rem" }
-                  }}
-                >
-                  Enter your email address or mobile number below to claim your 5-day free trial or to ask any questions. Our team will get in touch with you shortly.
-                </Typography>
-
-                {/* Contact Lead Capture Form */}
                 <Box
                   component="form"
                   onSubmit={handleLeadSubmit}
                   sx={{
-                    p: 1,
-                    borderRadius: "16px",
-                    bgcolor: "#ffffff",
-                    border: "1px solid rgba(15, 118, 110, 0.15)",
-                    boxShadow: "0 8px 30px rgba(15, 118, 110, 0.05)",
+                    p: 0.75,
+                    borderRadius: "8px",
+                    bgcolor: "#FFFFFF",
                     display: "flex",
                     flexDirection: { xs: "column", sm: "row" },
-                    gap: 1.5,
-                    mb: 3.5,
-                    transition: "all 0.3s ease",
-                    "&:focus-within": {
-                      borderColor: "primary.main",
-                      boxShadow: "0 8px 30px rgba(15, 118, 110, 0.12)",
-                      transform: "translateY(-2px)"
-                    }
+                    gap: 1,
+                    boxShadow: "none !important"
                   }}
                 >
                   <TextField
@@ -187,43 +208,46 @@ export default function Contact({
                         startAdornment: (
                           <InputAdornment position="start" sx={{ pl: 2, pr: 0.5 }}>
                             {inputType === "mobile" ? (
-                              <PhoneIcon sx={{ color: "primary.main" }} />
+                              <PhoneIcon sx={{ color: "#0f766e", fontSize: "1.3rem" }} />
                             ) : (
-                              <EmailOutlinedIcon sx={{ color: "primary.main" }} />
+                              <EmailOutlinedIcon sx={{ color: "#0f766e", fontSize: "1.3rem" }} />
                             )}
                           </InputAdornment>
                         ),
                       }
                     }}
                     sx={{
-                      justifyContent: "center",
                       "& .MuiInputBase-input": {
-                        py: 1,
-                        fontSize: "1rem",
-                        fontWeight: 500
+                        py: 1.3,
+                        fontSize: "0.98rem",
+                        fontWeight: 600,
+                        color: "#111827"
                       }
                     }}
                   />
                   <Button
                     type="submit"
                     variant="contained"
-                    color="primary"
                     disabled={loading}
                     sx={{
-                      py: { xs: 1.75, sm: 1.5 },
+                      py: { xs: 1.5, sm: 1.3 },
                       px: 4,
+                      minWidth: { xs: "100%", sm: "175px" },
                       whiteSpace: "nowrap",
-                      borderRadius: "12px",
+                      borderRadius: "6px",
                       fontWeight: 800,
                       fontSize: "0.95rem",
                       textTransform: "none",
-                      background: "linear-gradient(135deg, #0f766e 0%, #0d9488 100%)",
-                      boxShadow: "0 4px 15px rgba(15, 118, 110, 0.25)",
-                      transition: "all 0.2s ease",
+                      bgcolor: "#0f766e",
+                      color: "#FFFFFF",
+                      boxShadow: "none !important",
+                      display: "inline-flex",
+                      alignItems: "center",
+                      justifyContent: "center",
                       "&:hover": {
-                        background: "linear-gradient(135deg, #0d9488 0%, #0f766e 100%)",
-                        transform: "translateY(-1px)",
-                        boxShadow: "0 6px 20px rgba(15, 118, 110, 0.3)"
+                        bgcolor: "#115e59",
+                        boxShadow: "none !important",
+                        transform: "scale(1.04)"
                       }
                     }}
                   >
@@ -234,8 +258,6 @@ export default function Contact({
                     )}
                   </Button>
                 </Box>
-
-
               </Grid>
             </Grid>
           </CardContent>

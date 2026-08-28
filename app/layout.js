@@ -1,4 +1,4 @@
-import { Outfit } from "next/font/google";
+import { Outfit, Calistoga, Inter, JetBrains_Mono } from "next/font/google";
 import ToastProvider from "@/components/ToastProvider";
 import PWARegister from "@/components/PWARegister";
 import "./globals.css";
@@ -7,6 +7,28 @@ const outfit = Outfit({
   subsets: ["latin"],
   weight: ["300", "400", "500", "600", "700", "800"],
   variable: "--font-outfit",
+  display: "swap",
+});
+
+const calistoga = Calistoga({
+  weight: "400",
+  subsets: ["latin"],
+  variable: "--font-calistoga",
+  display: "swap",
+});
+
+const inter = Inter({
+  subsets: ["latin"],
+  weight: ["400", "500", "600", "700"],
+  variable: "--font-inter",
+  display: "swap",
+});
+
+const jetbrainsMono = JetBrains_Mono({
+  subsets: ["latin"],
+  weight: ["400", "500", "600"],
+  variable: "--font-mono",
+  display: "swap",
 });
 
 export const metadata = {
@@ -42,8 +64,8 @@ export const viewport = {
 
 export default function RootLayout({ children }) {
   return (
-    <html lang="en" className={`${outfit.variable} h-full antialiased`}>
-      <body className="min-h-full flex flex-col bg-slate-50 text-slate-900 font-sans selection:bg-blue-600 selection:text-white">
+    <html lang="en" className={`${outfit.variable} ${calistoga.variable} ${inter.variable} ${jetbrainsMono.variable} h-full antialiased`}>
+      <body className="min-h-full flex flex-col bg-[#FAFAFA] text-slate-900 font-sans selection:bg-[#0052FF] selection:text-white">
         <PWARegister />
         <ToastProvider />
         <div className="flex-1 flex flex-col">{children}</div>

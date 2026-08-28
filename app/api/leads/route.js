@@ -24,7 +24,10 @@ export async function POST(req) {
     });
 
     if (existingLead) {
-      return NextResponse.json({ success: true, message: "You have already registered for the trial!" });
+      return NextResponse.json({
+        success: true,
+        message: "Thank you! Our team will contact you as soon as possible.",
+      });
     }
 
     await prisma.lead.create({
@@ -34,7 +37,10 @@ export async function POST(req) {
       },
     });
 
-    return NextResponse.json({ success: true, message: "Successfully registered for the 5-day free trial!" });
+    return NextResponse.json({
+      success: true,
+      message: "Thank you! Our team will contact you as soon as possible.",
+    });
   } catch (error) {
     console.error("Lead Capture API Error:", error);
     return NextResponse.json({ success: false, error: error.message }, { status: 500 });

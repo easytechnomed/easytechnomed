@@ -1,13 +1,23 @@
 @import "tailwindcss";
 
 @theme {
-  --font-sans: var(--font-outfit), sans-serif;
-  --font-mono: var(--font-geist-mono), monospace;
+  --font-sans: var(--font-outfit), system-ui, sans-serif;
+  --font-mono: var(--font-mono), monospace;
 }
 
 :root {
-  --background: #f8fafc;
-  --foreground: #0f172a;
+  --background: #FFFFFF;
+  --foreground: #111827;
+  --primary: #0f766e;
+  --primary-hover: #115e59;
+  --primary-light: #f0fdfa;
+  --secondary: #10B981;
+  --accent: #F59E0B;
+  --muted: #F3F4F6;
+  --muted-foreground: #6B7280;
+  --border: #E5E7EB;
+  --card: #FFFFFF;
+  --ring: #0f766e;
 }
 
 body {
@@ -16,21 +26,66 @@ body {
   font-family: var(--font-sans);
 }
 
-/* Custom premium clean card background for standard light-mode design */
-.glass {
-  background: #ffffff;
-  border: 1px solid #e2e8f0;
-  box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.05), 0 2px 4px -2px rgb(0 0 0 / 0.05);
+/* Strict Flat Design Rule: Zero artificial shadows */
+*,
+*::before,
+*::after {
+  box-shadow: none !important;
 }
 
-/* Light dot grid background for a clean premium B2B SaaS feel */
-.bg-mesh {
-  background-color: #f8fafc;
-  background-image: radial-gradient(#e2e8f0 1.5px, transparent 1.5px);
-  background-size: 24px 24px;
+/* Flat solid buttons and transitions */
+.btn-flat-primary {
+  background-color: #0f766e;
+  color: #FFFFFF;
+  font-weight: 700;
+  border-radius: 8px;
+  transition: all 0.2s ease-in-out;
 }
 
-/* Ensure buttons show the pointer cursor globally */
+.btn-flat-primary:hover {
+  background-color: #115e59;
+  transform: scale(1.04);
+}
+
+.btn-flat-outline {
+  border: 4px solid #0f766e;
+  background-color: transparent;
+  color: #0f766e;
+  font-weight: 700;
+  border-radius: 8px;
+  transition: all 0.2s ease-in-out;
+}
+
+.btn-flat-outline:hover {
+  background-color: #0f766e;
+  color: #FFFFFF;
+  transform: scale(1.04);
+}
+
+.btn-flat-muted {
+  background-color: #F3F4F6;
+  color: #111827;
+  font-weight: 700;
+  border-radius: 8px;
+  transition: all 0.2s ease-in-out;
+}
+
+.btn-flat-muted:hover {
+  background-color: #E5E7EB;
+  transform: scale(1.04);
+}
+
+/* Flat Color Block Cards */
+.card-flat {
+  border-radius: 8px;
+  transition: transform 0.2s ease-in-out;
+}
+
+.card-flat:hover {
+  transform: scale(1.02);
+}
+
+/* Pointer cursor */
 button,
 [role="button"],
 [type="button"],

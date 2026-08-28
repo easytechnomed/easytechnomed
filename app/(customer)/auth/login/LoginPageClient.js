@@ -6,12 +6,10 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as zod from "zod";
 import { toast } from "sonner";
-import { ArrowRight, Mail, Lock, Phone } from "lucide-react";
-import { Input } from "@/components/ui/Input";
-import { Button } from "@/components/ui/Button";
+import { ArrowRight, Mail, Lock, Phone, ShieldCheck, X, CheckCircle, KeyRound, Eye, EyeOff } from "lucide-react";
 import { Label } from "@/components/ui/Label";
 
-// Auto-detect: if it looks like a phone number (digits, +, spaces, dashes) treat as mobile
+// Auto-detect: if it looks like a phone number treat as mobile
 const isLikelyMobile = (value) => /^[+\d\s\-()]{7,15}$/.test(value.trim());
 
 const loginSchema = zod.object({
@@ -32,6 +30,13 @@ export default function CustomerLoginPage() {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
   const [identifierValue, setIdentifierValue] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+
+  // Forgot password modal state
+  const [isForgotOpen, setIsForgotOpen] = useState(false);
+  const [forgotEmail, setForgotEmail] = useState("");
+  const [forgotLoading, setForgotLoading] = useState(false);
+  const [forgotSuccess, setForgotSuccess] = useState(false);
 
   const {
     register,
@@ -65,133 +70,278 @@ export default function CustomerLoginPage() {
     }
   };
 
+  const handleOpenForgotModal = () => {
+    const trimmed = identifierValue.trim();
+    if (trimmed.includes("@")) {
+      setForgotEmail(trimmed);
+    } else {
+      setForgotEmail("");
+    }
+    setForgotSuccess(false);
+    setIsForgotOpen(true);
+  };
+
+  const handleForgotSubmit = async (e) => {
+    e.preventDefault();
+    if (!forgotEmail.trim()) {
+      toast.error("Please enter your registered email address.");
+      return;
+    }
+
+    setForgotLoading(true);
+    try {
+      const res = await fetch("/api/auth/forgot-password", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: forgotEmail.trim() }),
+      }).then((r) => r.json());
+
+      if (res.success) {
+        setForgotSuccess(true);
+        toast.success(res.message);
+      } else {
+        toast.error(res.message);
+      }
+    } catch (err) {
+      toast.error("Failed to send reset link. Please try again.");
+    } finally {
+      setForgotLoading(false);
+    }
+  };
+
   return (
-    <div className="h-[100dvh] w-full flex flex-col md:flex-row bg-slate-50 text-slate-800 font-sans md:overflow-hidden overflow-y-auto">
-      {/* Col 1: Branding */}
-      <div className="hidden md:flex md:w-1/2 relative bg-cover bg-center items-center justify-center overflow-hidden"
-        style={{ backgroundImage: "url('/logo/customer_login_bg.png')" }}>
-        <div className="absolute inset-0 bg-gradient-to-tr from-white via-white/80 to-teal-50/40 z-10" />
-        <div className="relative z-20 max-w-lg px-8 text-center md:text-left flex flex-col gap-6">
-          <div className="flex items-center gap-3">
-            <img src="/logo/logobg.png" alt="EasyTechnoMed Logo" className="h-14 w-auto drop-shadow-[0_4px_12px_rgba(20,184,166,0.15)] bg-white/80 p-1.5 rounded-2xl border border-teal-100" />
+    <div className="min-h-[calc(100vh-72px)] w-full flex items-center justify-center pt-28 sm:pt-32 pb-16 px-4 sm:px-6 bg-[#F8FAFC] text-slate-900 font-sans">
+      <div className="w-full max-w-md space-y-6">
+        
+        {/* Header Title */}
+        <div className="text-center space-y-2">
+          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-md text-xs font-extrabold bg-[#0f766e]/15 text-[#0f766e]">
+            <span className="h-2 w-2 rounded-full bg-[#0f766e]" />
+            EasyTechnoMed Portal
           </div>
-          <div className="space-y-3">
-            <h2 className="text-3xl md:text-4xl font-black tracking-tight text-slate-900 leading-tight">
-              Powering modern <br />
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-teal-600 to-emerald-600">Lab Operations ⚡</span>
-            </h2>
-            <p className="text-slate-600 text-sm md:text-base leading-relaxed">
-              Manage patient registrations, design custom parameters, track laboratory statistics, and generate print-ready reports with ease.
-            </p>
-          </div>
-          <div className="flex items-center gap-4 pt-5 border-t border-slate-200">
-            <div className="flex -space-x-2">
-              <span className="w-8 h-8 rounded-full border-2 border-white bg-teal-500 flex items-center justify-center text-xs font-bold text-white">L</span>
-              <span className="w-8 h-8 rounded-full border-2 border-white bg-emerald-500 flex items-center justify-center text-xs font-bold text-white">T</span>
-              <span className="w-8 h-8 rounded-full border-2 border-white bg-sky-500 flex items-center justify-center text-xs font-bold text-white">M</span>
-            </div>
-            <p className="text-xs text-slate-500">Empowering laboratories with smart clinical technology.</p>
-          </div>
+          <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-slate-900">
+            Sign In to Workspace
+          </h1>
+          <p className="text-sm text-slate-500 font-medium">
+            Enter your mobile number or email to manage your lab.
+          </p>
         </div>
-      </div>
 
-      {/* Col 2: Login Form */}
-      <div className="w-full md:w-1/2 min-h-[100dvh] md:min-h-0 flex items-center justify-center pt-20 pb-6 px-6 md:pt-24 md:pb-8 md:px-8 bg-gradient-to-br from-slate-50 via-teal-50/10 to-slate-100 relative overflow-hidden">
-        <div className="absolute inset-0 bg-[linear-gradient(to_right,#e2e8f0_1px,transparent_1px),linear-gradient(to_bottom,#e2e8f0_1px,transparent_1px)] bg-[size:4rem_4rem] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_0%,#000_70%,transparent_100%)] opacity-35" />
-        <div className="absolute -top-32 -right-32 w-[30rem] h-[30rem] bg-gradient-to-br from-teal-200/30 to-emerald-200/10 rounded-full blur-3xl pointer-events-none" />
-        <div className="absolute -bottom-32 -left-32 w-[30rem] h-[30rem] bg-gradient-to-br from-sky-200/20 to-teal-100/10 rounded-full blur-3xl pointer-events-none" />
-
-        <div className="w-full max-w-md space-y-6 relative z-10">
-
-          {/* Heading */}
-          <div className="space-y-3 text-center md:text-left">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-bold bg-teal-50 text-teal-700 border border-teal-100/50">
-              <span className="flex h-2 w-2 rounded-full bg-teal-500 animate-pulse" />
-              EasyTechnoMed Portal
-            </div>
-            <div className="space-y-1">
-              <h2 className="text-4xl md:text-5xl font-black tracking-tight text-slate-950">Sign in</h2>
-              <p className="text-sm text-slate-500 font-bold leading-relaxed">
-                Connect your laboratory to our high-performance dashboard.
-              </p>
-            </div>
-          </div>
-
-          {/* Form Card */}
-          <div className="border border-slate-200/50 bg-white/70 backdrop-blur-xl shadow-[0_20px_60px_rgba(15,23,42,0.04)] hover:shadow-[0_30px_70px_rgba(20,184,166,0.09)] rounded-3xl p-6 md:p-8 border-2 transition-all duration-500 flex flex-col gap-6">
-            <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-              <div className="space-y-5">
-
-                {/* Email or Mobile — auto-detects icon + label */}
-                <div className="space-y-1.5 group">
-                  <Label htmlFor="identifier" className="text-slate-700 text-xs font-bold pl-1 group-focus-within:text-teal-600 transition-colors">
-                    Email Address or Mobile Number
-                  </Label>
-                  <div className="relative flex items-center">
-                    {isMobileInput ? (
-                      <Phone className="absolute left-4 text-slate-400 h-4.5 w-4.5 pointer-events-none group-focus-within:text-teal-500 transition-colors" />
-                    ) : (
-                      <Mail className="absolute left-4 text-slate-400 h-4.5 w-4.5 pointer-events-none group-focus-within:text-teal-500 transition-colors" />
-                    )}
-                    <Input
-                      id="identifier"
-                      type="text"
-                      placeholder="name@workspace.com or 9876543210"
-                      error={errors.identifier?.message}
-                      className="bg-white/80 pl-11 pr-4 border-l-4 border-l-teal-600 border-t-slate-200 border-r-slate-200 border-b-slate-200 text-slate-800 placeholder-slate-400 focus:border-teal-500 focus:ring-4 focus:ring-teal-500/5 rounded-r-xl rounded-l-none transition-all duration-300 py-3 shadow-sm font-medium"
-                      {...register("identifier", {
-                        onChange: (e) => setIdentifierValue(e.target.value),
-                      })}
-                    />
-                  </div>
+        {/* Form Card */}
+        <div className="bg-white border-2 border-slate-200 rounded-2xl p-6 sm:p-8 shadow-none">
+          <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+            
+            {/* Email / Mobile Field */}
+            <div className="space-y-1.5">
+              <Label htmlFor="identifier" className="text-slate-700 text-xs font-bold tracking-wide uppercase">
+                Mobile Number or Email
+              </Label>
+              <div className="relative flex items-center">
+                <div className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none flex items-center justify-center">
+                  {isMobileInput ? (
+                    <Phone className="w-5 h-5 text-slate-400" />
+                  ) : (
+                    <Mail className="w-5 h-5 text-slate-400" />
+                  )}
                 </div>
-
-                {/* Password */}
-                <div className="space-y-1.5 group">
-                  <Label htmlFor="password" className="text-slate-700 text-xs font-bold pl-1 group-focus-within:text-teal-600 transition-colors">
-                    Password
-                  </Label>
-                  <div className="relative flex items-center">
-                    <Lock className="absolute left-4 text-slate-400 h-4.5 w-4.5 pointer-events-none group-focus-within:text-teal-500 transition-colors" />
-                    <Input
-                      id="password"
-                      type="password"
-                      placeholder="••••••••"
-                      error={errors.password?.message}
-                      className="bg-white/80 pl-11 pr-4 border-l-4 border-l-teal-600 border-t-slate-200 border-r-slate-200 border-b-slate-200 text-slate-800 placeholder-slate-400 focus:border-teal-500 focus:ring-4 focus:ring-teal-500/5 rounded-r-xl rounded-l-none transition-all duration-300 py-3 shadow-sm font-medium"
-                      {...register("password")}
-                    />
-                  </div>
-                </div>
+                <input
+                  id="identifier"
+                  type="text"
+                  placeholder="Enter mobile number or email"
+                  className="w-full h-12 bg-slate-50 pl-11 pr-4 rounded-xl border-2 border-slate-300 focus:border-[#0f766e] focus:bg-white text-slate-900 font-semibold placeholder:text-slate-400 placeholder:font-normal text-sm transition-all focus:outline-none"
+                  {...register("identifier", {
+                    onChange: (e) => setIdentifierValue(e.target.value),
+                  })}
+                />
               </div>
+              {errors.identifier && (
+                <p className="text-xs text-red-600 font-bold mt-1 pl-1">{errors.identifier.message}</p>
+              )}
+            </div>
 
-              {/* Submit */}
-              <div className="space-y-4 pt-2">
-                <Button
-                  type="submit"
-                  className="w-full bg-slate-900 hover:bg-slate-800 text-white font-extrabold py-3.5 rounded-2xl transition-all duration-300 flex items-center justify-center gap-2 border-0 shadow-[0_10px_20px_rgba(15,23,42,0.15)] hover:shadow-[0_15px_25px_rgba(20,184,166,0.2)] transform hover:-translate-y-0.5"
-                  isLoading={isLoading}
+            {/* Password Field */}
+            <div className="space-y-1.5">
+              <div className="flex items-center justify-between">
+                <Label htmlFor="password" className="text-slate-700 text-xs font-bold tracking-wide uppercase">
+                  Password
+                </Label>
+                <button
+                  type="button"
+                  onClick={handleOpenForgotModal}
+                  className="text-xs font-bold text-[#0f766e] hover:underline cursor-pointer transition-colors"
                 >
-                  Access Customer Portal
-                  <ArrowRight className="h-4 w-4" />
-                </Button>
-
-                <div className="flex items-center justify-center w-full text-xs text-slate-500 pt-2 border-t border-slate-100">
-                  <button
-                    type="button"
-                    className="hover:text-teal-600 transition-colors duration-150 font-extrabold text-slate-600"
-                    onClick={() => router.push("/auth/register")}
-                  >
-                    Don&apos;t have an account?{" "}
-                    <span className="text-teal-600 underline decoration-teal-300 underline-offset-4 decoration-2">Register Workspace</span>
-                  </button>
-                </div>
+                  Forgot password?
+                </button>
               </div>
-            </form>
-          </div>
+              <div className="relative flex items-center">
+                <div className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none flex items-center justify-center">
+                  <Lock className="w-5 h-5 text-slate-400" />
+                </div>
+                <input
+                  id="password"
+                  type={showPassword ? "text" : "password"}
+                  placeholder="Enter your password"
+                  className="w-full h-12 bg-slate-50 pl-11 pr-11 rounded-xl border-2 border-slate-300 focus:border-[#0f766e] focus:bg-white text-slate-900 font-semibold placeholder:text-slate-400 placeholder:font-normal text-sm transition-all focus:outline-none"
+                  {...register("password")}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 cursor-pointer p-1.5 flex items-center justify-center rounded-lg hover:bg-slate-100 transition-colors"
+                >
+                  {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
+              </div>
+              {errors.password && (
+                <p className="text-xs text-red-600 font-bold mt-1 pl-1">{errors.password.message}</p>
+              )}
+            </div>
 
+            {/* Action Button */}
+            <div className="pt-2">
+              <button
+                type="submit"
+                disabled={isLoading}
+                style={{ backgroundColor: "#0f766e" }}
+                className="w-full h-12 text-white hover:bg-[#115e59] active:scale-[0.98] font-extrabold text-base rounded-xl transition-all flex items-center justify-center gap-2 border-0 shadow-none cursor-pointer disabled:opacity-50"
+              >
+                {isLoading ? (
+                  <span className="inline-block animate-spin h-5 w-5 border-2 border-white border-t-transparent rounded-full" />
+                ) : (
+                  <>
+                    Access Customer Portal
+                    <ArrowRight className="h-5 w-5" />
+                  </>
+                )}
+              </button>
+            </div>
+
+            {/* Toggle Register */}
+            <div className="pt-3 text-center border-t-2 border-slate-100">
+              <button
+                type="button"
+                onClick={() => router.push("/auth/register")}
+                className="text-xs sm:text-sm text-slate-600 font-bold hover:text-[#0f766e] transition-colors"
+              >
+                Don&apos;t have an account?{" "}
+                <span className="text-[#0f766e] underline decoration-2 underline-offset-4">
+                  Register Workspace
+                </span>
+              </button>
+            </div>
+
+          </form>
         </div>
+
+        {/* Security Footnote */}
+        <div className="flex items-center justify-center gap-2 text-xs font-semibold text-slate-400 text-center">
+          <ShieldCheck className="w-4 h-4 text-[#0f766e]" />
+          <span>100% Secure & HIPAA Compliant Cloud LIMS</span>
+        </div>
+
       </div>
+
+      {/* Forgot Password Modal Dialog */}
+      {isForgotOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-none">
+          <div className="bg-white border-2 border-slate-300 rounded-2xl w-full max-w-md p-6 sm:p-7 shadow-2xl relative">
+            
+            {/* Close Button */}
+            <button
+              onClick={() => setIsForgotOpen(false)}
+              className="absolute right-4 top-4 text-slate-400 hover:text-slate-700 p-1.5 rounded-lg transition-colors cursor-pointer"
+            >
+              <X className="w-5 h-5" />
+            </button>
+
+            {forgotSuccess ? (
+              <div className="text-center py-4 space-y-4">
+                <div className="mx-auto w-14 h-14 rounded-full bg-emerald-50 border-2 border-emerald-500 flex items-center justify-center text-emerald-600">
+                  <CheckCircle className="w-8 h-8" />
+                </div>
+                <div className="space-y-1.5">
+                  <h3 className="text-xl font-extrabold text-slate-900">
+                    Reset Link Sent!
+                  </h3>
+                  <p className="text-sm text-slate-600 font-medium leading-relaxed">
+                    We have sent a password reset link to <strong className="text-slate-900">{forgotEmail}</strong>. Please check your inbox and spam folder.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setIsForgotOpen(false)}
+                  style={{ backgroundColor: "#0f766e" }}
+                  className="w-full h-11 text-white font-bold text-sm rounded-xl cursor-pointer hover:bg-[#115e59] transition-all border-0"
+                >
+                  Back to Sign In
+                </button>
+              </div>
+            ) : (
+              <div className="space-y-5">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-[#0f766e]/15 flex items-center justify-center text-[#0f766e]">
+                    <KeyRound className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h3 className="text-lg sm:text-xl font-extrabold text-slate-900">
+                      Reset Password
+                    </h3>
+                    <p className="text-xs text-slate-500 font-medium">
+                      Enter your registered email to receive a reset link.
+                    </p>
+                  </div>
+                </div>
+
+                <form onSubmit={handleForgotSubmit} className="space-y-4">
+                  <div className="space-y-1.5">
+                    <Label htmlFor="forgot-email" className="text-slate-700 text-xs font-bold tracking-wide uppercase">
+                      Registered Email Address
+                    </Label>
+                    <div className="relative flex items-center">
+                      <div className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none flex items-center justify-center">
+                        <Mail className="w-5 h-5" />
+                      </div>
+                      <input
+                        id="forgot-email"
+                        type="email"
+                        required
+                        placeholder="e.g. admin@yourlab.com"
+                        value={forgotEmail}
+                        onChange={(e) => setForgotEmail(e.target.value)}
+                        className="w-full h-12 bg-slate-50 pl-11 pr-4 rounded-xl border-2 border-slate-300 focus:border-[#0f766e] focus:bg-white text-slate-900 font-semibold placeholder:text-slate-400 placeholder:font-normal text-sm transition-all focus:outline-none"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-3 pt-2">
+                    <button
+                      type="button"
+                      onClick={() => setIsForgotOpen(false)}
+                      className="flex-1 h-11 border-2 border-slate-300 text-slate-700 font-bold text-sm rounded-xl hover:bg-slate-100 transition-colors cursor-pointer"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="submit"
+                      disabled={forgotLoading}
+                      style={{ backgroundColor: "#0f766e" }}
+                      className="flex-1 h-11 text-white font-extrabold text-sm rounded-xl cursor-pointer hover:bg-[#115e59] transition-all flex items-center justify-center gap-2 border-0 disabled:opacity-50"
+                    >
+                      {forgotLoading ? (
+                        <span className="inline-block animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full" />
+                      ) : (
+                        "Send Reset Link"
+                      )}
+                    </button>
+                  </div>
+                </form>
+              </div>
+            )}
+
+          </div>
+        </div>
+      )}
+
     </div>
   );
 }

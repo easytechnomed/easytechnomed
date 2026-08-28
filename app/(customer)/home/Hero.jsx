@@ -10,14 +10,13 @@ import {
     TextField,
     InputAdornment,
     CircularProgress,
-    Chip,
     Card
 } from "@mui/material";
 import {
     PhoneAndroid as PhoneIcon,
     Email as EmailIcon,
     ArrowForward as ArrowForwardIcon,
-    LocalOffer as OfferIcon
+    CheckCircle as CheckCircleIcon
 } from "@mui/icons-material";
 
 export default function Hero({
@@ -25,300 +24,371 @@ export default function Hero({
     setContactInput,
     inputType,
     loading,
+    leadSuccess,
+    setLeadSuccess,
     handleLeadSubmit,
     router
 }) {
     return (
         <Box
             sx={{
-                minHeight: { xs: "auto", md: "calc(100dvh - 64px)" },
-                mt: "64px",
+                minHeight: { xs: "auto", md: "calc(100dvh - 72px)" },
+                mt: "72px",
                 display: "flex",
                 alignItems: "center",
-                background: "radial-gradient(circle at 10% 20%, rgba(20, 184, 166, 0.05) 0%, rgba(255, 255, 255, 0) 60%)",
+                bgcolor: "#FFFFFF",
                 position: "relative",
                 overflow: "hidden",
-                pt: { xs: 6, md: 0 },
-                pb: { xs: 0, md: 0 }
+                py: { xs: 5, sm: 7, md: 8 }
             }}
         >
-            <Container maxWidth="xl">
-                <Grid container spacing={{ xs: 6, md: 8 }} alignItems="center">
-                    {/* Hero Left Content */}
-                    <Grid size={{ xs: 12, md: 7, lg: 7 }} sx={{ position: "relative", zIndex: 2 }}>
-                        <Box sx={{ pr: { md: 4 }, display: "flex", flexDirection: "column", gap: 3, pt: 2 }}>
-                            {/* Badges/Chips */}
-                            <Chip
-                                icon={<OfferIcon sx={{ fontSize: "0.95rem !important", color: "primary.main" }} />}
-                                label="WELCOME OFFER • 5 DAYS FREE TRIAL"
-                                color="primary"
-                                variant="outlined"
+            {/* Flat Poster Geometric Decorative Shapes */}
+            <Box
+                sx={{
+                    position: "absolute",
+                    top: "-80px",
+                    right: "-80px",
+                    width: "320px",
+                    height: "320px",
+                    borderRadius: "50%",
+                    bgcolor: "rgba(15, 118, 110, 0.08)",
+                    pointerEvents: "none"
+                }}
+            />
+            <Box
+                sx={{
+                    position: "absolute",
+                    bottom: "-60px",
+                    left: "20%",
+                    width: "180px",
+                    height: "180px",
+                    transform: "rotate(45deg)",
+                    bgcolor: "rgba(243, 244, 246, 0.9)",
+                    pointerEvents: "none"
+                }}
+            />
+
+            <Container maxWidth="xl" sx={{ position: "relative", zIndex: 1 }}>
+                <Grid container spacing={{ xs: 5, md: 6, lg: 8 }} alignItems="center">
+
+                    {/* Left Column: Bold Flat Typography & Inputs */}
+                    <Grid size={{ xs: 12, md: 6, lg: 6 }}>
+                        <Box sx={{ display: "flex", flexDirection: "column", gap: { xs: 2.5, md: 3 } }}>
+
+                            {/* Flat Section Badge */}
+                            <Box
                                 sx={{
                                     alignSelf: "flex-start",
-                                    px: 1.5,
-                                    py: 2,
-                                    fontWeight: 700,
-                                    fontSize: "0.8rem",
-                                    color: "primary.main",
-                                    borderColor: "rgba(15, 118, 110, 0.2)",
-                                    backgroundColor: "rgba(15, 118, 110, 0.03)",
-                                    borderRadius: "9999px"
+                                    display: "inline-flex",
+                                    alignItems: "center",
+                                    gap: 1,
+                                    px: 2,
+                                    py: 0.6,
+                                    borderRadius: "6px",
+                                    bgcolor: "rgba(15, 118, 110, 0.12)",
+                                    border: "2px solid #0f766e",
                                 }}
-                            />
+                            >
+                                <Box
+                                    sx={{
+                                        width: 8,
+                                        height: 8,
+                                        borderRadius: "50%",
+                                        bgcolor: "#0f766e"
+                                    }}
+                                />
+                                <Typography
+                                    variant="caption"
+                                    sx={{
+                                        fontWeight: 800,
+                                        color: "#111827",
+                                        letterSpacing: "0.04em",
+                                        textTransform: "uppercase",
+                                        fontSize: "0.75rem"
+                                    }}
+                                >
+                                    Cloud Diagnostic LIMS
+                                </Typography>
+                            </Box>
 
                             {/* Main Headline */}
                             <Typography
                                 variant="h1"
                                 sx={{
-                                    fontSize: { xs: "2.25rem", sm: "3rem", md: "3.5rem" },
+                                    fontSize: { xs: "2.3rem", sm: "3.2rem", md: "3.6rem", lg: "4.2rem" },
                                     fontWeight: 800,
-                                    lineHeight: { xs: 1.2, md: 1.15 },
-                                    color: "text.primary"
+                                    color: "#111827",
+                                    lineHeight: { xs: 1.15, md: 1.1 },
+                                    letterSpacing: "-0.025em"
                                 }}
                             >
-                                Online Lab Reports Made <Box component="span" sx={{ color: "primary.main" }}>Beautiful</Box> & Simple
+                                Pathology Lab Software. <br />
+                                <Box component="span" sx={{ color: "#0f766e" }}>
+                                    Simple & Fast.
+                                </Box>
                             </Typography>
 
-                            {/* Subtitle Paragraph */}
+                            {/* Subheadline */}
                             <Typography
                                 variant="body1"
                                 sx={{
-                                    fontSize: { xs: "1rem", md: "1.125rem" },
-                                    color: "text.secondary",
+                                    fontSize: { xs: "1rem", md: "1.15rem" },
+                                    color: "#4B5563",
+                                    fontWeight: 500,
                                     lineHeight: 1.6,
-                                    maxWidth: "540px"
+                                    maxWidth: "520px"
                                 }}
                             >
-                                Run your diagnostic laboratory workspace with ease. Register patients, input test parameters, and share digital medical reports instantly. High performance, zero limitation.
+                                Create, print and send patient test reports on WhatsApp in 2 minutes. Simple for ground-level lab staff — no computer training needed.
                             </Typography>
 
-                            {/* Lead Form & Action Buttons container */}
-                            <Box sx={{ maxWidth: "500px", display: "flex", flexDirection: "column", gap: 2 }}>
-                                <Typography
-                                    variant="subtitle2"
-                                    sx={{
-                                        fontWeight: 700,
-                                        color: "primary.main",
-                                        textTransform: "uppercase",
-                                        fontSize: "0.75rem",
-                                        letterSpacing: "0.05em",
-                                        display: "flex",
-                                        alignItems: "center",
-                                        gap: 1
-                                    }}
-                                >
-                                    <span style={{ display: "inline-block", width: 6, height: 6, borderRadius: "50%", backgroundColor: "#14b8a6" }}></span>
-                                    Leave your details & we will contact you
-                                </Typography>
-
-                                {/* Responsive Form Box */}
-                                <Box
-                                    component="form"
-                                    onSubmit={handleLeadSubmit}
-                                    sx={{
-                                        p: 0.75,
-                                        borderRadius: "12px",
-                                        bgcolor: "#ffffff",
-                                        boxShadow: "0 10px 25px -10px rgba(15, 118, 110, 0.15)",
-                                        border: "1px solid rgba(15, 118, 110, 0.12)",
-                                        display: "flex",
-                                        flexDirection: { xs: "column", sm: "row" },
-                                        alignItems: { xs: "stretch", sm: "center" },
-                                        gap: 1.5
-                                    }}
-                                >
-                                    <TextField
-                                        fullWidth
-                                        variant="standard"
-                                        placeholder="Email address or Mobile number"
-                                        value={contactInput}
-                                        onChange={(e) => setContactInput(e.target.value)}
-                                        slotProps={{
-                                            input: {
-                                                disableUnderline: true,
-                                                startAdornment: (
-                                                    <InputAdornment position="start" sx={{ pl: 1.5, pr: 0.5 }}>
-                                                        {inputType === "mobile" ? (
-                                                            <PhoneIcon sx={{ color: "primary.main", fontSize: "1.25rem" }} />
-                                                        ) : (
-                                                            <EmailIcon sx={{ color: "primary.main", fontSize: "1.25rem" }} />
-                                                        )}
-                                                    </InputAdornment>
-                                                ),
-                                            }
-                                        }}
+                            {/* Flat Action & Form Box */}
+                            <Box sx={{ maxWidth: "490px", display: "flex", flexDirection: "column", gap: 1.8 }}>
+                                {leadSuccess ? (
+                                    <Box
                                         sx={{
-                                            "& .MuiInputBase-input": {
-                                                py: 1.5,
-                                                fontSize: "0.95rem",
-                                                fontWeight: 500
-                                            }
-                                        }}
-                                    />
-                                    <Button
-                                        type="submit"
-                                        variant="contained"
-                                        color="primary"
-                                        disabled={loading}
-                                        sx={{
-                                            py: { xs: 1.5, sm: 1.25 },
-                                            px: 4,
-                                            fontWeight: 700,
-                                            fontSize: "0.9rem",
+                                            p: 2.5,
                                             borderRadius: "8px",
-                                            textTransform: "none",
-                                            whiteSpace: "nowrap"
+                                            bgcolor: "rgba(16, 185, 129, 0.08)",
+                                            border: "2px solid #10B981",
+                                            display: "flex",
+                                            flexDirection: "column",
+                                            gap: 1.2,
                                         }}
                                     >
-                                        {loading ? <CircularProgress size={20} color="inherit" /> : "Save"}
-                                    </Button>
-                                </Box>
-
-                                {/* Divider */}
-                                <Box sx={{ display: "flex", alignItems: "center", gap: 2, my: 0.5 }}>
-                                    <Box sx={{ flex: 1, height: "1px", bgcolor: "rgba(15, 118, 110, 0.1)" }} />
-                                    <Typography
-                                        variant="caption"
+                                        <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
+                                            <CheckCircleIcon sx={{ color: "#10B981", fontSize: 26 }} />
+                                            <Box>
+                                                <Typography sx={{ color: "#065F46", fontWeight: 800, fontSize: "1rem" }}>
+                                                    Demo Request Received!
+                                                </Typography>
+                                                <Typography sx={{ color: "#047857", fontWeight: 600, fontSize: "0.88rem" }}>
+                                                    Our team will contact you as soon as possible.
+                                                </Typography>
+                                            </Box>
+                                        </Box>
+                                        <Button
+                                            size="small"
+                                            onClick={() => setLeadSuccess(false)}
+                                            sx={{
+                                                alignSelf: "flex-start",
+                                                color: "#047857",
+                                                textDecoration: "underline",
+                                                fontWeight: 700,
+                                                fontSize: "0.78rem",
+                                                p: 0,
+                                                minWidth: "auto",
+                                                "&:hover": { bgcolor: "transparent", textDecoration: "underline" }
+                                            }}
+                                        >
+                                            Submit another contact
+                                        </Button>
+                                    </Box>
+                                ) : (
+                                    <Box
+                                        component="form"
+                                        onSubmit={handleLeadSubmit}
                                         sx={{
-                                            color: "text.secondary",
-                                            fontWeight: 700,
-                                            textTransform: "uppercase",
-                                            letterSpacing: "0.05em",
-                                            fontSize: "0.7rem"
+                                            p: 0.75,
+                                            borderRadius: "8px",
+                                            bgcolor: "#F3F4F6",
+                                            border: "2px solid #E5E7EB",
+                                            display: "flex",
+                                            flexDirection: { xs: "column", sm: "row" },
+                                            alignItems: "center",
+                                            gap: 1,
+                                            transition: "border-color 0.2s, background-color 0.2s",
+                                            "&:focus-within": {
+                                                borderColor: "#0f766e",
+                                                bgcolor: "#FFFFFF"
+                                            }
                                         }}
                                     >
-                                        or
-                                    </Typography>
-                                    <Box sx={{ flex: 1, height: "1px", bgcolor: "rgba(15, 118, 110, 0.1)" }} />
-                                </Box>
+                                        <TextField
+                                            fullWidth
+                                            variant="standard"
+                                            placeholder="Mobile number or Email"
+                                            value={contactInput}
+                                            onChange={(e) => setContactInput(e.target.value)}
+                                            slotProps={{
+                                                input: {
+                                                    disableUnderline: true,
+                                                    startAdornment: (
+                                                        <InputAdornment position="start" sx={{ pl: 1.5, pr: 0.5 }}>
+                                                            {inputType === "mobile" ? (
+                                                                <PhoneIcon sx={{ color: "#0f766e", fontSize: "1.3rem" }} />
+                                                            ) : (
+                                                                <EmailIcon sx={{ color: "#0f766e", fontSize: "1.3rem" }} />
+                                                            )}
+                                                        </InputAdornment>
+                                                    ),
+                                                }
+                                            }}
+                                            sx={{
+                                                "& .MuiInputBase-input": {
+                                                    py: 1.3,
+                                                    fontSize: "0.98rem",
+                                                    fontWeight: 600,
+                                                    color: "#111827"
+                                                }
+                                            }}
+                                        />
+                                        <Button
+                                            type="submit"
+                                            variant="contained"
+                                            disabled={loading}
+                                            sx={{
+                                                py: 1.4,
+                                                px: 3.5,
+                                                minWidth: { xs: "100%", sm: "165px" },
+                                                width: { xs: "100%", sm: "auto" },
+                                                fontWeight: 700,
+                                                fontSize: "0.95rem",
+                                                borderRadius: "8px",
+                                                textTransform: "none",
+                                                whiteSpace: "nowrap",
+                                                bgcolor: "#0f766e",
+                                                color: "#FFFFFF",
+                                                boxShadow: "none !important",
+                                                display: "inline-flex",
+                                                alignItems: "center",
+                                                justifyContent: "center",
+                                                "&:hover": {
+                                                    bgcolor: "#115e59",
+                                                    boxShadow: "none !important",
+                                                    transform: "scale(1.04)"
+                                                }
+                                            }}
+                                        >
+                                            {loading ? <CircularProgress size={22} color="inherit" /> : "Get Free Demo"}
+                                        </Button>
+                                    </Box>
+                                )}
 
-                                {/* Direct Claim Button */}
+                                {/* Flat Outline Secondary Button */}
                                 <Button
-                                    variant="contained"
-                                    color="primary"
-                                    size="large"
+                                    variant="outlined"
                                     onClick={() => router.push("/auth/register")}
-                                    endIcon={<ArrowForwardIcon />}
+                                    endIcon={<ArrowForwardIcon sx={{ fontSize: "1.1rem" }} />}
                                     sx={{
-                                        py: 1.75,
-                                        px: 4,
+                                        py: 1.3,
                                         width: "100%",
-                                        fontSize: "1rem",
-                                        fontWeight: 700,
-                                        borderRadius: "12px",
-                                        background: "linear-gradient(135deg, #0f766e 0%, #115e59 100%)",
-                                        color: "#ffffff",
-                                        boxShadow: "0 10px 22px -5px rgba(15, 118, 110, 0.35)",
-                                        transition: "all 0.3s ease",
+                                        fontWeight: 800,
+                                        fontSize: "0.95rem",
+                                        borderRadius: "8px",
                                         textTransform: "none",
+                                        border: "3px solid #0f766e !important",
+                                        color: "#0f766e",
+                                        boxShadow: "none !important",
+                                        transition: "all 0.2s ease-in-out",
                                         "&:hover": {
-                                            background: "linear-gradient(135deg, #115e59 0%, #0f766e 100%)",
-                                            transform: "translateY(-1px)",
-                                            boxShadow: "0 12px 26px -5px rgba(15, 118, 110, 0.4)",
+                                            bgcolor: "#0f766e",
+                                            color: "#FFFFFF",
+                                            borderColor: "#0f766e !important",
+                                            boxShadow: "none !important",
+                                            transform: "scale(1.03)"
                                         }
                                     }}
                                 >
-                                    Claim 5 Days Trial
+                                    Start 5-Day Free Trial
                                 </Button>
+                            </Box>
 
-                                {/* Bullet points */}
-                                <Typography
-                                    variant="caption"
-                                    sx={{
-                                        display: "flex",
-                                        alignItems: "center",
-                                        gap: 0.5,
-                                        color: "text.secondary",
-                                        pl: 1,
-                                        mt: 0.5
-                                    }}
-                                >
-                                    <span>🚀</span> <b>5 Days Free Trial</b> • No Credit Card Required • Setup in 2 mins
-                                </Typography>
+                            {/* Flat Feature Bullet Points */}
+                            <Box sx={{ display: "flex", flexWrap: "wrap", gap: { xs: 2, sm: 3 }, pt: 0.5 }}>
+                                <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                                    <Box sx={{ width: 8, height: 8, borderRadius: "50%", bgcolor: "#10B981" }} />
+                                    <Typography variant="body2" sx={{ fontWeight: 700, color: "#374151", fontSize: "0.9rem" }}>
+                                        Instant Online Reports
+                                    </Typography>
+                                </Box>
+                                <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                                    <Box sx={{ width: 8, height: 8, borderRadius: "50%", bgcolor: "#0f766e" }} />
+                                    <Typography variant="body2" sx={{ fontWeight: 700, color: "#374151", fontSize: "0.9rem" }}>
+                                        Works on Mobile & PC
+                                    </Typography>
+                                </Box>
+                                <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                                    <Box sx={{ width: 8, height: 8, borderRadius: "50%", bgcolor: "#F59E0B" }} />
+                                    <Typography variant="body2" sx={{ fontWeight: 700, color: "#374151", fontSize: "0.9rem" }}>
+                                        5-Day Free Trial
+                                    </Typography>
+                                </Box>
                             </Box>
                         </Box>
                     </Grid>
 
-                    {/* Hero Right Column containing mockup */}
-                    <Grid
-                        size={{ xs: 12, md: 5, lg: 5 }}
-                        sx={{
-                            position: "relative",
-                            display: "flex",
-                            alignItems: "center",
-                            justifyContent: "center",
-                            width: "100%"
-                        }}
-                    >
-                        <Box
+                    {/* Right Column: Flat Window Preview Container */}
+                    <Grid size={{ xs: 12, md: 6, lg: 6 }}>
+                        <Card
+                            elevation={0}
                             sx={{
-                                position: { xs: "relative", md: "absolute" },
-                                right: { xs: "auto", md: "-15%", lg: "-20%" },
-                                top: { xs: "auto", md: "50%" },
-                                transform: { xs: "none", md: "translateY(-50%) translateZ(0)" },
-                                width: { xs: "100%", md: "135%", lg: "140%" },
-                                maxWidth: "840px",
-                                zIndex: 1,
-                                opacity: 1,
-                                mt: { xs: 4, md: 0 },
-                                px: 0,
-                                pointerEvents: { xs: "auto", md: "none" }
+                                border: "4px solid #E5E7EB",
+                                borderRadius: "8px",
+                                bgcolor: "#FFFFFF",
+                                overflow: "hidden",
+                                display: "flex",
+                                flexDirection: "column"
                             }}
                         >
+                            {/* Window Top Title Bar */}
+                            <Box
+                                sx={{
+                                    bgcolor: "#F3F4F6",
+                                    px: 2.5,
+                                    py: 1.5,
+                                    borderBottom: "3px solid #E5E7EB",
+                                    display: "flex",
+                                    alignItems: "center",
+                                    justifyContent: "space-between"
+                                }}
+                            >
+                                <Box sx={{ display: "flex", gap: 1 }}>
+                                    <Box sx={{ width: 12, height: 12, borderRadius: "50%", bgcolor: "#EF4444" }} />
+                                    <Box sx={{ width: 12, height: 12, borderRadius: "50%", bgcolor: "#F59E0B" }} />
+                                    <Box sx={{ width: 12, height: 12, borderRadius: "50%", bgcolor: "#10B981" }} />
+                                </Box>
+                                <Typography
+                                    variant="caption"
+                                    sx={{
+                                        fontWeight: 800,
+                                        color: "#4B5563",
+                                        letterSpacing: "0.05em",
+                                        fontSize: "0.75rem",
+                                        textTransform: "uppercase"
+                                    }}
+                                >
+                                    LIVE DEMO PREVIEW
+                                </Typography>
+                                <Box sx={{ width: 40 }} />
+                            </Box>
+
+                            {/* Image Preview Container */}
                             <Box
                                 sx={{
                                     position: "relative",
-                                    display: "flex",
-                                    justifyContent: "center",
-                                    alignItems: "center",
                                     width: "100%",
-                                    height: "100%"
+                                    bgcolor: "#F9FAFB",
+                                    display: "flex",
+                                    alignItems: "center",
+                                    justifyContent: "center",
+                                    p: { xs: 1.5, sm: 2 }
                                 }}
                             >
-                                {/* Decorative glowing gradient blur */}
                                 <Box
+                                    component="img"
+                                    src="/landing/register patient.png"
+                                    alt="Pathology Lab Dashboard Preview"
                                     sx={{
-                                        position: "absolute",
-                                        width: "90%",
-                                        height: "90%",
-                                        bgcolor: "rgba(20, 184, 166, 0.08)",
-                                        filter: "blur(50px)",
-                                        borderRadius: "50%",
-                                        zIndex: 1
+                                        width: "100%",
+                                        height: "auto",
+                                        maxHeight: { xs: 280, sm: 360, md: 420 },
+                                        objectFit: "contain",
+                                        borderRadius: "6px"
                                     }}
                                 />
-
-                                {/* Main Mockup Card */}
-                                <Card
-                                    sx={{
-                                        zIndex: 2,
-                                        overflow: "hidden",
-                                        border: { xs: "none", md: "1px solid rgba(15, 118, 110, 0.08)" },
-                                        boxShadow: { xs: "none", md: "0 20px 40px -15px rgba(0,0,0,0.1)" },
-                                        borderRadius: { xs: "0px", md: "16px" },
-                                        width: "100%",
-                                        transform: "translateZ(0)",
-                                        willChange: "transform",
-                                        transition: "transform 0.3s ease, box-shadow 0.3s ease",
-                                        "&:hover": {
-                                            transform: "scale(1.015) translateZ(0)"
-                                        }
-                                    }}
-                                >
-                                    <Box
-                                        component="img"
-                                        src="/landing/test report table.png"
-                                        alt="EasyTechnoMed Dashboard Preview"
-                                        sx={{
-                                            width: "100%",
-                                            height: "auto",
-                                            display: "block",
-                                            objectFit: "cover"
-                                        }}
-                                    />
-                                </Card>
                             </Box>
-                        </Box>
+                        </Card>
                     </Grid>
                 </Grid>
             </Container>

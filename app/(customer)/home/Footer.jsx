@@ -13,39 +13,50 @@ import {
 
 export default function Footer({ navLinks }) {
     return (
-        <Box sx={{ bgcolor: "#0f172a", color: "#94a3b8", py: { xs: 6, md: 8 }, borderTop: "1px solid rgba(255,255,255,0.05)" }}>
+        <Box sx={{ bgcolor: "#111827", color: "#9CA3AF", py: { xs: 7, md: 9 }, borderTop: "2px solid rgba(255, 255, 255, 0.1)" }}>
             <Container maxWidth="xl">
-                <Grid container spacing={4} sx={{ mb: 4 }}>
+                <Grid container spacing={4} sx={{ mb: 5 }}>
                     {/* Brand Column */}
                     <Grid size={{ xs: 12, md: 6 }}>
                         <Box
                             component="img"
                             src="/logo/logobg.png"
                             alt="EasyTechnoMed Logo"
-                            sx={{ height: 48, mb: 2.5, borderRadius: "6px", filter: "brightness(0.9)" }}
+                            sx={{ height: 44, mb: 2.5, borderRadius: "6px" }}
                         />
-                        <Typography variant="body2" sx={{ maxWidth: 360, lineHeight: 1.7, fontSize: "0.9rem" }}>
-                            Modern, secure, and professional diagnostic laboratory software for managing patient reports, referral metrics, and data summaries efficiently.
+                        <Typography variant="body2" sx={{ maxWidth: 380, lineHeight: 1.7, fontSize: "0.92rem", color: "#9CA3AF" }}>
+                            Modern, secure, and intuitive diagnostic laboratory software for managing patient reports, referral metrics, and data summaries efficiently.
                         </Typography>
                     </Grid>
 
                     {/* Product Links Column */}
                     <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-                        <Typography variant="subtitle2" sx={{ color: "#f8fafc", fontWeight: 700, mb: 2, textTransform: "uppercase", letterSpacing: "0.05em" }}>
+                        <Typography
+                            sx={{
+                                color: "#FFFFFF",
+                                fontWeight: 800,
+                                mb: 2,
+                                fontSize: "0.85rem",
+                                fontFamily: "var(--font-outfit), sans-serif",
+                                letterSpacing: "0.08em",
+                                textTransform: "uppercase"
+                            }}
+                        >
                             Product
                         </Typography>
                         <List sx={{ p: 0 }}>
                             {navLinks.map((link) => (
-                                <ListItem key={link.text} disableGutters sx={{ py: 0.75 }}>
+                                <ListItem key={link.text} disableGutters sx={{ py: 0.6 }}>
                                     <Typography
                                         component="a"
                                         href={link.href}
                                         sx={{
-                                            color: "#94a3b8",
+                                            color: "#9CA3AF",
                                             textDecoration: "none",
-                                            fontSize: "0.9rem",
-                                            transition: "color 0.2s",
-                                            "&:hover": { color: "#ffffff" }
+                                            fontSize: "0.92rem",
+                                            fontWeight: 600,
+                                            transition: "color 0.15s",
+                                            "&:hover": { color: "#0f766e" }
                                         }}
                                     >
                                         {link.text}
@@ -57,11 +68,21 @@ export default function Footer({ navLinks }) {
 
                     {/* Trust/Security Column */}
                     <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-                        <Typography variant="subtitle2" sx={{ color: "#f8fafc", fontWeight: 700, mb: 2, textTransform: "uppercase", letterSpacing: "0.05em" }}>
+                        <Typography
+                            sx={{
+                                color: "#FFFFFF",
+                                fontWeight: 800,
+                                mb: 2,
+                                fontSize: "0.85rem",
+                                fontFamily: "var(--font-outfit), sans-serif",
+                                letterSpacing: "0.08em",
+                                textTransform: "uppercase"
+                            }}
+                        >
                             Security & Trust
                         </Typography>
-                        <Typography variant="body2" sx={{ lineHeight: 1.7, fontSize: "0.9rem" }}>
-                            100% HIPAA compliant data practices. Continuous backup and encrypted records transfer.
+                        <Typography variant="body2" sx={{ lineHeight: 1.7, fontSize: "0.92rem", color: "#9CA3AF" }}>
+                            100% HIPAA compliant data practices. Daily automated cloud backups and multi-tenant isolated databases.
                         </Typography>
                     </Grid>
                 </Grid>
@@ -69,7 +90,7 @@ export default function Footer({ navLinks }) {
                 {/* Bottom Bar */}
                 <Box
                     sx={{
-                        borderTop: "1px solid rgba(255,255,255,0.08)",
+                        borderTop: "1px solid rgba(255, 255, 255, 0.1)",
                         pt: 4,
                         display: "flex",
                         flexDirection: { xs: "column", sm: "row" },
@@ -78,35 +99,37 @@ export default function Footer({ navLinks }) {
                         gap: 2
                     }}
                 >
-                    <Typography variant="caption" sx={{ fontSize: "0.75rem", textAlign: { xs: "center", sm: "left" } }}>
-                        © {new Date().getFullYear()} EasyTechnoMed. All rights reserved. Authorized personnel console access under license.
+                    <Typography variant="caption" sx={{ fontSize: "0.8rem", color: "#6B7280", fontWeight: 600, textAlign: { xs: "center", sm: "left" } }}>
+                        © {new Date().getFullYear()} EasyTechnoMed. All rights reserved. Cloud-Based Diagnostic Lab & LIMS Software.
                     </Typography>
                     <Box sx={{ display: "flex", gap: 3 }}>
                         <Typography
                             component={Link}
                             href="/privacy"
                             sx={{
-                                color: "#94a3b8",
+                                color: "#9CA3AF",
                                 textDecoration: "none",
-                                fontSize: "0.75rem",
-                                transition: "color 0.2s",
-                                "&:hover": { color: "#ffffff" }
+                                fontSize: "0.8rem",
+                                fontWeight: 600,
+                                transition: "color 0.15s",
+                                "&:hover": { color: "#0f766e" }
                             }}
                         >
                             Privacy Policy
                         </Typography>
                         <Typography
-                            component="a"
-                            href="#"
+                            component={Link}
+                            href="/about"
                             sx={{
-                                color: "#94a3b8",
+                                color: "#9CA3AF",
                                 textDecoration: "none",
-                                fontSize: "0.75rem",
-                                transition: "color 0.2s",
-                                "&:hover": { color: "#ffffff" }
+                                fontSize: "0.8rem",
+                                fontWeight: 600,
+                                transition: "color 0.15s",
+                                "&:hover": { color: "#0f766e" }
                             }}
                         >
-                            Terms of Service
+                            About Us
                         </Typography>
                     </Box>
                 </Box>

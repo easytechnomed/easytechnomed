@@ -50,13 +50,13 @@ const drawerWidth = 260;
 const theme = createTheme({
   palette: {
     primary: {
-      main: "#0f766e", // Teal 700
-      light: "#14b8a6", // Teal 500
-      dark: "#115e59", // Teal 800
+      main: "#0f766e", // Deep Teal Primary
+      light: "#14b8a6",
+      dark: "#115e59",
       contrastText: "#fff",
     },
     secondary: {
-      main: "#3b82f6", // Blue 500
+      main: "#10b981", // Emerald 500
     },
     background: {
       default: "#f8fafc", // Slate 50
@@ -71,7 +71,7 @@ const theme = createTheme({
     fontFamily: "var(--font-outfit), 'Outfit', sans-serif",
     button: {
       textTransform: "none",
-      fontWeight: 600,
+      fontWeight: 700,
     },
   },
   components: {
@@ -79,14 +79,22 @@ const theme = createTheme({
       styleOverrides: {
         root: {
           borderRadius: 8,
+          boxShadow: "none !important",
         },
       },
     },
     MuiCard: {
       styleOverrides: {
         root: {
-          borderRadius: 12,
-          boxShadow: "0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1)",
+          borderRadius: 10,
+          boxShadow: "none !important",
+        },
+      },
+    },
+    MuiPaper: {
+      styleOverrides: {
+        root: {
+          boxShadow: "none !important",
         },
       },
     },
@@ -376,14 +384,14 @@ export default function AdminLayoutClient({ admin, children }) {
                         borderRadius: "8px",
                         py: 1.2,
                         px: 2.5,
-                        backgroundColor: isActive ? "primary.light" : "transparent",
-                        color: isActive ? "primary.contrastText" : "text.secondary",
+                        backgroundColor: isActive ? "#0f766e" : "transparent",
+                        color: isActive ? "#FFFFFF" : "text.secondary",
                         justifyContent: isDrawerExpanded ? "initial" : "center",
                         "&:hover": {
-                          backgroundColor: isActive ? "primary.main" : "rgba(15, 118, 110, 0.08)",
-                          color: isActive ? "primary.contrastText" : "primary.main",
+                          backgroundColor: isActive ? "#115e59" : "rgba(15, 118, 110, 0.1)",
+                          color: isActive ? "#FFFFFF" : "#0f766e",
                           "& .MuiListItemIcon-root": {
-                            color: isActive ? "primary.contrastText" : "primary.main",
+                            color: isActive ? "#FFFFFF" : "#0f766e",
                           },
                         },
                       }}
@@ -442,11 +450,11 @@ export default function AdminLayoutClient({ admin, children }) {
                                 borderRadius: "6px",
                                 py: 0.6,
                                 px: 2,
-                                backgroundColor: isSubActive ? "rgba(15, 118, 110, 0.08)" : "transparent",
-                                color: isSubActive ? "primary.main" : "text.secondary",
+                                backgroundColor: isSubActive ? "rgba(15, 118, 110, 0.15)" : "transparent",
+                                color: isSubActive ? "#0f766e" : "text.secondary",
                                 "&:hover": {
-                                  backgroundColor: "rgba(15, 118, 110, 0.04)",
-                                  color: "primary.main",
+                                  backgroundColor: "rgba(15, 118, 110, 0.08)",
+                                  color: "#0f766e",
                                 },
                               }}
                             >
