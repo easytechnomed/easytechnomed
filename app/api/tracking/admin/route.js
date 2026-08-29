@@ -8,24 +8,35 @@ export async function POST(req) {
     const body = await req.json().catch(() => ({}));
     const { sessionId, startUTC, ENDUTC, mode, durationInMin } = body;
 
-    if (!sessionId || !startUTC || !ENDUTC) {
-      return NextResponse.json({ success: false, error: "Missing required fields" }, { status: 400 });
+    const parsedStart = new Date(startUTC);
+    const parsedEnd = new Date(ENDUTC);
+
+    if (isNaN(parsedStart.getTime()) || isNaN(parsedEnd.getTime())) {
+      return NextResponse.json({ success: false, error: "Invalid timestamp format" }, { status: 400 });
+    }
+
+    const calculatedMin = Math.max(0, (parsedEnd.getTime() - parsedStart.getTime()) / 60000);
+    const safeDuration = Math.min(Math.max(0, parseFloat(durationInMin) || 0), Math.max(0.1, calculatedMin));
+
+    // Skip persisting sub-20 second slices (< 0.33 min)
+    if (safeDuration < 0.33) {
+      return NextResponse.json({ success: true, message: "Sub-threshold slice skipped" });
     }
 
     const tracking = await prisma.adminTracking.upsert({
       where: { sessionId },
       update: {
-        ENDUTC: new Date(ENDUTC),
-        mode,
-        durationInMin: parseFloat(durationInMin),
+        ENDUTC: parsedEnd,
+        mode: mode || "online",
+        durationInMin: parseFloat(safeDuration.toFixed(2)),
         adminId: admin ? admin.id : null
       },
       create: {
         sessionId,
-        startUTC: new Date(startUTC),
-        ENDUTC: new Date(ENDUTC),
-        mode,
-        durationInMin: parseFloat(durationInMin),
+        startUTC: parsedStart,
+        ENDUTC: parsedEnd,
+        mode: mode || "online",
+        durationInMin: parseFloat(safeDuration.toFixed(2)),
         adminId: admin ? admin.id : null
       }
     });

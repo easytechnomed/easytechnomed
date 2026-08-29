@@ -25,22 +25,22 @@ export async function GET(req) {
     const nowIstTime = nowUtc.getTime() + IST_OFFSET_MS;
     const nowIstDate = new Date(nowIstTime);
 
-    // Day of week in IST (0 = Sun, 1 = Mon, ..., 6 = Sat)
-    const currentDayOfWeek = nowIstDate.getUTCDay();
+    // Distance to Monday (0 = Monday, ..., 6 = Sunday)
+    const currentDayOfWeek = (nowIstDate.getUTCDay() + 6) % 7;
 
-    // Start of the week (Sunday 00:00:00.000 IST)
-    const sundayIstDate = new Date(nowIstDate);
-    sundayIstDate.setUTCDate(nowIstDate.getUTCDate() - currentDayOfWeek + weekOffset * 7);
-    sundayIstDate.setUTCHours(0, 0, 0, 0);
+    // Start of the week (Monday 00:00:00.000 IST)
+    const mondayIstDate = new Date(nowIstDate);
+    mondayIstDate.setUTCDate(nowIstDate.getUTCDate() - currentDayOfWeek + weekOffset * 7);
+    mondayIstDate.setUTCHours(0, 0, 0, 0);
 
-    // End of the week (Saturday 23:59:59.999 IST)
-    const saturdayIstDate = new Date(sundayIstDate);
-    saturdayIstDate.setUTCDate(sundayIstDate.getUTCDate() + 6);
-    saturdayIstDate.setUTCHours(23, 59, 59, 999);
+    // End of the week (Sunday 23:59:59.999 IST)
+    const sundayIstDate = new Date(mondayIstDate);
+    sundayIstDate.setUTCDate(mondayIstDate.getUTCDate() + 6);
+    sundayIstDate.setUTCHours(23, 59, 59, 999);
 
     // Convert IST week boundaries back to UTC for database queries
-    const weekStartUtc = new Date(sundayIstDate.getTime() - IST_OFFSET_MS);
-    const weekEndUtc = new Date(saturdayIstDate.getTime() - IST_OFFSET_MS);
+    const weekStartUtc = new Date(mondayIstDate.getTime() - IST_OFFSET_MS);
+    const weekEndUtc = new Date(sundayIstDate.getTime() - IST_OFFSET_MS);
 
     // Query all AdminTracking records overlapping this week
     const trackings = await prisma.adminTracking.findMany({
@@ -67,8 +67,8 @@ export async function GET(req) {
       orderBy: { startUTC: "asc" },
     });
 
-    const dayNames = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
-    const dayShortNames = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+    const dayNames = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
+    const dayShortNames = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 
     const daysData = [];
     const allActiveAdminIds = new Set();
@@ -77,16 +77,19 @@ export async function GET(req) {
     let overallPeakDay = null;
     let overallPeakHour = null;
 
-    // Process each day from Sunday (0) to Saturday (6)
+    const TOTAL_SLOTS = 96; // 15-minute resolution per day (4 slots * 24 hours)
+    const SLOT_DURATION_MS = 15 * 60 * 1000;
+
+    // Process each day from Monday (0) to Sunday (6)
     for (let dayIndex = 0; dayIndex < 7; dayIndex++) {
-      const dayIstDate = new Date(sundayIstDate);
-      dayIstDate.setUTCDate(sundayIstDate.getUTCDate() + dayIndex);
+      const dayIstDate = new Date(mondayIstDate);
+      dayIstDate.setUTCDate(mondayIstDate.getUTCDate() + dayIndex);
 
       const dayDateStr = dayIstDate.toISOString().split("T")[0]; // YYYY-MM-DD
-      const dayDisplayDate = dayIstDate.toLocaleDateString("en-IN", {
+      const dayDisplayDate = dayIstDate.toLocaleDateString("en-US", {
         timeZone: "UTC",
-        day: "numeric",
         month: "short",
+        day: "numeric",
       });
 
       const dayStartIstTime = dayIstDate.getTime();
@@ -101,49 +104,45 @@ export async function GET(req) {
       // Check if this day is in the future
       const isFuture = dayIstDate.getTime() > nowIstDate.getTime() && !isToday;
 
-      // Analyze 24 hourly buckets for this day
-      const hourlyBuckets = [];
       let dayTotalMinutes = 0;
       const dayActiveAdminIds = new Set();
-      let dayPeakUsers = 0;
-      let dayPeakHourIndex = 0;
-      let dayPeakMinutes = 0;
+      const slots = [];
 
-      for (let h = 0; h < 24; h++) {
-        const hourStartIstTime = dayStartIstTime + h * 60 * 60 * 1000;
-        const hourEndIstTime = hourStartIstTime + 60 * 60 * 1000;
+      for (let s = 0; s < TOTAL_SLOTS; s++) {
+        const slotStartIstTime = dayStartIstTime + s * SLOT_DURATION_MS;
+        const slotEndIstTime = slotStartIstTime + SLOT_DURATION_MS;
 
-        // Convert hour bucket to UTC to match tracking session timestamps
-        const hourStartUtcTime = hourStartIstTime - IST_OFFSET_MS;
-        const hourEndUtcTime = hourEndIstTime - IST_OFFSET_MS;
+        // Convert slot bucket to UTC to match tracking session timestamps
+        const slotStartUtcTime = slotStartIstTime - IST_OFFSET_MS;
+        const slotEndUtcTime = slotEndIstTime - IST_OFFSET_MS;
 
-        const hourActiveAdmins = new Map();
-        let hourTotalMinutes = 0;
-        let hourSessionCount = 0;
+        let slotMinutes = 0;
+        let slotSessionCount = 0;
+        const slotActiveAdmins = new Map();
 
         for (const t of trackings) {
           const tStart = new Date(t.startUTC).getTime();
           const tEnd = new Date(t.ENDUTC).getTime();
 
-          // Check overlap between [tStart, tEnd] and [hourStartUtcTime, hourEndUtcTime]
-          if (tStart < hourEndUtcTime && tEnd > hourStartUtcTime) {
-            const overlapStart = Math.max(tStart, hourStartUtcTime);
-            const overlapEnd = Math.min(tEnd, hourEndUtcTime);
-            const overlapMinutes = Math.max(0, (overlapEnd - overlapStart) / (60 * 1000));
+          // Check overlap between [tStart, tEnd] and [slotStartUtcTime, slotEndUtcTime]
+          if (tStart < slotEndUtcTime && tEnd > slotStartUtcTime) {
+            const overlapStart = Math.max(tStart, slotStartUtcTime);
+            const overlapEnd = Math.min(tEnd, slotEndUtcTime);
+            const overlapMin = Math.max(0, (overlapEnd - overlapStart) / (60 * 1000));
 
-            hourTotalMinutes += overlapMinutes;
-            hourSessionCount++;
+            slotMinutes += overlapMin;
+            slotSessionCount++;
 
             const adminId = t.adminId || t.sessionId;
-            if (!hourActiveAdmins.has(adminId)) {
-              hourActiveAdmins.set(adminId, {
+            if (!slotActiveAdmins.has(adminId)) {
+              slotActiveAdmins.set(adminId, {
                 id: t.admin?.id || null,
                 name: t.admin?.name || "Admin User",
                 workspaceName: t.admin?.workspace?.name || "Workspace",
-                minutes: overlapMinutes,
+                minutes: overlapMin,
               });
             } else {
-              hourActiveAdmins.get(adminId).minutes += overlapMinutes;
+              slotActiveAdmins.get(adminId).minutes += overlapMin;
             }
 
             if (t.adminId) {
@@ -153,25 +152,56 @@ export async function GET(req) {
           }
         }
 
-        const activeUsersCount = hourActiveAdmins.size;
-        dayTotalMinutes += hourTotalMinutes;
+        const activeMinutes = Math.min(15, Math.round(slotMinutes));
+        dayTotalMinutes += activeMinutes;
+        const isSlotFuture = slotStartIstTime > nowIstTime;
 
-        hourlyBuckets.push({
-          hour: h,
-          label: formatHourLabel(h),
-          shortLabel: `${h % 12 === 0 ? 12 : h % 12}${h >= 12 ? "pm" : "am"}`,
-          activeUsers: activeUsersCount,
-          sessionsCount: hourSessionCount,
-          activeMinutes: Math.round(hourTotalMinutes),
-          activeAdminsList: Array.from(hourActiveAdmins.values()).slice(0, 5),
+        const startHour24 = Math.floor((s * 15) / 60);
+        const startMin = (s * 15) % 60;
+        const endHour24 = Math.floor(((s + 1) * 15) / 60);
+        const endMin = ((s + 1) * 15) % 60;
+
+        const formatTime = (h, m) => {
+          const period = h >= 12 && h < 24 ? "PM" : "AM";
+          const h12 = h % 12 === 0 ? 12 : (h === 24 ? 12 : h % 12);
+          const mStr = m.toString().padStart(2, "0");
+          return `${h12}:${mStr} ${period}`;
+        };
+
+        const timeRangeStr = `${formatTime(startHour24, startMin)} – ${formatTime(endHour24, endMin)}`;
+
+        slots.push({
+          index: s,
+          timeRangeStr,
+          activeMinutes,
+          isActive: activeMinutes > 0,
+          sessionCount: slotSessionCount,
+          activeAdminsList: Array.from(slotActiveAdmins.values()),
+          isFuture: isSlotFuture,
         });
+      }
 
-        // Determine day's peak hour
+      // Analyze 24 hourly buckets for peak hour determination
+      let dayPeakUsers = 0;
+      let dayPeakHourIndex = 0;
+      let dayPeakMinutes = 0;
+
+      for (let h = 0; h < 24; h++) {
+        const hourSlots = slots.slice(h * 4, (h + 1) * 4);
+        const hourTotalMinutes = hourSlots.reduce((acc, curr) => acc + curr.activeMinutes, 0);
+        const hourAdminsMap = new Map();
+        hourSlots.forEach((slot) => {
+          slot.activeAdminsList.forEach((adm) => {
+            if (adm.id) hourAdminsMap.set(adm.id, adm);
+          });
+        });
+        const hourUsersCount = hourAdminsMap.size;
+
         if (
-          activeUsersCount > dayPeakUsers ||
-          (activeUsersCount === dayPeakUsers && hourTotalMinutes > dayPeakMinutes && activeUsersCount > 0)
+          hourUsersCount > dayPeakUsers ||
+          (hourUsersCount === dayPeakUsers && hourTotalMinutes > dayPeakMinutes && hourUsersCount > 0)
         ) {
-          dayPeakUsers = activeUsersCount;
+          dayPeakUsers = hourUsersCount;
           dayPeakHourIndex = h;
           dayPeakMinutes = hourTotalMinutes;
         }
@@ -179,14 +209,13 @@ export async function GET(req) {
 
       weekTotalActiveMinutes += dayTotalMinutes;
 
-      // Check if this day's peak is the overall week's peak
       if (dayPeakUsers > overallPeakUsers && dayPeakUsers > 0) {
         overallPeakUsers = dayPeakUsers;
         overallPeakDay = dayNames[dayIndex];
         overallPeakHour = formatHourLabel(dayPeakHourIndex);
       }
 
-      const hasActivity = dayPeakUsers > 0 || dayTotalMinutes > 0;
+      const hasActivity = dayTotalMinutes > 0;
 
       daysData.push({
         dayIndex,
@@ -205,18 +234,17 @@ export async function GET(req) {
         totalActiveUsers: dayActiveAdminIds.size,
         totalActiveHours: parseFloat((dayTotalMinutes / 60).toFixed(1)),
         totalActiveMinutes: Math.round(dayTotalMinutes),
-        hourly: hourlyBuckets,
+        slots,
       });
     }
 
     // Format week date range display
-    const startRangeStr = sundayIstDate.toLocaleDateString("en-IN", {
+    const startRangeStr = mondayIstDate.toLocaleDateString("en-US", {
       timeZone: "UTC",
       day: "numeric",
       month: "short",
-      year: "numeric",
     });
-    const endRangeStr = saturdayIstDate.toLocaleDateString("en-IN", {
+    const endRangeStr = sundayIstDate.toLocaleDateString("en-US", {
       timeZone: "UTC",
       day: "numeric",
       month: "short",

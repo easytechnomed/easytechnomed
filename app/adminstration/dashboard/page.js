@@ -25,6 +25,7 @@ import {
   Tooltip,
   Avatar,
   LinearProgress,
+  Stack,
 } from "@mui/material";
 import {
   TrendingUp as TrendingUpIcon,
@@ -105,9 +106,9 @@ function SuperAdminDashboardContent() {
   const [busyLoading, setBusyLoading] = useState(true);
   const [busyRefreshing, setBusyRefreshing] = useState(false);
 
-  const fetchBusyHours = async (offset = busyWeekOffset, isManual = false) => {
+  const fetchBusyHours = async (offset = busyWeekOffset, isManual = false, isSilent = false) => {
     if (isManual) setBusyRefreshing(true);
-    else setBusyLoading(true);
+    else if (!isSilent) setBusyLoading(true);
 
     try {
       const res = await fetch(`/adminstration/api/dashboard/busy-hours?weekOffset=${offset}`).then((r) => r.json());
@@ -120,7 +121,7 @@ function SuperAdminDashboardContent() {
     } catch (err) {
       console.error("Failed to load busy hours analytics:", err);
     } finally {
-      setBusyLoading(false);
+      if (!isSilent) setBusyLoading(false);
       setBusyRefreshing(false);
     }
   };
@@ -157,7 +158,13 @@ function SuperAdminDashboardContent() {
   }, []);
 
   useEffect(() => {
-    fetchBusyHours(busyWeekOffset);
+    fetchBusyHours(busyWeekOffset, false, false);
+
+    const interval = setInterval(() => {
+      fetchBusyHours(busyWeekOffset, false, true);
+    }, 20 * 1000);
+
+    return () => clearInterval(interval);
   }, [busyWeekOffset]);
 
   if (loading) {
@@ -421,11 +428,29 @@ function SuperAdminDashboardContent() {
                   <AccessTimeIcon fontSize="small" />
                 </Avatar>
                 <Box>
-                  <Typography variant="h6" sx={{ fontWeight: 800, color: "text.primary", lineHeight: 1.2 }}>
-                    Weekly Active Hours & Busy Peak Analyzer
-                  </Typography>
+                  <Box sx={{ display: "flex", alignItems: "center", gap: 1.2 }}>
+                    <Typography variant="h6" sx={{ fontWeight: 800, color: "text.primary", lineHeight: 1.2 }}>
+                      Weekly Active Hours & Busy Peak Analyzer
+                    </Typography>
+                    <Chip
+                      label="⚡ LIVE (20s)"
+                      size="small"
+                      color="success"
+                      variant="outlined"
+                      sx={{
+                        fontSize: "0.65rem",
+                        fontWeight: 800,
+                        height: 20,
+                        animation: "pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite",
+                        "@keyframes pulse": {
+                          "0%, 100%": { opacity: 1 },
+                          "50%": { opacity: 0.5 },
+                        },
+                      }}
+                    />
+                  </Box>
                   <Typography variant="caption" color="text.secondary" sx={{ display: "block", mt: 0.2 }}>
-                    Peak operational hours & concurrent active users (Sun to Sat via AdminTracking)
+                    Peak operational hours & concurrent active users (Mon to Sun via AdminTracking)
                   </Typography>
                 </Box>
               </Box>
@@ -538,204 +563,243 @@ function SuperAdminDashboardContent() {
             </Paper>
           )}
 
-          {/* 7-Day Sun to Sat Columns Row */}
-          {busyLoading ? (
-            <Box sx={{ py: 6, display: "flex", justifyContent: "center", alignItems: "center", gap: 1.5 }}>
-              <CircularProgress size={24} color="primary" />
-              <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600 }}>
-                Analyzing tracking data for {busyData?.dateRange || "the week"}…
-              </Typography>
+          {/* Main 7-Day Timeline Health Status Rows (Matching Image) */}
+          <Paper
+            variant="outlined"
+            sx={{
+              p: { xs: 2, sm: 2.5 },
+              borderRadius: 3,
+              bgcolor: "white",
+              boxShadow: "0 1px 3px rgba(0,0,0,0.03)",
+            }}
+          >
+            {/* Time Milestone Markers Directly Above the Rows */}
+            <Box
+              sx={{
+                display: "flex",
+                alignItems: "center",
+                pl: "82px",
+                pr: "84px",
+                mb: 1.5,
+                pb: 0.5,
+                borderBottom: "1px dashed",
+                borderColor: "divider",
+              }}
+            >
+              <Box sx={{ flex: 1, display: "flex", justifyContent: "space-between", px: 0.5 }}>
+                <Typography variant="caption" sx={{ fontSize: "0.7rem", fontWeight: 800, color: "text.secondary" }}>
+                  12 AM (00:00)
+                </Typography>
+                <Typography variant="caption" sx={{ fontSize: "0.7rem", fontWeight: 700, color: "text.disabled" }}>
+                  3 AM
+                </Typography>
+                <Typography variant="caption" sx={{ fontSize: "0.7rem", fontWeight: 800, color: "text.secondary" }}>
+                  6 AM
+                </Typography>
+                <Typography variant="caption" sx={{ fontSize: "0.7rem", fontWeight: 700, color: "text.disabled" }}>
+                  9 AM
+                </Typography>
+                <Typography variant="caption" sx={{ fontSize: "0.7rem", fontWeight: 800, color: "text.secondary" }}>
+                  12 PM (Noon)
+                </Typography>
+                <Typography variant="caption" sx={{ fontSize: "0.7rem", fontWeight: 700, color: "text.disabled" }}>
+                  3 PM
+                </Typography>
+                <Typography variant="caption" sx={{ fontSize: "0.7rem", fontWeight: 800, color: "text.secondary" }}>
+                  6 PM
+                </Typography>
+                <Typography variant="caption" sx={{ fontSize: "0.7rem", fontWeight: 700, color: "text.disabled" }}>
+                  9 PM
+                </Typography>
+                <Typography variant="caption" sx={{ fontSize: "0.7rem", fontWeight: 800, color: "text.secondary" }}>
+                  11:59 PM (24:00)
+                </Typography>
+              </Box>
             </Box>
-          ) : (
-            <Grid container spacing={1.5}>
-              {busyData?.days?.map((day) => {
-                const isBusiestDayOfWeek = busyData.overallPeakDay === day.dayName && day.hasActivity;
 
-                return (
-                  <Grid key={day.dayIndex} size={{ xs: 12, sm: 6, md: 4, lg: 1.71 }}>
-                    <Paper
-                      variant="outlined"
-                      sx={{
-                        p: 1.8,
-                        height: "100%",
-                        borderRadius: 2.5,
-                        bgcolor: day.isToday
-                          ? "rgba(124, 58, 237, 0.04)"
-                          : isBusiestDayOfWeek
-                          ? "#fdf4ff"
-                          : "#ffffff",
-                        borderColor: day.isToday
-                          ? "#7c3aed"
-                          : isBusiestDayOfWeek
-                          ? "#d8b4fe"
-                          : "#e2e8f0",
-                        borderWidth: day.isToday ? 2 : 1,
-                        display: "flex",
-                        flexDirection: "column",
-                        justifyContent: "space-between",
-                        position: "relative",
-                        transition: "all 0.2s",
-                        "&:hover": {
-                          boxShadow: "0 6px 14px -4px rgba(0,0,0,0.08)",
-                          borderColor: "#7c3aed",
-                        },
-                      }}
-                    >
-                      {/* Day Header */}
-                      <Box>
-                        <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 1 }}>
-                          <Box sx={{ display: "flex", alignItems: "baseline", gap: 0.6 }}>
-                            <Typography variant="subtitle2" sx={{ fontWeight: 800, color: day.isToday ? "#7c3aed" : "text.primary" }}>
-                              {day.dayShort}
-                            </Typography>
-                            <Typography variant="caption" sx={{ color: "text.secondary", fontWeight: 600 }}>
-                              {day.displayDate}
-                            </Typography>
-                          </Box>
-
-                          {day.isToday && (
-                            <Chip
-                              label="TODAY"
-                              size="small"
-                              sx={{
-                                bgcolor: "#7c3aed",
-                                color: "#ffffff",
-                                fontWeight: 800,
-                                fontSize: "0.62rem",
-                                height: 18,
-                              }}
-                            />
-                          )}
-                        </Box>
-
-                        <Divider sx={{ mb: 1.5, borderColor: day.isToday ? "rgba(124, 58, 237, 0.2)" : "#f1f5f9" }} />
-
-                        {/* Peak Hour Highlight */}
-                        <Box sx={{ mb: 1.5 }}>
-                          <Typography variant="caption" sx={{ color: "text.secondary", fontWeight: 700, fontSize: "0.68rem", textTransform: "uppercase", letterSpacing: "0.4px", display: "block", mb: 0.3 }}>
-                            🔥 Busiest Hour
-                          </Typography>
-
-                          <Typography
-                            variant="body2"
-                            sx={{
-                              fontWeight: 800,
-                              fontSize: day.hasActivity ? "0.85rem" : "0.8rem",
-                              color: day.hasActivity ? (day.isToday ? "#7c3aed" : "#0f172a") : "#94a3b8",
-                              lineHeight: 1.3,
-                            }}
-                          >
-                            {day.peakHour}
-                          </Typography>
-
-                          {day.hasActivity ? (
-                            <Box sx={{ display: "flex", alignItems: "center", gap: 0.8, mt: 0.8, flexWrap: "wrap" }}>
-                              <Chip
-                                icon={<GroupIcon sx={{ fontSize: "12px !important" }} />}
-                                label={`${day.peakUsers} Active User${day.peakUsers === 1 ? "" : "s"}`}
-                                size="small"
-                                sx={{
-                                  height: 20,
-                                  fontSize: "0.68rem",
-                                  fontWeight: 800,
-                                  bgcolor: isBusiestDayOfWeek ? "#fae8ff" : "#ecfdf5",
-                                  color: isBusiestDayOfWeek ? "#86198f" : "#15803d",
-                                }}
-                              />
-                            </Box>
-                          ) : (
-                            <Typography variant="caption" sx={{ color: "text.disabled", display: "block", mt: 0.5, fontStyle: "italic" }}>
-                              {day.isFuture ? "Upcoming day" : "No active sessions"}
-                            </Typography>
-                          )}
-                        </Box>
-                      </Box>
-
-                      {/* Day Totals & 24h Mini Activity Bar */}
-                      <Box sx={{ mt: 1 }}>
-                        <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 0.8 }}>
-                          <Typography variant="caption" sx={{ color: "text.secondary", fontSize: "0.7rem", fontWeight: 600 }}>
-                            Total Day Active:
-                          </Typography>
-                          <Typography variant="caption" sx={{ fontWeight: 800, color: day.hasActivity ? "#0f172a" : "text.disabled", fontSize: "0.72rem" }}>
-                            {day.totalActiveHours > 0 ? `${day.totalActiveHours} hrs` : "0h"}
-                          </Typography>
-                        </Box>
-
-                        {/* 24-Hour Sparkline Heatmap Timeline (00h - 23h) */}
-                        <Box
+            {busyLoading ? (
+              <Box sx={{ py: 8, display: "flex", justifyContent: "center", alignItems: "center", gap: 1.5 }}>
+                <CircularProgress size={24} color="primary" />
+                <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600 }}>
+                  Analyzing tracking data for {busyData?.dateRange || "the week"}…
+                </Typography>
+              </Box>
+            ) : (
+              <Stack spacing={1.5}>
+                {busyData?.days?.map((day, idx) => (
+                  <Box
+                    key={idx}
+                    sx={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 1.5,
+                      p: 1.2,
+                      borderRadius: 2.5,
+                      bgcolor: day.isToday ? "rgba(99, 102, 241, 0.04)" : "transparent",
+                      border: day.isToday ? "1px solid rgba(99, 102, 241, 0.3)" : "1px solid transparent",
+                      transition: "all 0.15s ease",
+                      "&:hover": {
+                        bgcolor: day.isToday ? "rgba(99, 102, 241, 0.08)" : "action.hover",
+                      },
+                    }}
+                  >
+                    {/* Left: Day & Date */}
+                    <Box sx={{ width: 68, flexShrink: 0 }}>
+                      <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
+                        <Typography
+                          variant="body2"
                           sx={{
-                            display: "flex",
-                            alignItems: "flex-end",
-                            gap: "2px",
-                            height: 28,
-                            bgcolor: "#f8fafc",
-                            p: "3px 4px",
-                            borderRadius: 1.5,
-                            border: "1px solid #f1f5f9",
+                            fontWeight: 800,
+                            color: day.isToday ? "#6366f1" : "text.primary",
+                            lineHeight: 1.1,
+                            fontSize: "0.95rem",
                           }}
                         >
-                          {day.hourly?.map((h) => {
-                            const isPeakHour = day.hasActivity && h.hour === day.peakHourIndex;
-                            const maxVal = day.peakUsers || 1;
-                            const heightPct = h.activeUsers > 0 ? Math.max(25, Math.round((h.activeUsers / maxVal) * 100)) : 10;
-
-                            return (
-                              <Tooltip
-                                key={h.hour}
-                                title={
-                                  <Box sx={{ p: 0.5 }}>
-                                    <Typography variant="caption" sx={{ fontWeight: 800, display: "block" }}>
-                                      {h.label}
-                                    </Typography>
-                                    <Typography variant="caption" sx={{ display: "block" }}>
-                                      Active Users: <strong>{h.activeUsers}</strong> ({h.activeMinutes} mins)
-                                    </Typography>
-                                  </Box>
-                                }
-                                arrow
-                                placement="top"
-                              >
-                                <Box
-                                  sx={{
-                                    flex: 1,
-                                    height: `${heightPct}%`,
-                                    bgcolor: isPeakHour
-                                      ? "#7c3aed"
-                                      : h.activeUsers > 0
-                                      ? "#a78bfa"
-                                      : "#e2e8f0",
-                                    borderRadius: "1px",
-                                    cursor: "pointer",
-                                    transition: "all 0.15s",
-                                    "&:hover": {
-                                      bgcolor: "#6d28d9",
-                                      transform: "scaleY(1.2)",
-                                    },
-                                  }}
-                                />
-                              </Tooltip>
-                            );
-                          })}
-                        </Box>
-                        <Box sx={{ display: "flex", justifyContent: "space-between", mt: 0.3, px: 0.2 }}>
-                          <Typography variant="caption" sx={{ fontSize: "0.58rem", color: "#94a3b8" }}>
-                            12 AM
-                          </Typography>
-                          <Typography variant="caption" sx={{ fontSize: "0.58rem", color: "#94a3b8" }}>
-                            12 PM
-                          </Typography>
-                          <Typography variant="caption" sx={{ fontSize: "0.58rem", color: "#94a3b8" }}>
-                            11 PM
-                          </Typography>
-                        </Box>
+                          {day.dayShort}
+                        </Typography>
+                        {day.isToday && (
+                          <Chip
+                            label="TODAY"
+                            size="small"
+                            sx={{
+                              height: 16,
+                              fontSize: "0.55rem",
+                              fontWeight: 800,
+                              px: 0.4,
+                              bgcolor: "#6366f1",
+                              color: "#ffffff",
+                            }}
+                          />
+                        )}
                       </Box>
-                    </Paper>
-                  </Grid>
-                );
-              })}
-            </Grid>
-          )}
+                      <Typography variant="caption" color="text.secondary" sx={{ fontSize: "0.75rem", fontWeight: 600 }}>
+                        {day.displayDate}
+                      </Typography>
+                    </Box>
+
+                    {/* Middle: 96 Segmented Health Status Bars */}
+                    <Box
+                      sx={{
+                        flex: 1,
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "1.5px",
+                        height: 32,
+                        px: 0.5,
+                      }}
+                    >
+                      {day.slots?.map((slot) => {
+                        let bgColor = "#e2e8f0";
+                        let opacity = 1;
+                        let shadow = "none";
+
+                        if (slot.isActive) {
+                          if (slot.activeMinutes >= 10) {
+                            bgColor = "#059669";
+                          } else if (slot.activeMinutes >= 5) {
+                            bgColor = "#10b981";
+                          } else {
+                            bgColor = "#34d399";
+                          }
+                          shadow = "0 1px 2px rgba(16, 185, 129, 0.3)";
+                        } else if (slot.isFuture) {
+                          bgColor = "#f1f5f9";
+                          opacity = 0.5;
+                        }
+
+                        const tooltipTitle = (
+                          <Box sx={{ p: 0.5, textAlign: "center", minWidth: 130 }}>
+                            <Typography variant="caption" sx={{ fontWeight: 800, display: "block", color: "white" }}>
+                              {day.dayName}, {day.displayDate}
+                            </Typography>
+                            <Typography variant="caption" sx={{ display: "block", color: "rgba(255,255,255,0.85)", fontSize: "0.72rem" }}>
+                              🕒 {slot.timeRangeStr}
+                            </Typography>
+                            <Divider sx={{ my: 0.5, borderColor: "rgba(255,255,255,0.2)" }} />
+                            {slot.isActive ? (
+                              <>
+                                <Typography variant="caption" sx={{ fontWeight: 800, color: "#86efac", display: "block" }}>
+                                  🟢 Active: {slot.activeMinutes} min
+                                </Typography>
+                                {slot.sessionCount > 0 && (
+                                  <Typography variant="caption" sx={{ color: "rgba(255,255,255,0.75)", fontSize: "0.7rem", display: "block" }}>
+                                    {slot.sessionCount} session{slot.sessionCount > 1 ? "s" : ""}
+                                  </Typography>
+                                )}
+                                {slot.activeAdminsList?.length > 0 && (
+                                  <Typography variant="caption" sx={{ color: "rgba(255,255,255,0.85)", fontSize: "0.7rem", display: "block", mt: 0.3 }}>
+                                    👤 {slot.activeAdminsList.map((a) => a.name).join(", ")}
+                                  </Typography>
+                                )}
+                              </>
+                            ) : slot.isFuture ? (
+                              <Typography variant="caption" sx={{ color: "rgba(255,255,255,0.6)" }}>
+                                Upcoming Slot
+                              </Typography>
+                            ) : (
+                              <Typography variant="caption" sx={{ color: "rgba(255,255,255,0.7)" }}>
+                                ⚪ Inactive (0 min)
+                              </Typography>
+                            )}
+                          </Box>
+                        );
+
+                        return (
+                          <Tooltip key={slot.index} title={tooltipTitle} arrow placement="top">
+                            <Box
+                              sx={{
+                                flex: 1,
+                                height: "100%",
+                                borderRadius: "1.5px",
+                                bgcolor: bgColor,
+                                opacity,
+                                boxShadow: shadow,
+                                cursor: "pointer",
+                                transition: "all 0.12s ease-in-out",
+                                "&:hover": {
+                                  transform: "scaleY(1.25)",
+                                  zIndex: 10,
+                                  bgcolor: slot.isActive ? "#047857" : "#94a3b8",
+                                },
+                              }}
+                            />
+                          </Tooltip>
+                        );
+                      })}
+                    </Box>
+
+                    {/* Right: Day Total Active Duration Chip */}
+                    <Box sx={{ width: 72, textAlign: "right", flexShrink: 0 }}>
+                      <Chip
+                        label={`${day.totalActiveMinutes || 0} min`}
+                        size="small"
+                        sx={{
+                          fontWeight: 800,
+                          fontSize: "0.75rem",
+                          height: 24,
+                          borderRadius: "6px",
+                          bgcolor: day.totalActiveMinutes > 0 ? "rgba(16, 185, 129, 0.12)" : "grey.100",
+                          color: day.totalActiveMinutes > 0 ? "#065f46" : "text.secondary",
+                          border: day.totalActiveMinutes > 0 ? "1px solid rgba(16, 185, 129, 0.3)" : "1px solid transparent",
+                        }}
+                      />
+                    </Box>
+                  </Box>
+                ))}
+              </Stack>
+            )}
+
+            {/* Time Scale Footer (24 Hours) */}
+            <Box sx={{ display: "flex", alignItems: "center", pl: "82px", pr: "84px", mt: 1.5, pt: 1, borderTop: "1px dashed", borderColor: "divider" }}>
+              <Box sx={{ flex: 1, display: "flex", justifyContent: "space-between" }}>
+                <Typography variant="caption" sx={{ fontSize: "0.68rem", fontWeight: 700, color: "text.disabled" }}>00:00 (12 AM)</Typography>
+                <Typography variant="caption" sx={{ fontSize: "0.68rem", fontWeight: 700, color: "text.disabled" }}>06:00</Typography>
+                <Typography variant="caption" sx={{ fontSize: "0.68rem", fontWeight: 700, color: "text.disabled" }}>12:00 (Noon)</Typography>
+                <Typography variant="caption" sx={{ fontSize: "0.68rem", fontWeight: 700, color: "text.disabled" }}>18:00</Typography>
+                <Typography variant="caption" sx={{ fontSize: "0.68rem", fontWeight: 700, color: "text.disabled" }}>23:59 (12 AM)</Typography>
+              </Box>
+            </Box>
+          </Paper>
         </CardContent>
       </Card>
 
@@ -759,19 +823,25 @@ function SuperAdminDashboardContent() {
 
               <Box sx={{ width: "100%", height: 290 }}>
                 <ResponsiveContainer width="100%" height="100%">
-                  <AreaChart data={dailyTrend} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                  <BarChart data={dailyTrend} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
                     <defs>
-                      <linearGradient id="regGradient" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="#7c3aed" stopOpacity={0.4} />
-                        <stop offset="95%" stopColor="#7c3aed" stopOpacity={0.0} />
+                      <linearGradient id="regBarGradient" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stopColor="#7c3aed" stopOpacity={0.95} />
+                        <stop offset="100%" stopColor="#a78bfa" stopOpacity={0.75} />
                       </linearGradient>
                     </defs>
                     <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-                    <XAxis dataKey="date" tick={{ fontSize: 11, fill: "#64748b" }} axisLine={false} tickLine={false} />
-                    <YAxis tick={{ fontSize: 11, fill: "#64748b" }} axisLine={false} tickLine={false} />
-                    <RechartsTooltip content={<CustomChartTooltip />} />
-                    <Area type="monotone" dataKey="registrations" stroke="#7c3aed" strokeWidth={3} fillOpacity={1} fill="url(#regGradient)" name="Registrations" />
-                  </AreaChart>
+                    <XAxis dataKey="date" tick={{ fontSize: 11, fill: "#64748b", fontWeight: 600 }} axisLine={false} tickLine={false} />
+                    <YAxis tick={{ fontSize: 11, fill: "#64748b" }} axisLine={false} tickLine={false} allowDecimals={false} />
+                    <RechartsTooltip content={<CustomChartTooltip />} cursor={{ fill: "rgba(124, 58, 237, 0.06)", radius: 6 }} />
+                    <Bar
+                      dataKey="registrations"
+                      fill="url(#regBarGradient)"
+                      radius={[6, 6, 0, 0]}
+                      maxBarSize={36}
+                      name="Registrations"
+                    />
+                  </BarChart>
                 </ResponsiveContainer>
               </Box>
             </CardContent>

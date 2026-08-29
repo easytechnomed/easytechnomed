@@ -15,8 +15,27 @@ export async function GET(req) {
     const limit = limitParam ? parseInt(limitParam) : 10;
     const totalCount = await prisma.admin.count();
 
-    const todayStart = new Date();
-    todayStart.setHours(0, 0, 0, 0);
+    const clientTodayStart = searchParams.get("todayStart");
+    const clientTodayEnd = searchParams.get("todayEnd");
+
+    let todayStart;
+    let todayEnd;
+
+    if (clientTodayStart && !isNaN(new Date(clientTodayStart).getTime())) {
+      todayStart = new Date(clientTodayStart);
+    } else {
+      // Fallback: Compute IST (UTC+5:30) Start of Day
+      const IST_OFFSET_MS = 5.5 * 60 * 60 * 1000;
+      const nowIstDate = new Date(Date.now() + IST_OFFSET_MS);
+      nowIstDate.setUTCHours(0, 0, 0, 0);
+      todayStart = new Date(nowIstDate.getTime() - IST_OFFSET_MS);
+    }
+
+    if (clientTodayEnd && !isNaN(new Date(clientTodayEnd).getTime())) {
+      todayEnd = new Date(clientTodayEnd);
+    } else {
+      todayEnd = new Date(todayStart.getTime() + 24 * 60 * 60 * 1000 - 1);
+    }
 
     const admins = await prisma.admin.findMany({
       include: {
@@ -24,10 +43,8 @@ export async function GET(req) {
         role: { select: { id: true, name: true } },
         trackings: {
           where: {
-            OR: [
-              { startUTC: { gte: todayStart } },
-              { ENDUTC: { gte: todayStart } },
-            ],
+            startUTC: { lte: todayEnd },
+            ENDUTC: { gte: todayStart },
           },
           select: {
             startUTC: true,

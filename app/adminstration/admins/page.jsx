@@ -69,8 +69,14 @@ export default function AdminsPage() {
   const fetchData = async (pageNum = page, limitNum = limit, isSilent = false) => {
     if (!isSilent) setLoading(true);
     try {
+      const localTodayStart = new Date();
+      localTodayStart.setHours(0, 0, 0, 0);
+      const localTodayEnd = new Date(localTodayStart.getTime() + 24 * 60 * 60 * 1000 - 1);
+
       const [adminRes, wsRes, roleRes] = await Promise.all([
-        fetch(`/adminstration/api/admins?page=${pageNum}&limit=${limitNum}`).then((r) => r.json()),
+        fetch(
+          `/adminstration/api/admins?page=${pageNum}&limit=${limitNum}&todayStart=${encodeURIComponent(localTodayStart.toISOString())}&todayEnd=${encodeURIComponent(localTodayEnd.toISOString())}`
+        ).then((r) => r.json()),
         !isSilent ? fetch("/adminstration/api/workspaces").then((r) => r.json()) : Promise.resolve(null),
         !isSilent ? fetch("/adminstration/api/roles").then((r) => r.json()) : Promise.resolve(null),
       ]);
@@ -130,6 +136,8 @@ export default function AdminsPage() {
         if (!isSilent) setLoadingTracking(false);
       }
     };
+
+    fetchDrawerTracking(false);
 
     const interval = setInterval(() => {
       fetchDrawerTracking(true);
@@ -803,10 +811,28 @@ export default function AdminsPage() {
             {/* Header */}
             <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
               <Box>
-                <Typography variant="h5" sx={{ fontWeight: 800, color: "text.primary", letterSpacing: "-0.02em" }}>
-                  Activity & Active Hours
-                </Typography>
-                <Typography variant="body2" color="text.secondary">
+                <Box sx={{ display: "flex", alignItems: "center", gap: 1.2 }}>
+                  <Typography variant="h5" sx={{ fontWeight: 800, color: "text.primary", letterSpacing: "-0.02em" }}>
+                    Activity & Active Hours
+                  </Typography>
+                  <Chip
+                    label="⚡ LIVE (20s)"
+                    size="small"
+                    color="success"
+                    variant="outlined"
+                    sx={{
+                      fontSize: "0.65rem",
+                      fontWeight: 800,
+                      height: 20,
+                      animation: "pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite",
+                      "@keyframes pulse": {
+                        "0%, 100%": { opacity: 1 },
+                        "50%": { opacity: 0.5 },
+                      },
+                    }}
+                  />
+                </Box>
+                <Typography variant="body2" color="text.secondary" sx={{ mt: 0.2 }}>
                   Weekly active timeline and health status for <strong>{selectedAdmin.name}</strong>
                 </Typography>
               </Box>
