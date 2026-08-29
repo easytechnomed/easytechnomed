@@ -388,7 +388,7 @@ export default function SuperAdminAppVersionPage() {
       {/* KPI Metrics Cards */}
       <Grid container spacing={2.5} sx={{ mb: 4 }}>
         {/* Latest Active Version */}
-        <Grid item xs={12} sm={6} md={3}>
+        <Grid size={{ xs: 12, sm: 6, md: 3 }}>
           <Card sx={{ borderLeft: "4px solid #7c3aed", height: "100%" }}>
             <CardContent sx={{ p: 2.5 }}>
               <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", mb: 1 }}>
@@ -415,7 +415,7 @@ export default function SuperAdminAppVersionPage() {
         </Grid>
 
         {/* Total Published Releases */}
-        <Grid item xs={12} sm={6} md={3}>
+        <Grid size={{ xs: 12, sm: 6, md: 3 }}>
           <Card sx={{ borderLeft: "4px solid #3b82f6", height: "100%" }}>
             <CardContent sx={{ p: 2.5 }}>
               <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", mb: 1 }}>
@@ -437,7 +437,7 @@ export default function SuperAdminAppVersionPage() {
         </Grid>
 
         {/* Active vs Inactive */}
-        <Grid item xs={12} sm={6} md={3}>
+        <Grid size={{ xs: 12, sm: 6, md: 3 }}>
           <Card sx={{ borderLeft: "4px solid #10b981", height: "100%" }}>
             <CardContent sx={{ p: 2.5 }}>
               <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", mb: 1 }}>
@@ -459,7 +459,7 @@ export default function SuperAdminAppVersionPage() {
         </Grid>
 
         {/* Mandatory Releases */}
-        <Grid item xs={12} sm={6} md={3}>
+        <Grid size={{ xs: 12, sm: 6, md: 3 }}>
           <Card sx={{ borderLeft: "4px solid #ef4444", height: "100%" }}>
             <CardContent sx={{ p: 2.5 }}>
               <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", mb: 1 }}>
@@ -484,7 +484,7 @@ export default function SuperAdminAppVersionPage() {
       {/* Filter and Search Bar */}
       <Card sx={{ mb: 3, p: 2 }}>
         <Grid container spacing={2} alignItems="center">
-          <Grid item xs={12} md={5}>
+          <Grid size={{ xs: 12, md: 5 }}>
             <TextField
               fullWidth
               size="small"
@@ -511,7 +511,7 @@ export default function SuperAdminAppVersionPage() {
             />
           </Grid>
 
-          <Grid item xs={6} md={3}>
+          <Grid size={{ xs: 6, md: 3 }}>
             <FormControl fullWidth size="small">
               <InputLabel>Status</InputLabel>
               <Select
@@ -526,7 +526,7 @@ export default function SuperAdminAppVersionPage() {
             </FormControl>
           </Grid>
 
-          <Grid item xs={6} md={3}>
+          <Grid size={{ xs: 6, md: 3 }}>
             <FormControl fullWidth size="small">
               <InputLabel>Mandatory</InputLabel>
               <Select
@@ -541,7 +541,7 @@ export default function SuperAdminAppVersionPage() {
             </FormControl>
           </Grid>
 
-          <Grid item xs={12} md={1} sx={{ display: "flex", justifyContent: "flex-end" }}>
+          <Grid size={{ xs: 12, md: 1 }} sx={{ display: "flex", justifyContent: "flex-end" }}>
             <Button
               variant="outlined"
               fullWidth
@@ -785,7 +785,7 @@ export default function SuperAdminAppVersionPage() {
           <DialogContent sx={{ py: 2.5 }}>
             {/* Version, Title, Date Grid */}
             <Grid container spacing={2.5} sx={{ mb: 2.5 }}>
-              <Grid item xs={12} sm={4}>
+              <Grid size={{ xs: 12, sm: 4 }}>
                 <TextField
                   fullWidth
                   required
@@ -797,7 +797,7 @@ export default function SuperAdminAppVersionPage() {
                 />
               </Grid>
 
-              <Grid item xs={12} sm={5}>
+              <Grid size={{ xs: 12, sm: 5 }}>
                 <TextField
                   fullWidth
                   required
@@ -808,7 +808,7 @@ export default function SuperAdminAppVersionPage() {
                 />
               </Grid>
 
-              <Grid item xs={12} sm={3}>
+              <Grid size={{ xs: 12, sm: 3 }}>
                 <TextField
                   fullWidth
                   type="date"
