@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { verifySuperAdminAPI } from "@/lib/auth";
 import { encodePaymentUid } from "@/lib/saasInvoice";
+import { sendPlanRenewedEmail } from "@/lib/mail";
 
 export async function PUT(req, { params }) {
   try {
@@ -89,11 +90,45 @@ export async function PUT(req, { params }) {
       }),
     ]);
 
+    const invoiceUid = encodePaymentUid(paymentRecord.id);
+
+    // Send confirmation email to all active admins of this workspace
+    const adminRecipients = (updatedWorkspace.admins || []).filter(
+      (a) => a.email && a.email.trim().length > 0 && a.email.includes("@")
+    );
+    const emailResults = [];
+
+    for (const adm of adminRecipients) {
+      try {
+        await sendPlanRenewedEmail({
+          email: adm.email.trim(),
+          adminName: adm.name,
+          workspaceName: updatedWorkspace.name,
+          days,
+          startDate: baseDate,
+          expireAt: newExpireAt,
+          amount: paymentAmount,
+          paymentMode,
+          referenceNo,
+          invoiceUid,
+        });
+        emailResults.push({ email: adm.email, status: "sent" });
+      } catch (mailErr) {
+        console.error(`[RENEW_MAIL_ERROR] Failed to send renewal email to ${adm.email}:`, mailErr);
+        emailResults.push({ email: adm.email, status: "failed", error: mailErr.message });
+      }
+    }
+
+    const emailNote =
+      adminRecipients.length > 0
+        ? ` & confirmation email sent to ${adminRecipients.map((a) => a.email).join(", ")}`
+        : "";
+
     return NextResponse.json({
       success: true,
       message: `Plan renewed successfully! Extended by ${days} days until ${newExpireAt.toLocaleDateString("en-IN")}${
         paymentAmount > 0 ? ` with payment of ₹${paymentAmount.toLocaleString("en-IN")}` : ""
-      }.`,
+      }${emailNote}.`,
       workspace: {
         id: updatedWorkspace.id,
         name: updatedWorkspace.name,
@@ -105,13 +140,14 @@ export async function PUT(req, { params }) {
       },
       payment: {
         id: paymentRecord.id,
-        uid: encodePaymentUid(paymentRecord.id),
+        uid: invoiceUid,
         amount: Number(paymentRecord.amount),
         days: paymentRecord.days,
         paymentMode: paymentRecord.paymentMode,
         referenceNo: paymentRecord.referenceNo,
         paidAt: paymentRecord.paidAt.toISOString(),
       },
+      emailNotifications: emailResults,
     });
   } catch (error) {
     console.error("SuperAdmin Workspace Renew Error:", error);

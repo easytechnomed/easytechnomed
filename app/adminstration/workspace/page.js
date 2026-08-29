@@ -1424,6 +1424,12 @@ function WorkspaceControllerContent() {
                 </Alert>
               )}
 
+              <Box sx={{ p: 1.2, px: 1.5, bgcolor: "#f8fafc", borderRadius: 2, border: "1px dashed #cbd5e1", display: "flex", alignItems: "center", gap: 1 }}>
+                <Typography variant="caption" sx={{ color: "#475569", fontWeight: 600 }}>
+                  ✉️ <strong>Email Notification:</strong> Confirmation email with updated plan expiry & invoice receipt will be sent automatically to the workspace admin(s).
+                </Typography>
+              </Box>
+
               <FormControlLabel
                 control={
                   <Checkbox
