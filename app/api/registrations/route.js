@@ -78,6 +78,10 @@ export async function GET(req) {
     const skip = (page - 1) * limit;
 
     const where = { workspaceId: admin.workspaceId, isDeleted: false };
+    const status = searchParams.get("status");
+    if (status) {
+      where.status = status;
+    }
     if (startDate || endDate) {
       where.date = {};
       if (startDate) where.date.gte = new Date(startDate);

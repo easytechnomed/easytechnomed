@@ -4,9 +4,33 @@ import { requireAdmin } from "@/lib/auth";
 
 // Helper to serialize Decimal, Dates, and flatten parameter fields so frontend continues to see them directly
 function serializeTests(tests) {
-  return JSON.parse(JSON.stringify(tests)).map(test => {
-    if (test.parameters) {
-      test.parameters = test.parameters.map(tp => {
+  return tests.map(test => {
+    const item = {
+      id: test.id,
+      name: test.name,
+      code: test.code,
+      price: Number(test.price) || 0,
+      isProcessed: test.isProcessed,
+      workspaceId: test.workspaceId,
+      departmentId: test.departmentId,
+      isCustomized: test.isCustomized,
+      defaultUpdatedAt: test.defaultUpdatedAt,
+      baseRate: test.baseRate !== null && test.baseRate !== undefined ? Number(test.baseRate) : null,
+      collectionCenterRate: test.collectionCenterRate !== null && test.collectionCenterRate !== undefined ? Number(test.collectionCenterRate) : null,
+      curRate: test.curRate !== null && test.curRate !== undefined ? Number(test.curRate) : null,
+      franchiseRate: test.franchiseRate !== null && test.franchiseRate !== undefined ? Number(test.franchiseRate) : null,
+      labRate: test.labRate !== null && test.labRate !== undefined ? Number(test.labRate) : null,
+      offerPrice: test.offerPrice !== null && test.offerPrice !== undefined ? Number(test.offerPrice) : null,
+      rate: test.rate !== null && test.rate !== undefined ? Number(test.rate) : null,
+      superFranchiseRate: test.superFranchiseRate !== null && test.superFranchiseRate !== undefined ? Number(test.superFranchiseRate) : null,
+      outsourceCost: test.outsourceCost !== null && test.outsourceCost !== undefined ? Number(test.outsourceCost) : 0,
+      specialIncentivePercent: test.specialIncentivePercent !== null && test.specialIncentivePercent !== undefined ? Number(test.specialIncentivePercent) : null,
+      globalPrice: test.globalPrice !== undefined ? Number(test.globalPrice) : Number(test.price),
+      department: test.department ? { id: test.department.id, name: test.department.name } : null,
+    };
+
+    if (test.parameters && Array.isArray(test.parameters)) {
+      item.parameters = test.parameters.map(tp => {
         if (tp.parameter) {
           const { parameter, ...rest } = tp;
           return {
@@ -30,7 +54,8 @@ function serializeTests(tests) {
         return tp;
       });
     }
-    return test;
+
+    return item;
   });
 }
 
@@ -71,27 +96,49 @@ export async function GET(req) {
     const searchParams = req.nextUrl.searchParams;
     const pageParam = searchParams.get("page");
     const limitParam = searchParams.get("limit");
-    const page = pageParam ? parseInt(pageParam) : null;
-    const limit = limitParam ? parseInt(limitParam) : null;
-    const search = searchParams.get("search") || "";
+    const search = (searchParams.get("search") || "").trim();
+    const fetchAll = searchParams.get("all") === "true";
+    const includeParameters = searchParams.get("includeParameters") === "true";
+
+    const page = pageParam ? parseInt(pageParam) : 1;
+    // Default limit is 50 if not specified (unless all=true)
+    const limit = fetchAll ? null : (limitParam ? parseInt(limitParam) : 50);
+
+    const where = {
+      isDeleted: false,
+      OR: [
+        { workspaceId: admin.workspaceId },
+        { workspaceId: null },
+      ],
+    };
+
+    if (search !== "") {
+      where.AND = [
+        {
+          OR: [
+            { name: { contains: search } },
+            { code: { contains: search } },
+          ],
+        },
+      ];
+    }
 
     const allTests = await prisma.test.findMany({
-      where: {
-        isDeleted: false,
-        OR: [
-          { workspaceId: admin.workspaceId },
-          { workspaceId: null }
-        ]
-      },
+      where,
       include: {
         department: true,
-        parameters: {
-          where: { isDeleted: false },
-          orderBy: { order: "asc" },
-          include: { parameter: true }
-        }
+        ...(includeParameters
+          ? {
+              parameters: {
+                where: { isDeleted: false },
+                orderBy: { order: "asc" },
+                include: { parameter: true },
+              },
+            }
+          : {}),
       },
       orderBy: { name: "asc" },
+      take: limit ? limit * 3 : undefined, // buffer for global vs workspace overrides
     });
 
     // Group tests by code/name to pair global and workspace-specific versions
@@ -122,23 +169,13 @@ export async function GET(req) {
       };
     });
 
-    // Filter by search query on name or code
-    if (search.trim() !== "") {
-      const query = search.toLowerCase().trim();
-      tests = tests.filter(
-         (t) =>
-          t.name.toLowerCase().includes(query) ||
-          (t.code && t.code.toLowerCase().includes(query))
-      );
-    }
-
     // Sort tests by name
     tests.sort((a, b) => a.name.localeCompare(b.name));
 
     const totalCount = tests.length;
     let paginatedTests = tests;
-    if (page !== null && limit !== null) {
-      const startIndex = (page - 1) * limit;
+    if (limit !== null) {
+      const startIndex = pageParam ? (page - 1) * limit : 0;
       paginatedTests = tests.slice(startIndex, startIndex + limit);
     }
 
@@ -146,7 +183,7 @@ export async function GET(req) {
       success: true,
       tests: serializeTests(paginatedTests),
       pagination: {
-        page: page || 1,
+        page: page,
         limit: limit || totalCount,
         totalCount,
         totalPages: limit ? Math.ceil(totalCount / limit) : 1

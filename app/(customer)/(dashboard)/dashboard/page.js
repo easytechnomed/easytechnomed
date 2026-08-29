@@ -314,7 +314,7 @@ export default async function AdminDashboardPage({ searchParams }) {
 
   return (
     <Box sx={{ flexGrow: 1, minWidth: 0, pb: 4, pt: 1 }}>
-      
+
       {/* 1. Header Bar: Minimal, Direct, Impactful */}
       <Box
         sx={{
@@ -359,7 +359,7 @@ export default async function AdminDashboardPage({ searchParams }) {
           <Box sx={{ flex: { xs: "1 1 50%", sm: "none" }, width: { xs: "50%", sm: "auto" } }}>
             <DashboardRangeSelector initialRange={range} />
           </Box>
-          
+
           <Link href="/registration" style={{ textDecoration: "none", flex: "1 1 50%", width: "100%" }}>
             <Button
               fullWidth
@@ -379,135 +379,171 @@ export default async function AdminDashboardPage({ searchParams }) {
                 "&:hover": { bgcolor: "#115e59" },
               }}
             >
-              + Patient
+              Patient
             </Button>
           </Link>
         </Box>
       </Box>
 
-      {/* 2. 4 Core Numbers (Instant Understanding) */}
+      {/* 2. 4 Core Numbers (Instant Understanding - Clickable to /test-report) */}
       <Grid container spacing={{ xs: 1.5, sm: 2 }} sx={{ mb: 2.5 }}>
-        
+
         {/* Total Patients */}
         <Grid size={{ xs: 6, sm: 6, md: 3 }}>
-          <Card
-            elevation={0}
-            sx={{
-              height: "100%",
-              bgcolor: "#FFFFFF",
-              border: "1.5px solid #E2E8F0",
-              borderRadius: "12px",
-              p: { xs: 1.5, sm: 2 },
-            }}
-          >
-            <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", mb: 1 }}>
-              <Typography variant="caption" sx={{ color: "#64748B", fontWeight: 800, textTransform: "uppercase", fontSize: "0.7rem" }}>
-                Total Patients
-              </Typography>
-              <Box sx={{ width: 32, height: 32, borderRadius: "8px", bgcolor: "rgba(15, 118, 110, 0.12)", color: "#0f766e", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                <RegisterIcon sx={{ fontSize: 18 }} />
+          <Link href={`/test-report?range=${range}`} style={{ textDecoration: "none", color: "inherit", display: "block", height: "100%" }}>
+            <Card
+              elevation={0}
+              sx={{
+                height: "100%",
+                bgcolor: "#FFFFFF",
+                border: "1.5px solid #E2E8F0",
+                borderRadius: "12px",
+                p: { xs: 1.5, sm: 2 },
+                cursor: "pointer",
+                transition: "all 0.2s ease-in-out",
+                "&:hover": {
+                  borderColor: "#0f766e",
+                  transform: "translateY(-3px)",
+                  boxShadow: "0 8px 24px rgba(15, 118, 110, 0.12)",
+                },
+              }}
+            >
+              <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", mb: 1 }}>
+                <Typography variant="caption" sx={{ color: "#64748B", fontWeight: 800, textTransform: "uppercase", fontSize: "0.7rem" }}>
+                  Total Patients
+                </Typography>
+                <Box sx={{ width: 32, height: 32, borderRadius: "8px", bgcolor: "rgba(15, 118, 110, 0.12)", color: "#0f766e", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                  <RegisterIcon sx={{ fontSize: 18 }} />
+                </Box>
               </Box>
-            </Box>
-            <Typography variant="h4" sx={{ fontWeight: 800, color: "#0F172A", fontSize: { xs: "1.5rem", sm: "1.85rem" }, lineHeight: 1 }}>
-              {totalRegistrations}
-            </Typography>
-            <Typography variant="caption" sx={{ color: "#0f766e", fontWeight: 700, mt: 0.75, display: "block", fontSize: "0.72rem" }}>
-              Registered in period
-            </Typography>
-          </Card>
+              <Typography variant="h4" sx={{ fontWeight: 800, color: "#0F172A", fontSize: { xs: "1.5rem", sm: "1.85rem" }, lineHeight: 1 }}>
+                {totalRegistrations}
+              </Typography>
+              <Typography variant="caption" sx={{ color: "#0f766e", fontWeight: 700, mt: 0.75, display: "block", fontSize: "0.72rem" }}>
+                Registered in period →
+              </Typography>
+            </Card>
+          </Link>
         </Grid>
 
         {/* Pending Tests */}
         <Grid size={{ xs: 6, sm: 6, md: 3 }}>
-          <Card
-            elevation={0}
-            sx={{
-              height: "100%",
-              bgcolor: "#FFFFFF",
-              border: "1.5px solid #E2E8F0",
-              borderRadius: "12px",
-              p: { xs: 1.5, sm: 2 },
-            }}
-          >
-            <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", mb: 1 }}>
-              <Typography variant="caption" sx={{ color: "#64748B", fontWeight: 800, textTransform: "uppercase", fontSize: "0.7rem" }}>
-                Pending Tests
-              </Typography>
-              <Box sx={{ width: 32, height: 32, borderRadius: "8px", bgcolor: "rgba(245, 158, 11, 0.12)", color: "#D97706", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                <PendingIcon sx={{ fontSize: 18 }} />
+          <Link href={`/test-report?range=${range}&status=Pending`} style={{ textDecoration: "none", color: "inherit", display: "block", height: "100%" }}>
+            <Card
+              elevation={0}
+              sx={{
+                height: "100%",
+                bgcolor: "#FFFFFF",
+                border: "1.5px solid #E2E8F0",
+                borderRadius: "12px",
+                p: { xs: 1.5, sm: 2 },
+                cursor: "pointer",
+                transition: "all 0.2s ease-in-out",
+                "&:hover": {
+                  borderColor: "#D97706",
+                  transform: "translateY(-3px)",
+                  boxShadow: "0 8px 24px rgba(217, 119, 6, 0.12)",
+                },
+              }}
+            >
+              <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", mb: 1 }}>
+                <Typography variant="caption" sx={{ color: "#64748B", fontWeight: 800, textTransform: "uppercase", fontSize: "0.7rem" }}>
+                  Pending Tests
+                </Typography>
+                <Box sx={{ width: 32, height: 32, borderRadius: "8px", bgcolor: "rgba(245, 158, 11, 0.12)", color: "#D97706", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                  <PendingIcon sx={{ fontSize: 18 }} />
+                </Box>
               </Box>
-            </Box>
-            <Typography variant="h4" sx={{ fontWeight: 800, color: pendingRegistrations > 0 ? "#D97706" : "#0F172A", fontSize: { xs: "1.5rem", sm: "1.85rem" }, lineHeight: 1 }}>
-              {pendingRegistrations}
-            </Typography>
-            <Typography variant="caption" sx={{ color: pendingRegistrations > 0 ? "#D97706" : "#10B981", fontWeight: 700, mt: 0.75, display: "block", fontSize: "0.72rem" }}>
-              {pendingRegistrations > 0 ? "⚠️ Awaiting Results" : "✓ Worklist Clear"}
-            </Typography>
-          </Card>
+              <Typography variant="h4" sx={{ fontWeight: 800, color: pendingRegistrations > 0 ? "#D97706" : "#0F172A", fontSize: { xs: "1.5rem", sm: "1.85rem" }, lineHeight: 1 }}>
+                {pendingRegistrations}
+              </Typography>
+              <Typography variant="caption" sx={{ color: pendingRegistrations > 0 ? "#D97706" : "#10B981", fontWeight: 700, mt: 0.75, display: "block", fontSize: "0.72rem" }}>
+                {pendingRegistrations > 0 ? "⚠️ Awaiting Results →" : "✓ Worklist Clear"}
+              </Typography>
+            </Card>
+          </Link>
         </Grid>
 
         {/* Completed Tests */}
         <Grid size={{ xs: 6, sm: 6, md: 3 }}>
-          <Card
-            elevation={0}
-            sx={{
-              height: "100%",
-              bgcolor: "#FFFFFF",
-              border: "1.5px solid #E2E8F0",
-              borderRadius: "12px",
-              p: { xs: 1.5, sm: 2 },
-            }}
-          >
-            <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", mb: 1 }}>
-              <Typography variant="caption" sx={{ color: "#64748B", fontWeight: 800, textTransform: "uppercase", fontSize: "0.7rem" }}>
-                Completed Tests
-              </Typography>
-              <Box sx={{ width: 32, height: 32, borderRadius: "8px", bgcolor: "rgba(16, 185, 129, 0.12)", color: "#10B981", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                <CheckedIcon sx={{ fontSize: 18 }} />
+          <Link href={`/test-report?range=${range}&status=Completed`} style={{ textDecoration: "none", color: "inherit", display: "block", height: "100%" }}>
+            <Card
+              elevation={0}
+              sx={{
+                height: "100%",
+                bgcolor: "#FFFFFF",
+                border: "1.5px solid #E2E8F0",
+                borderRadius: "12px",
+                p: { xs: 1.5, sm: 2 },
+                cursor: "pointer",
+                transition: "all 0.2s ease-in-out",
+                "&:hover": {
+                  borderColor: "#10B981",
+                  transform: "translateY(-3px)",
+                  boxShadow: "0 8px 24px rgba(16, 185, 129, 0.12)",
+                },
+              }}
+            >
+              <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", mb: 1 }}>
+                <Typography variant="caption" sx={{ color: "#64748B", fontWeight: 800, textTransform: "uppercase", fontSize: "0.7rem" }}>
+                  Completed Tests
+                </Typography>
+                <Box sx={{ width: 32, height: 32, borderRadius: "8px", bgcolor: "rgba(16, 185, 129, 0.12)", color: "#10B981", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                  <CheckedIcon sx={{ fontSize: 18 }} />
+                </Box>
               </Box>
-            </Box>
-            <Typography variant="h4" sx={{ fontWeight: 800, color: "#0F172A", fontSize: { xs: "1.5rem", sm: "1.85rem" }, lineHeight: 1 }}>
-              {completedRegistrations}
-            </Typography>
-            <Typography variant="caption" sx={{ color: "#10B981", fontWeight: 700, mt: 0.75, display: "block", fontSize: "0.72rem" }}>
-              ✓ Reports Ready
-            </Typography>
-          </Card>
+              <Typography variant="h4" sx={{ fontWeight: 800, color: "#0F172A", fontSize: { xs: "1.5rem", sm: "1.85rem" }, lineHeight: 1 }}>
+                {completedRegistrations}
+              </Typography>
+              <Typography variant="caption" sx={{ color: "#10B981", fontWeight: 700, mt: 0.75, display: "block", fontSize: "0.72rem" }}>
+                ✓ Reports Ready →
+              </Typography>
+            </Card>
+          </Link>
         </Grid>
 
         {/* Collections */}
         <Grid size={{ xs: 6, sm: 6, md: 3 }}>
-          <Card
-            elevation={0}
-            sx={{
-              height: "100%",
-              bgcolor: "#FFFFFF",
-              border: "1.5px solid #E2E8F0",
-              borderRadius: "12px",
-              p: { xs: 1.5, sm: 2 },
-            }}
-          >
-            <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", mb: 1 }}>
-              <Typography variant="caption" sx={{ color: "#64748B", fontWeight: 800, textTransform: "uppercase", fontSize: "0.7rem" }}>
-                Collections
-              </Typography>
-              <Box sx={{ width: 32, height: 32, borderRadius: "8px", bgcolor: "rgba(59, 130, 246, 0.12)", color: "#2563EB", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                <WalletIcon sx={{ fontSize: 18 }} />
+          <Link href={`/test-report?range=${range}`} style={{ textDecoration: "none", color: "inherit", display: "block", height: "100%" }}>
+            <Card
+              elevation={0}
+              sx={{
+                height: "100%",
+                bgcolor: "#FFFFFF",
+                border: "1.5px solid #E2E8F0",
+                borderRadius: "12px",
+                p: { xs: 1.5, sm: 2 },
+                cursor: "pointer",
+                transition: "all 0.2s ease-in-out",
+                "&:hover": {
+                  borderColor: "#2563EB",
+                  transform: "translateY(-3px)",
+                  boxShadow: "0 8px 24px rgba(37, 99, 235, 0.12)",
+                },
+              }}
+            >
+              <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", mb: 1 }}>
+                <Typography variant="caption" sx={{ color: "#64748B", fontWeight: 800, textTransform: "uppercase", fontSize: "0.7rem" }}>
+                  Collections
+                </Typography>
+                <Box sx={{ width: 32, height: 32, borderRadius: "8px", bgcolor: "rgba(59, 130, 246, 0.12)", color: "#2563EB", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                  <WalletIcon sx={{ fontSize: 18 }} />
+                </Box>
               </Box>
-            </Box>
-            <Typography variant="h4" sx={{ fontWeight: 800, color: "#0F172A", fontSize: { xs: "1.35rem", sm: "1.7rem" }, lineHeight: 1 }}>
-              ₹{totalCollected.toLocaleString("en-IN", { maximumFractionDigits: 0 })}
-            </Typography>
-            <Typography variant="caption" sx={{ color: dueBalance > 0 ? "#DC2626" : "#10B981", fontWeight: 700, mt: 0.75, display: "block", fontSize: "0.72rem" }}>
-              {dueBalance > 0 ? `₹${dueBalance.toLocaleString("en-IN")} due balance` : "All dues cleared"}
-            </Typography>
-          </Card>
+              <Typography variant="h4" sx={{ fontWeight: 800, color: "#0F172A", fontSize: { xs: "1.35rem", sm: "1.7rem" }, lineHeight: 1 }}>
+                ₹{totalCollected.toLocaleString("en-IN", { maximumFractionDigits: 0 })}
+              </Typography>
+              <Typography variant="caption" sx={{ color: dueBalance > 0 ? "#DC2626" : "#10B981", fontWeight: 700, mt: 0.75, display: "block", fontSize: "0.72rem" }}>
+                {dueBalance > 0 ? `₹${dueBalance.toLocaleString("en-IN")} due balance →` : "All dues cleared →"}
+              </Typography>
+            </Card>
+          </Link>
         </Grid>
       </Grid>
 
       {/* 3. Visual Overview: Patient Trend & Department Split */}
       <Grid container spacing={{ xs: 1.5, sm: 2 }} sx={{ mb: 2.5 }}>
-        
+
         {/* Patient Volume Trend */}
         <Grid size={{ xs: 12, md: 7 }}>
           <Card elevation={0} sx={{ height: "100%", bgcolor: "#FFFFFF", border: "1.5px solid #E2E8F0", borderRadius: "12px", p: { xs: 2, sm: 2.5 } }}>

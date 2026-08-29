@@ -48,7 +48,7 @@ import { useAdminPermissions } from "@/lib/clientAuth";
 import { City, State } from "country-state-city";
 
 const filter = createFilterOptions({
-  limit: 100,
+  limit: 50,
 });
 
 // Helpers for timezone-aware date conversions
@@ -64,29 +64,36 @@ const toUtcString = (dateStr) => {
   return isNaN(d.getTime()) ? null : d.toISOString();
 };
 
-// Build a lookup map of Indian state codes to state names
-const indianStatesMap = {};
-try {
-  State.getStatesOfCountry("IN").forEach((s) => {
-    indianStatesMap[s.isoCode] = s.name;
-  });
-} catch (err) {
-  console.error("Failed to load Indian states", err);
-}
+// Cached singleton for country-state-city library list
+let cachedIndianCities = null;
+function getIndianCitiesFromLibrary() {
+  if (cachedIndianCities) return cachedIndianCities;
+  try {
+    const states = State.getStatesOfCountry("IN") || [];
+    const stateMap = {};
+    for (let i = 0; i < states.length; i++) {
+      stateMap[states[i].isoCode] = states[i].name;
+    }
 
-// India-focused cities list with their states (e.g. "Noida, Uttar Pradesh")
-let indianCities = [];
-try {
-  indianCities = Array.from(
-    new Set(
-      City.getCitiesOfCountry("IN").map((c) => {
-        const stateName = indianStatesMap[c.stateCode] || c.stateCode;
-        return `${c.name}, ${stateName}`;
-      })
-    )
-  ).sort();
-} catch (err) {
-  console.error("Failed to load Indian cities", err);
+    const rawCities = City.getCitiesOfCountry("IN") || [];
+    const seen = new Set();
+    const list = [];
+    for (let i = 0; i < rawCities.length; i++) {
+      const c = rawCities[i];
+      const stateName = stateMap[c.stateCode] || c.stateCode;
+      const formatted = `${c.name}, ${stateName}`;
+      if (!seen.has(formatted)) {
+        seen.add(formatted);
+        list.push(formatted);
+      }
+    }
+    list.sort();
+    cachedIndianCities = list;
+    return list;
+  } catch (err) {
+    console.error("Failed to load country-state-city data:", err);
+    return [];
+  }
 }
 
 export default function RegistrationPage() {
@@ -98,8 +105,18 @@ export default function RegistrationPage() {
   const editId = searchParams.get("edit");
   const [doctors, setDoctors] = useState([]);
   const [tests, setTests] = useState([]);
+  const [cityOptions, setCityOptions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
+
+  // Load country-state-city in non-blocking background so initial page render is instant
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      const cities = getIndianCitiesFromLibrary();
+      setCityOptions(cities);
+    }, 50);
+    return () => clearTimeout(timer);
+  }, []);
 
   // Form states
   const [billOn, setBillOn] = useState("Patient Rate");
@@ -117,6 +134,36 @@ export default function RegistrationPage() {
 
   const [selectedTests, setSelectedTests] = useState([]);
   const [testSearchInput, setTestSearchInput] = useState("");
+  const [isSearchingTests, setIsSearchingTests] = useState(false);
+
+  // Debounced search for tests when user types in test search input
+  useEffect(() => {
+    const query = (testSearchInput || "").trim();
+    const timer = setTimeout(async () => {
+      setIsSearchingTests(true);
+      try {
+        const url = query
+          ? `/api/tests?summary=true&limit=50&search=${encodeURIComponent(query)}`
+          : `/api/tests?summary=true&limit=50`;
+        const res = await fetch(url).then((r) => r.json());
+        if (res.success && Array.isArray(res.tests)) {
+          const parsedTests = res.tests.map((t) => ({
+            ...t,
+            price: Number(t.price) || 0,
+            outsourceCost: t.outsourceCost !== undefined && t.outsourceCost !== null ? Number(t.outsourceCost) : 0,
+            specialIncentivePercent: t.specialIncentivePercent !== undefined && t.specialIncentivePercent !== null ? Number(t.specialIncentivePercent) : null,
+          }));
+          setTests(parsedTests);
+        }
+      } catch (err) {
+        console.error("Test search debounce error:", err);
+      } finally {
+        setIsSearchingTests(false);
+      }
+    }, 250);
+
+    return () => clearTimeout(timer);
+  }, [testSearchInput]);
 
   // Dialog states for adding a new doctor
   const [openAddDocDialog, setOpenAddDocDialog] = useState(false);
@@ -186,7 +233,7 @@ export default function RegistrationPage() {
       try {
         const [docsRes, testsRes] = await Promise.all([
           fetch("/api/doctors").then((r) => r.json()),
-          fetch("/api/tests").then((r) => r.json())
+          fetch("/api/tests?summary=true").then((r) => r.json())
         ]);
         if (docsRes.success) setDoctors(docsRes.doctors);
         if (testsRes.success) {
@@ -891,12 +938,12 @@ _Thank you for choosing us for your health diagnostics!_`;
                 </Grid>
                 <Grid size={{ xs: 12, sm: 4 }}>
                   <Autocomplete
-                    options={indianCities}
+                    options={cityOptions}
                     freeSolo
                     openOnFocus
                     filterOptions={(options, state) => {
                       const filtered = filter(options, state);
-                      return filtered.slice(0, 100);
+                      return filtered.slice(0, 50);
                     }}
                     value={city}
                     onChange={(event, newValue) => {
@@ -1132,9 +1179,9 @@ _Thank you for choosing us for your health diagnostics!_`;
                   return `${option.name} (${option.code || "N/A"}) - ₹${option.price}`;
                 }}
                 filterOptions={(options, params) => {
-                  const filtered = filter(options, params);
                   const { inputValue } = params;
                   const trimmed = (inputValue || "").toLowerCase().trim();
+                  const filtered = [...options];
 
                   if (trimmed !== "") {
                     const isExisting = options.some(
@@ -1149,7 +1196,7 @@ _Thank you for choosing us for your health diagnostics!_`;
                     }
                   }
 
-                  return filtered.slice(0, 100);
+                  return filtered;
                 }}
                 selectOnFocus
                 clearOnBlur
@@ -1196,7 +1243,21 @@ _Thank you for choosing us for your health diagnostics!_`;
                   );
                 }}
                 renderInput={(params) => (
-                  <TextField {...params} label="Search & Add Test" size="small" placeholder="Select to add..." />
+                  <TextField
+                    {...params}
+                    label="Search & Add Test"
+                    size="small"
+                    placeholder="Type test name or code (e.g. CBC, Lipid, Sugar)..."
+                    InputProps={{
+                      ...(params.InputProps || {}),
+                      endAdornment: (
+                        <>
+                          {isSearchingTests ? <CircularProgress color="primary" size={18} sx={{ mr: 1 }} /> : null}
+                          {params.InputProps?.endAdornment || null}
+                        </>
+                      ),
+                    }}
+                  />
                 )}
                 sx={{ mb: 3 }}
               />
