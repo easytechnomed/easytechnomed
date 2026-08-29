@@ -16,49 +16,49 @@ model Workspace {
   updatedAt           DateTime             @updatedAt
   deletedAt           DateTime?
   isDeleted           Boolean              @default(false)
+  nextSequence        Int                  @default(1)
   expireAt            DateTime?
   startAt             DateTime?
-  nextSequence        Int                  @default(1)
   admins              Admin[]
   doctors             Doctor[]
+  interpretationRules InterpretationRule[]
+  parameters          Parameter[]
   registrations       Registration[]
   tests               Test[]
-  users               User[]
-  parameters          Parameter[]
-  testParameters      TestParameter[]
   testFormulas        TestFormula[]
-  interpretationRules InterpretationRule[]
-  pdfSetting          WorkspacePdf?
-  payments            WorkspacePayment[]
+  testParameters      TestParameter[]
+  users               User[]
   aiUsages            WorkspaceAiUsage[]
+  payments            WorkspacePayment[]
+  pdfSetting          WorkspacePdf?
 }
 
 model WorkspacePayment {
-  id           Int        @id @default(autoincrement())
-  workspaceId  Int
-  amount       Decimal    @default(0.00) @db.Decimal(10, 2)
-  days         Int
-  paymentMode  String     @default("Cash")
-  referenceNo  String?
-  notes        String?    @db.Text
-  paidAt       DateTime   @default(now())
-  startAt      DateTime?
-  expireAt     DateTime?
-  createdAt    DateTime   @default(now())
-  updatedAt    DateTime   @updatedAt
-  workspace    Workspace  @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  id          Int       @id @default(autoincrement())
+  workspaceId Int
+  amount      Decimal   @default(0.00) @db.Decimal(10, 2)
+  days        Int
+  paymentMode String    @default("Cash")
+  referenceNo String?
+  notes       String?   @db.Text
+  paidAt      DateTime  @default(now())
+  startAt     DateTime?
+  expireAt    DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
 
   @@index([workspaceId])
   @@index([paidAt])
 }
 
 model SuperAdmin {
-  id        Int                 @id @default(autoincrement())
+  id        Int                  @id @default(autoincrement())
   name      String
-  email     String              @unique
+  email     String               @unique
   password  String
-  createdAt DateTime            @default(now())
-  updatedAt DateTime            @updatedAt
+  createdAt DateTime             @default(now())
+  updatedAt DateTime             @updatedAt
   sessions  SuperAdminSession[]
   trackings SuperAdminTracking[]
 }
@@ -130,21 +130,21 @@ model UserRolePermission {
 }
 
 model Admin {
-  id                         Int            @id @default(autoincrement())
+  id                         Int                @id @default(autoincrement())
   name                       String
-  email                      String         @unique
+  email                      String             @unique
   password                   String
-  provider                   String         @default("credentials")
-  roleId                     Int            @default(1)
-  isEmailVerified            Boolean        @default(true)
-  isApproved                 Boolean        @default(true)
-  createdAt                  DateTime       @default(now())
-  updatedAt                  DateTime       @updatedAt
-  footerMargin               Int            @default(100)
-  framePdfUrl                String?        @db.VarChar(500)
-  headerMargin               Int            @default(140)
-  useFrameDefault            Boolean        @default(true)
-  isActive                   Boolean        @default(true)
+  provider                   String             @default("credentials")
+  roleId                     Int                @default(1)
+  isEmailVerified            Boolean            @default(true)
+  isApproved                 Boolean            @default(true)
+  createdAt                  DateTime           @default(now())
+  updatedAt                  DateTime           @updatedAt
+  footerMargin               Int                @default(100)
+  framePdfUrl                String?            @db.VarChar(500)
+  headerMargin               Int                @default(140)
+  useFrameDefault            Boolean            @default(true)
+  isActive                   Boolean            @default(true)
   workspaceId                Int?
   authorizedSignatoryDegree1 String?
   authorizedSignatoryDegree2 String?
@@ -152,12 +152,12 @@ model Admin {
   authorizedSignatoryName2   String?
   companyName                String?
   mobileNumber               String?
-  role                       AdminRole      @relation(fields: [roleId], references: [id])
-  workspace                  Workspace?     @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  role                       AdminRole          @relation(fields: [roleId], references: [id])
+  workspace                  Workspace?         @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
   address                    AdminAddress?
   sessions                   AdminSession[]
   trackings                  AdminTracking[]
-  registrations              Registration[] @relation("AdminRegistrations")
+  registrations              Registration[]     @relation("AdminRegistrations")
   aiUsages                   WorkspaceAiUsage[]
 
   @@index([roleId])
@@ -204,104 +204,104 @@ model Doctor {
   updatedAt           DateTime          @updatedAt
   workspaceId         Int?
   incentivePercent    Decimal           @default(0.00) @db.Decimal(5, 2)
-  isDeleted           Boolean           @default(false)
-  deletedAt           DateTime?
   address             String?
   clinicName          String?
   degree              String?
+  deletedAt           DateTime?
+  isDeleted           Boolean           @default(false)
   workspace           Workspace?        @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  incentiveHistory    DoctorIncentive[]
   registrations       Registration[]    @relation("RefBy")
   secondRegistrations Registration[]    @relation("SecondRef")
-  incentiveHistory    DoctorIncentive[]
 
   @@unique([workspaceId, code])
 }
 
 model Test {
-  id            Int                @id @default(autoincrement())
-  name          String
-  code          String?
-  price         Decimal            @db.Decimal(10, 2)
-  baseRate            Decimal?     @db.Decimal(10, 2)
-  curRate             Decimal?     @db.Decimal(10, 2)
-  rate                Decimal?     @db.Decimal(10, 2)
-  collectionCenterRate Decimal?    @db.Decimal(10, 2)
-  franchiseRate       Decimal?     @db.Decimal(10, 2)
-  superFranchiseRate  Decimal?     @db.Decimal(10, 2)
-  labRate             Decimal?     @db.Decimal(10, 2)
-  offerPrice          Decimal?     @db.Decimal(10, 2)
-  outsourceCost       Decimal?     @default(0.00) @db.Decimal(10, 2)
-  specialIncentivePercent Decimal? @db.Decimal(5, 2)
-  createdAt     DateTime           @default(now())
-  updatedAt     DateTime           @updatedAt
-  isProcessed   Boolean            @default(false)
-  workspaceId   Int?
-  isCustomized  Boolean            @default(false)
-  defaultUpdatedAt DateTime?
-  deletedAt     DateTime?
-  isDeleted     Boolean            @default(false)
-  departmentId  Int?
-  department    TestDepartment?    @relation(fields: [departmentId], references: [id], onDelete: SetNull)
-  registrations RegistrationTest[]
-  workspace     Workspace?         @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
-  parameters    TestParameter[]
-  formulas      TestFormula[]
-  interpretationRules InterpretationRule[]
+  id                      Int                  @id @default(autoincrement())
+  name                    String
+  code                    String?
+  price                   Decimal              @db.Decimal(10, 2)
+  createdAt               DateTime             @default(now())
+  updatedAt               DateTime             @updatedAt
+  isProcessed             Boolean              @default(false)
+  workspaceId             Int?
+  deletedAt               DateTime?
+  isDeleted               Boolean              @default(false)
+  departmentId            Int?
+  isCustomized            Boolean              @default(false)
+  defaultUpdatedAt        DateTime?
+  baseRate                Decimal?             @db.Decimal(10, 2)
+  collectionCenterRate    Decimal?             @db.Decimal(10, 2)
+  curRate                 Decimal?             @db.Decimal(10, 2)
+  franchiseRate           Decimal?             @db.Decimal(10, 2)
+  labRate                 Decimal?             @db.Decimal(10, 2)
+  offerPrice              Decimal?             @db.Decimal(10, 2)
+  rate                    Decimal?             @db.Decimal(10, 2)
+  superFranchiseRate      Decimal?             @db.Decimal(10, 2)
+  outsourceCost           Decimal?             @default(0.00) @db.Decimal(10, 2)
+  specialIncentivePercent Decimal?             @db.Decimal(5, 2)
+  interpretationRules     InterpretationRule[]
+  registrations           RegistrationTest[]
+  department              TestDepartment?      @relation(fields: [departmentId], references: [id])
+  workspace               Workspace?           @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  formulas                TestFormula[]
+  parameters              TestParameter[]
 
   @@unique([workspaceId, code])
   @@index([departmentId])
 }
 
 model Registration {
-  id               Int                   @id @default(autoincrement())
-  billOn           String                @default("Patient Rate")
-  mobileNo         String
-  labId            String
-  regNo            String                @unique
-  date             DateTime              @default(now())
-  title            String
-  name             String
-  city             String                @default("-NA-")
-  age              Float
-  ageUnit          String                @default("Year")
-  gender           String
-  refById          Int?
-  secondRefId      Int?
-  remark           String?               @db.Text
-  colType          String                @default("Camp")
-  expRptDate       DateTime?
-  sampleDate       DateTime?
-  sampleNo         String?
-  sampleBy         String                @default("-NA-")
-  paymentMode      String                @default("Cash")
-  paymentRefNo     String?
-  totalAmount      Decimal               @default(0.00) @db.Decimal(10, 2)
-  collectionCharge Decimal               @default(0.00) @db.Decimal(10, 2)
-  discountPercent  Decimal               @default(0.00) @db.Decimal(10, 2)
-  discountAmount   Decimal               @default(0.00) @db.Decimal(10, 2)
-  receivedAmount   Decimal               @default(0.00) @db.Decimal(10, 2)
-  dueAmount        Decimal               @default(0.00) @db.Decimal(10, 2)
-  refByIncentivePercent     Decimal       @default(0.00) @db.Decimal(5, 2)
-  secondRefIncentivePercent Decimal       @default(0.00) @db.Decimal(5, 2)
-  stickerCount     Int                   @default(1)
-  barcode          String?
-  status           String                @default("Pending")
-  pdfOtp           String?               @db.VarChar(10)
-  reportedAt       DateTime?
-  createdAt        DateTime              @default(now())
-  updatedAt        DateTime              @updatedAt
-  workspaceId      Int?
-  adminId          Int?
-  deletedAt        DateTime?
-  isDeleted        Boolean               @default(false)
-  results          PatientResult[]
-  refBy            Doctor?               @relation("RefBy", fields: [refById], references: [id])
-  secondRef        Doctor?               @relation("SecondRef", fields: [secondRefId], references: [id])
-  workspace        Workspace?            @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
-  admin            Admin?                @relation("AdminRegistrations", fields: [adminId], references: [id])
-  payments         RegistrationPayment[]
-  tests            RegistrationTest[]
-  aiUsages         WorkspaceAiUsage[]
+  id                        Int                   @id @default(autoincrement())
+  billOn                    String                @default("Patient Rate")
+  mobileNo                  String
+  labId                     String
+  regNo                     String                @unique
+  date                      DateTime              @default(now())
+  title                     String
+  name                      String
+  city                      String                @default("-NA-")
+  age                       Float
+  ageUnit                   String                @default("Year")
+  gender                    String
+  refById                   Int?
+  secondRefId               Int?
+  remark                    String?               @db.Text
+  colType                   String                @default("Camp")
+  expRptDate                DateTime?
+  sampleDate                DateTime?
+  sampleNo                  String?
+  sampleBy                  String                @default("-NA-")
+  paymentMode               String                @default("Cash")
+  paymentRefNo              String?
+  totalAmount               Decimal               @default(0.00) @db.Decimal(10, 2)
+  collectionCharge          Decimal               @default(0.00) @db.Decimal(10, 2)
+  discountPercent           Decimal               @default(0.00) @db.Decimal(10, 2)
+  discountAmount            Decimal               @default(0.00) @db.Decimal(10, 2)
+  receivedAmount            Decimal               @default(0.00) @db.Decimal(10, 2)
+  dueAmount                 Decimal               @default(0.00) @db.Decimal(10, 2)
+  stickerCount              Int                   @default(1)
+  barcode                   String?
+  status                    String                @default("Pending")
+  createdAt                 DateTime              @default(now())
+  updatedAt                 DateTime              @updatedAt
+  workspaceId               Int?
+  deletedAt                 DateTime?
+  isDeleted                 Boolean               @default(false)
+  refByIncentivePercent     Decimal               @default(0.00) @db.Decimal(5, 2)
+  secondRefIncentivePercent Decimal               @default(0.00) @db.Decimal(5, 2)
+  adminId                   Int?
+  pdfOtp                    String?               @db.VarChar(10)
+  reportedAt                DateTime?
+  results                   PatientResult[]
+  admin                     Admin?                @relation("AdminRegistrations", fields: [adminId], references: [id])
+  refBy                     Doctor?               @relation("RefBy", fields: [refById], references: [id])
+  secondRef                 Doctor?               @relation("SecondRef", fields: [secondRefId], references: [id])
+  workspace                 Workspace?            @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  payments                  RegistrationPayment[]
+  tests                     RegistrationTest[]
+  aiUsages                  WorkspaceAiUsage[]
 
   @@unique([workspaceId, labId])
   @@index([date])
@@ -314,96 +314,96 @@ model Registration {
 }
 
 model RegistrationTest {
-  registrationId         Int
-  testId                 Int
-  price                  Decimal      @default(0.00) @db.Decimal(10, 2)
-  assessNo               String?
-  collectedBy            String       @default("-NA-")
-  expense                Decimal      @default(0.00) @db.Decimal(10, 2)
+  registrationId          Int
+  testId                  Int
+  assessNo                String?
+  collectedBy             String       @default("-NA-")
+  expense                 Decimal      @default(0.00) @db.Decimal(10, 2)
+  pathologist             String       @default("-NA-")
+  product                 String       @default("-NA-")
+  sampleBarcode           String?
+  sampleRemark            String?
+  sampleStatus            String       @default("Pending")
+  sendTo                  String       @default("-NA-")
+  interpretation          String?      @db.Text
+  price                   Decimal      @default(0.00) @db.Decimal(10, 2)
   specialIncentivePercent Decimal?     @db.Decimal(5, 2)
-  pathologist            String       @default("-NA-")
-  product                String       @default("-NA-")
-  sampleBarcode          String?
-  sampleRemark           String?
-  sampleStatus           String       @default("Pending")
-  sendTo                 String       @default("-NA-")
-  interpretation         String?      @db.Text
-  registration           Registration @relation(fields: [registrationId], references: [id], onDelete: Cascade)
-  test                   Test         @relation(fields: [testId], references: [id], onDelete: Cascade)
+  registration            Registration @relation(fields: [registrationId], references: [id], onDelete: Cascade)
+  test                    Test         @relation(fields: [testId], references: [id], onDelete: Cascade)
 
   @@id([registrationId, testId])
   @@index([testId], map: "RegistrationTest_testId_fkey")
 }
 
 model Parameter {
-  id                 Int             @id @default(autoincrement())
-  name               String
-  code               String?
-  unit               String?
-  valueType          String?         @default("NUMERIC")
-  options            String?         @db.Text
-  minValMale         Float?
-  maxValMale         Float?
-  normalRangeMale    String?
-  minValFemale       Float?
-  maxValFemale       Float?
-  normalRangeFemale  String?
-  minValBaby         Float?
-  maxValBaby         Float?
-  normalRangeBaby    String?
-  normalRangeDefault String?
-  criticalMinValMale     Float?
-  criticalMaxValMale     Float?
-  criticalMinValFemale   Float?
-  criticalMaxValFemale   Float?
-  criticalMinValBaby     Float?
-  criticalMaxValBaby     Float?
-  criticalMinValDefault  Float?
-  criticalMaxValDefault  Float?
-  borderlineMinValMale     Float?
-  borderlineMaxValMale     Float?
-  borderlineMinValFemale   Float?
-  borderlineMaxValFemale   Float?
-  borderlineMinValBaby     Float?
-  borderlineMaxValBaby     Float?
-  borderlineMinValDefault  Float?
-  borderlineMaxValDefault  Float?
-  createdAt          DateTime        @default(now())
-  updatedAt          DateTime        @updatedAt
-  workspaceId        Int?
-  workspace          Workspace?      @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
-  testMappings       TestParameter[]
-  testFormulas       TestFormula[]
-  interpretationRules InterpretationRule[]
+  id                      Int                  @id @default(autoincrement())
+  name                    String
+  unit                    String?
+  minValMale              Float?
+  maxValMale              Float?
+  normalRangeMale         String?
+  minValFemale            Float?
+  maxValFemale            Float?
+  normalRangeFemale       String?
+  minValBaby              Float?
+  maxValBaby              Float?
+  normalRangeBaby         String?
+  normalRangeDefault      String?
+  createdAt               DateTime             @default(now())
+  updatedAt               DateTime             @updatedAt
+  workspaceId             Int?
+  code                    String?
+  criticalMaxValBaby      Float?
+  criticalMaxValDefault   Float?
+  criticalMaxValFemale    Float?
+  criticalMaxValMale      Float?
+  criticalMinValBaby      Float?
+  criticalMinValDefault   Float?
+  criticalMinValFemale    Float?
+  criticalMinValMale      Float?
+  borderlineMaxValBaby    Float?
+  borderlineMaxValDefault Float?
+  borderlineMaxValFemale  Float?
+  borderlineMaxValMale    Float?
+  borderlineMinValBaby    Float?
+  borderlineMinValDefault Float?
+  borderlineMinValFemale  Float?
+  borderlineMinValMale    Float?
+  options                 String?              @db.Text
+  valueType               String?              @default("NUMERIC")
+  interpretationRules     InterpretationRule[]
+  workspace               Workspace?           @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  testFormulas            TestFormula[]
+  testMappings            TestParameter[]
 
   @@unique([workspaceId, name])
   @@index([workspaceId], map: "Parameter_workspaceId_fkey")
 }
 
 model TestParameter {
-  id           Int             @id @default(autoincrement())
-  testId       Int
-  order        Int             @default(1)
-  createdAt    DateTime        @default(now())
-  updatedAt    DateTime        @updatedAt
-  deletedAt    DateTime?
-  isDeleted    Boolean         @default(false)
-  parameterId  Int
-  workspaceId  Int?
-  editable     Boolean         @default(true)
-  isCalculated Boolean         @default(false)
-  decimalPlace Int             @default(2)
+  id             Int             @id @default(autoincrement())
+  testId         Int
+  order          Int             @default(1)
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+  deletedAt      DateTime?
+  isDeleted      Boolean         @default(false)
+  parameterId    Int
+  workspaceId    Int?
+  decimalPlace   Int             @default(2)
+  editable       Boolean         @default(true)
+  isCalculated   Boolean         @default(false)
+  unit           String?
   roundingMethod String          @default("HALF_UP")
-  section      String?
-  unit         String?
-  valueType    String?
-  options      String?         @db.Text
-  isHeader     Boolean         @default(false)
-  parentId     Int?            // DB id of the parent isHeader TestParameter; null = standalone or is a header
-  workspace    Workspace?      @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
-  results      PatientResult[]
-  parameter    Parameter       @relation(fields: [parameterId], references: [id], onDelete: Cascade)
-  test         Test            @relation(fields: [testId], references: [id], onDelete: Cascade)
+  section        String?
+  isHeader       Boolean         @default(false)
+  parentId       Int?
+  options        String?         @db.Text
+  valueType      String?
+  results        PatientResult[]
+  parameter      Parameter       @relation(fields: [parameterId], references: [id], onDelete: Cascade)
+  test           Test            @relation(fields: [testId], references: [id], onDelete: Cascade)
+  workspace      Workspace?      @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
 
   @@index([parameterId], map: "TestParameter_parameterId_fkey")
   @@index([testId], map: "TestParameter_testId_fkey")
@@ -415,10 +415,10 @@ model PatientResult {
   registrationId  Int
   testParameterId Int
   value           String
-  flag            String?
-  interpretation  String?       @db.Text
   createdAt       DateTime      @default(now())
   updatedAt       DateTime      @updatedAt
+  flag            String?
+  interpretation  String?       @db.Text
   registration    Registration  @relation(fields: [registrationId], references: [id], onDelete: Cascade)
   testParameter   TestParameter @relation(fields: [testParameterId], references: [id], onDelete: Cascade)
 
@@ -441,11 +441,11 @@ model AdminAddress {
   state     String?
   pincode   String?
   country   String?
-  latitude  Float?
-  longitude Float?
   adminId   Int      @unique
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  latitude  Float?
+  longitude Float?
   admin     Admin    @relation(fields: [adminId], references: [id], onDelete: Cascade)
 }
 
@@ -514,20 +514,20 @@ model TestDepartment {
 }
 
 model TestFormula {
-  id                Int             @id @default(autoincrement())
+  id                Int        @id @default(autoincrement())
   workspaceId       Int?
   testId            Int
   outputParameterId Int
-  formula           String          @db.Text
-  description       String?         @db.Text
+  formula           String     @db.Text
+  description       String?    @db.Text
+  createdAt         DateTime   @default(now())
+  updatedAt         DateTime   @updatedAt
+  isActive          Boolean    @default(true)
   name              String?
-  version           Int             @default(1)
-  isActive          Boolean         @default(true)
-  createdAt         DateTime        @default(now())
-  updatedAt         DateTime        @updatedAt
-  workspace         Workspace?      @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
-  test              Test            @relation(fields: [testId], references: [id], onDelete: Cascade)
-  outputParameter   Parameter       @relation(fields: [outputParameterId], references: [id], onDelete: Cascade)
+  version           Int        @default(1)
+  outputParameter   Parameter  @relation(fields: [outputParameterId], references: [id], onDelete: Cascade)
+  test              Test       @relation(fields: [testId], references: [id], onDelete: Cascade)
+  workspace         Workspace? @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
 
   @@unique([workspaceId, testId, outputParameterId])
   @@index([testId])
@@ -536,17 +536,17 @@ model TestFormula {
 }
 
 model InterpretationRule {
-  id             Int          @id @default(autoincrement())
+  id             Int        @id @default(autoincrement())
   workspaceId    Int?
   testId         Int
   parameterId    Int
-  condition      String       @db.Text
-  interpretation String       @db.Text
-  createdAt      DateTime     @default(now())
-  updatedAt      DateTime     @updatedAt
-  workspace      Workspace?   @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
-  test           Test         @relation(fields: [testId], references: [id], onDelete: Cascade)
-  parameter      Parameter    @relation(fields: [parameterId], references: [id], onDelete: Cascade)
+  condition      String     @db.Text
+  interpretation String     @db.Text
+  createdAt      DateTime   @default(now())
+  updatedAt      DateTime   @updatedAt
+  parameter      Parameter  @relation(fields: [parameterId], references: [id], onDelete: Cascade)
+  test           Test       @relation(fields: [testId], references: [id], onDelete: Cascade)
+  workspace      Workspace? @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
 
   @@index([testId])
   @@index([parameterId])
@@ -564,51 +564,40 @@ model DoctorIncentive {
 }
 
 model WorkspacePdf {
-  id                         Int        @id @default(autoincrement())
-  workspaceId                Int        @unique
-  workspace                  Workspace  @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
-  
-  // Letterhead Frame & Page Margins
-  framePdfUrl                String?    @db.VarChar(500)
-  useFrameDefault            Boolean    @default(true)
-  headerMargin               Int        @default(140)
-  footerMargin               Int        @default(100)
-  leftMargin                 Int        @default(45)
-  rightMargin                Int        @default(45)
-  
-  // Colors (Hex format)
-  primaryColor               String     @default("#0f766e")
-  headerBgColor              String     @default("#e2e8f0")
-  headerTextColor            String     @default("#1e293b")
-  textColor                  String     @default("#0f172a")
-  patientCardBgColor         String     @default("#f8fafc")
-  patientCardBorderColor     String     @default("#e2e8f0")
-  tableRowBorderColor        String     @default("#e2e8f0")
-  departmentTextColor        String     @default("#ffffff")
-  
-  // Typography
-  fontFamily                 String     @default("Helvetica")
-  headerFontSize             Float      @default(9.0)
-  parameterFontSize          Float      @default(8.5)
-  patientInfoFontSize        Float      @default(9.0)
-  departmentFontSize         Float      @default(9.5)
-  remarkFontSize             Float      @default(8.5)
-  
-  // Column Configuration (JSON string)
-  columnOrder                String?    @db.Text
-  
-  // Signatories & Display Controls
+  id                         Int       @id @default(autoincrement())
+  workspaceId                Int       @unique
+  framePdfUrl                String?   @db.VarChar(500)
+  useFrameDefault            Boolean   @default(true)
+  headerMargin               Int       @default(140)
+  footerMargin               Int       @default(100)
+  leftMargin                 Int       @default(45)
+  rightMargin                Int       @default(45)
+  primaryColor               String    @default("#0f766e")
+  headerBgColor              String    @default("#e2e8f0")
+  headerTextColor            String    @default("#1e293b")
+  textColor                  String    @default("#0f172a")
+  patientCardBgColor         String    @default("#f8fafc")
+  patientCardBorderColor     String    @default("#e2e8f0")
+  tableRowBorderColor        String    @default("#e2e8f0")
+  departmentTextColor        String    @default("#ffffff")
+  fontFamily                 String    @default("Helvetica")
+  headerFontSize             Float     @default(9)
+  parameterFontSize          Float     @default(8.5)
+  patientInfoFontSize        Float     @default(9)
+  departmentFontSize         Float     @default(9.5)
+  remarkFontSize             Float     @default(8.5)
+  columnOrder                String?   @db.Text
   authorizedSignatoryName1   String?
   authorizedSignatoryDegree1 String?
   authorizedSignatoryName2   String?
   authorizedSignatoryDegree2 String?
-  showSignatures             Boolean    @default(true)
-  showQrCode                 Boolean    @default(true)
-  showDepartmentBanner       Boolean    @default(true)
-  showPatientBox             Boolean    @default(true)
-  
-  createdAt                  DateTime   @default(now())
-  updatedAt                  DateTime   @updatedAt
+  showSignatures             Boolean   @default(true)
+  showQrCode                 Boolean   @default(true)
+  showDepartmentBanner       Boolean   @default(true)
+  showPatientBox             Boolean   @default(true)
+  createdAt                  DateTime  @default(now())
+  updatedAt                  DateTime  @updatedAt
+  workspace                  Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
 }
 
 model WorkspaceAiUsage {
@@ -628,10 +617,9 @@ model WorkspaceAiUsage {
   durationMs      Int?
   ipAddress       String?
   createdAt       DateTime      @default(now())
-
+  admin           Admin?        @relation(fields: [adminId], references: [id])
+  registration    Registration? @relation(fields: [registrationId], references: [id])
   workspace       Workspace     @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
-  admin           Admin?        @relation(fields: [adminId], references: [id], onDelete: SetNull)
-  registration    Registration? @relation(fields: [registrationId], references: [id], onDelete: SetNull)
 
   @@index([workspaceId])
   @@index([adminId])
@@ -639,5 +627,18 @@ model WorkspaceAiUsage {
   @@index([createdAt])
   @@index([status])
   @@index([feature])
+}
+
+model AppVersion {
+  id          Int      @id @default(autoincrement())
+  version     String   @unique
+  title       String
+  description String?  @db.Text
+  changes     String?  @db.Text
+  isMandatory Boolean  @default(false)
+  isActive    Boolean  @default(true)
+  releaseDate DateTime @default(now())
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 }
 

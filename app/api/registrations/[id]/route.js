@@ -173,7 +173,7 @@ export async function PUT(req, { params }) {
           receivedAmount: validatedData.receivedAmount,
           dueAmount: validatedData.dueAmount,
           stickerCount: validatedData.stickerCount,
-          status: validatedData.dueAmount > 0 ? "Pending" : "Completed",
+          status: existing.status || "Pending",
         },
       });
 

@@ -34,6 +34,7 @@ import {
   TrendingUp as TrendingUpIcon,
   Email as EmailIcon,
   AutoAwesome as AutoAwesomeIcon,
+  SystemUpdateAlt as VersionIcon,
 } from "@mui/icons-material";
 import { toast } from "sonner";
 import NextTopLoader from "nextjs-toploader";
@@ -117,6 +118,7 @@ export default function SuperAdminLayout({ children }) {
   const menuItems = [
     { text: "Executive Dashboard", icon: <TrendingUpIcon />, path: "/adminstration/dashboard", exact: "/adminstration/dashboard" },
     { text: "Workspace Controller", icon: <WorkspaceIcon />, path: "/adminstration/workspace", exact: "/adminstration/workspace" },
+    { text: "App Version Control", icon: <VersionIcon />, path: "/adminstration/app-version", exact: "/adminstration/app-version" },
     { text: "Gemini AI Usage", icon: <AutoAwesomeIcon />, path: "/adminstration/ai-usage", exact: "/adminstration/ai-usage" },
     { text: "Administrators", icon: <PeopleIcon />, path: "/adminstration/admins", exact: "/adminstration/admins" },
     { text: "Import Lab Tests", icon: <UploadIcon />, path: "/adminstration/importer", exact: "/adminstration/importer" },

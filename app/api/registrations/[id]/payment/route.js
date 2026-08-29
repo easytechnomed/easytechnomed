@@ -77,7 +77,6 @@ export async function POST(req, { params }) {
           paymentMode: paymentMode || "Cash",
           paymentRefNo: paymentRefNo || null,
           remark: remark || null,
-          status: newDue > 0 ? "Pending" : "Completed",
         },
       });
 

@@ -28,9 +28,9 @@ export async function POST(req) {
     const headerStore = await headers();
     const ipAddress = headerStore.get("x-forwarded-for") || "127.0.0.1";
     const userAgent = headerStore.get("user-agent") || "unknown";
-    const expiresAt = new Date(Date.now() + 2 * 60 * 60 * 1000);
+    const expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000); // 30 days
 
-    const token = signToken({ id: superAdmin.id, email: superAdmin.email, isSuper: true });
+    const token = signToken({ id: superAdmin.id, email: superAdmin.email, isSuper: true }, "30d");
 
     await prisma.superAdminSession.create({
       data: {
@@ -46,7 +46,7 @@ export async function POST(req) {
       httpOnly: true,
       secure: false,
       sameSite: "lax",
-      maxAge: 30 * 24 * 60 * 60,
+      maxAge: 30 * 24 * 60 * 60, // 30 days in seconds
       path: "/",
     });
 
