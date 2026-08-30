@@ -2,8 +2,6 @@
 
 import React from "react";
 import { useRouter } from "next/navigation";
-import { FormControl, Select, MenuItem, Box } from "@mui/material";
-import { CalendarMonth as CalendarIcon } from "@mui/icons-material";
 
 const quickRanges = [
   { label: "Last 7 Days", value: "7days" },
@@ -19,67 +17,39 @@ export default function DashboardRangeSelector({ initialRange }) {
   const router = useRouter();
   const currentRange = initialRange || "7days";
 
-  const handleChange = (event) => {
-    const val = event.target.value;
+  const handleChange = (e) => {
+    const val = e.target.value;
     router.push(`?range=${val}`);
   };
 
   return (
-    <FormControl size="small" fullWidth sx={{ minWidth: { xs: "auto", sm: 160 } }}>
-      <Select
+    <div className="relative w-full sm:w-auto min-w-[150px]">
+      {/* Calendar Icon */}
+      <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-2.5 text-[#0f766e]">
+        <svg className="h-4 w-4 fill-current" viewBox="0 0 24 24">
+          <path d="M19 4h-1V2h-2v2H8V2H6v2H5c-1.11 0-1.99.9-1.99 2L3 20c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 16H5V10h14v10zm0-12H5V6h14v2z" />
+        </svg>
+      </div>
+
+      {/* Native Select with Tailwind CSS */}
+      <select
         value={currentRange}
         onChange={handleChange}
-        displayEmpty
-        startAdornment={
-          <CalendarIcon sx={{ fontSize: 18, color: "#0f766e", mr: 1, ml: -0.25 }} />
-        }
-        MenuProps={{
-          disableScrollLock: true,
-          PaperProps: {
-            sx: {
-              mt: 0.5,
-              borderRadius: "10px",
-              border: "1px solid #E2E8F0",
-              boxShadow: "0 10px 25px -5px rgba(0,0,0,0.1)",
-            },
-          },
-        }}
-        sx={{
-          bgcolor: "#FFFFFF",
-          border: "1.5px solid #E2E8F0",
-          borderRadius: "8px",
-          color: "#0F172A",
-          fontSize: { xs: "0.75rem", sm: "0.8rem" },
-          fontWeight: 700,
-          "& fieldset": { border: "none" },
-          "& .MuiSelect-select": {
-            py: 0.8,
-            px: 1.2,
-            display: "flex",
-            alignItems: "center",
-          },
-          "&:hover": {
-            borderColor: "#0f766e",
-            bgcolor: "#F8FAFC",
-          },
-        }}
+        className="w-full appearance-none rounded-lg border-[1.5px] border-slate-200 bg-white py-2 pl-8 pr-8 text-xs sm:text-sm font-bold text-slate-800 shadow-none transition-colors hover:border-[#0f766e] hover:bg-slate-50 focus:border-[#0f766e] focus:outline-none cursor-pointer"
       >
         {quickRanges.map((r) => (
-          <MenuItem
-            key={r.value}
-            value={r.value}
-            sx={{
-              fontSize: "0.8rem",
-              fontWeight: currentRange === r.value ? 800 : 500,
-              color: currentRange === r.value ? "#0f766e" : "#1E293B",
-              py: 0.9,
-              px: 2,
-            }}
-          >
+          <option key={r.value} value={r.value} className="text-slate-800 font-semibold py-1">
             {r.label}
-          </MenuItem>
+          </option>
         ))}
-      </Select>
-    </FormControl>
+      </select>
+
+      {/* Custom Chevron Icon */}
+      <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-2.5 text-slate-500">
+        <svg className="h-4 w-4 fill-current" viewBox="0 0 20 20">
+          <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
+        </svg>
+      </div>
+    </div>
   );
 }
