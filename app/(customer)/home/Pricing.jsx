@@ -31,6 +31,7 @@ export default function Pricing() {
             period: "/ 5 Days",
             features: [
                 "5 Days Full Access",
+                "Works Online & Offline (Beta)",
                 "No feature limitations",
                 "Register unlimited test profiles",
                 "Smart PDF & WhatsApp reports",
@@ -49,6 +50,7 @@ export default function Pricing() {
             period: "/ month",
             features: [
                 "Full platform access",
+                "Works Online & Offline (Beta)",
                 "Unlimited patient registrations",
                 "Permanent QR code report scanning",
                 "All diagnostic report templates",
@@ -68,6 +70,7 @@ export default function Pricing() {
             period: "/ year",
             features: [
                 "Full platform access",
+                "Works Online & Offline (Beta)",
                 "Save ~₹1,000 (16%+ discount)",
                 "Unlimited patient registrations",
                 "Permanent QR code report scanning",
@@ -86,6 +89,7 @@ export default function Pricing() {
         <Box
             id="pricing"
             sx={{
+                scrollMarginTop: { xs: "72px", md: "80px" },
                 py: { xs: 9, md: 14 },
                 bgcolor: "#F3F4F6", // Solid Gray 100 Color Block Section
                 borderTop: "2px solid #E5E7EB"
@@ -144,7 +148,7 @@ export default function Pricing() {
                             lineHeight: 1.6
                         }}
                     >
-                        Activate your account in seconds. Test the full platform for 5 days with zero credit card required.
+                        Activate your account in seconds. All plans include online & offline working capabilities with automatic cloud sync.
                     </Typography>
                 </Box>
 

@@ -13,6 +13,19 @@ import { CheckCircle as CheckCircleIcon } from "@mui/icons-material";
 export default function Features() {
     const featuresData = [
         {
+            badge: "Works Without Internet (Beta)",
+            title: "Continuous Work: Online & Offline (Beta)",
+            description: "Keep your laboratory running without interruptions, even during complete internet blackouts or slow connections. In offline mode, easily register patients, enter test findings, and generate PDF reports. Once reconnected, all offline records automatically sync live with your cloud database.",
+            bullets: [
+                "Zero lab stoppage: Keep working smoothly even when internet is down",
+                "Full patient registration, test result entry & report printing offline",
+                "Automatic live cloud synchronization as soon as internet is restored"
+            ],
+            image: "/landing/test report table.png",
+            reverse: false,
+            isOfflineFeature: true
+        },
+        {
             title: "Seamless Patient Registration",
             description: "Add patient profiles, record age/gender details, select bill modes, assign referring doctors, and capture barcode stickers dynamically. Everything on a single, easy-to-use form.",
             bullets: [
@@ -20,7 +33,7 @@ export default function Features() {
                 "Custom stickers, barcodes & payment modes"
             ],
             image: "/landing/register patient.png",
-            reverse: false
+            reverse: true
         },
         {
             title: "Smart Test Parameter Tracking",
@@ -30,7 +43,7 @@ export default function Features() {
                 "Quick search & print-to-PDF report generation"
             ],
             image: "/landing/test report table.png",
-            reverse: true
+            reverse: false
         },
         {
             title: "Doctor Referral Summaries",
@@ -40,12 +53,12 @@ export default function Features() {
                 "Easy report summaries ready for billing review"
             ],
             image: "/landing/doctor referal.png",
-            reverse: false
+            reverse: true
         }
     ];
 
     return (
-        <Box id="features" sx={{ py: { xs: 9, md: 14 }, bgcolor: "#FFFFFF", borderTop: "2px solid #E5E7EB" }}>
+        <Box id="features" sx={{ scrollMarginTop: { xs: "72px", md: "80px" }, py: { xs: 9, md: 14 }, bgcolor: "#FFFFFF", borderTop: "2px solid #E5E7EB" }}>
             <Container maxWidth="xl">
                 <Box sx={{ textAlign: "center", mb: { xs: 8, md: 12 }, maxWidth: 680, mx: "auto" }}>
                     {/* Flat Section Badge */}
@@ -120,6 +133,35 @@ export default function Features() {
                             }}
                         >
                             <Box sx={{ pl: { md: feature.reverse ? 4 : 0 }, pr: { md: feature.reverse ? 0 : 4 } }}>
+                                {feature.badge && (
+                                    <Box
+                                        sx={{
+                                            display: "inline-flex",
+                                            alignItems: "center",
+                                            gap: 1,
+                                            px: 1.5,
+                                            py: 0.4,
+                                            borderRadius: "6px",
+                                            bgcolor: "rgba(245, 158, 11, 0.12)",
+                                            border: "1.5px solid #d97706",
+                                            mb: 1.5
+                                        }}
+                                    >
+                                        <Box sx={{ width: 6, height: 6, borderRadius: "50%", bgcolor: "#d97706" }} />
+                                        <Typography
+                                            sx={{
+                                                fontFamily: "var(--font-outfit), sans-serif",
+                                                fontSize: "0.75rem",
+                                                letterSpacing: "0.05em",
+                                                textTransform: "uppercase",
+                                                color: "#b45309",
+                                                fontWeight: 800
+                                            }}
+                                        >
+                                            {feature.badge}
+                                        </Typography>
+                                    </Box>
+                                )}
                                 <Typography
                                     variant="h3"
                                     sx={{

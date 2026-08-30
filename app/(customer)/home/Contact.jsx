@@ -31,6 +31,7 @@ export default function Contact({
     <Box
       id="contact"
       sx={{
+        scrollMarginTop: { xs: "72px", md: "80px" },
         py: { xs: 10, md: 16 },
         bgcolor: "#111827", // Solid Dark Gray Color Block
         position: "relative",

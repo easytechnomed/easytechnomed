@@ -54,6 +54,11 @@ export default function FAQ() {
       question: "If my subscription plan expires, will my patients still be able to scan and view their reports?",
       answer: "Yes, absolutely! Even if your subscription plan expires, all patient test reports registered during your active subscription period remain permanently scanable and accessible via their QR codes. We guarantee that historical patient reports will never be locked.",
     },
+    {
+      id: "panel6",
+      question: "Will the lab software work if the internet is slow or completely offline?",
+      answer: "Yes, absolutely! EasyTechnoMed includes an Offline Working Mode (Beta). Even without internet or during slow network connections, you can register patients, input test results, and generate PDF lab reports without interruptions. As soon as your internet is back, all offline data automatically synchronizes live to your cloud database.",
+    },
   ];
 
   // FAQ Schema for SEO structure
@@ -74,6 +79,7 @@ export default function FAQ() {
     <Box
       id="faq"
       sx={{
+        scrollMarginTop: { xs: "72px", md: "80px" },
         py: { xs: 9, md: 14 },
         bgcolor: "#FFFFFF",
         borderTop: "2px solid #E5E7EB"

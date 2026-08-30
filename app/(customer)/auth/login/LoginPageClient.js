@@ -7,7 +7,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import * as zod from "zod";
 import { toast } from "sonner";
 import { TextField, InputAdornment, IconButton } from "@mui/material";
-import { ArrowRight, Mail, Lock, Phone, ShieldCheck, X, CheckCircle, KeyRound, Eye, EyeOff } from "lucide-react";
+import { ArrowRight, Mail, Lock, Phone, ShieldCheck, X, CheckCircle, KeyRound, Eye, EyeOff, WifiOff, AlertTriangle, ExternalLink } from "lucide-react";
 import { Label } from "@/components/ui/Label";
 
 // Auto-detect: if it looks like a phone number treat as mobile
@@ -32,6 +32,7 @@ export default function CustomerLoginPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [identifierValue, setIdentifierValue] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+  const [offlineTermsAccepted, setOfflineTermsAccepted] = useState(false);
 
   // Forgot password modal state
   const [isForgotOpen, setIsForgotOpen] = useState(false);
@@ -48,6 +49,19 @@ export default function CustomerLoginPage() {
   });
 
   const isMobileInput = isLikelyMobile(identifierValue);
+
+  const handleLaunchOffline = () => {
+    const offlineUrl = process.env.NEXT_PUBLIC_APP_OFFLINE_URL;
+    if (!offlineTermsAccepted) {
+      toast.info("Please accept the Beta testing notice checkbox to continue.");
+      return;
+    }
+    if (!offlineUrl) {
+      toast.error("Offline App URL is not configured (NEXT_PUBLIC_APP_OFFLINE_URL).");
+      return;
+    }
+    window.location.href = offlineUrl;
+  };
 
   const onSubmit = async (data) => {
     setIsLoading(true);
@@ -281,6 +295,60 @@ export default function CustomerLoginPage() {
 
           </form>
         </div>
+
+        {/* Offline App Access Section (Beta) - Temporarily Disabled */}
+        {/*
+        <div className="bg-white border-2 border-slate-200 rounded-2xl p-5 sm:p-6 shadow-none space-y-4 text-left">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <div className="p-1.5 rounded-lg bg-amber-500/15 text-amber-700">
+                <WifiOff className="w-4 h-4" />
+              </div>
+              <span className="text-sm font-extrabold text-slate-800">
+                Offline App Access
+              </span>
+            </div>
+            <span className="px-2 py-0.5 text-[11px] font-extrabold bg-amber-100 text-amber-800 border border-amber-300 rounded-md uppercase tracking-wider">
+              Beta Version
+            </span>
+          </div>
+
+          <div className="p-3 bg-amber-50/80 border border-amber-200 rounded-xl space-y-1.5">
+            <div className="flex items-start gap-2">
+              <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+              <p className="text-xs text-slate-700 leading-relaxed font-medium">
+                <strong className="text-slate-900 font-bold">Beta Notice:</strong> This offline application is currently in its Beta testing phase and may contain minor issues. It functions fully during offline periods or slow networks, and all recorded data will automatically sync live to the cloud once an internet connection is re-established.
+              </p>
+            </div>
+          </div>
+
+          <label className="flex items-start gap-2.5 cursor-pointer select-none pt-0.5">
+            <input
+              type="checkbox"
+              checked={offlineTermsAccepted}
+              onChange={(e) => setOfflineTermsAccepted(e.target.checked)}
+              className="mt-0.5 h-4 w-4 rounded border-slate-300 text-[#0f766e] focus:ring-[#0f766e] cursor-pointer accent-[#0f766e]"
+            />
+            <span className="text-xs text-slate-600 font-semibold leading-tight">
+              I understand that this is a Beta version and agree to proceed with testing.
+            </span>
+          </label>
+
+          <button
+            type="button"
+            onClick={handleLaunchOffline}
+            className={`w-full h-11 text-sm font-extrabold rounded-xl transition-all flex items-center justify-center gap-2 border-0 cursor-pointer ${
+              offlineTermsAccepted
+                ? "bg-slate-900 text-white hover:bg-slate-800 active:scale-[0.98]"
+                : "bg-slate-100 text-slate-400 hover:bg-slate-200"
+            }`}
+          >
+            <WifiOff className="w-4 h-4" />
+            <span>Open Offline Mode</span>
+            <ExternalLink className="w-3.5 h-3.5 opacity-70" />
+          </button>
+        </div>
+        */}
 
         {/* Security Footnote */}
         <div className="flex items-center justify-center gap-2 text-xs font-semibold text-slate-400 text-center">

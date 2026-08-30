@@ -12,11 +12,18 @@ import {
 import {
     Speed as SpeedIcon,
     CheckCircle as CheckCircleIcon,
-    Security as SecurityIcon
+    Security as SecurityIcon,
+    CloudSync as CloudSyncIcon
 } from "@mui/icons-material";
 
 export default function Benefits() {
     const benefitsData = [
+        {
+            icon: <CloudSyncIcon sx={{ fontSize: 30, color: "#FFFFFF" }} />,
+            iconBg: "#7c3aed",
+            title: "Works Online & Offline (Beta)",
+            description: "Never pause your lab operations. Register patients and create test reports even without internet, and all records automatically sync to the cloud once connected."
+        },
         {
             icon: <SpeedIcon sx={{ fontSize: 30, color: "#FFFFFF" }} />,
             iconBg: "#0f766e",
@@ -41,6 +48,7 @@ export default function Benefits() {
         <Box
             id="benefits"
             sx={{
+                scrollMarginTop: { xs: "72px", md: "80px" },
                 py: { xs: 9, md: 14 },
                 bgcolor: "#F3F4F6", // Solid Gray 100 Color Block Section
                 position: "relative",
@@ -120,7 +128,7 @@ export default function Benefits() {
 
                 <Grid container spacing={3.5}>
                     {benefitsData.map((benefit, index) => (
-                        <Grid key={index} size={{ xs: 12, md: 4 }}>
+                        <Grid key={index} size={{ xs: 12, sm: 6, lg: 3 }}>
                             <Card
                                 elevation={0}
                                 sx={{

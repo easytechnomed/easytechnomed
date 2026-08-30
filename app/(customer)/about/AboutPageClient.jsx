@@ -23,21 +23,21 @@ export default function AboutPage() {
 
   const coreValues = [
     {
-      title: "Absolute Security",
-      desc: "We prioritize patient confidentiality and data safety, enforcing strict security standards and multi-tenant database encryption.",
-      icon: <SecurityIcon sx={{ fontSize: 28, color: "#FFFFFF" }} />,
+      title: "Easy to Use (No Training Needed)",
+      desc: "A clean and simple design that anyone can learn in 5 minutes. No complicated settings, confusing menus, or technical headaches.",
+      icon: <SimplicityIcon sx={{ fontSize: 28, color: "#FFFFFF" }} />,
       iconBg: "#0f766e"
     },
     {
-      title: "Continuous Innovation",
-      desc: "We are committed to upgrading diagnostic lab workflows through automated report delivery, doctor metrics, and real-time statistics.",
+      title: "Works Online & Offline",
+      desc: "Keep working smoothly even during power cuts or when the internet is disconnected. All your data automatically syncs once you're back online.",
       icon: <TimelineIcon sx={{ fontSize: 28, color: "#FFFFFF" }} />,
       iconBg: "#10B981"
     },
     {
-      title: "Extreme Simplicity",
-      desc: "We design clean, intuitive, and lag-free workflows that let technicians register patients and generate reports in 2 minutes.",
-      icon: <SimplicityIcon sx={{ fontSize: 28, color: "#FFFFFF" }} />,
+      title: "100% Safe & Secure",
+      desc: "Your patient reports and lab records are backed up safely every single day with permanent QR code scanning access for patients.",
+      icon: <SecurityIcon sx={{ fontSize: 28, color: "#FFFFFF" }} />,
       iconBg: "#F59E0B"
     }
   ];
@@ -49,8 +49,8 @@ export default function AboutPage() {
         sx={{
           bgcolor: "#FFFFFF",
           color: "#111827",
-          pt: { xs: 18, md: 22 },
-          pb: { xs: 10, md: 14 },
+          pt: { xs: 16, md: 20 },
+          pb: { xs: 8, md: 12 },
           textAlign: "center",
           position: "relative",
           overflow: "hidden"
@@ -105,14 +105,14 @@ export default function AboutPage() {
               fontFamily: "var(--font-outfit), sans-serif",
               fontWeight: 800,
               mb: 2.5,
-              fontSize: { xs: "2.5rem", sm: "3.25rem", md: "4rem" },
+              fontSize: { xs: "2.2rem", sm: "3rem", md: "3.5rem" },
               color: "#111827",
               letterSpacing: "-0.02em"
             }}
           >
-            Modernizing Diagnostics with{" "}
+            Simple & Fast Software for{" "}
             <Box component="span" sx={{ color: "#0f766e" }}>
-              Intelligent Software
+              Diagnostic Labs
             </Box>
           </Typography>
           <Typography
@@ -121,12 +121,12 @@ export default function AboutPage() {
               fontFamily: "var(--font-outfit), sans-serif",
               color: "#4B5563",
               lineHeight: 1.7,
-              fontSize: { xs: "1.05rem", md: "1.2rem" },
+              fontSize: { xs: "1.05rem", md: "1.15rem" },
               maxWidth: 680,
               mx: "auto"
             }}
           >
-            Empowering diagnostic laboratories with state-of-the-art LIMS technology to deliver faster, highly secure, and error-free patient reports.
+            EasyTechnoMed helps pathology labs register patients, create accurate test reports, and share results without complicated steps or technical training.
           </Typography>
         </Container>
       </Box>
@@ -154,17 +154,17 @@ export default function AboutPage() {
               fontWeight: 800,
               mb: 3,
               color: "#111827",
-              fontSize: { xs: "1.9rem", md: "2.5rem" },
+              fontSize: { xs: "1.8rem", md: "2.3rem" },
               letterSpacing: "-0.02em"
             }}
           >
-            Making Diagnostic Operations Seamless and Accessible
+            Helping Every Pathology Lab Run Digitally with Ease
           </Typography>
           <Typography variant="body1" sx={{ color: "#4B5563", mb: 3, lineHeight: 1.8, maxWidth: 720, mx: "auto", fontSize: "1.05rem" }}>
-            At EasyTechnoMed, we believe healthcare diagnostics should be instantaneous and uncomplicated. Our cloud-based pathology software bridges the gap between registration desks, testing stations, referral networks, and patient report delivery.
+            We created EasyTechnoMed with one simple goal: to make everyday lab management easy, fast, and stress-free. Whether you operate a small local lab or a busy diagnostic clinic, you can manage your daily patient workflow from any computer, tablet, or mobile phone.
           </Typography>
           <Typography variant="body1" sx={{ color: "#4B5563", mb: 5, lineHeight: 1.8, maxWidth: 720, mx: "auto", fontSize: "1.05rem" }}>
-            By automating calculations, providing intuitive templates, and tracking referral analytics, we save diagnostic clinics operational overhead, letting technicians focus on what matters most: accurate analysis and patient care.
+            Our software works both online and offline. You can register patients, print clean PDF reports, and calculate doctor referral incentives in just a few simple clicks.
           </Typography>
           <Button
             variant="contained"
@@ -218,7 +218,7 @@ export default function AboutPage() {
                   fontWeight: 800
                 }}
               >
-                Our Core Values
+                Why Labs Trust Us
               </Typography>
             </Box>
 
@@ -228,11 +228,11 @@ export default function AboutPage() {
                 fontFamily: "var(--font-outfit), sans-serif",
                 fontWeight: 800,
                 color: "#111827",
-                fontSize: { xs: "1.9rem", md: "2.5rem" },
+                fontSize: { xs: "1.8rem", md: "2.3rem" },
                 letterSpacing: "-0.02em"
               }}
             >
-              The Principles That Guide Us
+              Built for Speed, Accuracy, and Peace of Mind
             </Typography>
           </Box>
 

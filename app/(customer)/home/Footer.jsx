@@ -12,6 +12,23 @@ import {
 } from "@mui/material";
 
 export default function Footer({ navLinks }) {
+    const handleNavClick = (e, href) => {
+        if (href.startsWith("/#") || href.startsWith("#")) {
+            const targetId = href.replace(/^\/?#/, "");
+            if (typeof window !== "undefined") {
+                const isHome = window.location.pathname === "/" || window.location.pathname === "";
+                if (isHome) {
+                    e.preventDefault();
+                    const el = document.getElementById(targetId);
+                    if (el) {
+                        el.scrollIntoView({ behavior: "smooth", block: "start" });
+                        window.history.pushState(null, "", `#${targetId}`);
+                    }
+                }
+            }
+        }
+    };
+
     return (
         <Box sx={{ bgcolor: "#111827", color: "#9CA3AF", py: { xs: 7, md: 9 }, borderTop: "2px solid rgba(255, 255, 255, 0.1)" }}>
             <Container maxWidth="xl">
@@ -50,6 +67,7 @@ export default function Footer({ navLinks }) {
                                     <Typography
                                         component="a"
                                         href={link.href}
+                                        onClick={(e) => handleNavClick(e, link.href)}
                                         sx={{
                                             color: "#9CA3AF",
                                             textDecoration: "none",

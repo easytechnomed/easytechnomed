@@ -14,6 +14,16 @@ export default function ScrollToTop() {
     }
 
     const resetScroll = () => {
+      // If there is an active hash in the URL, scroll to that element instead of top 0
+      if (typeof window !== "undefined" && window.location.hash) {
+        const targetId = window.location.hash.replace("#", "");
+        const targetEl = document.getElementById(targetId);
+        if (targetEl) {
+          targetEl.scrollIntoView({ behavior: "smooth", block: "start" });
+          return;
+        }
+      }
+
       // Blur any lingering focused elements from previous page/drawer
       if (typeof document !== "undefined" && document.activeElement && typeof document.activeElement.blur === "function") {
         document.activeElement.blur();

@@ -47,6 +47,44 @@ export default function Navbar({
             });
     }, []);
 
+    React.useEffect(() => {
+        const scrollToHash = () => {
+            if (typeof window !== "undefined" && window.location.hash) {
+                const targetId = window.location.hash.replace("#", "");
+                const el = document.getElementById(targetId);
+                if (el) {
+                    setTimeout(() => {
+                        el.scrollIntoView({ behavior: "smooth", block: "start" });
+                    }, 100);
+                }
+            }
+        };
+
+        scrollToHash();
+        window.addEventListener("hashchange", scrollToHash);
+        return () => window.removeEventListener("hashchange", scrollToHash);
+    }, []);
+
+    const handleNavClick = (e, href) => {
+        if (href.startsWith("/#") || href.startsWith("#")) {
+            e.preventDefault();
+            e.stopPropagation();
+            const targetId = href.replace(/^\/?#/, "");
+            if (typeof window !== "undefined") {
+                const isHome = window.location.pathname === "/" || window.location.pathname === "";
+                if (isHome) {
+                    const el = document.getElementById(targetId);
+                    if (el) {
+                        el.scrollIntoView({ behavior: "smooth", block: "start" });
+                        window.history.pushState(null, "", `#${targetId}`);
+                    }
+                } else {
+                    router.push(`/#${targetId}`, { scroll: false });
+                }
+            }
+        }
+    };
+
     return (
         <>
             <AppBar
@@ -90,6 +128,8 @@ export default function Navbar({
                                     key={link.text}
                                     component={Link}
                                     href={link.href}
+                                    scroll={false}
+                                    onClick={(e) => handleNavClick(e, link.href)}
                                     sx={{
                                         textDecoration: "none",
                                         color: "#111827",
@@ -250,7 +290,11 @@ export default function Navbar({
                                 <ListItemButton
                                     component={Link}
                                     href={link.href}
-                                    onClick={() => setMobileMenuOpen(false)}
+                                    scroll={false}
+                                    onClick={(e) => {
+                                        setMobileMenuOpen(false);
+                                        handleNavClick(e, link.href);
+                                    }}
                                     sx={{ py: 1.5, borderRadius: "6px", mb: 0.5 }}
                                 >
                                     <ListItemText primary={link.text} slotProps={{ primary: { fontWeight: 700, color: "#111827" } }} />
