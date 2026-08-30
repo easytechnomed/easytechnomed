@@ -1,4 +1,4 @@
-import React from "react";
+import React, { Suspense } from "react";
 import { requireAdmin } from "@/lib/auth";
 import AdminLayoutClient from "@/components/AdminLayoutClient";
 import ExpiredPlanView from "@/components/ExpiredPlanView";
@@ -39,9 +39,11 @@ export default async function AdminDashboardLayout({ children }) {
   return (
     <>
       <NextTopLoader color="#0f766e" showSpinner={false} height={3} />
-      <AdminLayoutClient admin={safeAdmin}>
-        {children}
-      </AdminLayoutClient>
+      <Suspense fallback={null}>
+        <AdminLayoutClient admin={safeAdmin}>
+          {children}
+        </AdminLayoutClient>
+      </Suspense>
     </>
   );
 }

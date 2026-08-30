@@ -2,35 +2,45 @@ import { NextResponse } from "next/server";
 import { verifySuperAdminAPI } from "@/lib/auth";
 
 // Models specifically restricted to gemini-3.5-flash-lite and gemini-3.1-flash-lite
+// Models with robust fallbacks
 const ALLOWED_MODELS = [
   "gemini-3.5-flash-lite",
   "gemini-3.1-flash-lite",
+  "gemini-2.5-flash",
+  "gemini-2.0-flash",
+  "gemini-1.5-flash",
 ];
 
-async function callGemini(apiKey, systemInstruction, userPrompt) {
+async function callGemini(apiKey, systemInstruction, userPrompt, isJson = false) {
   let lastError = null;
 
   for (const model of ALLOWED_MODELS) {
     try {
       const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
+      const payload = {
+        contents: [
+          {
+            parts: [
+              {
+                text: `${systemInstruction}\n\nUser Input / Release Notes:\n${userPrompt}`,
+              },
+            ],
+          },
+        ],
+        generationConfig: {
+          temperature: 0.3,
+          maxOutputTokens: 2000,
+        },
+      };
+
+      if (isJson) {
+        payload.generationConfig.responseMimeType = "application/json";
+      }
+
       const res = await fetch(url, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          contents: [
-            {
-              parts: [
-                {
-                  text: `${systemInstruction}\n\nInput Content:\n${userPrompt}`,
-                },
-              ],
-            },
-          ],
-          generationConfig: {
-            temperature: 0.3,
-            maxOutputTokens: 1500,
-          },
-        }),
+        body: JSON.stringify(payload),
       });
 
       if (res.ok) {
@@ -67,7 +77,7 @@ export async function POST(req) {
     const trimmedText = text?.trim();
     if (!trimmedText) {
       return NextResponse.json(
-        { success: false, error: "Text content is required for AI processing." },
+        { success: false, error: "Text or prompt content is required for AI generation." },
         { status: 400 }
       );
     }
@@ -87,8 +97,30 @@ export async function POST(req) {
     }
 
     let systemInstruction = "";
+    const isJsonAction = action === "generate_all";
 
     switch (action) {
+      case "generate_all":
+        systemInstruction = `You are the chief product release manager for EasyTechnoMed Enterprise LIMS (Laboratory Information Management System).
+Goal: Analyze the user's raw notes/prompt and generate a complete, production-ready release package containing:
+1. "title": A concise, engaging, and professional title summarizing the main highlights of the update (e.g. "WhatsApp Delivery & High-Speed Registration").
+2. "description": A clean 2-3 sentence executive release summary explaining the value to diagnostic lab doctors, pathologists, and administrators.
+3. "changes": A structured, comprehensive Markdown changelog formatted under relevant section headers:
+   - 🚀 **New Features**: (New capabilities added)
+   - ⚡ **Enhancements & Improvements**: (UI, speed, workflow updates)
+   - 🛠️ **Bug Fixes**: (Resolved issues, calculations, mobile fixes)
+   - 🔒 **Security & Reliability**: (Data, authentication, infrastructure)
+4. "suggestedVersion": (Optional) If the user's input mentions a version number (like 2.4.0 or v2.4.0), extract it. Otherwise return null.
+
+Return ONLY a valid JSON object with the exact structure:
+{
+  "title": "string",
+  "description": "string",
+  "changes": "string",
+  "suggestedVersion": "string or null"
+}`;
+        break;
+
       case "grammar":
         systemInstruction = `You are an expert technical editor.
 Goal: Carefully check and correct spelling, grammar, punctuation, capitalization, and sentence flow of the provided application release text.
@@ -139,7 +171,7 @@ Guidelines:
 
     for (const keyObj of keys) {
       try {
-        const result = await callGemini(keyObj.key, systemInstruction, trimmedText);
+        const result = await callGemini(keyObj.key, systemInstruction, trimmedText, isJsonAction);
         resultText = result.text;
         modelUsed = result.model;
         break;
@@ -153,14 +185,49 @@ Guidelines:
     }
 
     // Clean any accidental triple backticks if the model returned them
-    resultText = resultText
-      .replace(/^```(markdown|text)?\n?/i, "")
+    let cleaned = resultText
+      .replace(/^```(json|markdown|text)?\n?/i, "")
       .replace(/\n?```$/i, "")
       .trim();
 
+    if (isJsonAction) {
+      try {
+        const parsed = JSON.parse(cleaned);
+        return NextResponse.json({
+          success: true,
+          action: "generate_all",
+          generated: {
+            title: parsed.title || "",
+            description: parsed.description || "",
+            changes: parsed.changes || "",
+            suggestedVersion: parsed.suggestedVersion || null,
+          },
+          modelUsed,
+        });
+      } catch (parseErr) {
+        console.warn("Failed to parse JSON directly, attempting regex extraction:", parseErr);
+        const jsonMatch = cleaned.match(/\{[\s\S]*\}/);
+        if (jsonMatch) {
+          const parsed = JSON.parse(jsonMatch[0]);
+          return NextResponse.json({
+            success: true,
+            action: "generate_all",
+            generated: {
+              title: parsed.title || "",
+              description: parsed.description || "",
+              changes: parsed.changes || "",
+              suggestedVersion: parsed.suggestedVersion || null,
+            },
+            modelUsed,
+          });
+        }
+        throw new Error("Invalid JSON returned by Gemini for full release generation.");
+      }
+    }
+
     return NextResponse.json({
       success: true,
-      resultText,
+      resultText: cleaned,
       modelUsed,
       action,
     });

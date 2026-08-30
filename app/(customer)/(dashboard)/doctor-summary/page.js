@@ -470,17 +470,17 @@ export default function DoctorSummaryPage() {
   return (
     <Box sx={{ flexGrow: 1, pb: 4 }}>
       {/* Header section with print utilities */}
-      <Box sx={{ display: "flex", flexWrap: "wrap", justifyContent: "space-between", alignItems: "center", mb: 3, gap: 2 }}>
+      <Box sx={{ display: "flex", flexDirection: { xs: "column", sm: "row" }, justifyContent: "space-between", alignItems: { xs: "flex-start", sm: "center" }, mb: 2.5, gap: 2 }}>
         <Box>
-          <Typography variant="h5" sx={{ fontWeight: 800, color: "primary.main" }}>
+          <Typography variant="h5" sx={{ fontWeight: 800, color: "primary.main", fontSize: { xs: "1.25rem", sm: "1.5rem" } }}>
             Doctor Referral Summary (Ref Summary)
           </Typography>
-          <Typography variant="body2" sx={{ color: "text.secondary", mt: 0.3 }}>
+          <Typography variant="body2" sx={{ color: "text.secondary", mt: 0.3, fontSize: { xs: "0.8rem", sm: "0.875rem" } }}>
             Track referred patient counts, test billings, incentives, and payments per doctor.
           </Typography>
         </Box>
 
-        <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1.5 }}>
+        <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1, width: { xs: "100%", sm: "auto" } }}>
           {summaryData.length > 0 && (
             <>
               <Button
@@ -488,6 +488,7 @@ export default function DoctorSummaryPage() {
                 size="small"
                 startIcon={areAllExpanded ? <UnfoldLessIcon /> : <UnfoldMoreIcon />}
                 onClick={toggleAllRows}
+                sx={{ flexGrow: { xs: 1, sm: 0 }, fontSize: "0.78rem" }}
               >
                 {areAllExpanded ? "Collapse All" : "Expand All"}
               </Button>
@@ -497,24 +498,37 @@ export default function DoctorSummaryPage() {
                 size="small"
                 startIcon={<FileDownloadIcon />}
                 onClick={exportAllDoctorsExcel}
+                sx={{ flexGrow: { xs: 1, sm: 0 }, fontSize: "0.78rem" }}
               >
-                Export Excel (XLS)
+                Export Excel
               </Button>
             </>
           )}
-          <Button variant="outlined" size="small" startIcon={<PrintIcon />} onClick={() => window.print()}>
-            Print Summary
+          <Button
+            variant="outlined"
+            size="small"
+            startIcon={<PrintIcon />}
+            onClick={() => window.print()}
+            sx={{ flexGrow: { xs: 1, sm: 0 }, fontSize: "0.78rem" }}
+          >
+            Print
           </Button>
-          <Button variant="contained" size="small" startIcon={<AddIcon />} onClick={() => setOpenAddDocDrawer(true)}>
+          <Button
+            variant="contained"
+            size="small"
+            startIcon={<AddIcon />}
+            onClick={() => setOpenAddDocDrawer(true)}
+            sx={{ flexGrow: { xs: 1, sm: 0 }, bgcolor: "#0f766e", fontWeight: 700, fontSize: "0.78rem", "&:hover": { bgcolor: "#115e59" } }}
+          >
             Add Doctor
           </Button>
         </Box>
       </Box>
 
       {/* Date Filter Toolbar Card */}
-      <Card variant="outlined" sx={{ mb: 3, bgcolor: "#ffffff" }}>
-        <CardContent sx={{ py: 2 }}>
-          <Grid container spacing={2} alignItems="center">
+      <Card variant="outlined" sx={{ mb: 2.5, bgcolor: "#ffffff", borderRadius: 2, boxShadow: "0 1px 3px rgba(0,0,0,0.04)" }}>
+        <CardContent sx={{ py: { xs: 1.5, sm: 2 }, px: { xs: 1.5, sm: 2.5 } }}>
+          <Grid container spacing={1.5} alignItems="center">
             <Grid size={{ xs: 12, sm: 6, md: 3 }}>
               <FormControl fullWidth size="small">
                 <InputLabel id="period-select-label">Date Period</InputLabel>
@@ -536,7 +550,7 @@ export default function DoctorSummaryPage() {
                 </Select>
               </FormControl>
             </Grid>
-            <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+            <Grid size={{ xs: 6, sm: 6, md: 3 }}>
               <TextField
                 label="Start Date"
                 type="date"
@@ -550,7 +564,7 @@ export default function DoctorSummaryPage() {
                 slotProps={{ inputLabel: { shrink: true } }}
               />
             </Grid>
-            <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+            <Grid size={{ xs: 6, sm: 6, md: 3 }}>
               <TextField
                 label="End Date"
                 type="date"
@@ -565,440 +579,742 @@ export default function DoctorSummaryPage() {
               />
             </Grid>
             <Grid size={{ xs: 12, sm: 6, md: 3 }} sx={{ display: "flex", gap: 1 }}>
-              <Button variant="contained" fullWidth size="small" onClick={loadData} startIcon={<SearchIcon />}>
+              <Button
+                variant="contained"
+                fullWidth
+                size="small"
+                onClick={loadData}
+                startIcon={<SearchIcon />}
+                sx={{ bgcolor: "#0f766e", fontWeight: 700, "&:hover": { bgcolor: "#115e59" } }}
+              >
                 Filter Summary
               </Button>
-              <IconButton color="secondary" onClick={handleResetFilters} title="Reset filters">
-                <ResetIcon />
+              <IconButton color="secondary" onClick={handleResetFilters} title="Reset filters" sx={{ border: "1px solid #e2e8f0", borderRadius: 1.5 }}>
+                <ResetIcon fontSize="small" />
               </IconButton>
             </Grid>
           </Grid>
         </CardContent>
       </Card>
 
+      {/* KPI Stats Summary Cards (Commented out)
+      <Grid container spacing={1.5} sx={{ mb: 2.5 }}>
+        <Grid size={{ xs: 6, sm: 3 }}>
+          <Card variant="outlined" sx={{ p: 1.5, borderRadius: 2, bgcolor: "#ffffff", borderLeft: "4px solid #0f766e" }}>
+            <Typography variant="caption" sx={{ color: "text.secondary", fontWeight: 700, textTransform: "uppercase" }}>
+              Total Referrals
+            </Typography>
+            <Typography variant="h6" sx={{ fontWeight: 800, color: "#0f766e", mt: 0.2 }}>
+              {totalCount} <span style={{ fontSize: "0.75rem", fontWeight: 600, color: "#64748b" }}>patients</span>
+            </Typography>
+          </Card>
+        </Grid>
+        <Grid size={{ xs: 6, sm: 3 }}>
+          <Card variant="outlined" sx={{ p: 1.5, borderRadius: 2, bgcolor: "#ffffff", borderLeft: "4px solid #3b82f6" }}>
+            <Typography variant="caption" sx={{ color: "text.secondary", fontWeight: 700, textTransform: "uppercase" }}>
+              Net Amount
+            </Typography>
+            <Typography variant="h6" sx={{ fontWeight: 800, color: "#1e40af", mt: 0.2 }}>
+              ₹{totalNetAmount.toLocaleString("en-IN", { maximumFractionDigits: 0 })}
+            </Typography>
+          </Card>
+        </Grid>
+        <Grid size={{ xs: 6, sm: 3 }}>
+          <Card variant="outlined" sx={{ p: 1.5, borderRadius: 2, bgcolor: "#ffffff", borderLeft: "4px solid #8b5cf6" }}>
+            <Typography variant="caption" sx={{ color: "text.secondary", fontWeight: 700, textTransform: "uppercase" }}>
+              Total Incentive
+            </Typography>
+            <Typography variant="h6" sx={{ fontWeight: 800, color: "#6d28d9", mt: 0.2 }}>
+              ₹{totalIncentive.toLocaleString("en-IN", { maximumFractionDigits: 0 })}
+            </Typography>
+          </Card>
+        </Grid>
+        <Grid size={{ xs: 6, sm: 3 }}>
+          <Card variant="outlined" sx={{ p: 1.5, borderRadius: 2, bgcolor: "#ffffff", borderLeft: "4px solid #10b981" }}>
+            <Typography variant="caption" sx={{ color: "text.secondary", fontWeight: 700, textTransform: "uppercase" }}>
+              Collection
+            </Typography>
+            <Typography variant="h6" sx={{ fontWeight: 800, color: "#047857", mt: 0.2 }}>
+              ₹{totalCollection.toLocaleString("en-IN", { maximumFractionDigits: 0 })}
+            </Typography>
+          </Card>
+        </Grid>
+      </Grid>
+      */}
+
       {/* Date range descriptor banner */}
       <Box
         sx={{
           bgcolor: "#ecfdf5",
           p: 1.5,
-          borderRadius: "8px 8px 0 0",
+          borderRadius: { xs: 2, md: "8px 8px 0 0" },
           border: "1px solid #a7f3d0",
-          borderBottom: 0,
+          borderBottom: { xs: "1px solid #a7f3d0", md: 0 },
+          mb: { xs: 2, md: 0 },
           display: "flex",
+          flexDirection: { xs: "column", sm: "row" },
           justifyContent: "space-between",
-          alignItems: "center",
+          alignItems: { xs: "flex-start", sm: "center" },
+          gap: 0.5,
         }}
       >
-        <Typography variant="subtitle2" sx={{ fontWeight: 700, color: "#065f46" }}>
+        <Typography variant="subtitle2" sx={{ fontWeight: 700, color: "#065f46", fontSize: "0.85rem" }}>
           Ref Summary from {formatDate(startDate)} to {formatDate(endDate)}
         </Typography>
-        <Typography variant="caption" sx={{ color: "#047857", fontWeight: 600 }}>
-          Click the down arrow on any doctor row to view all referred patient details
+        <Typography variant="caption" sx={{ color: "#047857", fontWeight: 600, fontSize: "0.75rem" }}>
+          Tap on any doctor to view all referred patient details
         </Typography>
       </Box>
 
-      {/* Doctor Summary Table */}
-      <TableContainer component={Paper} variant="outlined" sx={{ borderRadius: "0 0 8px 8px", boxShadow: "0 1px 3px rgba(0,0,0,0.05)", overflow: "visible" }}>
+      {/* ============================================================ */}
+      {/* MOBILE VIEW (Card Layout for XS / SM screens) */}
+      {/* ============================================================ */}
+      <Box sx={{ display: { xs: "block", md: "none" } }}>
         {loading ? (
-          <Box sx={{ display: "flex", flexDirection: "column", justifyContent: "center", alignItems: "center", py: 8, gap: 2 }}>
-            <CircularProgress size={40} />
-            <Typography variant="body2" sx={{ color: "text.secondary" }}>
-              Loading summary reports...
+          <Box sx={{ display: "flex", flexDirection: "column", justifyContent: "center", alignItems: "center", py: 8, gap: 2, bgcolor: "#ffffff", borderRadius: 2, border: "1px solid #e2e8f0" }}>
+            <CircularProgress size={36} color="primary" />
+            <Typography variant="body2" sx={{ color: "text.secondary", fontWeight: 600 }}>
+              Loading doctor summary reports...
             </Typography>
           </Box>
+        ) : summaryData.length === 0 ? (
+          <Box sx={{ p: 4, textAlign: "center", bgcolor: "#ffffff", borderRadius: 2, border: "1px solid #e2e8f0", color: "text.secondary" }}>
+            <Typography variant="body2">No referral activities found in this date range.</Typography>
+          </Box>
         ) : (
-          <Table size="small">
-            <TableHead
-              sx={{
-                position: "sticky",
-                top: { xs: 56, sm: 64 },
-                zIndex: 10,
-                bgcolor: "#f1f5f9",
-                "& th": {
+          <Box sx={{ display: "flex", flexDirection: "column", gap: 1.5 }}>
+            {summaryData.map((item, idx) => {
+              const isExpanded = Boolean(expandedRows[item.id]);
+              return (
+                <Card
+                  key={item.id}
+                  variant="outlined"
+                  sx={{
+                    borderRadius: 2.5,
+                    bgcolor: "#ffffff",
+                    borderColor: isExpanded ? "#0f766e" : "#e2e8f0",
+                    boxShadow: isExpanded ? "0 4px 14px rgba(15, 118, 110, 0.12)" : "0 1px 4px rgba(0,0,0,0.04)",
+                    transition: "all 0.2s ease",
+                  }}
+                >
+                  {/* Card Header: Doctor Name & Quick Action Bar */}
+                  <Box
+                    sx={{
+                      p: 1.5,
+                      bgcolor: isExpanded ? "rgba(15, 118, 110, 0.06)" : "#fafafa",
+                      borderBottom: "1px solid #f1f5f9",
+                      display: "flex",
+                      justifyContent: "space-between",
+                      alignItems: "flex-start",
+                      gap: 1,
+                    }}
+                  >
+                    <Box sx={{ minWidth: 0 }}>
+                      <Box sx={{ display: "flex", alignItems: "center", gap: 1, flexWrap: "wrap" }}>
+                        <Typography
+                          variant="subtitle1"
+                          sx={{
+                            fontWeight: 800,
+                            color: "#0f766e",
+                            fontSize: "0.95rem",
+                            cursor: "pointer",
+                          }}
+                          onClick={() => toggleRow(item.id)}
+                        >
+                          {item.name}
+                        </Typography>
+                        <Chip
+                          label={item.code}
+                          size="small"
+                          sx={{ height: 20, fontSize: "0.68rem", fontWeight: 700, bgcolor: "#e2e8f0", color: "#334155" }}
+                        />
+                        <Chip
+                          label={`${item.incentivePercent}% Rate`}
+                          size="small"
+                          sx={{ height: 20, fontSize: "0.68rem", fontWeight: 700, bgcolor: "rgba(15, 118, 110, 0.1)", color: "#0f766e" }}
+                        />
+                      </Box>
+                      <Typography variant="caption" sx={{ color: "#64748b", fontSize: "0.72rem", mt: 0.25, display: "block" }}>
+                        Last Paid: {item.lastPaid ? formatDate(item.lastPaid) : "Never"}
+                      </Typography>
+                    </Box>
+
+                    {/* Action Icon Buttons */}
+                    <Box sx={{ display: "flex", alignItems: "center", gap: 0.5, flexShrink: 0 }}>
+                      <IconButton onClick={() => handleOpenEdit(item)} size="small" color="primary" sx={{ p: 0.5 }}>
+                        <EditIcon fontSize="small" />
+                      </IconButton>
+                      <IconButton onClick={() => exportDoctorExcel(item)} size="small" color="success" sx={{ p: 0.5 }}>
+                        <FileDownloadIcon fontSize="small" />
+                      </IconButton>
+                      <IconButton onClick={() => handleOpenDelete(item)} size="small" color="error" sx={{ p: 0.5 }}>
+                        <DeleteIcon fontSize="small" />
+                      </IconButton>
+                    </Box>
+                  </Box>
+
+                  {/* Card Body: 4 KPI Pills */}
+                  <CardContent sx={{ p: 1.5, pb: "10px !important" }}>
+                    <Grid container spacing={1}>
+                      <Grid size={{ xs: 6 }}>
+                        <Box sx={{ p: 1, borderRadius: 1.5, bgcolor: "#f8fafc", border: "1px solid #f1f5f9" }}>
+                          <Typography variant="caption" sx={{ color: "#64748b", fontWeight: 600, fontSize: "0.7rem", display: "block" }}>
+                            Referred Patients
+                          </Typography>
+                          <Typography variant="subtitle2" sx={{ fontWeight: 800, color: "#0f766e", fontSize: "0.9rem" }}>
+                            {item.count} <span style={{ fontSize: "0.7rem", fontWeight: 500, color: "#64748b" }}>pts</span>
+                          </Typography>
+                        </Box>
+                      </Grid>
+                      <Grid size={{ xs: 6 }}>
+                        <Box sx={{ p: 1, borderRadius: 1.5, bgcolor: "#f8fafc", border: "1px solid #f1f5f9" }}>
+                          <Typography variant="caption" sx={{ color: "#64748b", fontWeight: 600, fontSize: "0.7rem", display: "block" }}>
+                            Net Amount
+                          </Typography>
+                          <Typography variant="subtitle2" sx={{ fontWeight: 800, color: "#1e293b", fontSize: "0.9rem" }}>
+                            ₹{item.netAmount.toFixed(2)}
+                          </Typography>
+                        </Box>
+                      </Grid>
+                      <Grid size={{ xs: 6 }}>
+                        <Box sx={{ p: 1, borderRadius: 1.5, bgcolor: "#faf5ff", border: "1px solid #f3e8ff" }}>
+                          <Typography variant="caption" sx={{ color: "#7e22ce", fontWeight: 700, fontSize: "0.7rem", display: "block" }}>
+                            Doc Incentive
+                          </Typography>
+                          <Typography variant="subtitle2" sx={{ fontWeight: 800, color: "#6b21a8", fontSize: "0.9rem" }}>
+                            ₹{item.incentiveAmount.toFixed(2)}
+                          </Typography>
+                        </Box>
+                      </Grid>
+                      <Grid size={{ xs: 6 }}>
+                        <Box sx={{ p: 1, borderRadius: 1.5, bgcolor: "#ecfdf5", border: "1px solid #d1fae5" }}>
+                          <Typography variant="caption" sx={{ color: "#047857", fontWeight: 700, fontSize: "0.7rem", display: "block" }}>
+                            Collection
+                          </Typography>
+                          <Typography variant="subtitle2" sx={{ fontWeight: 800, color: "#065f46", fontSize: "0.9rem" }}>
+                            ₹{item.collection.toFixed(2)}
+                          </Typography>
+                        </Box>
+                      </Grid>
+                    </Grid>
+
+                    {/* Accordion Expand/Collapse Button */}
+                    <Button
+                      fullWidth
+                      size="small"
+                      variant="text"
+                      onClick={() => toggleRow(item.id)}
+                      endIcon={isExpanded ? <KeyboardArrowUpIcon /> : <KeyboardArrowDownIcon />}
+                      sx={{
+                        mt: 1,
+                        py: 0.6,
+                        borderRadius: 1.5,
+                        color: isExpanded ? "#0f766e" : "#64748b",
+                        bgcolor: isExpanded ? "rgba(15, 118, 110, 0.08)" : "transparent",
+                        fontWeight: 700,
+                        fontSize: "0.78rem",
+                        textTransform: "none",
+                        "&:hover": { bgcolor: "rgba(15, 118, 110, 0.12)" },
+                      }}
+                    >
+                      {isExpanded ? "Hide Referred Patients" : `View ${item.registrations?.length || item.count} Patient Details`}
+                    </Button>
+
+                    {/* Collapsible Mobile Patient List */}
+                    <Collapse in={isExpanded} timeout="auto" unmountOnExit>
+                      <Box sx={{ pt: 1.5, display: "flex", flexDirection: "column", gap: 1 }}>
+                        {(!item.registrations || item.registrations.length === 0) ? (
+                          <Typography variant="caption" sx={{ color: "text.secondary", textAlign: "center", py: 1.5 }}>
+                            No patient records available.
+                          </Typography>
+                        ) : (
+                          item.registrations.map((reg, regIdx) => (
+                            <Box
+                              key={reg.id || regIdx}
+                              sx={{
+                                p: 1.25,
+                                borderRadius: 2,
+                                bgcolor: "#f8fafc",
+                                border: "1px solid #e2e8f0",
+                                display: "flex",
+                                flexDirection: "column",
+                                gap: 0.75,
+                              }}
+                            >
+                              <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+                                <Box>
+                                  <Typography variant="subtitle2" sx={{ fontWeight: 800, color: "#0f172a", fontSize: "0.85rem" }}>
+                                    {reg.fullName || reg.name}
+                                  </Typography>
+                                  <Typography variant="caption" sx={{ color: "#64748b", fontSize: "0.7rem" }}>
+                                    {reg.age ? `${reg.age} ${reg.ageUnit || "Y"}` : ""} {reg.gender ? `• ${reg.gender}` : ""} • {formatDateTime(reg.date)}
+                                  </Typography>
+                                </Box>
+                                <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
+                                  {getStatusChip(reg.status)}
+                                  <IconButton
+                                    size="small"
+                                    color="primary"
+                                    onClick={() => window.open(`/api/print-bill/${reg.id}`, "_blank")}
+                                    sx={{ p: 0.4 }}
+                                    title="View Bill"
+                                  >
+                                    <ReceiptIcon sx={{ fontSize: 16 }} />
+                                  </IconButton>
+                                  <IconButton
+                                    size="small"
+                                    color="success"
+                                    onClick={() => window.open(`/api/print-report/${reg.regNo}?withFrame=true`, "_blank")}
+                                    sx={{ p: 0.4 }}
+                                    title="View Report"
+                                  >
+                                    <ReportIcon sx={{ fontSize: 16 }} />
+                                  </IconButton>
+                                </Box>
+                              </Box>
+
+                              {/* Tests booked chips */}
+                              {reg.tests && reg.tests.length > 0 && (
+                                <Box sx={{ display: "flex", flexWrap: "wrap", gap: 0.5 }}>
+                                  {reg.tests.map((t, tIdx) => (
+                                    <Chip
+                                      key={tIdx}
+                                      label={`${t.name} (₹${t.price})`}
+                                      size="small"
+                                      sx={{ fontSize: "0.68rem", height: 20, bgcolor: "#ffffff", border: "1px solid #cbd5e1" }}
+                                    />
+                                  ))}
+                                </Box>
+                              )}
+
+                              {/* Billing & Incentive row */}
+                              <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", pt: 0.5, borderTop: "1px dashed #e2e8f0" }}>
+                                <Typography variant="caption" sx={{ color: "#475569", fontWeight: 600 }}>
+                                  Bill: <strong style={{ color: "#0f172a" }}>₹{reg.netAmount.toFixed(2)}</strong> (Rec: ₹{reg.receivedAmount.toFixed(2)})
+                                </Typography>
+                                <Typography variant="caption" sx={{ color: "#6b21a8", fontWeight: 800 }}>
+                                  Incentive: ₹{reg.incentiveAmount.toFixed(2)}
+                                </Typography>
+                              </Box>
+                            </Box>
+                          ))
+                        )}
+                      </Box>
+                    </Collapse>
+                  </CardContent>
+                </Card>
+              );
+            })}
+          </Box>
+        )}
+      </Box>
+
+      {/* ============================================================ */}
+      {/* DESKTOP VIEW (Table Layout for MD / LG screens) */}
+      {/* ============================================================ */}
+      <Box sx={{ display: { xs: "none", md: "block" } }}>
+        <TableContainer component={Paper} variant="outlined" sx={{ borderRadius: "0 0 8px 8px", boxShadow: "0 1px 3px rgba(0,0,0,0.05)", overflow: "visible" }}>
+          {loading ? (
+            <Box sx={{ display: "flex", flexDirection: "column", justifyContent: "center", alignItems: "center", py: 8, gap: 2 }}>
+              <CircularProgress size={40} />
+              <Typography variant="body2" sx={{ color: "text.secondary" }}>
+                Loading summary reports...
+              </Typography>
+            </Box>
+          ) : (
+            <Table size="small">
+              <TableHead
+                sx={{
                   position: "sticky",
                   top: { xs: 56, sm: 64 },
                   zIndex: 10,
                   bgcolor: "#f1f5f9",
-                  fontWeight: 700,
-                  borderBottom: "2px solid #cbd5e1",
-                  boxShadow: "0 2px 4px rgba(0,0,0,0.06)",
-                },
-              }}
-            >
-              <TableRow>
-                <TableCell sx={{ width: 44, px: 1 }} align="center">
-                  <Tooltip title={areAllExpanded ? "Collapse all doctors" : "Expand all doctors"}>
-                    <IconButton size="small" onClick={toggleAllRows}>
-                      {areAllExpanded ? <KeyboardArrowUpIcon fontSize="small" /> : <KeyboardArrowDownIcon fontSize="small" />}
-                    </IconButton>
-                  </Tooltip>
-                </TableCell>
-                <TableCell sx={{ fontWeight: 700 }}>SNO</TableCell>
-                <TableCell sx={{ fontWeight: 700 }} align="center">Actions</TableCell>
-                <TableCell sx={{ fontWeight: 700 }}>Ref. By (Doctor)</TableCell>
-                <TableCell sx={{ fontWeight: 700 }}>Code</TableCell>
-                <TableCell sx={{ fontWeight: 700 }}>Last Paid</TableCell>
-                <TableCell sx={{ fontWeight: 700 }} align="right">Incentive %</TableCell>
-                <TableCell sx={{ fontWeight: 700 }} align="right">Count</TableCell>
-                <TableCell sx={{ fontWeight: 700 }} align="right">Amount (₹)</TableCell>
-                <TableCell sx={{ fontWeight: 700 }} align="right">Pat.Dis (₹)</TableCell>
-                <TableCell sx={{ fontWeight: 700 }} align="right">Net Amount (₹)</TableCell>
-                <TableCell sx={{ fontWeight: 700 }} align="right">Doc.Inc (₹)</TableCell>
-                <TableCell sx={{ fontWeight: 700 }} align="right">Collection (₹)</TableCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {summaryData.length === 0 ? (
+                  "& th": {
+                    position: "sticky",
+                    top: { xs: 56, sm: 64 },
+                    zIndex: 10,
+                    bgcolor: "#f1f5f9",
+                    fontWeight: 700,
+                    borderBottom: "2px solid #cbd5e1",
+                    boxShadow: "0 2px 4px rgba(0,0,0,0.06)",
+                  },
+                }}
+              >
                 <TableRow>
-                  <TableCell colSpan={13} align="center" sx={{ py: 6, color: "text.secondary" }}>
-                    No referral activities found in this date range.
+                  <TableCell sx={{ width: 44, px: 1 }} align="center">
+                    <Tooltip title={areAllExpanded ? "Collapse all doctors" : "Expand all doctors"}>
+                      <IconButton size="small" onClick={toggleAllRows}>
+                        {areAllExpanded ? <KeyboardArrowUpIcon fontSize="small" /> : <KeyboardArrowDownIcon fontSize="small" />}
+                      </IconButton>
+                    </Tooltip>
                   </TableCell>
+                  <TableCell sx={{ fontWeight: 700 }}>SNO</TableCell>
+                  <TableCell sx={{ fontWeight: 700 }} align="center">Actions</TableCell>
+                  <TableCell sx={{ fontWeight: 700 }}>Ref. By (Doctor)</TableCell>
+                  <TableCell sx={{ fontWeight: 700 }}>Code</TableCell>
+                  <TableCell sx={{ fontWeight: 700 }}>Last Paid</TableCell>
+                  <TableCell sx={{ fontWeight: 700 }} align="right">Incentive %</TableCell>
+                  <TableCell sx={{ fontWeight: 700 }} align="right">Count</TableCell>
+                  <TableCell sx={{ fontWeight: 700 }} align="right">Amount (₹)</TableCell>
+                  <TableCell sx={{ fontWeight: 700 }} align="right">Pat.Dis (₹)</TableCell>
+                  <TableCell sx={{ fontWeight: 700 }} align="right">Net Amount (₹)</TableCell>
+                  <TableCell sx={{ fontWeight: 700 }} align="right">Doc.Inc (₹)</TableCell>
+                  <TableCell sx={{ fontWeight: 700 }} align="right">Collection (₹)</TableCell>
                 </TableRow>
-              ) : (
-                summaryData.map((item, idx) => {
-                  const isExpanded = Boolean(expandedRows[item.id]);
-                  return (
-                    <React.Fragment key={item.id}>
-                      <TableRow
-                        sx={{
-                          bgcolor: isExpanded ? "rgba(15, 118, 110, 0.05)" : "inherit",
-                          transition: "background-color 0.2s",
-                          "&:hover": { bgcolor: "rgba(15, 118, 110, 0.08)" },
-                          "& > td": {
-                            borderBottom: isExpanded ? "none" : undefined,
-                          },
-                        }}
-                      >
-                        {/* Accordion toggle button */}
-                        <TableCell align="center" sx={{ px: 1 }}>
-                          <Tooltip title={isExpanded ? "Hide referred patients" : "View referred patients"}>
-                            <IconButton
-                              size="small"
-                              onClick={() => toggleRow(item.id)}
-                              color={isExpanded ? "primary" : "default"}
-                              sx={{
-                                transition: "transform 0.2s",
-                                transform: isExpanded ? "rotate(180deg)" : "rotate(0deg)",
-                              }}
-                            >
-                              <KeyboardArrowDownIcon fontSize="small" />
-                            </IconButton>
-                          </Tooltip>
-                        </TableCell>
-
-                        <TableCell sx={{ fontWeight: 500 }}>{idx + 1}</TableCell>
-
-                        <TableCell align="center" sx={{ whiteSpace: "nowrap" }}>
-                          <Tooltip title="Edit Doctor Incentive">
-                            <IconButton onClick={() => handleOpenEdit(item)} color="primary" size="small">
-                              <EditIcon fontSize="small" />
-                            </IconButton>
-                          </Tooltip>
-                          <Tooltip title={`Export ${item.name} Referral Report (Excel)`}>
-                            <IconButton onClick={() => exportDoctorExcel(item)} color="success" size="small">
-                              <FileDownloadIcon fontSize="small" />
-                            </IconButton>
-                          </Tooltip>
-                          <Tooltip title="Delete Doctor">
-                            <IconButton onClick={() => handleOpenDelete(item)} color="error" size="small">
-                              <DeleteIcon fontSize="small" />
-                            </IconButton>
-                          </Tooltip>
-                        </TableCell>
-
-                        <TableCell>
-                          <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                            <Typography
-                              variant="body2"
-                              sx={{
-                                fontWeight: 700,
-                                color: "primary.main",
-                                cursor: "pointer",
-                                "&:hover": { textDecoration: "underline" },
-                              }}
-                              onClick={() => toggleRow(item.id)}
-                            >
-                              {item.name}
-                            </Typography>
-                            {item.count > 0 && (
-                              <Chip
-                                label={`${item.count} pts`}
+              </TableHead>
+              <TableBody>
+                {summaryData.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={13} align="center" sx={{ py: 6, color: "text.secondary" }}>
+                      No referral activities found in this date range.
+                    </TableCell>
+                  </TableRow>
+                ) : (
+                  summaryData.map((item, idx) => {
+                    const isExpanded = Boolean(expandedRows[item.id]);
+                    return (
+                      <React.Fragment key={item.id}>
+                        <TableRow
+                          sx={{
+                            bgcolor: isExpanded ? "rgba(15, 118, 110, 0.05)" : "inherit",
+                            transition: "background-color 0.2s",
+                            "&:hover": { bgcolor: "rgba(15, 118, 110, 0.08)" },
+                            "& > td": {
+                              borderBottom: isExpanded ? "none" : undefined,
+                            },
+                          }}
+                        >
+                          {/* Accordion toggle button */}
+                          <TableCell align="center" sx={{ px: 1 }}>
+                            <Tooltip title={isExpanded ? "Hide referred patients" : "View referred patients"}>
+                              <IconButton
                                 size="small"
-                                color="primary"
-                                variant="outlined"
-                                sx={{ height: 18, fontSize: "0.68rem", fontWeight: 700 }}
-                              />
-                            )}
-                          </Box>
-                        </TableCell>
-
-                        <TableCell sx={{ color: "text.secondary" }}>{item.code}</TableCell>
-                        <TableCell sx={{ color: "text.secondary" }}>{item.lastPaid ? formatDate(item.lastPaid) : "-"}</TableCell>
-                        <TableCell align="right" sx={{ fontWeight: 600 }}>{item.incentivePercent}%</TableCell>
-                        <TableCell align="right" sx={{ fontWeight: 700 }}>{item.count}</TableCell>
-                        <TableCell align="right">₹{item.amount.toFixed(2)}</TableCell>
-                        <TableCell align="right">₹{item.discount.toFixed(2)}</TableCell>
-                        <TableCell align="right" sx={{ fontWeight: 600 }}>₹{item.netAmount.toFixed(2)}</TableCell>
-                        <TableCell align="right" sx={{ color: "primary.dark", fontWeight: 700 }}>₹{item.incentiveAmount.toFixed(2)}</TableCell>
-                        <TableCell align="right" sx={{ color: "success.main", fontWeight: 700 }}>
-                          {item.collection > 0 ? `₹${item.collection.toFixed(2)}` : "0.00"}
-                        </TableCell>
-                      </TableRow>
-
-                      {/* Collapsible Accordion Row */}
-                      <TableRow>
-                        <TableCell colSpan={13} sx={{ py: 0, px: 2, borderBottom: isExpanded ? undefined : "none" }}>
-                          <Collapse in={isExpanded} timeout="auto" unmountOnExit>
-                            <Box sx={{ py: 2.5, px: 1 }}>
-                              {/* Sub Header Box */}
-                              <Box
+                                onClick={() => toggleRow(item.id)}
+                                color={isExpanded ? "primary" : "default"}
                                 sx={{
-                                  display: "flex",
-                                  flexWrap: "wrap",
-                                  justifyContent: "space-between",
-                                  alignItems: "center",
-                                  p: 1.5,
-                                  mb: 1.5,
-                                  bgcolor: "#f8fafc",
-                                  borderRadius: 1.5,
-                                  border: "1px solid #e2e8f0",
-                                  gap: 1.5,
+                                  transition: "transform 0.2s",
+                                  transform: isExpanded ? "rotate(180deg)" : "rotate(0deg)",
                                 }}
                               >
-                                <Box sx={{ display: "flex", alignItems: "center", flexWrap: "wrap", gap: 1 }}>
-                                  <PersonIcon sx={{ color: "primary.main", fontSize: 20 }} />
-                                  <Typography variant="subtitle2" sx={{ fontWeight: 700, color: "text.primary" }}>
-                                    Patients Referred by {item.name}
-                                  </Typography>
-                                  <Chip
-                                    label={`Total: ${item.registrations?.length || 0} Registrations`}
-                                    size="small"
-                                    color="primary"
-                                    sx={{ height: 22, fontSize: "0.75rem", fontWeight: 600 }}
-                                  />
-                                  {item.registrations && item.registrations.length > 0 && (
-                                    <Button
-                                      variant="outlined"
-                                      color="success"
-                                      size="small"
-                                      startIcon={<FileDownloadIcon />}
-                                      onClick={() => exportDoctorExcel(item)}
-                                      sx={{
-                                        height: 24,
-                                        fontSize: "0.72rem",
-                                        fontWeight: 700,
-                                        ml: 1,
-                                        textTransform: "none",
-                                      }}
-                                    >
-                                      Export Doctor XLS
-                                    </Button>
-                                  )}
-                                </Box>
+                                <KeyboardArrowDownIcon fontSize="small" />
+                              </IconButton>
+                            </Tooltip>
+                          </TableCell>
 
-                                <Stack direction="row" spacing={2} sx={{ fontSize: "0.8rem", color: "text.secondary" }}>
-                                  <Box>
-                                    Gross: <strong>₹{item.amount.toFixed(2)}</strong>
-                                  </Box>
-                                  <Box>
-                                    Net: <strong>₹{item.netAmount.toFixed(2)}</strong>
-                                  </Box>
-                                  <Box sx={{ color: "primary.dark" }}>
-                                    Doc. Incentive: <strong>₹{item.incentiveAmount.toFixed(2)}</strong>
-                                  </Box>
-                                  <Box sx={{ color: "success.main" }}>
-                                    Received: <strong>₹{item.collection.toFixed(2)}</strong>
-                                  </Box>
-                                </Stack>
-                              </Box>
+                          <TableCell sx={{ fontWeight: 500 }}>{idx + 1}</TableCell>
 
-                              {/* Patients Detailed Table */}
-                              {(!item.registrations || item.registrations.length === 0) ? (
-                                <Box
-                                  sx={{
-                                    p: 3,
-                                    textAlign: "center",
-                                    bgcolor: "#fdfdfd",
-                                    borderRadius: 1,
-                                    border: "1px dashed #cbd5e1",
-                                    color: "text.secondary",
-                                  }}
-                                >
-                                  <Typography variant="body2">
-                                    No patient visits found for <strong>{item.name}</strong> between {formatDate(startDate)} and {formatDate(endDate)}.
-                                  </Typography>
-                                </Box>
-                              ) : (
-                                <TableContainer
-                                  component={Paper}
+                          <TableCell align="center" sx={{ whiteSpace: "nowrap" }}>
+                            <Tooltip title="Edit Doctor Incentive">
+                              <IconButton onClick={() => handleOpenEdit(item)} color="primary" size="small">
+                                <EditIcon fontSize="small" />
+                              </IconButton>
+                            </Tooltip>
+                            <Tooltip title={`Export ${item.name} Referral Report (Excel)`}>
+                              <IconButton onClick={() => exportDoctorExcel(item)} color="success" size="small">
+                                <FileDownloadIcon fontSize="small" />
+                              </IconButton>
+                            </Tooltip>
+                            <Tooltip title="Delete Doctor">
+                              <IconButton onClick={() => handleOpenDelete(item)} color="error" size="small">
+                                <DeleteIcon fontSize="small" />
+                              </IconButton>
+                            </Tooltip>
+                          </TableCell>
+
+                          <TableCell>
+                            <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                              <Typography
+                                variant="body2"
+                                sx={{
+                                  fontWeight: 700,
+                                  color: "primary.main",
+                                  cursor: "pointer",
+                                  "&:hover": { textDecoration: "underline" },
+                                }}
+                                onClick={() => toggleRow(item.id)}
+                              >
+                                {item.name}
+                              </Typography>
+                              {item.count > 0 && (
+                                <Chip
+                                  label={`${item.count} pts`}
+                                  size="small"
+                                  color="primary"
                                   variant="outlined"
-                                  sx={{
-                                    bgcolor: "#ffffff",
-                                    borderRadius: 1.5,
-                                    overflow: "hidden",
-                                    boxShadow: "0 1px 3px rgba(0,0,0,0.04)",
-                                  }}
-                                >
-                                  <Table size="small">
-                                    <TableHead sx={{ bgcolor: "#f8fafc" }}>
-                                      <TableRow>
-                                        <TableCell sx={{ fontWeight: 700, fontSize: "0.78rem" }}>#</TableCell>
-                                        <TableCell sx={{ fontWeight: 700, fontSize: "0.78rem" }}>Date & Time</TableCell>
-                                        <TableCell sx={{ fontWeight: 700, fontSize: "0.78rem" }}>Patient Details</TableCell>
-                                        <TableCell sx={{ fontWeight: 700, fontSize: "0.78rem" }}>Tests Booked</TableCell>
-                                        <TableCell sx={{ fontWeight: 700, fontSize: "0.78rem" }} align="right">Net Amount (₹)</TableCell>
-                                        <TableCell sx={{ fontWeight: 700, fontSize: "0.78rem" }} align="right">Incentive</TableCell>
-                                        <TableCell sx={{ fontWeight: 700, fontSize: "0.78rem" }} align="right">Paid (₹)</TableCell>
-                                        <TableCell sx={{ fontWeight: 700, fontSize: "0.78rem" }} align="center">Status</TableCell>
-                                        <TableCell sx={{ fontWeight: 700, fontSize: "0.78rem" }} align="center">Print Actions</TableCell>
-                                      </TableRow>
-                                    </TableHead>
-                                    <TableBody>
-                                      {item.registrations.map((reg, regIdx) => (
-                                        <TableRow
-                                          key={reg.id}
-                                          sx={{
-                                            "&:hover": { bgcolor: "#f8fafc" },
-                                            "&:last-child td, &:last-child th": { border: 0 },
-                                          }}
-                                        >
-                                          <TableCell sx={{ fontSize: "0.78rem" }}>{regIdx + 1}</TableCell>
-                                          <TableCell sx={{ fontSize: "0.78rem", whiteSpace: "nowrap" }}>
-                                            {formatDateTime(reg.date)}
-                                          </TableCell>
-                                          <TableCell sx={{ fontSize: "0.78rem" }}>
-                                            <Typography variant="body2" sx={{ fontWeight: 600, color: "text.primary" }}>
-                                              {reg.fullName || reg.name}
-                                            </Typography>
-                                            <Typography variant="caption" sx={{ color: "text.secondary" }}>
-                                              {reg.age ? `${reg.age} ${reg.ageUnit || "Y"}` : ""}
-                                              {reg.gender ? ` • ${reg.gender}` : ""}
-                                            </Typography>
-                                          </TableCell>
-                                          <TableCell sx={{ fontSize: "0.78rem", maxWidth: 300 }}>
-                                            <Box sx={{ display: "flex", flexWrap: "wrap", gap: 0.5 }}>
-                                              {reg.tests && reg.tests.length > 0 ? (
-                                                reg.tests.map((t, tIdx) => {
-                                                  const tooltipTitle = (
-                                                    <Box sx={{ p: 0.5, fontSize: "0.75rem" }}>
-                                                      <Typography variant="subtitle2" sx={{ fontWeight: 700, mb: 0.5 }}>{t.name} ({t.code || "Test"})</Typography>
-                                                      <div>Test Price: ₹{Number(t.price).toFixed(2)}</div>
-                                                      {Number(t.expense) > 0 && <div style={{ color: "#fca5a5" }}>Outsource Cost: -₹{Number(t.expense).toFixed(2)}</div>}
-                                                      <div>Net Base: ₹{(t.netBase !== undefined ? Number(t.netBase) : Number(t.price)).toFixed(2)}</div>
-                                                      <div>Incentive: {t.incentivePercent}% {t.isSpecialRate ? "(Special Test Rate)" : "(Doctor Default Rate)"}</div>
-                                                      <div style={{ fontWeight: 700, color: "#86efac", marginTop: "4px" }}>Doc Share: ₹{(Number(t.incentiveAmount) || 0).toFixed(2)}</div>
-                                                    </Box>
-                                                  );
-
-                                                  let chipBg = "#f1f5f9";
-                                                  let chipBorder = "#cbd5e1";
-                                                  let chipColor = "inherit";
-
-                                                  if (t.isSpecialRate) {
-                                                    chipBg = "#e0e7ff";
-                                                    chipBorder = "#a5b4fc";
-                                                    chipColor = "#3730a3";
-                                                  } else if (Number(t.expense) > 0) {
-                                                    chipBg = "#fef3c7";
-                                                    chipBorder = "#fde68a";
-                                                    chipColor = "#92400e";
-                                                  }
-
-                                                  return (
-                                                    <Tooltip key={tIdx} title={tooltipTitle} arrow>
-                                                      <Chip
-                                                        label={`${t.name}${Number(t.expense) > 0 ? ` (Out: -₹${Number(t.expense)})` : ""}${t.isSpecialRate ? ` (${t.incentivePercent}% Sp)` : ""}`}
-                                                        size="small"
-                                                        variant="outlined"
-                                                        sx={{
-                                                          fontSize: "0.7rem",
-                                                          height: 20,
-                                                          bgcolor: chipBg,
-                                                          borderColor: chipBorder,
-                                                          color: chipColor,
-                                                          fontWeight: t.isSpecialRate || Number(t.expense) > 0 ? 600 : 400,
-                                                          cursor: "pointer",
-                                                        }}
-                                                      />
-                                                    </Tooltip>
-                                                  );
-                                                })
-                                              ) : (
-                                                <Typography variant="caption" sx={{ color: "text.secondary" }}>
-                                                  No tests
-                                                </Typography>
-                                              )}
-                                            </Box>
-                                          </TableCell>
-                                          <TableCell align="right" sx={{ fontSize: "0.78rem", fontWeight: 600 }}>
-                                            ₹{reg.netAmount.toFixed(2)}
-                                          </TableCell>
-                                          <TableCell align="right" sx={{ fontSize: "0.78rem", color: "primary.dark", fontWeight: 700 }}>
-                                            ₹{reg.incentiveAmount.toFixed(2)}
-                                            <Typography variant="caption" sx={{ display: "block", color: "text.secondary", fontSize: "0.68rem" }}>
-                                              {reg.hasSpecialTests || reg.hasOutsourcedTests ? "(Itemized Calc)" : `(${reg.incentivePercent}%)`}
-                                            </Typography>
-                                          </TableCell>
-                                          <TableCell align="right" sx={{ fontSize: "0.78rem", whiteSpace: "nowrap", color: "success.main", fontWeight: 600 }}>
-                                            ₹{reg.receivedAmount.toFixed(2)}
-                                          </TableCell>
-                                          <TableCell align="center" sx={{ fontSize: "0.78rem" }}>
-                                            {getStatusChip(reg.status)}
-                                          </TableCell>
-                                          <TableCell align="center" sx={{ whiteSpace: "nowrap" }}>
-                                            <Tooltip title="Print / View Bill">
-                                              <IconButton
-                                                size="small"
-                                                color="primary"
-                                                onClick={() => window.open(`/api/print-bill/${reg.id}`, "_blank")}
-                                                sx={{ mr: 0.5 }}
-                                              >
-                                                <ReceiptIcon fontSize="small" />
-                                              </IconButton>
-                                            </Tooltip>
-                                            <Tooltip title="Print / View Test Report">
-                                              <IconButton
-                                                size="small"
-                                                color="success"
-                                                onClick={() => window.open(`/api/print-report/${reg.regNo}?withFrame=true`, "_blank")}
-                                              >
-                                                <ReportIcon fontSize="small" />
-                                              </IconButton>
-                                            </Tooltip>
-                                          </TableCell>
-                                        </TableRow>
-                                      ))}
-                                    </TableBody>
-                                  </Table>
-                                </TableContainer>
+                                  sx={{ height: 18, fontSize: "0.68rem", fontWeight: 700 }}
+                                />
                               )}
                             </Box>
-                          </Collapse>
-                        </TableCell>
-                      </TableRow>
-                    </React.Fragment>
-                  );
-                })
-              )}
+                          </TableCell>
 
-              {/* Totals Row */}
-              {summaryData.length > 0 && (
-                <TableRow sx={{ bgcolor: "#f1f5f9", "& td": { fontWeight: 800 } }}>
-                  <TableCell />
-                  <TableCell colSpan={5}>Grand Total</TableCell>
-                  <TableCell align="right">-</TableCell>
-                  <TableCell align="right">{totalCount}</TableCell>
-                  <TableCell align="right">₹{totalAmount.toFixed(2)}</TableCell>
-                  <TableCell align="right">₹{totalDiscount.toFixed(2)}</TableCell>
-                  <TableCell align="right">₹{totalNetAmount.toFixed(2)}</TableCell>
-                  <TableCell align="right">₹{totalIncentive.toFixed(2)}</TableCell>
-                  <TableCell align="right" sx={{ color: "success.main" }}>₹{totalCollection.toFixed(2)}</TableCell>
-                </TableRow>
-              )}
-            </TableBody>
-          </Table>
-        )}
-      </TableContainer>
+                          <TableCell sx={{ color: "text.secondary" }}>{item.code}</TableCell>
+                          <TableCell sx={{ color: "text.secondary" }}>{item.lastPaid ? formatDate(item.lastPaid) : "-"}</TableCell>
+                          <TableCell align="right" sx={{ fontWeight: 600 }}>{item.incentivePercent}%</TableCell>
+                          <TableCell align="right" sx={{ fontWeight: 700 }}>{item.count}</TableCell>
+                          <TableCell align="right">₹{item.amount.toFixed(2)}</TableCell>
+                          <TableCell align="right">₹{item.discount.toFixed(2)}</TableCell>
+                          <TableCell align="right" sx={{ fontWeight: 600 }}>₹{item.netAmount.toFixed(2)}</TableCell>
+                          <TableCell align="right" sx={{ color: "primary.dark", fontWeight: 700 }}>₹{item.incentiveAmount.toFixed(2)}</TableCell>
+                          <TableCell align="right" sx={{ color: "success.main", fontWeight: 700 }}>
+                            {item.collection > 0 ? `₹${item.collection.toFixed(2)}` : "0.00"}
+                          </TableCell>
+                        </TableRow>
+
+                        {/* Collapsible Accordion Row */}
+                        <TableRow>
+                          <TableCell colSpan={13} sx={{ py: 0, px: 2, borderBottom: isExpanded ? undefined : "none" }}>
+                            <Collapse in={isExpanded} timeout="auto" unmountOnExit>
+                              <Box sx={{ py: 2.5, px: 1 }}>
+                                {/* Sub Header Box */}
+                                <Box
+                                  sx={{
+                                    display: "flex",
+                                    flexWrap: "wrap",
+                                    justifyContent: "space-between",
+                                    alignItems: "center",
+                                    p: 1.5,
+                                    mb: 1.5,
+                                    bgcolor: "#f8fafc",
+                                    borderRadius: 1.5,
+                                    border: "1px solid #e2e8f0",
+                                    gap: 1.5,
+                                  }}
+                                >
+                                  <Box sx={{ display: "flex", alignItems: "center", flexWrap: "wrap", gap: 1 }}>
+                                    <PersonIcon sx={{ color: "primary.main", fontSize: 20 }} />
+                                    <Typography variant="subtitle2" sx={{ fontWeight: 700, color: "text.primary" }}>
+                                      Patients Referred by {item.name}
+                                    </Typography>
+                                    <Chip
+                                      label={`Total: ${item.registrations?.length || 0} Registrations`}
+                                      size="small"
+                                      color="primary"
+                                      sx={{ height: 22, fontSize: "0.75rem", fontWeight: 600 }}
+                                    />
+                                    {item.registrations && item.registrations.length > 0 && (
+                                      <Button
+                                        variant="outlined"
+                                        color="success"
+                                        size="small"
+                                        startIcon={<FileDownloadIcon />}
+                                        onClick={() => exportDoctorExcel(item)}
+                                        sx={{
+                                          height: 24,
+                                          fontSize: "0.72rem",
+                                          fontWeight: 700,
+                                          ml: 1,
+                                          textTransform: "none",
+                                        }}
+                                      >
+                                        Export Doctor XLS
+                                      </Button>
+                                    )}
+                                  </Box>
+
+                                  <Stack direction="row" spacing={2} sx={{ fontSize: "0.8rem", color: "text.secondary" }}>
+                                    <Box>
+                                      Gross: <strong>₹{item.amount.toFixed(2)}</strong>
+                                    </Box>
+                                    <Box>
+                                      Net: <strong>₹{item.netAmount.toFixed(2)}</strong>
+                                    </Box>
+                                    <Box sx={{ color: "primary.dark" }}>
+                                      Doc. Incentive: <strong>₹{item.incentiveAmount.toFixed(2)}</strong>
+                                    </Box>
+                                    <Box sx={{ color: "success.main" }}>
+                                      Received: <strong>₹{item.collection.toFixed(2)}</strong>
+                                    </Box>
+                                  </Stack>
+                                </Box>
+
+                                {/* Patients Detailed Table */}
+                                {(!item.registrations || item.registrations.length === 0) ? (
+                                  <Box
+                                    sx={{
+                                      p: 3,
+                                      textAlign: "center",
+                                      bgcolor: "#fdfdfd",
+                                      borderRadius: 1,
+                                      border: "1px dashed #cbd5e1",
+                                      color: "text.secondary",
+                                    }}
+                                  >
+                                    <Typography variant="body2">
+                                      No patient visits found for <strong>{item.name}</strong> between {formatDate(startDate)} and {formatDate(endDate)}.
+                                    </Typography>
+                                  </Box>
+                                ) : (
+                                  <TableContainer
+                                    component={Paper}
+                                    variant="outlined"
+                                    sx={{
+                                      bgcolor: "#ffffff",
+                                      borderRadius: 1.5,
+                                      overflow: "hidden",
+                                      boxShadow: "0 1px 3px rgba(0,0,0,0.04)",
+                                    }}
+                                  >
+                                    <Table size="small">
+                                      <TableHead sx={{ bgcolor: "#f8fafc" }}>
+                                        <TableRow>
+                                          <TableCell sx={{ fontWeight: 700, fontSize: "0.78rem" }}>#</TableCell>
+                                          <TableCell sx={{ fontWeight: 700, fontSize: "0.78rem" }}>Date & Time</TableCell>
+                                          <TableCell sx={{ fontWeight: 700, fontSize: "0.78rem" }}>Patient Details</TableCell>
+                                          <TableCell sx={{ fontWeight: 700, fontSize: "0.78rem" }}>Tests Booked</TableCell>
+                                          <TableCell sx={{ fontWeight: 700, fontSize: "0.78rem" }} align="right">Net Amount (₹)</TableCell>
+                                          <TableCell sx={{ fontWeight: 700, fontSize: "0.78rem" }} align="right">Incentive</TableCell>
+                                          <TableCell sx={{ fontWeight: 700, fontSize: "0.78rem" }} align="right">Paid (₹)</TableCell>
+                                          <TableCell sx={{ fontWeight: 700, fontSize: "0.78rem" }} align="center">Status</TableCell>
+                                          <TableCell sx={{ fontWeight: 700, fontSize: "0.78rem" }} align="center">Print Actions</TableCell>
+                                        </TableRow>
+                                      </TableHead>
+                                      <TableBody>
+                                        {item.registrations.map((reg, regIdx) => (
+                                          <TableRow
+                                            key={reg.id}
+                                            sx={{
+                                              "&:hover": { bgcolor: "#f8fafc" },
+                                              "&:last-child td, &:last-child th": { border: 0 },
+                                            }}
+                                          >
+                                            <TableCell sx={{ fontSize: "0.78rem" }}>{regIdx + 1}</TableCell>
+                                            <TableCell sx={{ fontSize: "0.78rem", whiteSpace: "nowrap" }}>
+                                              {formatDateTime(reg.date)}
+                                            </TableCell>
+                                            <TableCell sx={{ fontSize: "0.78rem" }}>
+                                              <Typography variant="body2" sx={{ fontWeight: 600, color: "text.primary" }}>
+                                                {reg.fullName || reg.name}
+                                              </Typography>
+                                              <Typography variant="caption" sx={{ color: "text.secondary" }}>
+                                                {reg.age ? `${reg.age} ${reg.ageUnit || "Y"}` : ""}
+                                                {reg.gender ? ` • ${reg.gender}` : ""}
+                                              </Typography>
+                                            </TableCell>
+                                            <TableCell sx={{ fontSize: "0.78rem", maxWidth: 300 }}>
+                                              <Box sx={{ display: "flex", flexWrap: "wrap", gap: 0.5 }}>
+                                                {reg.tests && reg.tests.length > 0 ? (
+                                                  reg.tests.map((t, tIdx) => {
+                                                    const tooltipTitle = (
+                                                      <Box sx={{ p: 0.5, fontSize: "0.75rem" }}>
+                                                        <Typography variant="subtitle2" sx={{ fontWeight: 700, mb: 0.5 }}>{t.name} ({t.code || "Test"})</Typography>
+                                                        <div>Test Price: ₹{Number(t.price).toFixed(2)}</div>
+                                                        {Number(t.expense) > 0 && <div style={{ color: "#fca5a5" }}>Outsource Cost: -₹{Number(t.expense).toFixed(2)}</div>}
+                                                        <div>Net Base: ₹{(t.netBase !== undefined ? Number(t.netBase) : Number(t.price)).toFixed(2)}</div>
+                                                        <div>Incentive: {t.incentivePercent}% {t.isSpecialRate ? "(Special Test Rate)" : "(Doctor Default Rate)"}</div>
+                                                        <div style={{ fontWeight: 700, color: "#86efac", marginTop: "4px" }}>Doc Share: ₹{(Number(t.incentiveAmount) || 0).toFixed(2)}</div>
+                                                      </Box>
+                                                    );
+
+                                                    let chipBg = "#f1f5f9";
+                                                    let chipBorder = "#cbd5e1";
+                                                    let chipColor = "inherit";
+
+                                                    if (t.isSpecialRate) {
+                                                      chipBg = "#e0e7ff";
+                                                      chipBorder = "#a5b4fc";
+                                                      chipColor = "#3730a3";
+                                                    } else if (Number(t.expense) > 0) {
+                                                      chipBg = "#fef3c7";
+                                                      chipBorder = "#fde68a";
+                                                      chipColor = "#92400e";
+                                                    }
+
+                                                    return (
+                                                      <Tooltip key={tIdx} title={tooltipTitle} arrow>
+                                                        <Chip
+                                                          label={`${t.name}${Number(t.expense) > 0 ? ` (Out: -₹${Number(t.expense)})` : ""}${t.isSpecialRate ? ` (${t.incentivePercent}% Sp)` : ""}`}
+                                                          size="small"
+                                                          variant="outlined"
+                                                          sx={{
+                                                            fontSize: "0.7rem",
+                                                            height: 20,
+                                                            bgcolor: chipBg,
+                                                            borderColor: chipBorder,
+                                                            color: chipColor,
+                                                            fontWeight: t.isSpecialRate || Number(t.expense) > 0 ? 600 : 400,
+                                                            cursor: "pointer",
+                                                          }}
+                                                        />
+                                                      </Tooltip>
+                                                    );
+                                                  })
+                                                ) : (
+                                                  <Typography variant="caption" sx={{ color: "text.secondary" }}>
+                                                    No tests
+                                                  </Typography>
+                                                )}
+                                              </Box>
+                                            </TableCell>
+                                            <TableCell align="right" sx={{ fontSize: "0.78rem", fontWeight: 600 }}>
+                                              ₹{reg.netAmount.toFixed(2)}
+                                            </TableCell>
+                                            <TableCell align="right" sx={{ fontSize: "0.78rem", color: "primary.dark", fontWeight: 700 }}>
+                                              ₹{reg.incentiveAmount.toFixed(2)}
+                                              <Typography variant="caption" sx={{ display: "block", color: "text.secondary", fontSize: "0.68rem" }}>
+                                                {reg.hasSpecialTests || reg.hasOutsourcedTests ? "(Itemized Calc)" : `(${reg.incentivePercent}%)`}
+                                              </Typography>
+                                            </TableCell>
+                                            <TableCell align="right" sx={{ fontSize: "0.78rem", whiteSpace: "nowrap", color: "success.main", fontWeight: 600 }}>
+                                              ₹{reg.receivedAmount.toFixed(2)}
+                                            </TableCell>
+                                            <TableCell align="center" sx={{ fontSize: "0.78rem" }}>
+                                              {getStatusChip(reg.status)}
+                                            </TableCell>
+                                            <TableCell align="center" sx={{ whiteSpace: "nowrap" }}>
+                                              <Tooltip title="Print / View Bill">
+                                                <IconButton
+                                                  size="small"
+                                                  color="primary"
+                                                  onClick={() => window.open(`/api/print-bill/${reg.id}`, "_blank")}
+                                                  sx={{ mr: 0.5 }}
+                                                >
+                                                  <ReceiptIcon fontSize="small" />
+                                                </IconButton>
+                                              </Tooltip>
+                                              <Tooltip title="Print / View Test Report">
+                                                <IconButton
+                                                  size="small"
+                                                  color="success"
+                                                  onClick={() => window.open(`/api/print-report/${reg.regNo}?withFrame=true`, "_blank")}
+                                                >
+                                                  <ReportIcon fontSize="small" />
+                                                </IconButton>
+                                              </Tooltip>
+                                            </TableCell>
+                                          </TableRow>
+                                        ))}
+                                      </TableBody>
+                                    </Table>
+                                  </TableContainer>
+                                )}
+                              </Box>
+                            </Collapse>
+                          </TableCell>
+                        </TableRow>
+                      </React.Fragment>
+                    );
+                  })
+                )}
+
+                {/* Totals Row */}
+                {summaryData.length > 0 && (
+                  <TableRow sx={{ bgcolor: "#f1f5f9", "& td": { fontWeight: 800 } }}>
+                    <TableCell />
+                    <TableCell colSpan={5}>Grand Total</TableCell>
+                    <TableCell align="right">-</TableCell>
+                    <TableCell align="right">{totalCount}</TableCell>
+                    <TableCell align="right">₹{totalAmount.toFixed(2)}</TableCell>
+                    <TableCell align="right">₹{totalDiscount.toFixed(2)}</TableCell>
+                    <TableCell align="right">₹{totalNetAmount.toFixed(2)}</TableCell>
+                    <TableCell align="right">₹{totalIncentive.toFixed(2)}</TableCell>
+                    <TableCell align="right" sx={{ color: "success.main" }}>₹{totalCollection.toFixed(2)}</TableCell>
+                  </TableRow>
+                )}
+              </TableBody>
+            </Table>
+          )}
+        </TableContainer>
+      </Box>
 
       {/* Right Side Drawer for adding a new doctor */}
       <AddDoctorDrawer

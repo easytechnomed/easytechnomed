@@ -14,6 +14,11 @@ export default function ScrollToTop() {
     }
 
     const resetScroll = () => {
+      // Blur any lingering focused elements from previous page/drawer
+      if (typeof document !== "undefined" && document.activeElement && typeof document.activeElement.blur === "function") {
+        document.activeElement.blur();
+      }
+
       // 1. Reset standard window and document scroll
       window.scrollTo({ top: 0, left: 0, behavior: "instant" });
       if (document.documentElement) {

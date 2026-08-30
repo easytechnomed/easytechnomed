@@ -91,6 +91,7 @@ import * as XLSX from "xlsx";
 import ResultEntry from "./component/resultEntry";
 import ShowResult from "./component/showResult";
 import MoneyRecipt from "./component/MoneyRecipt";
+import SampleManagement from "./component/SampleManagement";
 
 
 const menuButtonStyle = {
@@ -566,61 +567,9 @@ export default function TestReportPage() {
   };
 
   // --- SAMPLE MANAGEMENT ---
-  const handleOpenSampleManagement = async () => {
-    const regId = selectedReg.id;
+  const handleOpenSampleManagement = () => {
     handleCloseMenu();
-    try {
-      const res = await fetch(`/api/registrations/${regId}/samples`).then((r) => r.json());
-      if (res.success) {
-        const rows = res.registration.tests.map((rt) => ({
-          testId: rt.test.id,
-          testName: rt.test.name,
-          sampleStatus: rt.sampleStatus,
-          sampleBarcode: rt.sampleBarcode || selectedReg.barcode?.replace(/^,\s*/, "")?.split(" ")?.[0] || "",
-          sampleRemark: rt.sampleRemark || "",
-          sendTo: rt.sendTo || "-NA-",
-          expense: rt.expense || 0,
-          assessNo: rt.assessNo || "",
-          pathologist: rt.pathologist || "-NA-",
-          collectedBy: rt.collectedBy || "-NA-",
-          product: rt.product || "-NA-"
-        }));
-        setSampleRows(rows);
-        setSampleDialogOpen(true);
-      } else {
-        showToast(res.message, "error");
-      }
-    } catch (err) {
-      showToast(err.message || "Failed to load sample details", "error");
-    }
-  };
-
-  const handleSampleRowChange = (index, field, value) => {
-    const updated = [...sampleRows];
-    updated[index][field] = value;
-    setSampleRows(updated);
-  };
-
-  const handleSaveSamples = async () => {
-    setSampleSaving(true);
-    try {
-      const res = await fetch(`/api/registrations/${selectedReg.id}/samples`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(sampleRows),
-      }).then((r) => r.json());
-      if (res.success) {
-        showToast(res.message, "success");
-        setSampleDialogOpen(false);
-        loadData();
-      } else {
-        showToast(res.message, "error");
-      }
-    } catch (err) {
-      showToast(err.message || "Failed to save sample details", "error");
-    } finally {
-      setSampleSaving(false);
-    }
+    setSampleDialogOpen(true);
   };
 
   // --- RESULT ENTRY ---
@@ -1402,168 +1351,16 @@ export default function TestReportPage() {
       )}
 
       {/* --- SAMPLE MANAGEMENT DIALOG --- */}
-      <Dialog
+      <SampleManagement
         open={sampleDialogOpen}
         onClose={() => setSampleDialogOpen(false)}
-        maxWidth="lg"
-        fullWidth
-        PaperProps={{ sx: { borderRadius: 2 } }}
-      >
-        <DialogTitle sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", bgcolor: "primary.main", color: "primary.contrastText", py: 1.5 }}>
-          <Typography variant="subtitle1" sx={{ fontWeight: 800 }}>
-            🖋 Sample Management <span style={{ fontSize: "0.8rem", fontWeight: 400, opacity: 0.8 }}>(Status and barcode registration)</span>
-          </Typography>
-          <IconButton onClick={() => setSampleDialogOpen(false)} size="small" sx={{ color: "primary.contrastText" }}>
-            <CloseIcon />
-          </IconButton>
-        </DialogTitle>
-        <DialogContent sx={{ mt: 2, p: 2 }}>
-          {selectedReg && (
-            <Box sx={{ mb: 2, p: 1.5, bgcolor: "grey.50", borderRadius: 1 }}>
-              <Grid container spacing={2}>
-                <Grid size={{ xs: 6 }}>
-                  <Typography variant="body2"><strong>Patient:</strong> {selectedReg.title} {selectedReg.name} / {selectedReg.age.toFixed(2)} {selectedReg.ageUnit} / {selectedReg.gender}</Typography>
-                </Grid>
-                <Grid size={{ xs: 6 }}>
-                  <Typography variant="body2"><strong>Partner:</strong> Main Lab Group <strong>Address:</strong> Local branch office</Typography>
-                </Grid>
-              </Grid>
-            </Box>
-          )}
-
-          <TableContainer component={Paper} variant="outlined" sx={{ maxHeight: 400 }}>
-            <Table size="small" stickyHeader>
-              <TableHead>
-                <TableRow>
-                  <TableCell sx={{ fontWeight: 700, bgcolor: "grey.100" }}>Wing</TableCell>
-                  <TableCell sx={{ fontWeight: 700, bgcolor: "grey.100" }}>Test Name</TableCell>
-                  <TableCell sx={{ fontWeight: 700, bgcolor: "grey.100" }}>Barcode</TableCell>
-                  <TableCell sx={{ fontWeight: 700, bgcolor: "grey.100" }}>Sample Status</TableCell>
-                  <TableCell sx={{ fontWeight: 700, bgcolor: "grey.100" }}>Remark</TableCell>
-                  <TableCell sx={{ fontWeight: 700, bgcolor: "grey.100" }}>Send to</TableCell>
-                  <TableCell sx={{ fontWeight: 700, bgcolor: "grey.100" }}>Expense</TableCell>
-                  <TableCell sx={{ fontWeight: 700, bgcolor: "grey.100" }}>Assess. no</TableCell>
-                  <TableCell sx={{ fontWeight: 700, bgcolor: "grey.100" }}>Pathologist</TableCell>
-                  <TableCell sx={{ fontWeight: 700, bgcolor: "grey.100" }}>Collected By</TableCell>
-                  <TableCell sx={{ fontWeight: 700, bgcolor: "grey.100" }}>Product</TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {sampleRows.map((row, idx) => (
-                  <TableRow key={row.testId}>
-                    <TableCell>-NA-</TableCell>
-                    <TableCell sx={{ fontWeight: 600, color: "primary.main" }}>{row.testName}</TableCell>
-                    <TableCell>
-                      <TextField
-                        size="small"
-                        value={row.sampleBarcode}
-                        onChange={(e) => handleSampleRowChange(idx, "sampleBarcode", e.target.value)}
-                        variant="outlined"
-                        sx={{ width: 120, "& .MuiInputBase-input": { py: 0.5, fontSize: "0.8rem" } }}
-                      />
-                    </TableCell>
-                    <TableCell>
-                      <TextField
-                        select
-                        size="small"
-                        value={row.sampleStatus}
-                        onChange={(e) => handleSampleRowChange(idx, "sampleStatus", e.target.value)}
-                        sx={{ width: 110, "& .MuiInputBase-input": { py: 0.5, fontSize: "0.8rem" } }}
-                      >
-                        <MenuItem value="Pending">Pending</MenuItem>
-                        <MenuItem value="Accepted">Accepted</MenuItem>
-                        <MenuItem value="Rejected">Rejected</MenuItem>
-                      </TextField>
-                    </TableCell>
-                    <TableCell>
-                      <TextField
-                        size="small"
-                        value={row.sampleRemark}
-                        onChange={(e) => handleSampleRowChange(idx, "sampleRemark", e.target.value)}
-                        placeholder="Remark"
-                        sx={{ width: 120, "& .MuiInputBase-input": { py: 0.5, fontSize: "0.8rem" } }}
-                      />
-                    </TableCell>
-                    <TableCell>
-                      <TextField
-                        select
-                        size="small"
-                        value={row.sendTo}
-                        onChange={(e) => handleSampleRowChange(idx, "sendTo", e.target.value)}
-                        sx={{ width: 100, "& .MuiInputBase-input": { py: 0.5, fontSize: "0.8rem" } }}
-                      >
-                        <MenuItem value="-NA-">-NA-</MenuItem>
-                        <MenuItem value="Main Lab">Main Lab</MenuItem>
-                        <MenuItem value="Branch Lab">Branch Lab</MenuItem>
-                      </TextField>
-                    </TableCell>
-                    <TableCell>
-                      <TextField
-                        type="number"
-                        size="small"
-                        value={row.expense}
-                        onChange={(e) => handleSampleRowChange(idx, "expense", e.target.value)}
-                        sx={{ width: 70, "& .MuiInputBase-input": { py: 0.5, fontSize: "0.8rem" } }}
-                      />
-                    </TableCell>
-                    <TableCell>
-                      <TextField
-                        size="small"
-                        value={row.assessNo}
-                        onChange={(e) => handleSampleRowChange(idx, "assessNo", e.target.value)}
-                        sx={{ width: 80, "& .MuiInputBase-input": { py: 0.5, fontSize: "0.8rem" } }}
-                      />
-                    </TableCell>
-                    <TableCell>
-                      <TextField
-                        select
-                        size="small"
-                        value={row.pathologist}
-                        onChange={(e) => handleSampleRowChange(idx, "pathologist", e.target.value)}
-                        sx={{ width: 120, "& .MuiInputBase-input": { py: 0.5, fontSize: "0.8rem" } }}
-                      >
-                        <MenuItem value="-NA-">-NA-</MenuItem>
-                        <MenuItem value="Dr. Ahmadi">Dr. Ahmadi</MenuItem>
-                        <MenuItem value="Dr. ANAND KUMAR">Dr. ANAND KUMAR</MenuItem>
-                      </TextField>
-                    </TableCell>
-                    <TableCell>
-                      <TextField
-                        select
-                        size="small"
-                        value={row.collectedBy}
-                        onChange={(e) => handleSampleRowChange(idx, "collectedBy", e.target.value)}
-                        sx={{ width: 110, "& .MuiInputBase-input": { py: 0.5, fontSize: "0.8rem" } }}
-                      >
-                        <MenuItem value="-NA-">-NA-</MenuItem>
-                        <MenuItem value="Anima Lab">Anima Lab</MenuItem>
-                        <MenuItem value="Staff">Staff</MenuItem>
-                      </TextField>
-                    </TableCell>
-                    <TableCell>-NA-</TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </TableContainer>
-        </DialogContent>
-        <DialogActions sx={{ px: 3, pb: 2 }}>
-          <Button onClick={() => setSampleDialogOpen(false)} variant="outlined" size="small">Cancel</Button>
-          <Tooltip title={!canWrite ? "You do not have permission to modify samples" : ""}>
-            <span>
-              <Button
-                onClick={handleSaveSamples}
-                variant="contained"
-                size="small"
-                startIcon={sampleSaving ? <CircularProgress size={16} color="inherit" /> : <SaveIcon />}
-                disabled={sampleSaving || !canWrite}
-              >
-                Save Samples
-              </Button>
-            </span>
-          </Tooltip>
-        </DialogActions>
-      </Dialog>
+        selectedReg={selectedReg}
+        onSaveSuccess={() => {
+          showToast("Samples updated successfully!", "success");
+          loadData();
+        }}
+        canWrite={canWrite}
+      />
 
       {/* --- TEST RESULT ENTRY DIALOG --- */}
       <ResultEntry

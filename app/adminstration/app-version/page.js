@@ -102,6 +102,10 @@ export default function SuperAdminAppVersionPage() {
   const [aiMenuField, setAiMenuField] = useState(null);
   const [aiPreviewData, setAiPreviewData] = useState(null); // { field, original, suggested, action }
 
+  // 1-Click AI Full Release Generator State
+  const [aiPromptInput, setAiPromptInput] = useState("");
+  const [aiGeneratingAll, setAiGeneratingAll] = useState(false);
+
   // Preview Dialog State
   const [previewOpen, setPreviewOpen] = useState(false);
   const [previewVersion, setPreviewVersion] = useState(null);
@@ -163,6 +167,7 @@ export default function SuperAdminAppVersionPage() {
       isActive: true,
       releaseDate: new Date().toISOString().split("T")[0],
     });
+    setAiPromptInput("");
     setAiPreviewData(null);
     setDialogOpen(true);
   };
@@ -179,6 +184,7 @@ export default function SuperAdminAppVersionPage() {
       isActive: Boolean(versionItem.isActive),
       releaseDate: versionItem.releaseDate ? new Date(versionItem.releaseDate).toISOString().split("T")[0] : new Date().toISOString().split("T")[0],
     });
+    setAiPromptInput("");
     setAiPreviewData(null);
     setDialogOpen(true);
   };
@@ -331,6 +337,48 @@ export default function SuperAdminAppVersionPage() {
   // Discard AI Suggestion
   const handleDiscardAiSuggestion = () => {
     setAiPreviewData(null);
+  };
+
+  // 1-Click Generate Title, Summary, and Changelog from AI Prompt
+  const handleGenerateAllWithAi = async (promptOverride) => {
+    const rawPrompt = (typeof promptOverride === "string" ? promptOverride : aiPromptInput).trim();
+    if (!rawPrompt) {
+      toast.error("Please enter some details or notes in the AI prompt box first.");
+      return;
+    }
+
+    setAiGeneratingAll(true);
+    try {
+      const res = await fetch("/adminstration/api/app-version/ai-assist", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "generate_all",
+          text: rawPrompt,
+          version: formData.version,
+          title: formData.title,
+        }),
+      });
+
+      const data = await res.json();
+      if (data.success && data.generated) {
+        setFormData((prev) => ({
+          ...prev,
+          title: data.generated.title || prev.title,
+          description: data.generated.description || prev.description,
+          changes: data.generated.changes || prev.changes,
+          version: (data.generated.suggestedVersion && !prev.version) ? data.generated.suggestedVersion : prev.version,
+        }));
+        toast.success(`✨ Title, Summary & Changelog generated using ${data.modelUsed || "Gemini AI"}!`);
+      } else {
+        toast.error(data.error || "Failed to generate release details with AI.");
+      }
+    } catch (err) {
+      console.error(err);
+      toast.error("Error communicating with Gemini AI.");
+    } finally {
+      setAiGeneratingAll(false);
+    }
   };
 
   // Open Preview Modal
@@ -783,6 +831,113 @@ export default function SuperAdminAppVersionPage() {
 
         <form onSubmit={handleSubmit}>
           <DialogContent sx={{ py: 2.5 }}>
+            {/* ✨ 1-Click Instant AI Release Generator */}
+            <Box
+              sx={{
+                p: 2.25,
+                mb: 3,
+                borderRadius: 2.5,
+                background: "linear-gradient(135deg, rgba(124, 58, 237, 0.08) 0%, rgba(99, 102, 241, 0.05) 100%)",
+                border: "1.5px solid rgba(124, 58, 237, 0.25)",
+                boxShadow: "0 4px 16px rgba(124, 58, 237, 0.06)",
+              }}
+            >
+              <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", mb: 1 }}>
+                <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                  <Box sx={{ p: 0.6, borderRadius: 1.5, bgcolor: "rgba(124, 58, 237, 0.15)", color: "#7c3aed", display: "flex" }}>
+                    <AutoAwesomeIcon sx={{ fontSize: 18 }} />
+                  </Box>
+                  <Typography variant="subtitle2" sx={{ fontWeight: 800, color: "#6d28d9" }}>
+                    Instant AI Release Generator
+                  </Typography>
+                </Box>
+                <Chip
+                  size="small"
+                  label="1-Click Auto-Fill"
+                  sx={{ bgcolor: "rgba(124, 58, 237, 0.12)", color: "#6d28d9", fontWeight: 800, fontSize: "0.68rem" }}
+                />
+              </Box>
+
+              <Typography variant="caption" sx={{ color: "text.secondary", display: "block", mb: 1.5, lineHeight: 1.4 }}>
+                Type your release notes or bullet points below. Gemini AI will automatically generate and fill the <strong>Release Title</strong>, <strong>Executive Summary</strong>, and <strong>Structured Changelog</strong> in one click.
+              </Typography>
+
+              <Box sx={{ display: "flex", flexDirection: { xs: "column", sm: "row" }, gap: 1.5, alignItems: "stretch" }}>
+                <TextField
+                  fullWidth
+                  multiline
+                  minRows={2}
+                  maxRows={4}
+                  size="small"
+                  placeholder="Type release details... e.g. Added automated WhatsApp report PDF delivery, fixed discount calculation bug on patient billing, optimized registration page speed to sub-second load, version 2.4.0"
+                  value={aiPromptInput}
+                  onChange={(e) => setAiPromptInput(e.target.value)}
+                  disabled={aiGeneratingAll}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) {
+                      e.preventDefault();
+                      handleGenerateAllWithAi();
+                    }
+                  }}
+                  sx={{
+                    bgcolor: "#FFFFFF",
+                    borderRadius: 1.5,
+                    "& .MuiOutlinedInput-root": {
+                      borderRadius: 1.5,
+                    },
+                  }}
+                />
+                <Button
+                  variant="contained"
+                  onClick={() => handleGenerateAllWithAi()}
+                  disabled={aiGeneratingAll || !aiPromptInput.trim()}
+                  startIcon={aiGeneratingAll ? <CircularProgress size={18} color="inherit" /> : <AutoAwesomeIcon />}
+                  sx={{
+                    bgcolor: "#7c3aed",
+                    color: "#FFFFFF",
+                    fontWeight: 800,
+                    px: 3,
+                    py: 1,
+                    borderRadius: 1.5,
+                    whiteSpace: "nowrap",
+                    alignSelf: { xs: "stretch", sm: "center" },
+                    minHeight: { sm: 54 },
+                    boxShadow: "0 4px 14px rgba(124, 58, 237, 0.35)",
+                    "&:hover": { bgcolor: "#6d28d9" },
+                  }}
+                >
+                  {aiGeneratingAll ? "Generating..." : "Generate with AI"}
+                </Button>
+              </Box>
+
+              {/* Quick Starter Templates */}
+              <Box sx={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 0.75, mt: 1.25 }}>
+                <Typography variant="caption" sx={{ color: "text.disabled", fontWeight: 700, fontSize: "0.68rem" }}>
+                  Quick Examples:
+                </Typography>
+                {[
+                  { label: "⚡ Speed & Bug Fixes", text: "Optimized patient registration and test load speed to sub-second response, fixed invoice discount calculation, cleaned drawer navigation delay on mobile" },
+                  { label: "🚀 WhatsApp & Reporting", text: "Added automated WhatsApp delivery for test PDF reports, QR code scanning verification, enhanced money receipt printing" },
+                  { label: "🔒 Security & Multi-Tenant", text: "Strengthened workspace role permissions, updated database indexing for multi-tenant isolation, mandatory security patch" },
+                ].map((tpl) => (
+                  <Chip
+                    key={tpl.label}
+                    size="small"
+                    label={tpl.label}
+                    onClick={() => setAiPromptInput(tpl.text)}
+                    sx={{
+                      fontSize: "0.68rem",
+                      fontWeight: 700,
+                      cursor: "pointer",
+                      bgcolor: "rgba(255, 255, 255, 0.85)",
+                      border: "1px solid rgba(124, 58, 237, 0.2)",
+                      "&:hover": { bgcolor: "rgba(124, 58, 237, 0.1)" },
+                    }}
+                  />
+                ))}
+              </Box>
+            </Box>
+
             {/* Version, Title, Date Grid */}
             <Grid container spacing={2.5} sx={{ mb: 2.5 }}>
               <Grid size={{ xs: 12, sm: 4 }}>

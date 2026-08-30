@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { TrackingProvider } from "@/app/context/TrackingContext";
@@ -45,6 +45,52 @@ import {
 } from "@mui/icons-material";
 
 const drawerWidth = 260;
+
+const STATIC_MENU_ITEMS = [
+  {
+    text: "Dashboard",
+    path: "/dashboard",
+    icon: <DashboardIcon />,
+    required: ["DASHBOARD_VIEW"]
+  },
+  {
+    text: "Patient Registration",
+    path: "/registration",
+    icon: <RegisterIcon />,
+    required: ["REGISTRATION_READ", "REGISTRATION_WRITE"]
+  },
+  {
+    text: "Test Reports",
+    path: "/test-report",
+    icon: <ReportIcon />,
+    required: ["REGISTRATION_READ", "REGISTRATION_WRITE"]
+  },
+  {
+    text: "Dr. Referral Summary",
+    path: "/doctor-summary",
+    icon: <DoctorIcon />,
+    required: ["DOCTOR_READ", "DOCTOR_WRITE"]
+  },
+  {
+    text: "Manage Members",
+    path: "/members",
+    icon: <PeopleIcon />,
+    required: ["MEMBER_READ", "MEMBER_WRITE"]
+  },
+  {
+    text: "System Settings",
+    path: "/settings",
+    icon: <SettingsIcon />,
+    required: ["SETTINGS_READ", "SETTINGS_WRITE", "TEST_READ", "TEST_WRITE"],
+    subItems: [
+      { text: "Profile Setting", path: "/settings?tab=profile", required: ["SETTINGS_READ", "SETTINGS_WRITE"] },
+      { text: "Address Setting", path: "/settings/address", required: ["SETTINGS_READ", "SETTINGS_WRITE"] },
+      { text: "Test & Parameter", path: "/settings/tests", required: ["TEST_READ", "TEST_WRITE"] },
+      { text: "PDF Frame Setting", path: "/settings/pdf", required: ["SETTINGS_READ", "SETTINGS_WRITE"] },
+      { text: "Subscription & Invoices", path: "/settings/payments", required: ["SETTINGS_READ", "SETTINGS_WRITE"] },
+    ]
+  },
+];
 
 // Create a custom MUI theme matching the app's clean medical theme
 const theme = createTheme({
@@ -177,12 +223,6 @@ export default function AdminLayoutClient({ admin, children }) {
   const router = useRouter();
   const searchParams = useSearchParams();
 
-  // Automatically close mobile drawer and reset scroll on route / searchParam changes
-  useEffect(() => {
-    setMobileOpen(false);
-    window.scrollTo({ top: 0, left: 0, behavior: "instant" });
-  }, [pathname, searchParams]);
-
   const [mounted, setMounted] = useState(false);
   useEffect(() => {
     setMounted(true);
@@ -246,8 +286,16 @@ export default function AdminLayoutClient({ admin, children }) {
 
   const currentDrawerWidth = isMdUp ? (desktopOpen ? drawerWidth : 72) : drawerWidth;
   const isDrawerExpanded = isMdUp ? desktopOpen : true;
+  const lastOpenTimeRef = useRef(0);
 
-  const handleDrawerClose = () => {
+  const handleDrawerClose = (event, reason) => {
+    // Prevent mobile touch bleed-through / ghost click on freshly mounted backdrop
+    if (reason === "backdropClick" && Date.now() - lastOpenTimeRef.current < 500) {
+      return;
+    }
+    if (typeof document !== "undefined" && document.activeElement && typeof document.activeElement.blur === "function") {
+      document.activeElement.blur();
+    }
     setMobileOpen(false);
   };
 
@@ -255,10 +303,15 @@ export default function AdminLayoutClient({ admin, children }) {
     if (e && typeof e.stopPropagation === "function") {
       e.stopPropagation();
     }
-    if (isMdUp) {
-      setDesktopOpen((prev) => !prev);
-    } else {
+    if (typeof document !== "undefined" && document.activeElement && typeof document.activeElement.blur === "function") {
+      document.activeElement.blur();
+    }
+    const isMobile = typeof window !== "undefined" ? window.innerWidth < 900 : !isMdUp;
+    if (isMobile) {
+      lastOpenTimeRef.current = Date.now();
       setMobileOpen((prev) => !prev);
+    } else {
+      setDesktopOpen((prev) => !prev);
     }
   };
 
@@ -292,63 +345,19 @@ export default function AdminLayoutClient({ admin, children }) {
     return requiredPermissions.some(perm => userPerms.includes(perm));
   };
 
-  const menuItems = [
-    {
-      text: "Dashboard",
-      path: "/dashboard",
-      icon: <DashboardIcon />,
-      required: ["DASHBOARD_VIEW"]
-    },
-    {
-      text: "Patient Registration",
-      path: "/registration",
-      icon: <RegisterIcon />,
-      required: ["REGISTRATION_READ", "REGISTRATION_WRITE"]
-    },
-    {
-      text: "Test Reports",
-      path: "/test-report",
-      icon: <ReportIcon />,
-      required: ["REGISTRATION_READ", "REGISTRATION_WRITE"]
-    },
-    {
-      text: "Dr. Referral Summary",
-      path: "/doctor-summary",
-      icon: <DoctorIcon />,
-      required: ["DOCTOR_READ", "DOCTOR_WRITE"]
-    },
-    {
-      text: "Manage Members",
-      path: "/members",
-      icon: <PeopleIcon />,
-      required: ["MEMBER_READ", "MEMBER_WRITE"]
-    },
-    {
-      text: "System Settings",
-      path: "/settings",
-      icon: <SettingsIcon />,
-      required: ["SETTINGS_READ", "SETTINGS_WRITE", "TEST_READ", "TEST_WRITE"],
-      subItems: [
-        { text: "Profile Setting", path: "/settings?tab=profile", required: ["SETTINGS_READ", "SETTINGS_WRITE"] },
-        { text: "Address Setting", path: "/settings/address", required: ["SETTINGS_READ", "SETTINGS_WRITE"] },
-        { text: "Test & Parameter", path: "/settings/tests", required: ["TEST_READ", "TEST_WRITE"] },
-        { text: "PDF Frame Setting", path: "/settings/pdf", required: ["SETTINGS_READ", "SETTINGS_WRITE"] },
-        { text: "Subscription & Invoices", path: "/settings/payments", required: ["SETTINGS_READ", "SETTINGS_WRITE"] },
-      ]
-    },
-  ];
-
-  const filteredMenuItems = menuItems
-    .filter(item => !item.required || hasPermission(item.required))
-    .map(item => {
-      if (item.subItems) {
-        return {
-          ...item,
-          subItems: item.subItems.filter(sub => !sub.required || hasPermission(sub.required))
-        };
-      }
-      return item;
-    });
+  const filteredMenuItems = useMemo(() => {
+    return STATIC_MENU_ITEMS
+      .filter(item => !item.required || hasPermission(item.required))
+      .map(item => {
+        if (item.subItems) {
+          return {
+            ...item,
+            subItems: item.subItems.filter(sub => !sub.required || hasPermission(sub.required))
+          };
+        }
+        return item;
+      });
+  }, [admin]);
 
   const drawerContent = (
     <Box sx={{ height: "100%", display: "flex", flexDirection: "column", overflowX: "hidden" }}>
@@ -616,7 +625,7 @@ export default function AdminLayoutClient({ admin, children }) {
   );
 
   const getPageTitle = () => {
-    const matched = menuItems.find((item) => pathname === item.path);
+    const matched = STATIC_MENU_ITEMS.find((item) => pathname === item.path);
     return matched ? matched.text : "Admin Workspace";
   };
 
@@ -636,24 +645,34 @@ export default function AdminLayoutClient({ admin, children }) {
               color: "text.primary",
               boxShadow: "none",
               borderBottom: "none",
-              transition: (theme) => theme.transitions.create(["width", "margin"], {
+              transition: isMdUp ? (theme) => theme.transitions.create(["width", "margin"], {
                 easing: theme.transitions.easing.sharp,
                 duration: theme.transitions.duration.enteringScreen,
-              }),
+              }) : "none",
             }}
           >
-            <Toolbar sx={{ justifyContent: "space-between", px: 3 }}>
+            <Toolbar sx={{ justifyContent: "space-between", px: { xs: 1.5, sm: 3 } }}>
               <Box sx={{ display: "flex", alignItems: "center" }}>
                 <IconButton
                   color="inherit"
                   aria-label="open drawer"
                   edge="start"
                   onClick={handleDrawerToggle}
-                  sx={{ mr: 2 }}
+                  sx={{
+                    mr: { xs: 1, sm: 2 },
+                    p: 1,
+                    touchAction: "manipulation",
+                    cursor: "pointer",
+                    WebkitTapHighlightColor: "transparent",
+                    "& .MuiSvgIcon-root": {
+                      fontSize: { xs: "1.75rem", sm: "1.5rem" },
+                      pointerEvents: "none",
+                    },
+                  }}
                 >
                   <MenuIcon />
                 </IconButton>
-                <Typography variant="h6" noWrap component="div" sx={{ fontWeight: 700, fontSize: "1.1rem" }}>
+                <Typography variant="h6" noWrap component="div" sx={{ fontWeight: 700, fontSize: { xs: "1rem", sm: "1.1rem" } }}>
                   {getPageTitle()}
                 </Typography>
               </Box>
@@ -714,24 +733,38 @@ export default function AdminLayoutClient({ admin, children }) {
             sx={{
               width: { md: currentDrawerWidth },
               flexShrink: { md: 0 },
-              transition: (theme) => theme.transitions.create("width", {
-                easing: theme.transitions.easing.sharp,
-                duration: theme.transitions.duration.enteringScreen,
-              })
             }}
             aria-label="mailbox folders"
           >
             {/* Temporary Drawer for Mobile */}
             <Drawer
               variant="temporary"
+              anchor="left"
               open={mobileOpen}
               onClose={handleDrawerClose}
+              disableScrollLock
               ModalProps={{
-                keepMounted: true, // Better open performance on mobile.
+                keepMounted: false,
+                disableScrollLock: true,
+                disableAutoFocus: true,
+                disableEnforceFocus: true,
+                disableRestoreFocus: true,
+              }}
+              PaperProps={{
+                elevation: 6,
+                sx: {
+                  boxSizing: "border-box",
+                  width: drawerWidth,
+                  backgroundColor: "#ffffff",
+                  backgroundImage: "none",
+                  borderRight: "1px solid",
+                  borderColor: "divider",
+                  boxShadow: "4px 0 24px rgba(0, 0, 0, 0.15)",
+                },
               }}
               sx={{
                 display: { xs: "block", md: "none" },
-                "& .MuiDrawer-paper": { boxSizing: "border-box", width: drawerWidth, borderRight: "1px solid", borderColor: "divider" },
+                zIndex: 1400,
               }}
             >
               {drawerContent}
