@@ -2,8 +2,8 @@
 
 import React from "react";
 import { useRouter } from "next/navigation";
-import { Box, Button, Menu, MenuItem } from "@mui/material";
-import { CalendarMonth as CalendarIcon, ExpandMore as ExpandMoreIcon } from "@mui/icons-material";
+import { FormControl, Select, MenuItem, Box } from "@mui/material";
+import { CalendarMonth as CalendarIcon } from "@mui/icons-material";
 
 const quickRanges = [
   { label: "Last 7 Days", value: "7days" },
@@ -18,67 +18,56 @@ const quickRanges = [
 export default function DashboardRangeSelector({ initialRange }) {
   const router = useRouter();
   const currentRange = initialRange || "7days";
-  const [anchorEl, setAnchorEl] = React.useState(null);
-  const open = Boolean(anchorEl);
 
-  const handleSelect = (val) => {
+  const handleChange = (event) => {
+    const val = event.target.value;
     router.push(`?range=${val}`);
-    setAnchorEl(null);
   };
 
-  const selectedLabel = quickRanges.find((r) => r.value === currentRange)?.label || "Last 7 Days";
-
   return (
-    <Box sx={{ display: "flex", alignItems: "center", width: { xs: "100%", sm: "auto" } }}>
-      <Button
-        fullWidth
-        size="small"
-        onClick={(e) => setAnchorEl(e.currentTarget)}
-        startIcon={<CalendarIcon sx={{ fontSize: 16, color: "#0f766e" }} />}
-        endIcon={<ExpandMoreIcon sx={{ fontSize: 16 }} />}
+    <FormControl size="small" fullWidth sx={{ minWidth: { xs: "auto", sm: 160 } }}>
+      <Select
+        value={currentRange}
+        onChange={handleChange}
+        displayEmpty
+        startAdornment={
+          <CalendarIcon sx={{ fontSize: 18, color: "#0f766e", mr: 1, ml: -0.25 }} />
+        }
+        MenuProps={{
+          disableScrollLock: true,
+          PaperProps: {
+            sx: {
+              mt: 0.5,
+              borderRadius: "10px",
+              border: "1px solid #E2E8F0",
+              boxShadow: "0 10px 25px -5px rgba(0,0,0,0.1)",
+            },
+          },
+        }}
         sx={{
-          justifyContent: "space-between",
           bgcolor: "#FFFFFF",
           border: "1.5px solid #E2E8F0",
-          color: "#0F172A",
           borderRadius: "8px",
-          py: 0.8,
-          px: 1.5,
+          color: "#0F172A",
           fontSize: { xs: "0.75rem", sm: "0.8rem" },
           fontWeight: 700,
-          boxShadow: "none !important",
-          minWidth: { xs: "auto", sm: 160 },
-          whiteSpace: "nowrap",
+          "& fieldset": { border: "none" },
+          "& .MuiSelect-select": {
+            py: 0.8,
+            px: 1.2,
+            display: "flex",
+            alignItems: "center",
+          },
           "&:hover": {
             borderColor: "#0f766e",
             bgcolor: "#F8FAFC",
           },
         }}
       >
-        {selectedLabel}
-      </Button>
-
-      <Menu
-        anchorEl={anchorEl}
-        open={open}
-        onClose={() => setAnchorEl(null)}
-        disableScrollLock
-        disableAutoFocusItem
-        PaperProps={{
-          sx: {
-            mt: 1,
-            borderRadius: "10px",
-            border: "1px solid #E2E8F0",
-            minWidth: 160,
-            boxShadow: "0 10px 25px -5px rgba(0,0,0,0.1)",
-          },
-        }}
-      >
         {quickRanges.map((r) => (
           <MenuItem
             key={r.value}
-            selected={currentRange === r.value}
-            onClick={() => handleSelect(r.value)}
+            value={r.value}
             sx={{
               fontSize: "0.8rem",
               fontWeight: currentRange === r.value ? 800 : 500,
@@ -90,7 +79,7 @@ export default function DashboardRangeSelector({ initialRange }) {
             {r.label}
           </MenuItem>
         ))}
-      </Menu>
-    </Box>
+      </Select>
+    </FormControl>
   );
 }
