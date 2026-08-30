@@ -39,7 +39,7 @@ import {
 import { toast } from "sonner";
 import NextTopLoader from "nextjs-toploader";
 
-const drawerWidth = 260;
+const drawerWidth = 280;
 
 // Custom light purple theme matching the SuperAdmin dashboard theme
 const lightPurpleTheme = createTheme({
@@ -117,14 +117,14 @@ export default function SuperAdminLayout({ children }) {
 
   const menuItems = [
     { text: "Executive Dashboard", icon: <TrendingUpIcon />, path: "/adminstration/dashboard", exact: "/adminstration/dashboard" },
-    { text: "Workspace Controller", icon: <WorkspaceIcon />, path: "/adminstration/workspace", exact: "/adminstration/workspace" },
-    { text: "App Version Control", icon: <VersionIcon />, path: "/adminstration/app-version", exact: "/adminstration/app-version" },
-    { text: "Gemini AI Usage", icon: <AutoAwesomeIcon />, path: "/adminstration/ai-usage", exact: "/adminstration/ai-usage" },
     { text: "Administrators", icon: <PeopleIcon />, path: "/adminstration/admins", exact: "/adminstration/admins" },
-    { text: "Import Lab Tests", icon: <UploadIcon />, path: "/adminstration/importer", exact: "/adminstration/importer" },
-    { text: "Default Tests & Params", icon: <ScienceIcon />, path: "/adminstration/test-parameter", exact: "/adminstration/test-parameter" },
-    { text: "Admin Roles", icon: <SecurityIcon />, path: "/adminstration/adminRole", exact: "/adminstration/adminRole" },
+    { text: "Workspace Controller", icon: <WorkspaceIcon />, path: "/adminstration/workspace", exact: "/adminstration/workspace" },
+    { text: "Gemini AI Usage", icon: <AutoAwesomeIcon />, path: "/adminstration/ai-usage", exact: "/adminstration/ai-usage" },
     { text: "Onboard Workspace", icon: <WorkspaceIcon />, path: "/adminstration/onBoarding", exact: "/adminstration/onBoarding" },
+    { text: "Admin Roles", icon: <SecurityIcon />, path: "/adminstration/adminRole", exact: "/adminstration/adminRole" },
+    { text: "Default Tests & Params", icon: <ScienceIcon />, path: "/adminstration/test-parameter", exact: "/adminstration/test-parameter" },
+    { text: "Import Lab Tests", icon: <UploadIcon />, path: "/adminstration/importer", exact: "/adminstration/importer" },
+    { text: "App Version Control", icon: <VersionIcon />, path: "/adminstration/app-version", exact: "/adminstration/app-version" },
   ];
 
   const drawerContent = (
@@ -146,7 +146,7 @@ export default function SuperAdminLayout({ children }) {
         <List sx={{ px: desktopDrawerOpen ? 2 : 1 }}>
           {menuItems.map((item) => {
             const isActive = pathname === item.exact;
-            
+
             return (
               <ListItem key={item.text} disablePadding sx={{ mb: 0.5 }}>
                 <Tooltip title={!desktopDrawerOpen ? item.text : ""} placement="right" arrow>
@@ -318,111 +318,111 @@ export default function SuperAdminLayout({ children }) {
         <CssBaseline />
         <NextTopLoader color="#7c3aed" showSpinner={false} height={3} />
         <Box sx={{ display: "flex", minHeight: "100vh", bgcolor: "background.default" }}>
-        
-        {/* Sidebar Navigation */}
-        <Box component="nav" sx={{ width: { md: desktopDrawerOpen ? drawerWidth : 70 }, flexShrink: { md: 0 }, transition: "width 0.2s" }}>
-          {/* Mobile Drawer */}
-          <Drawer
-            variant="temporary"
-            open={mobileOpen}
-            onClose={() => setMobileOpen(false)}
-            ModalProps={{ keepMounted: true }}
-            sx={{
-              display: { xs: "block", md: "none" },
-              "& .MuiDrawer-paper": { boxSizing: "border-box", width: drawerWidth, borderRight: "1px solid", borderColor: "divider" },
-            }}
-          >
-            {drawerContent}
-          </Drawer>
 
-          {/* Desktop Drawer */}
-          <Drawer
-            variant="permanent"
-            sx={{
-              display: { xs: "none", md: "block" },
-              "& .MuiDrawer-paper": { 
-                boxSizing: "border-box", 
-                width: desktopDrawerOpen ? drawerWidth : 70, 
-                borderRight: "1px solid", 
+          {/* Sidebar Navigation */}
+          <Box component="nav" sx={{ width: { md: desktopDrawerOpen ? drawerWidth : 70 }, flexShrink: { md: 0 }, transition: "width 0.2s" }}>
+            {/* Mobile Drawer */}
+            <Drawer
+              variant="temporary"
+              open={mobileOpen}
+              onClose={() => setMobileOpen(false)}
+              ModalProps={{ keepMounted: true }}
+              sx={{
+                display: { xs: "block", md: "none" },
+                "& .MuiDrawer-paper": { boxSizing: "border-box", width: drawerWidth, borderRight: "1px solid", borderColor: "divider" },
+              }}
+            >
+              {drawerContent}
+            </Drawer>
+
+            {/* Desktop Drawer */}
+            <Drawer
+              variant="permanent"
+              sx={{
+                display: { xs: "none", md: "block" },
+                "& .MuiDrawer-paper": {
+                  boxSizing: "border-box",
+                  width: desktopDrawerOpen ? drawerWidth : 70,
+                  borderRight: "1px solid",
+                  borderColor: "divider",
+                  transition: "width 0.2s",
+                  overflowX: "hidden"
+                },
+              }}
+              open
+            >
+              {drawerContent}
+            </Drawer>
+          </Box>
+
+          {/* Right Area */}
+          <Box sx={{ flexGrow: 1, display: "flex", flexDirection: "column", minWidth: 0 }}>
+            {/* Header AppBar */}
+            <AppBar
+              position="sticky"
+              color="inherit"
+              elevation={0}
+              sx={{
+                top: 0,
+                zIndex: (theme) => theme.zIndex.appBar,
+                borderBottom: "1px solid",
                 borderColor: "divider",
-                transition: "width 0.2s",
-                overflowX: "hidden"
-              },
-            }}
-            open
-          >
-            {drawerContent}
-          </Drawer>
-        </Box>
-
-        {/* Right Area */}
-        <Box sx={{ flexGrow: 1, display: "flex", flexDirection: "column", minWidth: 0 }}>
-          {/* Header AppBar */}
-          <AppBar
-            position="sticky"
-            color="inherit"
-            elevation={0}
-            sx={{
-              top: 0,
-              zIndex: (theme) => theme.zIndex.appBar,
-              borderBottom: "1px solid",
-              borderColor: "divider",
-              bgcolor: "background.paper",
-            }}
-          >
-            <Toolbar sx={{ justifyContent: "space-between", px: { xs: 2, md: 4 } }}>
-              <Box sx={{ display: "flex", alignItems: "center" }}>
-                <IconButton
-                  color="inherit"
-                  edge="start"
-                  onClick={() => setMobileOpen(!mobileOpen)}
-                  sx={{ mr: 2, display: { md: "none" } }}
-                >
-                  <MenuIcon />
-                </IconButton>
-                <IconButton
-                  color="inherit"
-                  edge="start"
-                  onClick={() => setDesktopDrawerOpen(!desktopDrawerOpen)}
-                  sx={{ mr: 2, display: { xs: "none", md: "inline-flex" } }}
-                >
-                  <MenuIcon />
-                </IconButton>
-                <Typography variant="h6" noWrap sx={{ fontWeight: 800, fontSize: "1.25rem", color: "primary.main" }}>
-                  SuperAdmin Console
-                </Typography>
-              </Box>
-
-              <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
-                <Box sx={{ display: { xs: "none", sm: "flex" }, alignItems: "center", gap: 1.5 }}>
-                  <Avatar sx={{ bgcolor: "primary.main", color: "primary.contrastText", width: 32, height: 32, fontSize: "0.875rem", fontWeight: 700 }}>
-                    S
-                  </Avatar>
-                  <Typography variant="subtitle2" sx={{ fontWeight: 700, color: "text.primary" }}>
-                    System Admin
+                bgcolor: "background.paper",
+              }}
+            >
+              <Toolbar sx={{ justifyContent: "space-between", px: { xs: 2, md: 4 } }}>
+                <Box sx={{ display: "flex", alignItems: "center" }}>
+                  <IconButton
+                    color="inherit"
+                    edge="start"
+                    onClick={() => setMobileOpen(!mobileOpen)}
+                    sx={{ mr: 2, display: { md: "none" } }}
+                  >
+                    <MenuIcon />
+                  </IconButton>
+                  <IconButton
+                    color="inherit"
+                    edge="start"
+                    onClick={() => setDesktopDrawerOpen(!desktopDrawerOpen)}
+                    sx={{ mr: 2, display: { xs: "none", md: "inline-flex" } }}
+                  >
+                    <MenuIcon />
+                  </IconButton>
+                  <Typography variant="h6" noWrap sx={{ fontWeight: 800, fontSize: "1.25rem", color: "primary.main" }}>
+                    SuperAdmin Console
                   </Typography>
                 </Box>
-                <Divider orientation="vertical" variant="middle" flexItem sx={{ display: { xs: "none", sm: "block" } }} />
-                <Button
-                  variant="outlined"
-                  color="error"
-                  startIcon={<LogoutIcon />}
-                  onClick={handleLogout}
-                  sx={{ fontWeight: 600 }}
-                >
-                  Logout
-                </Button>
-              </Box>
-            </Toolbar>
-          </AppBar>
 
-          {/* Main content body */}
-          <Box sx={{ flexGrow: 1, display: "flex", flexDirection: "column", overflow: "hidden", minWidth: 0, width: "100%", maxWidth: "100%" }}>
-            {children}
+                <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+                  <Box sx={{ display: { xs: "none", sm: "flex" }, alignItems: "center", gap: 1.5 }}>
+                    <Avatar sx={{ bgcolor: "primary.main", color: "primary.contrastText", width: 32, height: 32, fontSize: "0.875rem", fontWeight: 700 }}>
+                      S
+                    </Avatar>
+                    <Typography variant="subtitle2" sx={{ fontWeight: 700, color: "text.primary" }}>
+                      System Admin
+                    </Typography>
+                  </Box>
+                  <Divider orientation="vertical" variant="middle" flexItem sx={{ display: { xs: "none", sm: "block" } }} />
+                  <Button
+                    variant="outlined"
+                    color="error"
+                    startIcon={<LogoutIcon />}
+                    onClick={handleLogout}
+                    sx={{ fontWeight: 600 }}
+                  >
+                    Logout
+                  </Button>
+                </Box>
+              </Toolbar>
+            </AppBar>
+
+            {/* Main content body */}
+            <Box sx={{ flexGrow: 1, display: "flex", flexDirection: "column", overflow: "hidden", minWidth: 0, width: "100%", maxWidth: "100%" }}>
+              {children}
+            </Box>
           </Box>
         </Box>
-      </Box>
-    </ThemeProvider>
-  </TrackingProvider>
+      </ThemeProvider>
+    </TrackingProvider>
   );
 }
