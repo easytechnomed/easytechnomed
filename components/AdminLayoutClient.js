@@ -138,7 +138,6 @@ const getExpiryMessage = (expireAt) => {
 export default function AdminLayoutClient({ admin, children }) {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [desktopOpen, setDesktopOpen] = useState(true);
-  const [isClosing, setIsClosing] = useState(false);
   const [anchorEl, setAnchorEl] = useState(null);
   const [hoverAnchorEl, setHoverAnchorEl] = useState(null);
   const [hoveredItem, setHoveredItem] = useState(null);
@@ -177,6 +176,11 @@ export default function AdminLayoutClient({ admin, children }) {
   const pathname = usePathname();
   const router = useRouter();
   const searchParams = useSearchParams();
+
+  // Automatically close mobile drawer on route / searchParam changes
+  useEffect(() => {
+    setMobileOpen(false);
+  }, [pathname, searchParams]);
 
   const [mounted, setMounted] = useState(false);
   useEffect(() => {
@@ -243,21 +247,17 @@ export default function AdminLayoutClient({ admin, children }) {
   const isDrawerExpanded = isMdUp ? desktopOpen : true;
 
   const handleDrawerClose = () => {
-    setIsClosing(true);
     setMobileOpen(false);
   };
 
-  const handleDrawerTransitionEnd = () => {
-    setIsClosing(false);
-  };
-
-  const handleDrawerToggle = () => {
+  const handleDrawerToggle = (e) => {
+    if (e && typeof e.stopPropagation === "function") {
+      e.stopPropagation();
+    }
     if (isMdUp) {
-      setDesktopOpen(!desktopOpen);
+      setDesktopOpen((prev) => !prev);
     } else {
-      if (!isClosing) {
-        setMobileOpen(!mobileOpen);
-      }
+      setMobileOpen((prev) => !prev);
     }
   };
 
@@ -724,7 +724,6 @@ export default function AdminLayoutClient({ admin, children }) {
             <Drawer
               variant="temporary"
               open={mobileOpen}
-              onTransitionEnd={handleDrawerTransitionEnd}
               onClose={handleDrawerClose}
               ModalProps={{
                 keepMounted: true, // Better open performance on mobile.
