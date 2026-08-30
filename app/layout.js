@@ -1,6 +1,8 @@
+import { Suspense } from "react";
 import { Outfit, Calistoga, Inter, JetBrains_Mono } from "next/font/google";
 import ToastProvider from "@/components/ToastProvider";
 import PWARegister from "@/components/PWARegister";
+import ScrollToTop from "@/components/ScrollToTop";
 import "./globals.css";
 
 const outfit = Outfit({
@@ -70,6 +72,9 @@ export default function RootLayout({ children }) {
   return (
     <html lang="en" className={`${outfit.variable} ${calistoga.variable} ${inter.variable} ${jetbrainsMono.variable} h-full antialiased`}>
       <body className="min-h-full flex flex-col bg-[#FAFAFA] text-slate-900 font-sans selection:bg-[#0052FF] selection:text-white">
+        <Suspense fallback={null}>
+          <ScrollToTop />
+        </Suspense>
         <PWARegister />
         <ToastProvider />
         <div className="flex-1 flex flex-col">{children}</div>

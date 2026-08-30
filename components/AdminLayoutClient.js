@@ -177,9 +177,10 @@ export default function AdminLayoutClient({ admin, children }) {
   const router = useRouter();
   const searchParams = useSearchParams();
 
-  // Automatically close mobile drawer on route / searchParam changes
+  // Automatically close mobile drawer and reset scroll on route / searchParam changes
   useEffect(() => {
     setMobileOpen(false);
+    window.scrollTo({ top: 0, left: 0, behavior: "instant" });
   }, [pathname, searchParams]);
 
   const [mounted, setMounted] = useState(false);
@@ -627,14 +628,14 @@ export default function AdminLayoutClient({ admin, children }) {
           {/* AppBar */}
           <AppBar
             position="fixed"
+            elevation={0}
             sx={{
               width: { md: `calc(100% - ${currentDrawerWidth}px)` },
               ml: { md: `${currentDrawerWidth}px` },
               backgroundColor: "background.paper",
               color: "text.primary",
-              boxShadow: "0 1px 3px 0 rgba(0,0,0,0.05)",
-              borderBottom: "1px solid",
-              borderColor: "divider",
+              boxShadow: "none",
+              borderBottom: "none",
               transition: (theme) => theme.transitions.create(["width", "margin"], {
                 easing: theme.transitions.easing.sharp,
                 duration: theme.transitions.duration.enteringScreen,
@@ -766,9 +767,9 @@ export default function AdminLayoutClient({ admin, children }) {
               p: { xs: 1.5, sm: 3 },
               width: { md: `calc(100% - ${currentDrawerWidth}px)` },
               minWidth: 0,
-              mt: "64px",
+              mt: { xs: "56px", sm: "64px" },
               backgroundColor: "background.default",
-              minHeight: "calc(100vh - 64px)",
+              minHeight: { xs: "calc(100vh - 56px)", sm: "calc(100vh - 64px)" },
               transition: (theme) => theme.transitions.create(["width", "margin"], {
                 easing: theme.transitions.easing.sharp,
                 duration: theme.transitions.duration.enteringScreen,

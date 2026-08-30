@@ -1,0 +1,49 @@
+"use client";
+
+import { useEffect } from "react";
+import { usePathname, useSearchParams } from "next/navigation";
+
+export default function ScrollToTop() {
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+
+  useEffect(() => {
+    // Disable automatic browser scroll restoration if possible
+    if (typeof window !== "undefined" && "scrollRestoration" in window.history) {
+      window.history.scrollRestoration = "manual";
+    }
+
+    const resetScroll = () => {
+      // 1. Reset standard window and document scroll
+      window.scrollTo({ top: 0, left: 0, behavior: "instant" });
+      if (document.documentElement) {
+        document.documentElement.scrollTop = 0;
+      }
+      if (document.body) {
+        document.body.scrollTop = 0;
+      }
+
+      // 2. Reset any main container or overflow scrollable containers
+      const mainContainers = document.querySelectorAll("main, [role='main'], .overflow-y-auto, .overflow-auto, .overflow-y-scroll");
+      mainContainers.forEach((el) => {
+        if (el && el.scrollTop > 0) {
+          el.scrollTop = 0;
+        }
+      });
+    };
+
+    // Execute immediately
+    resetScroll();
+
+    // Re-verify on the next frame & microtask to override any late browser/Next.js scroll restoration
+    const rafId = requestAnimationFrame(resetScroll);
+    const timer = setTimeout(resetScroll, 20);
+
+    return () => {
+      cancelAnimationFrame(rafId);
+      clearTimeout(timer);
+    };
+  }, [pathname, searchParams]);
+
+  return null;
+}
