@@ -62,6 +62,8 @@ export default function DashboardRangeSelector({ initialRange }) {
         anchorEl={anchorEl}
         open={open}
         onClose={() => setAnchorEl(null)}
+        disableScrollLock
+        disableAutoFocusItem
         PaperProps={{
           sx: {
             mt: 1,

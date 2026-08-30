@@ -286,16 +286,7 @@ export default function AdminLayoutClient({ admin, children }) {
 
   const currentDrawerWidth = isMdUp ? (desktopOpen ? drawerWidth : 72) : drawerWidth;
   const isDrawerExpanded = isMdUp ? desktopOpen : true;
-  const lastOpenTimeRef = useRef(0);
-
-  const handleDrawerClose = (event, reason) => {
-    // Prevent mobile touch bleed-through / ghost click on freshly mounted backdrop
-    if (reason === "backdropClick" && Date.now() - lastOpenTimeRef.current < 500) {
-      return;
-    }
-    if (typeof document !== "undefined" && document.activeElement && typeof document.activeElement.blur === "function") {
-      document.activeElement.blur();
-    }
+  const handleDrawerClose = () => {
     setMobileOpen(false);
   };
 
@@ -303,12 +294,8 @@ export default function AdminLayoutClient({ admin, children }) {
     if (e && typeof e.stopPropagation === "function") {
       e.stopPropagation();
     }
-    if (typeof document !== "undefined" && document.activeElement && typeof document.activeElement.blur === "function") {
-      document.activeElement.blur();
-    }
     const isMobile = typeof window !== "undefined" ? window.innerWidth < 900 : !isMdUp;
     if (isMobile) {
-      lastOpenTimeRef.current = Date.now();
       setMobileOpen((prev) => !prev);
     } else {
       setDesktopOpen((prev) => !prev);
@@ -368,8 +355,8 @@ export default function AdminLayoutClient({ admin, children }) {
           <Box component="img" src="/android-chrome-512x512.png" alt="Logo" sx={{ height: 36, width: 36, borderRadius: "6px" }} />
         )}
 
-        {mounted && !isMdUp && (
-          <IconButton onClick={handleDrawerClose}>
+        {!isMdUp && (
+          <IconButton onClick={() => setMobileOpen(false)}>
             <ChevronLeftIcon />
           </IconButton>
         )}
@@ -387,7 +374,7 @@ export default function AdminLayoutClient({ admin, children }) {
                 <ListItem disablePadding sx={{ mb: 0.5 }}>
                   <Link href={itemHref} style={{ textDecoration: "none", width: "100%" }}>
                     <ListItemButton
-                      onClick={() => mounted && !isMdUp && handleDrawerClose()}
+                      onClick={() => !isMdUp && setMobileOpen(false)}
                       onMouseEnter={(e) => handleItemHover(e, item)}
                       onMouseLeave={handleItemLeave}
                       sx={{
@@ -455,7 +442,7 @@ export default function AdminLayoutClient({ admin, children }) {
                         <ListItem key={sub.text} disablePadding sx={{ mb: 0.5 }}>
                           <Link href={subHref} style={{ textDecoration: "none", width: "100%" }}>
                             <ListItemButton
-                              onClick={() => mounted && !isMdUp && handleDrawerClose()}
+                              onClick={() => !isMdUp && setMobileOpen(false)}
                               sx={{
                                 borderRadius: "6px",
                                 py: 0.6,
@@ -639,6 +626,7 @@ export default function AdminLayoutClient({ admin, children }) {
             position="fixed"
             elevation={0}
             sx={{
+              zIndex: { xs: 1200, md: 1100 },
               width: { md: `calc(100% - ${currentDrawerWidth}px)` },
               ml: { md: `${currentDrawerWidth}px` },
               backgroundColor: "background.paper",
@@ -736,39 +724,46 @@ export default function AdminLayoutClient({ admin, children }) {
             }}
             aria-label="mailbox folders"
           >
-            {/* Temporary Drawer for Mobile */}
-            <Drawer
-              variant="temporary"
-              anchor="left"
-              open={mobileOpen}
-              onClose={handleDrawerClose}
-              disableScrollLock
-              ModalProps={{
-                keepMounted: false,
-                disableScrollLock: true,
-                disableAutoFocus: true,
-                disableEnforceFocus: true,
-                disableRestoreFocus: true,
-              }}
-              PaperProps={{
-                elevation: 6,
-                sx: {
-                  boxSizing: "border-box",
-                  width: drawerWidth,
-                  backgroundColor: "#ffffff",
-                  backgroundImage: "none",
-                  borderRight: "1px solid",
-                  borderColor: "divider",
-                  boxShadow: "4px 0 24px rgba(0, 0, 0, 0.15)",
-                },
-              }}
+            {/* Pure Zero-Latency Mobile Drawer Backdrop */}
+            <Box
+              onClick={() => setMobileOpen(false)}
               sx={{
+                position: "fixed",
+                inset: 0,
+                bgcolor: "rgba(15, 23, 42, 0.5)",
+                backdropFilter: "blur(2px)",
+                zIndex: 1300,
+                opacity: mobileOpen ? 1 : 0,
+                visibility: mobileOpen ? "visible" : "hidden",
+                pointerEvents: mobileOpen ? "auto" : "none",
+                transition: "opacity 0.22s ease, visibility 0.22s ease",
                 display: { xs: "block", md: "none" },
-                zIndex: 1400,
+              }}
+            />
+
+            {/* Pure Zero-Latency Mobile Drawer Panel */}
+            <Box
+              sx={{
+                position: "fixed",
+                top: 0,
+                left: 0,
+                bottom: 0,
+                width: drawerWidth,
+                maxWidth: "85vw",
+                bgcolor: "#ffffff",
+                zIndex: 1350,
+                boxShadow: mobileOpen ? "4px 0 28px rgba(0, 0, 0, 0.2)" : "none",
+                transform: mobileOpen ? "translateX(0)" : "translateX(-100%)",
+                visibility: mobileOpen ? "visible" : "hidden",
+                transition: "transform 0.24s cubic-bezier(0.4, 0, 0.2, 1), visibility 0.24s ease",
+                display: { xs: "flex", md: "none" },
+                flexDirection: "column",
+                overflow: "hidden",
               }}
             >
               {drawerContent}
-            </Drawer>
+            </Box>
+
             {/* Permanent Drawer for Desktop */}
             <Drawer
               variant="permanent"
@@ -812,70 +807,72 @@ export default function AdminLayoutClient({ admin, children }) {
             {children}
           </Box>
 
-          {/* Floating Submenu for Collapsed Drawer */}
-          <Popper
-            open={Boolean(hoverAnchorEl)}
-            anchorEl={hoverAnchorEl}
-            placement="right-start"
-            style={{ zIndex: 1400 }}
-          >
-            <Paper
-              onMouseEnter={handleMenuEnter}
-              onMouseLeave={handleMenuLeave}
-              sx={{
-                boxShadow: "0 4px 20px rgba(0,0,0,0.08)",
-                border: "1px solid",
-                borderColor: "divider",
-                minWidth: 180,
-                py: 0.5,
-                ml: 0.5
-              }}
+          {/* Floating Submenu for Collapsed Desktop Drawer */}
+          {isMdUp && !isDrawerExpanded && (
+            <Popper
+              open={Boolean(hoverAnchorEl)}
+              anchorEl={hoverAnchorEl}
+              placement="right-start"
+              style={{ zIndex: 1400 }}
             >
-              <Box sx={{ px: 2, py: 0.8, bgcolor: "rgba(15, 118, 110, 0.04)" }}>
-                <Typography variant="caption" sx={{ fontWeight: 700, color: "primary.main", textTransform: "uppercase", letterSpacing: 0.5 }}>
-                  {hoveredItem?.text}
-                </Typography>
-              </Box>
-              <Divider sx={{ opacity: 0.6 }} />
-              <MenuList>
-                {hoveredItem?.subItems?.map((sub) => {
-                  const isAdmin = pathname.startsWith("/admin");
-                  const cleanPath = isAdmin ? pathname.slice(6) || "/" : pathname;
-                  const searchParamsStr = sub.path.split("?")[1] || "";
-                  const tabName = searchParamsStr.split("=")[1] || "";
-                  const currentTab = searchParams.get("tab") || (cleanPath === "/settings" ? "profile" : "");
-                  const isSubActive = sub.path.includes("?")
-                    ? (cleanPath === "/settings" && currentTab === tabName)
-                    : (cleanPath === sub.path || cleanPath.startsWith(sub.path + "/"));
-                  const subHref = isAdmin ? `/admin${sub.path}` : sub.path;
+              <Paper
+                onMouseEnter={handleMenuEnter}
+                onMouseLeave={handleMenuLeave}
+                sx={{
+                  boxShadow: "0 4px 20px rgba(0,0,0,0.08)",
+                  border: "1px solid",
+                  borderColor: "divider",
+                  minWidth: 180,
+                  py: 0.5,
+                  ml: 0.5
+                }}
+              >
+                <Box sx={{ px: 2, py: 0.8, bgcolor: "rgba(15, 118, 110, 0.04)" }}>
+                  <Typography variant="caption" sx={{ fontWeight: 700, color: "primary.main", textTransform: "uppercase", letterSpacing: 0.5 }}>
+                    {hoveredItem?.text}
+                  </Typography>
+                </Box>
+                <Divider sx={{ opacity: 0.6 }} />
+                <MenuList>
+                  {hoveredItem?.subItems?.map((sub) => {
+                    const isAdmin = pathname.startsWith("/admin");
+                    const cleanPath = isAdmin ? pathname.slice(6) || "/" : pathname;
+                    const searchParamsStr = sub.path.split("?")[1] || "";
+                    const tabName = searchParamsStr.split("=")[1] || "";
+                    const currentTab = searchParams.get("tab") || (cleanPath === "/settings" ? "profile" : "");
+                    const isSubActive = sub.path.includes("?")
+                      ? (cleanPath === "/settings" && currentTab === tabName)
+                      : (cleanPath === sub.path || cleanPath.startsWith(sub.path + "/"));
+                    const subHref = isAdmin ? `/admin${sub.path}` : sub.path;
 
-                  return (
-                    <MenuItem
-                      key={sub.text}
-                      onClick={() => {
-                        handleMenuLeave();
-                        router.push(subHref);
-                      }}
-                      sx={{
-                        py: 1,
-                        px: 2,
-                        fontSize: "0.825rem",
-                        fontWeight: isSubActive ? 700 : 500,
-                        color: isSubActive ? "primary.main" : "text.secondary",
-                        backgroundColor: isSubActive ? "rgba(15, 118, 110, 0.08)" : "transparent",
-                        "&:hover": {
-                          backgroundColor: "rgba(15, 118, 110, 0.04)",
-                          color: "primary.main"
-                        }
-                      }}
-                    >
-                      {sub.text}
-                    </MenuItem>
-                  );
-                })}
-              </MenuList>
-            </Paper>
-          </Popper>
+                    return (
+                      <MenuItem
+                        key={sub.text}
+                        onClick={() => {
+                          handleMenuLeave();
+                          router.push(subHref);
+                        }}
+                        sx={{
+                          py: 1,
+                          px: 2,
+                          fontSize: "0.825rem",
+                          fontWeight: isSubActive ? 700 : 500,
+                          color: isSubActive ? "primary.main" : "text.secondary",
+                          backgroundColor: isSubActive ? "rgba(15, 118, 110, 0.08)" : "transparent",
+                          "&:hover": {
+                            backgroundColor: "rgba(15, 118, 110, 0.04)",
+                            color: "primary.main"
+                          }
+                        }}
+                      >
+                        {sub.text}
+                      </MenuItem>
+                    );
+                  })}
+                </MenuList>
+              </Paper>
+            </Popper>
+          )}
         </Box>
       </ThemeProvider>
     </TrackingProvider>
