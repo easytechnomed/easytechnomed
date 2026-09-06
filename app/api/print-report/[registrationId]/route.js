@@ -484,6 +484,27 @@ export async function GET(req, { params }) {
     const authorizedSignatoryName2 = workspacePdf?.authorizedSignatoryName2 || configAdmin?.authorizedSignatoryName2 || "";
     const authorizedSignatoryDegree2 = workspacePdf?.authorizedSignatoryDegree2 || configAdmin?.authorizedSignatoryDegree2 || "";
 
+    const signature1Url = workspacePdf?.signature1Url || null;
+    const signature2Url = workspacePdf?.signature2Url || null;
+
+    let signaturesConfig = {
+      sign1: { width: 100, height: 45, offsetX: 0, offsetY: 0 },
+      sign2: { width: 100, height: 45, offsetX: 0, offsetY: 0 },
+    };
+    try {
+      if (workspacePdf?.signaturesConfig) {
+        const parsed = typeof workspacePdf.signaturesConfig === "string" ? JSON.parse(workspacePdf.signaturesConfig) : workspacePdf.signaturesConfig;
+        signaturesConfig = { ...signaturesConfig, ...parsed };
+      }
+    } catch {}
+
+    let logosConfig = [];
+    try {
+      if (workspacePdf?.logosConfig) {
+        logosConfig = typeof workspacePdf.logosConfig === "string" ? JSON.parse(workspacePdf.logosConfig) : workspacePdf.logosConfig;
+      }
+    } catch {}
+
     const showSignatures = workspacePdf?.showSignatures ?? true;
     const showQrCode = workspacePdf?.showQrCode ?? true;
     const showDepartmentBanner = workspacePdf?.showDepartmentBanner ?? true;
@@ -495,6 +516,35 @@ export async function GET(req, { params }) {
     const font = await pdfDoc.embedFont(fontDefs.regular);
     const fontBold = await pdfDoc.embedFont(fontDefs.bold);
     const fontOblique = await pdfDoc.embedFont(fontDefs.oblique);
+
+    // Image fetch helper (PNG & JPEG)
+    const fetchAndEmbedImage = async (imgUrl) => {
+      if (!imgUrl || typeof imgUrl !== "string" || !imgUrl.startsWith("http")) return null;
+      try {
+        const res = await fetch(imgUrl);
+        if (!res.ok) return null;
+        const bytes = await res.arrayBuffer();
+        try {
+          return await pdfDoc.embedPng(bytes);
+        } catch {
+          return await pdfDoc.embedJpg(bytes);
+        }
+      } catch (err) {
+        console.error("fetchAndEmbedImage error for URL in print-report:", imgUrl, err);
+        return null;
+      }
+    };
+
+    // Embed Signatures & Logos
+    const [embeddedSig1, embeddedSig2, ...embeddedLogosRaw] = await Promise.all([
+      fetchAndEmbedImage(signature1Url),
+      fetchAndEmbedImage(signature2Url),
+      ...logosConfig.map((l) => (l && l.enabled !== false && l.url ? fetchAndEmbedImage(l.url) : Promise.resolve(null))),
+    ]);
+
+    const embeddedLogos = logosConfig
+      .map((logo, idx) => ({ ...logo, img: embeddedLogosRaw[idx] }))
+      .filter((logo) => Boolean(logo.img));
 
     // Fetch and embed QR Code image
     let qrImage = null;
@@ -532,6 +582,42 @@ export async function GET(req, { params }) {
     let currentPage = null;
     let pageCount = 0;
 
+    const drawLogos = (page, isFirstPage) => {
+      for (const logo of embeddedLogos) {
+        if (!logo || !logo.img) continue;
+        if (logo.showOnPages === "first" && !isFirstPage) continue;
+        const w = parseFloat(logo.width) || 110;
+        const h = parseFloat(logo.height) || 50;
+        let x = leftMargin;
+        let y = pageHeight - 75;
+
+        const preset = logo.positionPreset || "top-left";
+        const userX = parseFloat(logo.x) || 0;
+        const userY = parseFloat(logo.y) || 20;
+
+        if (preset === "top-left") {
+          x = leftMargin + userX;
+          y = pageHeight - userY - h;
+        } else if (preset === "top-center") {
+          x = (pageWidth - w) / 2 + userX;
+          y = pageHeight - userY - h;
+        } else if (preset === "top-right") {
+          x = pageWidth - rightMargin - w - userX;
+          y = pageHeight - userY - h;
+        } else {
+          x = userX || leftMargin;
+          y = pageHeight - userY - h;
+        }
+
+        page.drawImage(logo.img, {
+          x: Math.max(0, Math.min(pageWidth - w, x)),
+          y: Math.max(0, Math.min(pageHeight - h, y)),
+          width: w,
+          height: h,
+        });
+      }
+    };
+
     const addNewPage = async () => {
       pageCount++;
       if (framePdfDoc && framePdfDoc.getPageCount() > 0) {
@@ -543,6 +629,7 @@ export async function GET(req, { params }) {
           drawDefaultHeaderFooter(currentPage);
         }
       }
+      drawLogos(currentPage, pageCount === 1);
       return currentPage;
     };
 
@@ -1367,6 +1454,20 @@ export async function GET(req, { params }) {
 
       // Left: Authorized Signatory 1
       if (hasSig1) {
+        const s1Width = parseFloat(signaturesConfig?.sign1?.width) || 100;
+        const s1Height = parseFloat(signaturesConfig?.sign1?.height) || 45;
+        const s1OffsetX = parseFloat(signaturesConfig?.sign1?.offsetX) || 0;
+        const s1OffsetY = parseFloat(signaturesConfig?.sign1?.offsetY) || 0;
+
+        if (embeddedSig1) {
+          currentPage.drawImage(embeddedSig1, {
+            x: leftMargin + 15 + s1OffsetX,
+            y: sigY + 14 + s1OffsetY,
+            width: s1Width,
+            height: s1Height,
+          });
+        }
+
         currentPage.drawLine({
           start: { x: leftMargin + 15, y: sigY + 12 },
           end: { x: leftMargin + 155, y: sigY + 12 },
@@ -1405,6 +1506,20 @@ export async function GET(req, { params }) {
       // Right: Authorized Signatory 2
       if (hasSig2) {
         const sig2X = pageWidth - rightMargin - 155;
+        const s2Width = parseFloat(signaturesConfig?.sign2?.width) || 100;
+        const s2Height = parseFloat(signaturesConfig?.sign2?.height) || 45;
+        const s2OffsetX = parseFloat(signaturesConfig?.sign2?.offsetX) || 0;
+        const s2OffsetY = parseFloat(signaturesConfig?.sign2?.offsetY) || 0;
+
+        if (embeddedSig2) {
+          currentPage.drawImage(embeddedSig2, {
+            x: sig2X + s2OffsetX,
+            y: sigY + 14 + s2OffsetY,
+            width: s2Width,
+            height: s2Height,
+          });
+        }
+
         currentPage.drawLine({
           start: { x: sig2X, y: sigY + 12 },
           end: { x: sig2X + 140, y: sigY + 12 },

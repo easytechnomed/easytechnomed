@@ -36,6 +36,13 @@ export const DEFAULT_PDF_SETTINGS = {
   authorizedSignatoryDegree1: "",
   authorizedSignatoryName2: "",
   authorizedSignatoryDegree2: "",
+  signature1Url: null,
+  signature2Url: null,
+  signaturesConfig: JSON.stringify({
+    sign1: { width: 100, height: 45, offsetX: 0, offsetY: 0 },
+    sign2: { width: 100, height: 45, offsetX: 0, offsetY: 0 },
+  }),
+  logosConfig: JSON.stringify([]),
   showSignatures: true,
   showQrCode: true,
   showDepartmentBanner: true,
@@ -83,9 +90,18 @@ export async function GET() {
         authorizedSignatoryDegree2: adminRecord?.authorizedSignatoryDegree2 || "",
       };
     } else {
-      // Ensure columnOrder has valid fallback if null or corrupted
+      // Ensure columnOrder, signaturesConfig, logosConfig have valid fallbacks if null
       if (!pdfConfig.columnOrder) {
         pdfConfig.columnOrder = JSON.stringify(DEFAULT_COLUMN_ORDER);
+      }
+      if (!pdfConfig.signaturesConfig) {
+        pdfConfig.signaturesConfig = JSON.stringify({
+          sign1: { width: 100, height: 45, offsetX: 0, offsetY: 0 },
+          sign2: { width: 100, height: 45, offsetX: 0, offsetY: 0 },
+        });
+      }
+      if (!pdfConfig.logosConfig) {
+        pdfConfig.logosConfig = JSON.stringify([]);
       }
     }
 
@@ -118,6 +134,25 @@ export async function POST(req) {
       columnOrderStr = JSON.stringify(DEFAULT_COLUMN_ORDER);
     }
 
+    // Normalize signatures config
+    let signaturesConfigStr = body.signaturesConfig;
+    if (typeof signaturesConfigStr === "object" && signaturesConfigStr !== null) {
+      signaturesConfigStr = JSON.stringify(signaturesConfigStr);
+    } else if (typeof signaturesConfigStr !== "string") {
+      signaturesConfigStr = JSON.stringify({
+        sign1: { width: 100, height: 45, offsetX: 0, offsetY: 0 },
+        sign2: { width: 100, height: 45, offsetX: 0, offsetY: 0 },
+      });
+    }
+
+    // Normalize logos config
+    let logosConfigStr = body.logosConfig;
+    if (Array.isArray(logosConfigStr)) {
+      logosConfigStr = JSON.stringify(logosConfigStr);
+    } else if (typeof logosConfigStr !== "string") {
+      logosConfigStr = JSON.stringify([]);
+    }
+
     const payload = {
       framePdfUrl: body.framePdfUrl || null,
       useFrameDefault: body.useFrameDefault !== undefined ? Boolean(body.useFrameDefault) : true,
@@ -144,22 +179,43 @@ export async function POST(req) {
       authorizedSignatoryDegree1: body.authorizedSignatoryDegree1 || null,
       authorizedSignatoryName2: body.authorizedSignatoryName2 || null,
       authorizedSignatoryDegree2: body.authorizedSignatoryDegree2 || null,
+      signature1Url: body.signature1Url || null,
+      signature2Url: body.signature2Url || null,
+      signaturesConfig: signaturesConfigStr,
+      logosConfig: logosConfigStr,
       showSignatures: body.showSignatures !== undefined ? Boolean(body.showSignatures) : true,
       showQrCode: body.showQrCode !== undefined ? Boolean(body.showQrCode) : true,
       showDepartmentBanner: body.showDepartmentBanner !== undefined ? Boolean(body.showDepartmentBanner) : true,
       showPatientBox: body.showPatientBox !== undefined ? Boolean(body.showPatientBox) : true,
     };
 
-    const saved = await prisma.workspacePdf.upsert({
-      where: { workspaceId },
-      create: {
-        workspaceId,
-        ...payload,
-      },
-      update: {
-        ...payload,
-      },
-    });
+    let saved;
+    try {
+      saved = await prisma.workspacePdf.upsert({
+        where: { workspaceId },
+        create: {
+          workspaceId,
+          ...payload,
+        },
+        update: {
+          ...payload,
+        },
+      });
+    } catch (dbErr) {
+      console.warn("Retrying WorkspacePdf upsert with legacy fields:", dbErr.message);
+      const { signature1Url, signature2Url, signaturesConfig, logosConfig, ...legacyPayload } = payload;
+      saved = await prisma.workspacePdf.upsert({
+        where: { workspaceId },
+        create: {
+          workspaceId,
+          ...legacyPayload,
+        },
+        update: {
+          ...legacyPayload,
+        },
+      });
+      saved = { ...saved, signature1Url, signature2Url, signaturesConfig, logosConfig };
+    }
 
     // Also keep legacy admin fields in sync
     await prisma.admin.update({

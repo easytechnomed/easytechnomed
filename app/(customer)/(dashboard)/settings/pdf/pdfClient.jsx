@@ -53,7 +53,13 @@ import {
   Visibility as ShowIcon,
   VisibilityOff as HideIcon,
   CheckCircle as CheckIcon,
-  Palette as PaletteIcon
+  Palette as PaletteIcon,
+  AddPhotoAlternate as AddImageIcon,
+  Delete as DeleteIcon,
+  Image as ImageIcon,
+  Tune as TuneIcon,
+  Draw as DrawIcon,
+  Add as AddIcon,
 } from "@mui/icons-material";
 import { useAdminPermissions } from "@/lib/clientAuth";
 import { DEFAULT_COLUMNS, PDF_THEME_PRESETS } from "@/lib/pdfTheme";
@@ -88,6 +94,13 @@ export default function PdfSettingsClient() {
     authorizedSignatoryDegree1: "",
     authorizedSignatoryName2: "",
     authorizedSignatoryDegree2: "",
+    signature1Url: "",
+    signature2Url: "",
+    signaturesConfig: {
+      sign1: { width: 100, height: 45, offsetX: 0, offsetY: 0 },
+      sign2: { width: 100, height: 45, offsetX: 0, offsetY: 0 },
+    },
+    logosConfig: [],
     showSignatures: true,
     showQrCode: true,
     showDepartmentBanner: true,
@@ -97,6 +110,9 @@ export default function PdfSettingsClient() {
   const [activeTab, setActiveTab] = useState(0);
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
+  const [uploadingSig1, setUploadingSig1] = useState(false);
+  const [uploadingSig2, setUploadingSig2] = useState(false);
+  const [uploadingLogo, setUploadingLogo] = useState(false);
   const [saving, setSaving] = useState(false);
   const [toast, setToast] = useState({ open: false, message: "", severity: "success" });
 
@@ -138,6 +154,28 @@ export default function PdfSettingsClient() {
             }
           }
 
+          let parsedSignatures = {
+            sign1: { width: 100, height: 45, offsetX: 0, offsetY: 0 },
+            sign2: { width: 100, height: 45, offsetX: 0, offsetY: 0 },
+          };
+          if (s.signaturesConfig) {
+            try {
+              const p = typeof s.signaturesConfig === "string" ? JSON.parse(s.signaturesConfig) : s.signaturesConfig;
+              parsedSignatures = {
+                sign1: { ...parsedSignatures.sign1, ...(p?.sign1 || {}) },
+                sign2: { ...parsedSignatures.sign2, ...(p?.sign2 || {}) },
+              };
+            } catch {}
+          }
+
+          let parsedLogos = [];
+          if (s.logosConfig) {
+            try {
+              parsedLogos = typeof s.logosConfig === "string" ? JSON.parse(s.logosConfig) : s.logosConfig;
+              if (!Array.isArray(parsedLogos)) parsedLogos = [];
+            } catch {}
+          }
+
           setSettings({
             framePdfUrl: s.framePdfUrl || "",
             headerMargin: s.headerMargin ?? 140,
@@ -164,6 +202,10 @@ export default function PdfSettingsClient() {
             authorizedSignatoryDegree1: s.authorizedSignatoryDegree1 || "",
             authorizedSignatoryName2: s.authorizedSignatoryName2 || "",
             authorizedSignatoryDegree2: s.authorizedSignatoryDegree2 || "",
+            signature1Url: s.signature1Url || "",
+            signature2Url: s.signature2Url || "",
+            signaturesConfig: parsedSignatures,
+            logosConfig: parsedLogos,
             showSignatures: s.showSignatures ?? true,
             showQrCode: s.showQrCode ?? true,
             showDepartmentBanner: s.showDepartmentBanner ?? true,
@@ -286,7 +328,7 @@ export default function PdfSettingsClient() {
 
   // Reset All to Standard Defaults
   const handleResetDefaults = () => {
-    if (window.confirm("Are you sure you want to reset all colors, column positions, and font sizes to defaults?")) {
+    if (window.confirm("Are you sure you want to reset all colors, column positions, font sizes, signatures, and logos to defaults?")) {
       setSettings((prev) => ({
         ...prev,
         headerMargin: 140,
@@ -308,6 +350,13 @@ export default function PdfSettingsClient() {
         departmentFontSize: 9.5,
         remarkFontSize: 8.5,
         columnOrder: DEFAULT_COLUMNS,
+        signature1Url: "",
+        signature2Url: "",
+        signaturesConfig: {
+          sign1: { width: 100, height: 45, offsetX: 0, offsetY: 0 },
+          sign2: { width: 100, height: 45, offsetX: 0, offsetY: 0 },
+        },
+        logosConfig: [],
         showSignatures: true,
         showQrCode: true,
         showDepartmentBanner: true,
@@ -331,8 +380,9 @@ export default function PdfSettingsClient() {
     try {
       const formData = new FormData();
       formData.append("file", file);
+      formData.append("folder", "frame-templates");
 
-      const res = await fetch("/api/settings/upload-frame", {
+      const res = await fetch("/api/settings/upload-media", {
         method: "POST",
         body: formData,
       }).then((r) => r.json());
@@ -354,6 +404,132 @@ export default function PdfSettingsClient() {
     showToast("Template frame URL cleared. Click Save to apply changes.", "info");
   };
 
+  // ── Signature Image Upload & Adjustment Handlers ──────────────────
+  const handleSignatureUpload = async (signKey, e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith("image/")) {
+      showToast("Please upload an image file (PNG or JPG). Transparent PNG is recommended.", "error");
+      return;
+    }
+
+    const setSpinner = signKey === "sign1" ? setUploadingSig1 : setUploadingSig2;
+    setSpinner(true);
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+      formData.append("folder", "signatures");
+
+      const res = await fetch("/api/settings/upload-media", {
+        method: "POST",
+        body: formData,
+      }).then((r) => r.json());
+
+      if (res.success && res.url) {
+        const fieldName = signKey === "sign1" ? "signature1Url" : "signature2Url";
+        handleInputChange(fieldName, res.url);
+        showToast(`${signKey === "sign1" ? "Signatory 1" : "Signatory 2"} signature image uploaded to Cloudflare!`, "success");
+      } else {
+        showToast(res.error || "Failed to upload signature image.", "error");
+      }
+    } catch (err) {
+      showToast("An error occurred during signature upload.", "error");
+    } finally {
+      setSpinner(false);
+    }
+  };
+
+  const handleClearSignature = (signKey) => {
+    const fieldName = signKey === "sign1" ? "signature1Url" : "signature2Url";
+    handleInputChange(fieldName, "");
+    showToast(`Signature removed. Click Save to apply changes.`, "info");
+  };
+
+  const handleSignatureAdjustment = (signKey, property, value) => {
+    setSettings((prev) => ({
+      ...prev,
+      signaturesConfig: {
+        ...prev.signaturesConfig,
+        [signKey]: {
+          ...(prev.signaturesConfig?.[signKey] || {}),
+          [property]: value,
+        },
+      },
+    }));
+  };
+
+  // ── Multiple Logos Upload & Position Handlers ──────────────────
+  const handleLogoUpload = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith("image/")) {
+      showToast("Please upload an image file (PNG or JPG).", "error");
+      return;
+    }
+
+    setUploadingLogo(true);
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+      formData.append("folder", "logos");
+
+      const res = await fetch("/api/settings/upload-media", {
+        method: "POST",
+        body: formData,
+      }).then((r) => r.json());
+
+      if (res.success && res.url) {
+        const cleanName = file.name.replace(/\.[^/.]+$/, "") || "Lab Logo";
+        const newLogo = {
+          id: `logo_${Date.now()}`,
+          name: cleanName,
+          url: res.url,
+          positionPreset: "top-left",
+          x: 0,
+          y: 20,
+          width: 110,
+          height: 50,
+          showOnPages: "all",
+          enabled: true,
+        };
+
+        setSettings((prev) => ({
+          ...prev,
+          logosConfig: [...(prev.logosConfig || []), newLogo],
+        }));
+        showToast(`Logo "${cleanName}" uploaded to Cloudflare logos folder!`, "success");
+      } else {
+        showToast(res.error || "Failed to upload logo image.", "error");
+      }
+    } catch (err) {
+      showToast("An error occurred during logo upload.", "error");
+    } finally {
+      setUploadingLogo(false);
+    }
+  };
+
+  const handleUpdateLogo = (index, field, value) => {
+    setSettings((prev) => {
+      const updated = [...(prev.logosConfig || [])];
+      updated[index] = {
+        ...updated[index],
+        [field]: value,
+      };
+      return { ...prev, logosConfig: updated };
+    });
+  };
+
+  const handleDeleteLogo = (index) => {
+    setSettings((prev) => {
+      const updated = [...(prev.logosConfig || [])];
+      updated.splice(index, 1);
+      return { ...prev, logosConfig: updated };
+    });
+    showToast("Logo removed from configuration.", "info");
+  };
+
   // Save Settings to Backend
   const handleSave = async () => {
     setSaving(true);
@@ -361,6 +537,8 @@ export default function PdfSettingsClient() {
       const payload = {
         ...settings,
         columnOrder: JSON.stringify(settings.columnOrder),
+        signaturesConfig: JSON.stringify(settings.signaturesConfig),
+        logosConfig: JSON.stringify(settings.logosConfig),
       };
 
       const res = await fetch("/api/settings/pdf", {
@@ -408,6 +586,10 @@ export default function PdfSettingsClient() {
     authorizedSignatoryDegree1: settings.authorizedSignatoryDegree1 || "",
     authorizedSignatoryName2: settings.authorizedSignatoryName2 || "",
     authorizedSignatoryDegree2: settings.authorizedSignatoryDegree2 || "",
+    signature1Url: settings.signature1Url || "",
+    signature2Url: settings.signature2Url || "",
+    signaturesConfig: JSON.stringify(settings.signaturesConfig),
+    logosConfig: JSON.stringify(settings.logosConfig),
     showSignatures: String(settings.showSignatures),
     showQrCode: String(settings.showQrCode),
     showDepartmentBanner: String(settings.showDepartmentBanner),
@@ -572,7 +754,8 @@ export default function PdfSettingsClient() {
                   <Tab icon={<PaletteIcon fontSize="small" />} iconPosition="start" label="Colors & Themes" />
                   <Tab icon={<TypographyIcon fontSize="small" />} iconPosition="start" label="Typography" />
                   <Tab icon={<MarginIcon fontSize="small" />} iconPosition="start" label="Letterhead & Margins" />
-                  <Tab icon={<SignatoryIcon fontSize="small" />} iconPosition="start" label="Signatories & Toggles" />
+                  <Tab icon={<ImageIcon fontSize="small" />} iconPosition="start" label="Logos & Branding" />
+                  <Tab icon={<SignatoryIcon fontSize="small" />} iconPosition="start" label="Signatures & Toggles" />
                 </Tabs>
               </Paper>
 
@@ -1308,17 +1491,297 @@ export default function PdfSettingsClient() {
                 </Box>
               )}
 
-              {/* ── TAB 4: SIGNATORIES & SECTION TOGGLES ──────────────────────── */}
+              {/* ── TAB 4: LOGOS & BRANDING ──────────────────────────────────── */}
               {activeTab === 4 && (
                 <Box>
-                  {/* Signatories */}
                   <Paper variant="outlined" sx={{ p: 2.5, borderRadius: 3, mb: 2.5 }}>
-                    <Typography variant="subtitle2" sx={{ fontWeight: 800, mb: 0.5 }}>
-                      Authorized Signatories
-                    </Typography>
-                    <Typography variant="caption" color="text.secondary" sx={{ display: "block", mb: 2 }}>
-                      Doctor names and qualifications that appear at the bottom signature area.
-                    </Typography>
+                    <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", mb: 2, flexWrap: "wrap", gap: 1 }}>
+                      <Box>
+                        <Typography variant="subtitle2" sx={{ fontWeight: 800 }}>
+                          Report Logos & Accreditation Badges
+                        </Typography>
+                        <Typography variant="caption" color="text.secondary">
+                          Upload multiple logos (e.g. Main Lab Logo, NABL, ISO, ICMR badges). Position and size each logo independently.
+                        </Typography>
+                      </Box>
+                      <Tooltip title={!canWriteSettings ? "You do not have permission to upload logos" : ""}>
+                        <span>
+                          <Button
+                            variant="contained"
+                            component="label"
+                            size="small"
+                            startIcon={uploadingLogo ? <CircularProgress size={16} color="inherit" /> : <AddImageIcon fontSize="small" />}
+                            disabled={uploadingLogo || !canWriteSettings}
+                            sx={{ textTransform: "none", borderRadius: 2, fontWeight: 700 }}
+                          >
+                            {uploadingLogo ? "Uploading..." : "Upload New Logo"}
+                            <input
+                              type="file"
+                              hidden
+                              accept="image/png,image/jpeg,image/jpg"
+                              onChange={handleLogoUpload}
+                            />
+                          </Button>
+                        </span>
+                      </Tooltip>
+                    </Box>
+
+                    {(!settings.logosConfig || settings.logosConfig.length === 0) ? (
+                      <Box sx={{ p: 3, border: "2px dashed", borderColor: "grey.300", borderRadius: 2.5, textAlign: "center", bgcolor: "grey.50" }}>
+                        <Typography sx={{ fontSize: "2.5rem", mb: 0.5 }}>🏷️</Typography>
+                        <Typography variant="subtitle2" color="text.primary" sx={{ fontWeight: 700 }}>
+                          No Logos Added Yet
+                        </Typography>
+                        <Typography variant="caption" color="text.secondary" sx={{ display: "block", maxWidth: 360, mx: "auto", mt: 0.5, mb: 1.5 }}>
+                          Upload your laboratory brand logo or government accreditation marks (NABL/ISO). Stored in Cloudflare R2 bucket.
+                        </Typography>
+                        <Button
+                          variant="outlined"
+                          component="label"
+                          size="small"
+                          startIcon={uploadingLogo ? <CircularProgress size={16} color="inherit" /> : <UploadIcon fontSize="small" />}
+                          disabled={uploadingLogo || !canWriteSettings}
+                          sx={{ textTransform: "none", borderRadius: 2 }}
+                        >
+                          {uploadingLogo ? "Uploading..." : "Choose Logo Image"}
+                          <input
+                            type="file"
+                            hidden
+                            accept="image/png,image/jpeg,image/jpg"
+                            onChange={handleLogoUpload}
+                          />
+                        </Button>
+                      </Box>
+                    ) : (
+                      <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
+                        {settings.logosConfig.map((logo, index) => (
+                          <Paper
+                            key={logo.id || index}
+                            variant="outlined"
+                            sx={{
+                              p: 2,
+                              borderRadius: 2.5,
+                              bgcolor: logo.enabled !== false ? "#ffffff" : "grey.50",
+                              opacity: logo.enabled !== false ? 1 : 0.65,
+                              border: "1px solid",
+                              borderColor: "divider",
+                              transition: "all 0.2s ease",
+                            }}
+                          >
+                            {/* Header row: Thumbnail, Name, Status & Delete */}
+                            <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", mb: 2, flexWrap: "wrap", gap: 1 }}>
+                              <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
+                                {/* Thumbnail Box with checkerboard background for transparency */}
+                                <Box
+                                  sx={{
+                                    width: 52,
+                                    height: 52,
+                                    borderRadius: 1.5,
+                                    border: "1px solid",
+                                    borderColor: "grey.300",
+                                    display: "flex",
+                                    alignItems: "center",
+                                    justifyContent: "center",
+                                    overflow: "hidden",
+                                    bgcolor: "#ffffff",
+                                    backgroundImage: "linear-gradient(45deg, #f1f5f9 25%, transparent 25%), linear-gradient(-45deg, #f1f5f9 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #f1f5f9 75%), linear-gradient(-45deg, transparent 75%, #f1f5f9 75%)",
+                                    backgroundSize: "10px 10px",
+                                  }}
+                                >
+                                  <img
+                                    src={logo.url}
+                                    alt={logo.name || "Logo"}
+                                    style={{ maxWidth: "100%", maxHeight: "100%", objectFit: "contain" }}
+                                  />
+                                </Box>
+
+                                <Box>
+                                  <TextField
+                                    size="small"
+                                    value={logo.name || ""}
+                                    onChange={(e) => handleUpdateLogo(index, "name", e.target.value)}
+                                    placeholder="e.g. Lab Main Logo"
+                                    InputProps={{ sx: { fontSize: "0.85rem", height: 32, fontWeight: 700 } }}
+                                    sx={{ width: 180 }}
+                                  />
+                                  <Typography variant="caption" color="text.secondary" sx={{ display: "block", mt: 0.2 }}>
+                                    Logo #{index + 1} &bull; Cloudflare R2 logos folder
+                                  </Typography>
+                                </Box>
+                              </Box>
+
+                              <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                                <FormControlLabel
+                                  control={
+                                    <Switch
+                                      size="small"
+                                      checked={logo.enabled !== false}
+                                      onChange={(e) => handleUpdateLogo(index, "enabled", e.target.checked)}
+                                      color="primary"
+                                    />
+                                  }
+                                  label={<Typography variant="caption" sx={{ fontWeight: 600 }}>{logo.enabled !== false ? "Visible" : "Hidden"}</Typography>}
+                                />
+
+                                <Tooltip title="Delete Logo">
+                                  <IconButton size="small" color="error" onClick={() => handleDeleteLogo(index)}>
+                                    <DeleteIcon fontSize="small" />
+                                  </IconButton>
+                                </Tooltip>
+                              </Box>
+                            </Box>
+
+                            <Divider sx={{ my: 1.5 }} />
+
+                            {/* Position and Sizing Controls */}
+                            <Grid container spacing={2}>
+                              {/* Position Preset */}
+                              <Grid size={{ xs: 12, sm: 6 }}>
+                                <Typography variant="caption" sx={{ fontWeight: 700, mb: 0.5, display: "block", textTransform: "uppercase" }}>
+                                  Placement Position
+                                </Typography>
+                                <ButtonGroup size="small" fullWidth variant="outlined">
+                                  <Button
+                                    variant={(logo.positionPreset || "top-left") === "top-left" ? "contained" : "outlined"}
+                                    onClick={() => handleUpdateLogo(index, "positionPreset", "top-left")}
+                                    sx={{ textTransform: "none", fontSize: "0.75rem", py: 0.5 }}
+                                  >
+                                    Top Left
+                                  </Button>
+                                  <Button
+                                    variant={logo.positionPreset === "top-center" ? "contained" : "outlined"}
+                                    onClick={() => handleUpdateLogo(index, "positionPreset", "top-center")}
+                                    sx={{ textTransform: "none", fontSize: "0.75rem", py: 0.5 }}
+                                  >
+                                    Top Center
+                                  </Button>
+                                  <Button
+                                    variant={logo.positionPreset === "top-right" ? "contained" : "outlined"}
+                                    onClick={() => handleUpdateLogo(index, "positionPreset", "top-right")}
+                                    sx={{ textTransform: "none", fontSize: "0.75rem", py: 0.5 }}
+                                  >
+                                    Top Right
+                                  </Button>
+                                  <Button
+                                    variant={logo.positionPreset === "custom" ? "contained" : "outlined"}
+                                    onClick={() => handleUpdateLogo(index, "positionPreset", "custom")}
+                                    sx={{ textTransform: "none", fontSize: "0.75rem", py: 0.5 }}
+                                  >
+                                    Custom
+                                  </Button>
+                                </ButtonGroup>
+                              </Grid>
+
+                              {/* Display Pages */}
+                              <Grid size={{ xs: 12, sm: 6 }}>
+                                <Typography variant="caption" sx={{ fontWeight: 700, mb: 0.5, display: "block", textTransform: "uppercase" }}>
+                                  Print on Pages
+                                </Typography>
+                                <ButtonGroup size="small" fullWidth variant="outlined">
+                                  <Button
+                                    variant={(logo.showOnPages || "all") === "all" ? "contained" : "outlined"}
+                                    onClick={() => handleUpdateLogo(index, "showOnPages", "all")}
+                                    sx={{ textTransform: "none", fontSize: "0.75rem", py: 0.5 }}
+                                  >
+                                    All Report Pages
+                                  </Button>
+                                  <Button
+                                    variant={logo.showOnPages === "first" ? "contained" : "outlined"}
+                                    onClick={() => handleUpdateLogo(index, "showOnPages", "first")}
+                                    sx={{ textTransform: "none", fontSize: "0.75rem", py: 0.5 }}
+                                  >
+                                    First Page Only
+                                  </Button>
+                                </ButtonGroup>
+                              </Grid>
+
+                              {/* Width & Height Sliders */}
+                              <Grid size={{ xs: 12, sm: 6 }}>
+                                <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 0.5 }}>
+                                  <Typography variant="caption" sx={{ fontWeight: 700 }}>Width</Typography>
+                                  <Chip label={`${logo.width || 110} pt`} size="small" variant="outlined" sx={{ fontWeight: 700, height: 20 }} />
+                                </Box>
+                                <Slider
+                                  size="small"
+                                  value={parseFloat(logo.width) || 110}
+                                  min={30}
+                                  max={250}
+                                  step={2}
+                                  onChange={(e, val) => handleUpdateLogo(index, "width", val)}
+                                />
+                              </Grid>
+
+                              <Grid size={{ xs: 12, sm: 6 }}>
+                                <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 0.5 }}>
+                                  <Typography variant="caption" sx={{ fontWeight: 700 }}>Height</Typography>
+                                  <Chip label={`${logo.height || 50} pt`} size="small" variant="outlined" sx={{ fontWeight: 700, height: 20 }} />
+                                </Box>
+                                <Slider
+                                  size="small"
+                                  value={parseFloat(logo.height) || 50}
+                                  min={20}
+                                  max={160}
+                                  step={2}
+                                  onChange={(e, val) => handleUpdateLogo(index, "height", val)}
+                                />
+                              </Grid>
+
+                              {/* Fine Offset / Coordinates Sliders */}
+                              <Grid size={{ xs: 12, sm: 6 }}>
+                                <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 0.5 }}>
+                                  <Typography variant="caption" sx={{ fontWeight: 700 }}>
+                                    {logo.positionPreset === "custom" ? "X Position (from Left Margin)" : "Horizontal Offset (Nudge X)"}
+                                  </Typography>
+                                  <Chip label={`${logo.x || 0} pt`} size="small" variant="outlined" sx={{ fontWeight: 700, height: 20 }} />
+                                </Box>
+                                <Slider
+                                  size="small"
+                                  value={parseFloat(logo.x) || 0}
+                                  min={logo.positionPreset === "custom" ? 0 : -60}
+                                  max={logo.positionPreset === "custom" ? 500 : 60}
+                                  step={1}
+                                  onChange={(e, val) => handleUpdateLogo(index, "x", val)}
+                                />
+                              </Grid>
+
+                              <Grid size={{ xs: 12, sm: 6 }}>
+                                <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 0.5 }}>
+                                  <Typography variant="caption" sx={{ fontWeight: 700 }}>
+                                    Distance from Top of Page (Y)
+                                  </Typography>
+                                  <Chip label={`${logo.y || 20} pt`} size="small" variant="outlined" sx={{ fontWeight: 700, height: 20 }} />
+                                </Box>
+                                <Slider
+                                  size="small"
+                                  value={parseFloat(logo.y) || 20}
+                                  min={5}
+                                  max={300}
+                                  step={1}
+                                  onChange={(e, val) => handleUpdateLogo(index, "y", val)}
+                                />
+                              </Grid>
+                            </Grid>
+                          </Paper>
+                        ))}
+                      </Box>
+                    )}
+                  </Paper>
+                </Box>
+              )}
+
+              {/* ── TAB 5: SIGNATURES & SECTION TOGGLES ──────────────────────── */}
+              {activeTab === 5 && (
+                <Box>
+                  {/* Signatory 1 Card */}
+                  <Paper variant="outlined" sx={{ p: 2.5, borderRadius: 3, mb: 2.5 }}>
+                    <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", mb: 1.5 }}>
+                      <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                        <Chip label="Signatory 1" color="primary" size="small" sx={{ fontWeight: 800 }} />
+                        <Typography variant="subtitle2" sx={{ fontWeight: 800 }}>
+                          Left Pathologist / Doctor Signature
+                        </Typography>
+                      </Box>
+                    </Box>
 
                     <Grid container spacing={2}>
                       <Grid size={{ xs: 12, sm: 6 }}>
@@ -1343,6 +1806,185 @@ export default function PdfSettingsClient() {
                         />
                       </Grid>
 
+                      {/* Signature Image Upload & Thumbnail */}
+                      <Grid size={{ xs: 12 }}>
+                        <Typography variant="caption" sx={{ fontWeight: 700, display: "block", mb: 1, textTransform: "uppercase" }}>
+                          Signatory 1 - Digital Signature Image
+                        </Typography>
+
+                        {settings.signature1Url ? (
+                          <Box
+                            sx={{
+                              display: "flex",
+                              alignItems: "center",
+                              gap: 2,
+                              p: 1.5,
+                              borderRadius: 2,
+                              border: "1px solid",
+                              borderColor: "primary.light",
+                              bgcolor: "rgba(15, 118, 110, 0.04)"
+                            }}
+                          >
+                            {/* Checkerboard thumbnail box */}
+                            <Box
+                              sx={{
+                                width: 100,
+                                height: 48,
+                                borderRadius: 1.5,
+                                border: "1px solid",
+                                borderColor: "grey.300",
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "center",
+                                overflow: "hidden",
+                                bgcolor: "#ffffff",
+                                backgroundImage: "linear-gradient(45deg, #f1f5f9 25%, transparent 25%), linear-gradient(-45deg, #f1f5f9 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #f1f5f9 75%), linear-gradient(-45deg, transparent 75%, #f1f5f9 75%)",
+                                backgroundSize: "8px 8px",
+                              }}
+                            >
+                              <img
+                                src={settings.signature1Url}
+                                alt="Signatory 1 Signature"
+                                style={{ maxWidth: "100%", maxHeight: "100%", objectFit: "contain" }}
+                              />
+                            </Box>
+
+                            <Box sx={{ flexGrow: 1, minWidth: 0 }}>
+                              <Typography variant="caption" sx={{ fontWeight: 700, color: "primary.dark", display: "block" }}>
+                                Active Signature Image (Cloudflare R2 signatures folder)
+                              </Typography>
+                              <Typography variant="caption" color="text.secondary" noWrap sx={{ display: "block" }}>
+                                {settings.signature1Url.split("/").pop()}
+                              </Typography>
+                            </Box>
+
+                            <Button
+                              variant="outlined"
+                              component="label"
+                              size="small"
+                              disabled={uploadingSig1 || !canWriteSettings}
+                              sx={{ textTransform: "none", fontSize: "0.75rem" }}
+                            >
+                              {uploadingSig1 ? "Uploading..." : "Replace"}
+                              <input
+                                type="file"
+                                hidden
+                                accept="image/png,image/jpeg,image/jpg"
+                                onChange={(e) => handleSignatureUpload("sign1", e)}
+                              />
+                            </Button>
+
+                            <Button
+                              variant="text"
+                              color="error"
+                              size="small"
+                              onClick={() => handleClearSignature("sign1")}
+                              disabled={!canWriteSettings}
+                              sx={{ textTransform: "none", fontSize: "0.75rem" }}
+                            >
+                              Remove
+                            </Button>
+                          </Box>
+                        ) : (
+                          <Box sx={{ p: 2, border: "2px dashed", borderColor: "grey.300", borderRadius: 2, textAlign: "center", bgcolor: "grey.50" }}>
+                            <Typography variant="caption" color="text.secondary" sx={{ display: "block", mb: 1 }}>
+                              No signature image uploaded for Signatory 1. Click below to upload transparent PNG.
+                            </Typography>
+                            <Button
+                              variant="outlined"
+                              component="label"
+                              size="small"
+                              startIcon={uploadingSig1 ? <CircularProgress size={16} color="inherit" /> : <DrawIcon fontSize="small" />}
+                              disabled={uploadingSig1 || !canWriteSettings}
+                              sx={{ textTransform: "none", borderRadius: 2 }}
+                            >
+                              {uploadingSig1 ? "Uploading to Cloudflare..." : "Upload Signature 1 Image"}
+                              <input
+                                type="file"
+                                hidden
+                                accept="image/png,image/jpeg,image/jpg"
+                                onChange={(e) => handleSignatureUpload("sign1", e)}
+                              />
+                            </Button>
+                          </Box>
+                        )}
+                      </Grid>
+
+                      {/* Sliders for Signatory 1 Fine Adjustment */}
+                      <Grid size={{ xs: 12, sm: 6 }}>
+                        <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 0.5 }}>
+                          <Typography variant="caption" sx={{ fontWeight: 700 }}>Signature Width</Typography>
+                          <Chip label={`${settings.signaturesConfig?.sign1?.width || 100} pt`} size="small" variant="outlined" sx={{ fontWeight: 700, height: 20 }} />
+                        </Box>
+                        <Slider
+                          size="small"
+                          value={parseFloat(settings.signaturesConfig?.sign1?.width) || 100}
+                          min={40}
+                          max={200}
+                          step={2}
+                          onChange={(e, val) => handleSignatureAdjustment("sign1", "width", val)}
+                        />
+                      </Grid>
+
+                      <Grid size={{ xs: 12, sm: 6 }}>
+                        <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 0.5 }}>
+                          <Typography variant="caption" sx={{ fontWeight: 700 }}>Signature Height</Typography>
+                          <Chip label={`${settings.signaturesConfig?.sign1?.height || 45} pt`} size="small" variant="outlined" sx={{ fontWeight: 700, height: 20 }} />
+                        </Box>
+                        <Slider
+                          size="small"
+                          value={parseFloat(settings.signaturesConfig?.sign1?.height) || 45}
+                          min={20}
+                          max={90}
+                          step={2}
+                          onChange={(e, val) => handleSignatureAdjustment("sign1", "height", val)}
+                        />
+                      </Grid>
+
+                      <Grid size={{ xs: 12, sm: 6 }}>
+                        <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 0.5 }}>
+                          <Typography variant="caption" sx={{ fontWeight: 700 }}>Vertical Position (Up / Down Offset)</Typography>
+                          <Chip label={`${settings.signaturesConfig?.sign1?.offsetY || 0} pt`} size="small" variant="outlined" sx={{ fontWeight: 700, height: 20 }} />
+                        </Box>
+                        <Slider
+                          size="small"
+                          value={parseFloat(settings.signaturesConfig?.sign1?.offsetY) || 0}
+                          min={-30}
+                          max={40}
+                          step={1}
+                          onChange={(e, val) => handleSignatureAdjustment("sign1", "offsetY", val)}
+                        />
+                      </Grid>
+
+                      <Grid size={{ xs: 12, sm: 6 }}>
+                        <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 0.5 }}>
+                          <Typography variant="caption" sx={{ fontWeight: 700 }}>Horizontal Position (Left / Right Offset)</Typography>
+                          <Chip label={`${settings.signaturesConfig?.sign1?.offsetX || 0} pt`} size="small" variant="outlined" sx={{ fontWeight: 700, height: 20 }} />
+                        </Box>
+                        <Slider
+                          size="small"
+                          value={parseFloat(settings.signaturesConfig?.sign1?.offsetX) || 0}
+                          min={-40}
+                          max={40}
+                          step={1}
+                          onChange={(e, val) => handleSignatureAdjustment("sign1", "offsetX", val)}
+                        />
+                      </Grid>
+                    </Grid>
+                  </Paper>
+
+                  {/* Signatory 2 Card */}
+                  <Paper variant="outlined" sx={{ p: 2.5, borderRadius: 3, mb: 2.5 }}>
+                    <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", mb: 1.5 }}>
+                      <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                        <Chip label="Signatory 2" color="secondary" size="small" sx={{ fontWeight: 800 }} />
+                        <Typography variant="subtitle2" sx={{ fontWeight: 800 }}>
+                          Right Pathologist / Doctor Signature
+                        </Typography>
+                      </Box>
+                    </Box>
+
+                    <Grid container spacing={2}>
                       <Grid size={{ xs: 12, sm: 6 }}>
                         <TextField
                           label="Signatory 2 - Full Name"
@@ -1362,6 +2004,170 @@ export default function PdfSettingsClient() {
                           value={settings.authorizedSignatoryDegree2 || ""}
                           onChange={(e) => handleInputChange("authorizedSignatoryDegree2", e.target.value)}
                           placeholder="e.g. DCP, Consulting Pathologist"
+                        />
+                      </Grid>
+
+                      {/* Signature 2 Image Upload & Thumbnail */}
+                      <Grid size={{ xs: 12 }}>
+                        <Typography variant="caption" sx={{ fontWeight: 700, display: "block", mb: 1, textTransform: "uppercase" }}>
+                          Signatory 2 - Digital Signature Image
+                        </Typography>
+
+                        {settings.signature2Url ? (
+                          <Box
+                            sx={{
+                              display: "flex",
+                              alignItems: "center",
+                              gap: 2,
+                              p: 1.5,
+                              borderRadius: 2,
+                              border: "1px solid",
+                              borderColor: "secondary.light",
+                              bgcolor: "rgba(147, 51, 234, 0.04)"
+                            }}
+                          >
+                            <Box
+                              sx={{
+                                width: 100,
+                                height: 48,
+                                borderRadius: 1.5,
+                                border: "1px solid",
+                                borderColor: "grey.300",
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "center",
+                                overflow: "hidden",
+                                bgcolor: "#ffffff",
+                                backgroundImage: "linear-gradient(45deg, #f1f5f9 25%, transparent 25%), linear-gradient(-45deg, #f1f5f9 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #f1f5f9 75%), linear-gradient(-45deg, transparent 75%, #f1f5f9 75%)",
+                                backgroundSize: "8px 8px",
+                              }}
+                            >
+                              <img
+                                src={settings.signature2Url}
+                                alt="Signatory 2 Signature"
+                                style={{ maxWidth: "100%", maxHeight: "100%", objectFit: "contain" }}
+                              />
+                            </Box>
+
+                            <Box sx={{ flexGrow: 1, minWidth: 0 }}>
+                              <Typography variant="caption" sx={{ fontWeight: 700, color: "secondary.dark", display: "block" }}>
+                                Active Signature Image (Cloudflare R2 signatures folder)
+                              </Typography>
+                              <Typography variant="caption" color="text.secondary" noWrap sx={{ display: "block" }}>
+                                {settings.signature2Url.split("/").pop()}
+                              </Typography>
+                            </Box>
+
+                            <Button
+                              variant="outlined"
+                              component="label"
+                              size="small"
+                              disabled={uploadingSig2 || !canWriteSettings}
+                              sx={{ textTransform: "none", fontSize: "0.75rem" }}
+                            >
+                              {uploadingSig2 ? "Uploading..." : "Replace"}
+                              <input
+                                type="file"
+                                hidden
+                                accept="image/png,image/jpeg,image/jpg"
+                                onChange={(e) => handleSignatureUpload("sign2", e)}
+                              />
+                            </Button>
+
+                            <Button
+                              variant="text"
+                              color="error"
+                              size="small"
+                              onClick={() => handleClearSignature("sign2")}
+                              disabled={!canWriteSettings}
+                              sx={{ textTransform: "none", fontSize: "0.75rem" }}
+                            >
+                              Remove
+                            </Button>
+                          </Box>
+                        ) : (
+                          <Box sx={{ p: 2, border: "2px dashed", borderColor: "grey.300", borderRadius: 2, textAlign: "center", bgcolor: "grey.50" }}>
+                            <Typography variant="caption" color="text.secondary" sx={{ display: "block", mb: 1 }}>
+                              No signature image uploaded for Signatory 2. Click below to upload transparent PNG.
+                            </Typography>
+                            <Button
+                              variant="outlined"
+                              component="label"
+                              size="small"
+                              startIcon={uploadingSig2 ? <CircularProgress size={16} color="inherit" /> : <DrawIcon fontSize="small" />}
+                              disabled={uploadingSig2 || !canWriteSettings}
+                              sx={{ textTransform: "none", borderRadius: 2 }}
+                            >
+                              {uploadingSig2 ? "Uploading to Cloudflare..." : "Upload Signature 2 Image"}
+                              <input
+                                type="file"
+                                hidden
+                                accept="image/png,image/jpeg,image/jpg"
+                                onChange={(e) => handleSignatureUpload("sign2", e)}
+                              />
+                            </Button>
+                          </Box>
+                        )}
+                      </Grid>
+
+                      {/* Sliders for Signatory 2 Fine Adjustment */}
+                      <Grid size={{ xs: 12, sm: 6 }}>
+                        <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 0.5 }}>
+                          <Typography variant="caption" sx={{ fontWeight: 700 }}>Signature Width</Typography>
+                          <Chip label={`${settings.signaturesConfig?.sign2?.width || 100} pt`} size="small" variant="outlined" sx={{ fontWeight: 700, height: 20 }} />
+                        </Box>
+                        <Slider
+                          size="small"
+                          value={parseFloat(settings.signaturesConfig?.sign2?.width) || 100}
+                          min={40}
+                          max={200}
+                          step={2}
+                          onChange={(e, val) => handleSignatureAdjustment("sign2", "width", val)}
+                        />
+                      </Grid>
+
+                      <Grid size={{ xs: 12, sm: 6 }}>
+                        <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 0.5 }}>
+                          <Typography variant="caption" sx={{ fontWeight: 700 }}>Signature Height</Typography>
+                          <Chip label={`${settings.signaturesConfig?.sign2?.height || 45} pt`} size="small" variant="outlined" sx={{ fontWeight: 700, height: 20 }} />
+                        </Box>
+                        <Slider
+                          size="small"
+                          value={parseFloat(settings.signaturesConfig?.sign2?.height) || 45}
+                          min={20}
+                          max={90}
+                          step={2}
+                          onChange={(e, val) => handleSignatureAdjustment("sign2", "height", val)}
+                        />
+                      </Grid>
+
+                      <Grid size={{ xs: 12, sm: 6 }}>
+                        <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 0.5 }}>
+                          <Typography variant="caption" sx={{ fontWeight: 700 }}>Vertical Position (Up / Down Offset)</Typography>
+                          <Chip label={`${settings.signaturesConfig?.sign2?.offsetY || 0} pt`} size="small" variant="outlined" sx={{ fontWeight: 700, height: 20 }} />
+                        </Box>
+                        <Slider
+                          size="small"
+                          value={parseFloat(settings.signaturesConfig?.sign2?.offsetY) || 0}
+                          min={-30}
+                          max={40}
+                          step={1}
+                          onChange={(e, val) => handleSignatureAdjustment("sign2", "offsetY", val)}
+                        />
+                      </Grid>
+
+                      <Grid size={{ xs: 12, sm: 6 }}>
+                        <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 0.5 }}>
+                          <Typography variant="caption" sx={{ fontWeight: 700 }}>Horizontal Position (Left / Right Offset)</Typography>
+                          <Chip label={`${settings.signaturesConfig?.sign2?.offsetX || 0} pt`} size="small" variant="outlined" sx={{ fontWeight: 700, height: 20 }} />
+                        </Box>
+                        <Slider
+                          size="small"
+                          value={parseFloat(settings.signaturesConfig?.sign2?.offsetX) || 0}
+                          min={-40}
+                          max={40}
+                          step={1}
+                          onChange={(e, val) => handleSignatureAdjustment("sign2", "offsetX", val)}
                         />
                       </Grid>
                     </Grid>

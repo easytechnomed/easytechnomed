@@ -7,17 +7,15 @@ export async function POST(req) {
     await requireAdmin("SETTINGS_WRITE");
     const formData = await req.formData();
     const file = formData.get("file");
-    const requestedFolder = formData.get("folder") || "frame-templates";
+    const requestedFolder = formData.get("folder") || "logos";
 
     if (!file) {
       return NextResponse.json({ success: false, error: "No file provided." }, { status: 400 });
     }
 
-    // Allowed folder whitelist for security
     const allowedFolders = ["frame-templates", "signatures", "logos"];
-    const folder = allowedFolders.includes(requestedFolder) ? requestedFolder : "frame-templates";
+    const folder = allowedFolders.includes(requestedFolder) ? requestedFolder : "logos";
 
-    // Validate mime types based on folder
     if (folder === "frame-templates" && file.type !== "application/pdf") {
       return NextResponse.json({ success: false, error: "Only PDF files are allowed for letterhead templates." }, { status: 400 });
     }

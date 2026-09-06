@@ -591,6 +591,10 @@ model WorkspacePdf {
   authorizedSignatoryDegree1 String?
   authorizedSignatoryName2   String?
   authorizedSignatoryDegree2 String?
+  signature1Url              String?   @db.VarChar(500)
+  signature2Url              String?   @db.VarChar(500)
+  signaturesConfig           String?   @db.Text
+  logosConfig                String?   @db.Text
   showSignatures             Boolean   @default(true)
   showQrCode                 Boolean   @default(true)
   showDepartmentBanner       Boolean   @default(true)

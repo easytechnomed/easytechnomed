@@ -93,6 +93,30 @@ export async function GET(req) {
     const showDepartmentBanner = getParam("showDepartmentBanner", String(dbPdf?.showDepartmentBanner ?? true)) === "true";
     const showPatientBox = getParam("showPatientBox", String(dbPdf?.showPatientBox ?? true)) === "true";
 
+    // Signatures & Logos Config
+    const signature1Url = getParam("signature1Url", dbPdf?.signature1Url || "");
+    const signature2Url = getParam("signature2Url", dbPdf?.signature2Url || "");
+    const signaturesConfigRaw = getParam("signaturesConfig", dbPdf?.signaturesConfig || "");
+    const logosConfigRaw = getParam("logosConfig", dbPdf?.logosConfig || "");
+
+    let signaturesConfig = {
+      sign1: { width: 100, height: 45, offsetX: 0, offsetY: 0 },
+      sign2: { width: 100, height: 45, offsetX: 0, offsetY: 0 },
+    };
+    try {
+      if (signaturesConfigRaw) {
+        const parsed = typeof signaturesConfigRaw === "string" ? JSON.parse(signaturesConfigRaw) : signaturesConfigRaw;
+        signaturesConfig = { ...signaturesConfig, ...parsed };
+      }
+    } catch {}
+
+    let logosConfig = [];
+    try {
+      if (logosConfigRaw) {
+        logosConfig = typeof logosConfigRaw === "string" ? JSON.parse(logosConfigRaw) : logosConfigRaw;
+      }
+    } catch {}
+
     // Convert hex to pdf-lib rgb colors
     const primaryColor = hexToRgb(primaryColorHex, { r: 0.06, g: 0.46, b: 0.43 });
     const headerBgColor = hexToRgb(headerBgColorHex, { r: 0.88, g: 0.91, b: 0.94 });
@@ -110,6 +134,35 @@ export async function GET(req) {
     const font = await pdfDoc.embedFont(fontDefs.regular);
     const fontBold = await pdfDoc.embedFont(fontDefs.bold);
     const fontOblique = await pdfDoc.embedFont(fontDefs.oblique);
+
+    // Image fetch helper (handles PNG & JPEG)
+    const fetchAndEmbedImage = async (imgUrl) => {
+      if (!imgUrl || typeof imgUrl !== "string" || !imgUrl.startsWith("http")) return null;
+      try {
+        const res = await fetch(imgUrl);
+        if (!res.ok) return null;
+        const bytes = await res.arrayBuffer();
+        try {
+          return await pdfDoc.embedPng(bytes);
+        } catch {
+          return await pdfDoc.embedJpg(bytes);
+        }
+      } catch (err) {
+        console.error("fetchAndEmbedImage error for URL:", imgUrl, err);
+        return null;
+      }
+    };
+
+    // Embed Signatures & Logos
+    const [embeddedSig1, embeddedSig2, ...embeddedLogosRaw] = await Promise.all([
+      fetchAndEmbedImage(signature1Url),
+      fetchAndEmbedImage(signature2Url),
+      ...logosConfig.map((l) => (l && l.enabled !== false && l.url ? fetchAndEmbedImage(l.url) : Promise.resolve(null))),
+    ]);
+
+    const embeddedLogos = logosConfig
+      .map((logo, idx) => ({ ...logo, img: embeddedLogosRaw[idx] }))
+      .filter((logo) => Boolean(logo.img));
 
     // Fetch and embed QR Code image if enabled
     let qrImage = null;
@@ -164,6 +217,41 @@ export async function GET(req) {
         end: { x: pageWidth - rightMargin, y: 55 },
         thickness: 0.5,
         color: rgb(0.8, 0.8, 0.8),
+      });
+    }
+
+    // Draw uploaded branding & accreditation logos
+    for (const logo of embeddedLogos) {
+      if (!logo || !logo.img) continue;
+      const w = parseFloat(logo.width) || 110;
+      const h = parseFloat(logo.height) || 50;
+      let x = leftMargin;
+      let y = pageHeight - 75;
+
+      const preset = logo.positionPreset || "top-left";
+      const userX = parseFloat(logo.x) || 0;
+      const userY = parseFloat(logo.y) || 20;
+
+      if (preset === "top-left") {
+        x = leftMargin + userX;
+        y = pageHeight - userY - h;
+      } else if (preset === "top-center") {
+        x = (pageWidth - w) / 2 + userX;
+        y = pageHeight - userY - h;
+      } else if (preset === "top-right") {
+        x = pageWidth - rightMargin - w - userX;
+        y = pageHeight - userY - h;
+      } else {
+        // Custom coordinates (user provides absolute X and Y from top)
+        x = userX || leftMargin;
+        y = pageHeight - userY - h;
+      }
+
+      currentPage.drawImage(logo.img, {
+        x: Math.max(0, Math.min(pageWidth - w, x)),
+        y: Math.max(0, Math.min(pageHeight - h, y)),
+        width: w,
+        height: h,
       });
     }
 
@@ -398,6 +486,20 @@ export async function GET(req) {
 
       // Left: Authorized Signatory 1
       if (authorizedSignatoryName1 && authorizedSignatoryName1.trim()) {
+        const s1Width = parseFloat(signaturesConfig?.sign1?.width) || 100;
+        const s1Height = parseFloat(signaturesConfig?.sign1?.height) || 45;
+        const s1OffsetX = parseFloat(signaturesConfig?.sign1?.offsetX) || 0;
+        const s1OffsetY = parseFloat(signaturesConfig?.sign1?.offsetY) || 0;
+
+        if (embeddedSig1) {
+          currentPage.drawImage(embeddedSig1, {
+            x: leftMargin + 15 + s1OffsetX,
+            y: sigY + 14 + s1OffsetY,
+            width: s1Width,
+            height: s1Height,
+          });
+        }
+
         currentPage.drawLine({
           start: { x: leftMargin + 15, y: sigY + 12 },
           end: { x: leftMargin + 155, y: sigY + 12 },
@@ -436,6 +538,20 @@ export async function GET(req) {
       // Right: Authorized Signatory 2
       if (authorizedSignatoryName2 && authorizedSignatoryName2.trim()) {
         const sig2X = pageWidth - rightMargin - 155;
+        const s2Width = parseFloat(signaturesConfig?.sign2?.width) || 100;
+        const s2Height = parseFloat(signaturesConfig?.sign2?.height) || 45;
+        const s2OffsetX = parseFloat(signaturesConfig?.sign2?.offsetX) || 0;
+        const s2OffsetY = parseFloat(signaturesConfig?.sign2?.offsetY) || 0;
+
+        if (embeddedSig2) {
+          currentPage.drawImage(embeddedSig2, {
+            x: sig2X + s2OffsetX,
+            y: sigY + 14 + s2OffsetY,
+            width: s2Width,
+            height: s2Height,
+          });
+        }
+
         currentPage.drawLine({
           start: { x: sig2X, y: sigY + 12 },
           end: { x: sig2X + 140, y: sigY + 12 },
